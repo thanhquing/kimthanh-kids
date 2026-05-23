@@ -1,0 +1,36 @@
+{
+  "name": "@kimthanh/shared-auth",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@kimthanh/shared-api-client": "workspace:*",
+    "@kimthanh/shared-types": "workspace:*",
+    "zustand": "^4.5.2"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@kimthanh/eslint-config": "workspace:*",
+    "@kimthanh/tsconfig": "workspace:*",
+    "@types/react": "^18.2.79",
+    "react": "^18.2.0",
+    "typescript": "^5.4.5"
+  }
+}

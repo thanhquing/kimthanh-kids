@@ -1,0 +1,29 @@
+{
+  "app": { "name": "KimThanh Kindergarten" },
+  "auth": {
+    "login": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "errors": { "invalidCredentials": "Invalid email or password." }
+  },
+  "tabs": {
+    "home": "Home",
+    "attendance": "Attendance",
+    "reports": "Reports",
+    "messages": "Messages",
+    "profile": "Profile"
+  },
+  "parent": {
+    "dashboard": "My child",
+    "todayReport": "Today's report",
+    "tuition": "Tuition",
+    "requestMedicine": "Request medicine"
+  },
+  "teacher": {
+    "dashboard": "My class",
+    "markAttendance": "Mark attendance",
+    "writeReport": "Write report"
+  },
+  "common": { "loading": "Loading…", "empty": "No data yet", "save": "Save", "cancel": "Cancel" }
+}

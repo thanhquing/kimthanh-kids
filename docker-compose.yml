@@ -1,0 +1,39 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: kimthanh
+    ports: ['5432:5432']
+    volumes:
+      - kt-postgres:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on: [postgres]
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      API_GLOBAL_PREFIX: api
+      API_CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/kimthanh?schema=public
+      JWT_ACCESS_SECRET: change-me-please-min-32-chars-xxxxxxxx
+      JWT_REFRESH_SECRET: change-me-please-min-32-chars-yyyyyyyy
+    ports: ['4000:4000']
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on: [api]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api
+    ports: ['3000:3000']
+
+volumes:
+  kt-postgres:

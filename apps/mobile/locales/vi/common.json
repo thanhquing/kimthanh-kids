@@ -1,0 +1,29 @@
+{
+  "app": { "name": "Mầm Non Kim Thanh" },
+  "auth": {
+    "login": "Đăng nhập",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "submit": "Đăng nhập",
+    "errors": { "invalidCredentials": "Email hoặc mật khẩu không đúng." }
+  },
+  "tabs": {
+    "home": "Trang chủ",
+    "attendance": "Điểm danh",
+    "reports": "Báo cáo",
+    "messages": "Tin nhắn",
+    "profile": "Cá nhân"
+  },
+  "parent": {
+    "dashboard": "Theo dõi con",
+    "todayReport": "Báo cáo hôm nay",
+    "tuition": "Học phí",
+    "requestMedicine": "Gửi yêu cầu thuốc"
+  },
+  "teacher": {
+    "dashboard": "Lớp của tôi",
+    "markAttendance": "Điểm danh",
+    "writeReport": "Viết báo cáo"
+  },
+  "common": { "loading": "Đang tải…", "empty": "Chưa có dữ liệu", "save": "Lưu", "cancel": "Hủy" }
+}

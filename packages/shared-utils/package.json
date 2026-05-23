@@ -1,0 +1,31 @@
+{
+  "name": "@kimthanh/shared-utils",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@kimthanh/shared-types": "workspace:*",
+    "date-fns": "^3.6.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@kimthanh/eslint-config": "workspace:*",
+    "@kimthanh/tsconfig": "workspace:*",
+    "typescript": "^5.4.5"
+  }
+}

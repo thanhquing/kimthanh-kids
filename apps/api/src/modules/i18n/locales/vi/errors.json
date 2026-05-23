@@ -1,0 +1,12 @@
+{
+  "internal": "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
+  "validation": "Dữ liệu không hợp lệ.",
+  "auth": {
+    "invalidCredentials": "Email hoặc mật khẩu không đúng.",
+    "emailExists": "Email đã được sử dụng.",
+    "tokenExpired": "Phiên đăng nhập đã hết hạn.",
+    "unauthorized": "Bạn chưa đăng nhập."
+  },
+  "forbidden": "Bạn không có quyền truy cập.",
+  "notFound": "Không tìm thấy tài nguyên."
+}

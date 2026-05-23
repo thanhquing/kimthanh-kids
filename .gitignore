@@ -1,0 +1,56 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build outputs
+dist
+build
+.next
+out
+.turbo
+
+# coverage / test
+coverage
+*.lcov
+
+# env
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# OS / IDE
+.DS_Store
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# expo / RN
+.expo
+.expo-shared
+ios/Pods
+android/.gradle
+android/build
+android/app/build
+
+# prisma
+prisma/.env
+
+# misc
+*.tsbuildinfo
+
+# Stray TS emit inside source folders (should only ever live in dist/.next/build)
+apps/*/src/**/*.js
+apps/*/src/**/*.js.map
+apps/*/src/**/*.d.ts
+apps/*/src/**/*.d.ts.map
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
