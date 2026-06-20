@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hồ sơ sức khỏe — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/classrooms.html" class="nav-item"
+          ><i data-lucide="school" class="w-4 h-4"></i>Lớp học</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/attendance.html" class="nav-item"
+          ><i data-lucide="check-square" class="w-4 h-4"></i>Điểm danh</a
+        ><a href="/mock-ui/web/reports.html" class="nav-item"
+          ><i data-lucide="file-text" class="w-4 h-4"></i>Báo cáo hằng ngày</a
+        >
+        <div class="nav-group">Sức khỏe</div>
+        <a href="/mock-ui/web/medicine-requests.html" class="nav-item"
+          ><i data-lucide="pill" class="w-4 h-4"></i>Yêu cầu thuốc</a
+        ><a href="/mock-ui/web/health-records.html" class="nav-item active"
+          ><i data-lucide="heart-pulse" class="w-4 h-4"></i>Hồ sơ sức khỏe</a
+        ><a href="/mock-ui/web/incidents.html" class="nav-item"
+          ><i data-lucide="alert-triangle" class="w-4 h-4"></i>Sự cố</a
+        >
+        <div class="nav-group">Tài chính</div>
+        <a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        ><a href="/mock-ui/web/payments.html" class="nav-item"
+          ><i data-lucide="credit-card" class="w-4 h-4"></i>Thanh toán</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        ><a href="/mock-ui/web/profile.html" class="nav-item"
+          ><i data-lucide="user" class="w-4 h-4"></i>Hồ sơ</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Sức khỏe / Hồ sơ</div>
+            <div class="font-bold text-slate-800">Hồ sơ sức khỏe</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Tìm kiếm..." />
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="chip active !py-1">VI</span><span class="chip !py-1">EN</span>
+          </div>
+          <div class="relative">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i
+            ><span
+              class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] grid place-items-center"
+              >3</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <span class="badge b-amber">Beta</span
+              ><span class="text-sm text-slate-500">Endpoint sẽ sớm có</span>
+            </div>
+            <button class="btn-primary text-sm">+ Ghi nhận đo lường</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Học sinh</th>
+                <th>Ngày đo</th>
+                <th>Chiều cao</th>
+                <th>Cân nặng</th>
+                <th>Nhiệt độ</th>
+                <th>Ghi chú</th>
+                <th>Người ghi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">N</div>
+                    Nguyễn Minh
+                  </div>
+                </td>
+                <td>20/05/2026</td>
+                <td>105 cm</td>
+                <td>17.5 kg</td>
+                <td>36.8°C</td>
+                <td>Khỏe mạnh</td>
+                <td>Y tá Hoa</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">T</div>
+                    Trần Hùng
+                  </div>
+                </td>
+                <td>20/05/2026</td>
+                <td>108 cm</td>
+                <td>18.2 kg</td>
+                <td>37.1°C</td>
+                <td>Hơi nóng nhẹ</td>
+                <td>Y tá Hoa</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">L</div>
+                    Lê Mai
+                  </div>
+                </td>
+                <td>20/05/2026</td>
+                <td>102 cm</td>
+                <td>15.8 kg</td>
+                <td>36.6°C</td>
+                <td>—</td>
+                <td>Y tá Hoa</td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">P</div>
+                    Phạm Nam
+                  </div>
+                </td>
+                <td>19/05/2026</td>
+                <td>100 cm</td>
+                <td>16.0 kg</td>
+                <td>36.5°C</td>
+                <td>—</td>
+                <td>Y tá Lan</td>
+              </tr>
+            </tbody>
+          </table>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

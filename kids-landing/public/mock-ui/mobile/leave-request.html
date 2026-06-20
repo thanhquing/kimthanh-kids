@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Xin nghỉ học — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">P15</span>Xin nghỉ học</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Xin nghỉ học</div>
+            <div class="w-5"></div>
+          </div>
+          <div class="h-14"></div>
+          <form class="space-y-4">
+            <div>
+              <label class="label">Chọn con</label
+              ><select class="field">
+                <option>Nguyễn Minh — Lớp Mầm A</option>
+                <option>Nguyễn An — Lớp Chồi B</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Loại nghỉ</label>
+              <div class="flex gap-2 flex-wrap">
+                <div class="chip active">Ốm</div>
+                <div class="chip">Việc gia đình</div>
+                <div class="chip">Khác</div>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="label">Từ ngày</label
+                ><input class="field" type="date" value="2026-05-27" />
+              </div>
+              <div>
+                <label class="label">Đến ngày</label
+                ><input class="field" type="date" value="2026-05-28" />
+              </div>
+            </div>
+            <div>
+              <label class="label">Lý do</label
+              ><textarea class="field" rows="4">
+Bé bị sốt nhẹ, gia đình xin cho bé nghỉ 2 ngày để chăm sóc tại nhà.</textarea
+              >
+            </div>
+            <div>
+              <label class="label">Đính kèm (tùy chọn)</label>
+              <div
+                class="card p-3 border-2 border-dashed border-slate-200 text-center text-xs text-slate-500"
+              >
+                <i data-lucide="paperclip" class="w-4 h-4 inline"></i> Tải giấy khám bệnh
+              </div>
+            </div>
+            <button
+              type="button"
+              onclick="toast('Đã gửi đơn xin nghỉ cho cô giáo')"
+              class="btn-primary w-full"
+            >
+              Gửi đơn
+            </button>
+          </form>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab"><i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span></div>
+          <div class="tab"><i data-lucide="users" class="w-5 h-5"></i><span>Con tôi</span></div>
+          <div class="tab active">
+            <i data-lucide="message-circle" class="w-5 h-5"></i><span>Tin nhắn</span>
+          </div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Đăng nhập — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen brand-grad grid place-items-center p-6">
+      <div class="grid md:grid-cols-2 max-w-4xl w-full card overflow-hidden">
+        <div class="brand-grad text-white p-10 hidden md:flex flex-col justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-9 h-9 rounded-xl bg-white/20 grid place-items-center">
+              <i data-lucide="sun" class="w-5 h-5"></i>
+            </div>
+            <span class="font-bold">KimThanh Kids</span>
+          </div>
+          <div>
+            <div class="text-3xl font-bold mb-2">Chào mừng đến với<br />Admin Console</div>
+            <p class="opacity-80 text-sm">
+              Quản lý toàn bộ hoạt động của trường mầm non trên cùng một nền tảng.
+            </p>
+          </div>
+          <div class="text-xs opacity-70">© 2026 KimThanh Kids</div>
+        </div>
+        <div class="p-10">
+          <h1 class="text-2xl font-bold mb-1">Đăng nhập</h1>
+          <p class="text-sm text-slate-500 mb-6">Sử dụng tài khoản được trường cấp</p>
+          <form class="space-y-4">
+            <div>
+              <label class="label">Email</label
+              ><input class="field" value="admin@kimthanh.edu.vn" />
+            </div>
+            <div>
+              <label class="label">Mật khẩu</label
+              ><input class="field" type="password" value="••••••••" />
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <label class="flex items-center gap-2"
+                ><input type="checkbox" checked />Ghi nhớ tôi</label
+              ><a class="text-[color:var(--primary)] font-medium">Quên mật khẩu?</a>
+            </div>
+            <button
+              type="button"
+              onclick="toast('Đăng nhập thành công')"
+              class="btn-primary w-full"
+            >
+              Đăng nhập
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

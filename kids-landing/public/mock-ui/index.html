@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>KimThanh Kids — Mock UI Catalog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <header class="brand-grad text-white">
+      <div class="max-w-7xl mx-auto px-6 py-10">
+        <div class="flex items-center gap-3 mb-4">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo-lg" />
+          <div>
+            <div class="text-sm opacity-80">KimThanh Kids</div>
+            <h1 class="text-3xl font-bold">Mock UI Catalog</h1>
+          </div>
+        </div>
+        <p class="max-w-2xl opacity-90">
+          Bộ thiết kế HTML/CSS/JS tĩnh cho ứng dụng quản lý mầm non — Mobile chia 2 nhóm Phụ huynh &
+          Giáo viên (E2E full scope), kèm 20 màn hình Web Dashboard.
+        </p>
+      </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 py-10 space-y-12">
+      <section>
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 grid place-items-center">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold">📱 Mobile · Phụ huynh</h2>
+            <p class="text-slate-500 text-sm">
+              Hành trình PH: đăng nhập → theo dõi con → giao tiếp → thanh toán
+            </p>
+          </div>
+        </div>
+        <div
+          id="parent-grid"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-5"
+        ></div>
+      </section>
+
+      <section>
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 grid place-items-center">
+            <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold">📱 Mobile · Giáo viên</h2>
+            <p class="text-slate-500 text-sm">
+              Hành trình GV: điểm danh → giáo án → báo cáo → duyệt thuốc → liên hệ PH
+            </p>
+          </div>
+        </div>
+        <div
+          id="teacher-grid"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-5"
+        ></div>
+      </section>
+
+      <section>
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 grid place-items-center">
+            <i data-lucide="share-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold">📱 Mobile · Dùng chung</h2>
+            <p class="text-slate-500 text-sm">Splash, đăng nhập/đăng ký, hồ sơ, thông báo đẩy</p>
+          </div>
+        </div>
+        <div
+          id="shared-grid"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-5"
+        ></div>
+      </section>
+
+      <section>
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-600 grid place-items-center">
+            <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold">🖥️ Web Dashboard</h2>
+            <p class="text-slate-500 text-sm">Sidebar shell · DataTable · biểu đồ SVG</p>
+          </div>
+        </div>
+        <div id="web-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5"></div>
+      </section>
+    </main>
+    <footer class="text-center text-xs text-slate-400 py-8">
+      KimThanh Kids © 2026 — Static mockups
+    </footer>
+
+    <script>
+      const parent = [
+        ["P1", "Trang chủ Phụ huynh", "home-parent"],
+        ["P2", "Danh sách con", "children-list"],
+        ["P3", "Chi tiết học sinh", "student-detail"],
+        ["P4", "Lịch sử điểm danh", "attendance-history"],
+        ["P5", "Feed báo cáo hằng ngày", "report-feed"],
+        ["P6", "Thực đơn tuần ⭐", "menu-weekly"],
+        ["P7", "Yêu cầu thuốc — DS", "medicine-list"],
+        ["P8", "Yêu cầu thuốc — Tạo", "medicine-create"],
+        ["P9", "Yêu cầu thuốc — Chi tiết", "medicine-detail"],
+        ["P10", "Xin nghỉ học ⭐", "leave-request"],
+        ["P11", "Hóa đơn học phí", "invoices"],
+        ["P12", "Thanh toán học phí ⭐", "payment-checkout"],
+        ["P13", "Thông báo — Feed", "announcements-feed"],
+        ["P14", "Nhắn tin cô giáo ⭐", "chat-teacher"],
+      ];
+      const teacher = [
+        ["T1", "Trang chủ Giáo viên", "home-teacher"],
+        ["T2", "Sĩ số lớp ⭐", "class-roster"],
+        ["T3", "Chi tiết học sinh", "student-detail"],
+        ["T4", "Điểm danh hôm nay", "attendance-mark"],
+        ["T5", "Lịch sử điểm danh", "attendance-history"],
+        ["T6", "Soạn báo cáo hằng ngày", "report-compose"],
+        ["T7", "Feed báo cáo", "report-feed"],
+        ["T8", "Giáo án tuần ⭐", "lesson-plan"],
+        ["T9", "Duyệt yêu cầu thuốc ⭐", "medicine-approve"],
+        ["T10", "Thông báo — Soạn", "announcement-compose"],
+        ["T11", "Thông báo — Feed", "announcements-feed"],
+        ["T12", "Hộp thư phụ huynh ⭐", "chat-parent"],
+      ];
+      const shared = [
+        ["S1", "Splash / Bootstrap", "splash"],
+        ["S2", "Đăng nhập", "login"],
+        ["S3", "Đăng ký", "register"],
+        ["S4", "Hồ sơ cá nhân", "profile"],
+        ["S5", "Thông báo đẩy", "notifications"],
+      ];
+      const web = [
+        ["W0", "Landing", "landing"],
+        ["W1", "Đăng nhập", "login"],
+        ["W2", "Quên mật khẩu", "forgot"],
+        ["W3", "Dashboard Home", "dashboard"],
+        ["W4", "Người dùng", "users"],
+        ["W5", "Lớp học", "classrooms"],
+        ["W5a", "Chi tiết lớp", "classroom-detail"],
+        ["W6", "Học sinh", "students"],
+        ["W6a", "Hồ sơ học sinh", "student-profile"],
+        ["W7", "Điểm danh", "attendance"],
+        ["W8", "Báo cáo hằng ngày", "reports"],
+        ["W9", "Yêu cầu thuốc", "medicine-requests"],
+        ["W10a", "Hồ sơ sức khỏe", "health-records"],
+        ["W10b", "Sự cố", "incidents"],
+        ["W11", "Hóa đơn", "invoices"],
+        ["W12", "Thanh toán", "payments"],
+        ["W13", "Thông báo", "announcements"],
+        ["W14", "Cài đặt trường", "settings-school"],
+        ["W15", "Hồ sơ", "profile"],
+        ["W16", "403/404", "errors"],
+      ];
+      const card = (folder, [id, title, slug], accent) => `
+<a href="/mock-ui/${folder}/${slug}.html" class="card p-4 hover:-translate-y-0.5 hover:shadow-lg transition block group">
+  <div class="flex items-center justify-between mb-2"><span class="badge ${accent}">${id}</span>
+    <i data-lucide="arrow-up-right" class="w-4 h-4 text-slate-400 group-hover:text-[color:var(--primary)]"></i></div>
+  <div class="font-semibold text-slate-800">${title}</div>
+  <div class="text-xs text-slate-400 mt-1">${folder}/${slug}.html</div>
+</a>`;
+      document.getElementById("parent-grid").innerHTML = parent
+        .map((m) => card("mobile", m, "b-peach"))
+        .join("");
+      document.getElementById("teacher-grid").innerHTML = teacher
+        .map((m) => card("mobile", m, "b-amber"))
+        .join("");
+      document.getElementById("shared-grid").innerHTML = shared
+        .map((m) => card("mobile", m, "b-slate"))
+        .join("");
+      document.getElementById("web-grid").innerHTML = web
+        .map((m) => card("web", m, "b-blue"))
+        .join("");
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

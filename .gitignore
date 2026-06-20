@@ -1,0 +1,54 @@
+# ───────────────────────────────────────────────
+# Root .gitignore — áp dụng cho TẤT CẢ sub-app
+# (kids-api, kids-crm, kids-mobile-*, kids-landing)
+# Mỗi sub-app vẫn có thể có .gitignore riêng nếu cần.
+# ───────────────────────────────────────────────
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+
+# Build output
+dist/
+dist-ssr/
+build/
+.output/
+.vinxi/
+.nitro/
+.next/
+.expo/
+.turbo/
+
+# Môi trường / bí mật — KHÔNG bao giờ push
+.env
+.env.*
+!.env.example
+*.local
+.dev.vars
+
+# Wrangler / Cloudflare
+.wrangler/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Native / mobile
+*.keystore
+*.jks
+ios/Pods/
+*.xcworkspace
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sw?

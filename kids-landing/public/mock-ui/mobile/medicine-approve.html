@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Duyệt yêu cầu thuốc — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">T9</span>Duyệt yêu cầu thuốc</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Yêu cầu thuốc</div>
+            <div class="w-5"></div>
+          </div>
+          <div class="h-14"></div>
+          <div class="flex gap-2 mb-3">
+            <div class="chip active">Chờ duyệt (3)</div>
+            <div class="chip">Đang dùng</div>
+            <div class="chip">Đã xong</div>
+          </div>
+          <div class="space-y-3">
+            <div class="card p-4">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <div class="font-semibold">Bé Nguyễn Minh</div>
+                  <div class="text-xs text-slate-500">PH: chị Lan · 8:12 sáng nay</div>
+                </div>
+                <span class="badge b-amber">Chờ duyệt</span>
+              </div>
+              <div class="text-sm mt-1"><b>Siro ho Prospan</b> · 5ml × 2 lần/ngày (8h & 14h)</div>
+              <div class="text-xs text-slate-500 mt-1">Từ 26/05 đến 29/05 · Bé bị ho nhẹ</div>
+              <div class="flex gap-2 mt-3">
+                <button
+                  onclick="toast('Đã duyệt yêu cầu')"
+                  class="btn-primary flex-1 !py-2 text-sm"
+                >
+                  Duyệt
+                </button>
+                <button class="btn-soft flex-1 !py-2 text-sm">Từ chối</button>
+              </div>
+            </div>
+            <div class="card p-4">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <div class="font-semibold">Bé Lê Hà</div>
+                  <div class="text-xs text-slate-500">PH: chị Mai · 7:45 sáng nay</div>
+                </div>
+                <span class="badge b-amber">Chờ duyệt</span>
+              </div>
+              <div class="text-sm mt-1"><b>Hapacol 150mg</b> · 1 gói khi sốt > 38.5°C</div>
+              <div class="text-xs text-slate-500 mt-1">Hôm nay · Bé sốt nhẹ tối qua</div>
+              <div class="flex gap-2 mt-3">
+                <button
+                  onclick="toast('Đã duyệt yêu cầu')"
+                  class="btn-primary flex-1 !py-2 text-sm"
+                >
+                  Duyệt
+                </button>
+                <button class="btn-soft flex-1 !py-2 text-sm">Từ chối</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab"><i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span></div>
+          <div class="tab active"><i data-lucide="school" class="w-5 h-5"></i><span>Lớp</span></div>
+          <div class="tab"><i data-lucide="file-text" class="w-5 h-5"></i><span>Báo cáo</span></div>
+          <div class="tab"><i data-lucide="bell" class="w-5 h-5"></i><span>Thông báo</span></div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

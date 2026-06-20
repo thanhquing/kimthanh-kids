@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Chi tiết học sinh — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M5</span>Chi tiết học sinh</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Hồ sơ học sinh</div>
+            <i data-lucide="more-vertical" class="w-5 h-5"></i>
+          </div>
+          <div class="h-14"></div>
+          <div class="text-center pt-2">
+            <div
+              class="avatar !w-24 !h-24 mx-auto mb-3 bg-gradient-to-br from-pink-300 to-orange-300 text-2xl"
+            >
+              M
+            </div>
+            <div class="text-xl font-bold">Nguyễn Minh</div>
+            <div class="text-sm text-slate-500">Biệt danh: Bé Mun</div>
+            <div class="flex justify-center gap-2 mt-2">
+              <span class="badge b-blue">Nam</span><span class="badge b-peach">Lớp Mầm A</span>
+            </div>
+            <div class="text-xs text-slate-500 mt-2">Sinh ngày 15/03/2021 · 5 tuổi</div>
+          </div>
+          <div class="flex gap-2 overflow-x-auto -mx-1 px-1 mt-4 pb-1">
+            <span class="chip active">Tổng quan</span><span class="chip">Điểm danh</span
+            ><span class="chip">Báo cáo</span><span class="chip">Sức khỏe</span
+            ><span class="chip">Học phí</span><span class="chip">Hình ảnh</span>
+          </div>
+          <div class="card p-4 mt-4">
+            <div class="font-semibold mb-2">Hôm nay</div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="status-dot bg-emerald-400"></span
+              ><span class="text-sm">Có mặt — Check-in 7:45</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="status-dot bg-amber-400"></span
+              ><span class="text-sm">Đã ăn 2/3 phần · Ngủ ngon 2h</span>
+            </div>
+          </div>
+          <div class="card p-4 mt-3">
+            <div class="font-semibold mb-2">Phụ huynh</div>
+            <div class="flex items-center gap-2 text-sm py-1">
+              <div class="avatar !w-8 !h-8 text-xs">L</div>
+              Nguyễn Thị Lan · Mẹ
+            </div>
+            <div class="flex items-center gap-2 text-sm py-1">
+              <div class="avatar !w-8 !h-8 text-xs">T</div>
+              Nguyễn Văn Tuấn · Ba
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

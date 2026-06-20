@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>KimThanh Kids — Landing — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <header class="bg-white border-b">
+      <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" /><span
+            class="font-bold"
+            >KimThanh Kids</span
+          >
+        </div>
+        <nav class="flex gap-6 text-sm text-slate-600">
+          <a>Giới thiệu</a><a>Tính năng</a><a>Học phí</a><a>Liên hệ</a>
+        </nav>
+        <div class="flex gap-2">
+          <a class="btn-soft text-sm">Đăng ký</a><a class="btn-primary text-sm">Đăng nhập</a>
+        </div>
+      </div>
+    </header>
+    <section class="brand-grad text-white">
+      <div class="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-10 items-center">
+        <div>
+          <div class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs mb-4">
+            Mầm non hạnh phúc · Hà Nội
+          </div>
+          <h1 class="text-5xl font-bold leading-tight mb-4">Nơi tuổi thơ <br />được ươm mầm</h1>
+          <p class="opacity-90 mb-6 max-w-md">
+            Quản lý lớp học, báo cáo hằng ngày, theo dõi sức khỏe, học phí minh bạch — tất cả trong
+            một nền tảng cho phụ huynh và giáo viên.
+          </p>
+          <div class="flex gap-3">
+            <a class="bg-white text-[color:var(--primary-600)] font-semibold px-5 py-3 rounded-xl"
+              >Đăng nhập</a
+            ><a class="border border-white/70 px-5 py-3 rounded-xl">Đăng ký phụ huynh</a>
+          </div>
+        </div>
+        <div class="aspect-square rounded-3xl overflow-hidden shadow-2xl">
+          <img
+            src="/mock-ui/images/hero-kids.jpg"
+            class="w-full h-full object-cover"
+            alt="Các bé KimThanh Kids"
+          />
+        </div>
+      </div>
+    </section>
+    <section class="max-w-7xl mx-auto px-6 py-20">
+      <h2 class="text-3xl font-bold text-center mb-12">Mọi thứ trường mầm non cần</h2>
+      <div class="grid md:grid-cols-4 gap-5">
+        <div class="card p-6">
+          <div
+            class="w-12 h-12 rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary-600)] grid place-items-center mb-3"
+          >
+            <i data-lucide="school" class="w-6 h-6"></i>
+          </div>
+          <div class="font-bold mb-1">Quản lý lớp</div>
+          <div class="text-sm text-slate-500">Phân lớp, giáo viên chủ nhiệm, sĩ số minh bạch</div>
+        </div>
+        <div class="card p-6">
+          <div
+            class="w-12 h-12 rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary-600)] grid place-items-center mb-3"
+          >
+            <i data-lucide="file-text" class="w-6 h-6"></i>
+          </div>
+          <div class="font-bold mb-1">Báo cáo hằng ngày</div>
+          <div class="text-sm text-slate-500">Cô gửi báo cáo về bữa ăn, giấc ngủ, tâm trạng</div>
+        </div>
+        <div class="card p-6">
+          <div
+            class="w-12 h-12 rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary-600)] grid place-items-center mb-3"
+          >
+            <i data-lucide="heart-pulse" class="w-6 h-6"></i>
+          </div>
+          <div class="font-bold mb-1">Theo dõi sức khỏe</div>
+          <div class="text-sm text-slate-500">Yêu cầu thuốc, hồ sơ y tế, ghi nhận sự cố</div>
+        </div>
+        <div class="card p-6">
+          <div
+            class="w-12 h-12 rounded-xl bg-[color:var(--primary)]/10 text-[color:var(--primary-600)] grid place-items-center mb-3"
+          >
+            <i data-lucide="receipt" class="w-6 h-6"></i>
+          </div>
+          <div class="font-bold mb-1">Học phí minh bạch</div>
+          <div class="text-sm text-slate-500">Hóa đơn rõ ràng, lịch thanh toán, lịch sử</div>
+        </div>
+      </div>
+    </section>
+    <footer class="bg-slate-900 text-slate-400 py-10 text-center text-sm">
+      © 2026 KimThanh Kids · contact@kimthanh.edu.vn
+    </footer>
+  </body>
+</html>

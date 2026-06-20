@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Thông báo đẩy — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M17</span>Thông báo đẩy</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <div class="w-5"></div>
+            <div class="font-semibold text-slate-800">Thông báo</div>
+            <div class="w-5"></div>
+          </div>
+          <div class="h-14"></div>
+          <div class="space-y-3">
+            <div class="card p-3 flex gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 grid place-items-center">
+                <i data-lucide="check-square" class="w-5 h-5 text-emerald-600"></i>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Bé Minh đã được điểm danh</div>
+                <div class="text-xs text-slate-500">Có mặt lúc 7:45 sáng</div>
+                <div class="text-xs text-slate-400 mt-1">5 phút trước</div>
+              </div>
+              <span class="w-2 h-2 bg-[color:var(--primary)] rounded-full mt-2"></span>
+            </div>
+            <div class="card p-3 flex gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 grid place-items-center">
+                <i data-lucide="file-text" class="w-5 h-5 text-blue-600"></i>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Báo cáo mới cho bé Minh</div>
+                <div class="text-xs text-slate-500">Cô Hà vừa gửi báo cáo hằng ngày</div>
+                <div class="text-xs text-slate-400 mt-1">1 giờ trước</div>
+              </div>
+              <span class="w-2 h-2 bg-[color:var(--primary)] rounded-full mt-2"></span>
+            </div>
+            <div class="card p-3 flex gap-3 opacity-70">
+              <div class="w-10 h-10 rounded-xl bg-orange-50 grid place-items-center">
+                <i data-lucide="megaphone" class="w-5 h-5 text-orange-600"></i>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Thông báo mới từ lớp Mầm A</div>
+                <div class="text-xs text-slate-500">Chuẩn bị dã ngoại thứ Sáu</div>
+                <div class="text-xs text-slate-400 mt-1">2 giờ trước</div>
+              </div>
+            </div>
+            <div class="card p-3 flex gap-3 opacity-70">
+              <div class="w-10 h-10 rounded-xl bg-red-50 grid place-items-center">
+                <i data-lucide="receipt" class="w-5 h-5 text-red-600"></i>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Hóa đơn sắp đến hạn</div>
+                <div class="text-xs text-slate-500">Học phí tháng 5/2026 — 1.500.000 ₫</div>
+                <div class="text-xs text-slate-400 mt-1">Hôm qua</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab active">
+            <i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span>
+          </div>
+          <div class="tab"><i data-lucide="users" class="w-5 h-5"></i><span>Con tôi</span></div>
+          <div class="tab"><i data-lucide="bell" class="w-5 h-5"></i><span>Thông báo</span></div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

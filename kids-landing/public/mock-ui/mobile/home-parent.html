@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Trang chủ (Phụ huynh) — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M3a</span>Trang chủ (Phụ huynh)</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-xs text-slate-500">Xin chào,</div>
+              <div class="font-bold text-lg">Chị Lan 👋</div>
+            </div>
+            <div class="avatar !w-10 !h-10">L</div>
+          </div>
+          <div class="card p-4 mt-4 brand-grad text-white">
+            <div class="text-xs opacity-80">Hôm nay · Thứ Ba 26/05/2026</div>
+            <div class="text-xl font-bold mt-1">2 con đang đi học</div>
+            <div class="flex gap-2 mt-3">
+              <span class="badge bg-white/20 text-white">✓ Bé Minh — Có mặt</span
+              ><span class="badge bg-white/20 text-white">⏰ Bé An — Đi muộn</span>
+            </div>
+          </div>
+          <div class="section-title">Con của tôi</div>
+          <div class="flex gap-3 overflow-x-auto -mx-1 px-1 pb-2">
+            <div class="card p-3 min-w-[150px]">
+              <img
+                src="/mock-ui/images/avatar-1.jpg"
+                class="w-full h-20 object-cover rounded-lg mb-2"
+              />
+              <div class="font-semibold text-sm">Nguyễn Minh</div>
+              <div class="text-xs text-slate-500">Lớp Mầm A</div>
+            </div>
+            <div class="card p-3 min-w-[150px]">
+              <img
+                src="/mock-ui/images/avatar-2.jpg"
+                class="w-full h-20 object-cover rounded-lg mb-2"
+              />
+              <div class="font-semibold text-sm">Nguyễn An</div>
+              <div class="text-xs text-slate-500">Lớp Chồi B</div>
+            </div>
+          </div>
+          <div class="section-title">Khoảnh khắc hôm nay</div>
+          <img src="/mock-ui/images/hero-kids.jpg" class="hero-img mb-2" alt="Hoạt động lớp" />
+          <div class="text-xs text-slate-500 mb-2">
+            Bé Minh đang vẽ tranh cùng các bạn lớp Mầm A — cô Hà chia sẻ
+          </div>
+          <div class="section-title">Thông báo gần đây</div>
+          <div class="space-y-2">
+            <div class="card p-3">
+              <div class="flex items-start gap-3">
+                <span class="badge b-peach">Lớp Mầm A</span
+                ><span class="text-xs text-slate-400 ml-auto">2 giờ trước</span>
+              </div>
+              <div class="font-semibold mt-1 text-sm">Chuẩn bị đồ cho buổi dã ngoại thứ Sáu</div>
+            </div>
+            <div class="card p-3">
+              <div class="flex items-start gap-3">
+                <span class="badge b-blue">Trường</span
+                ><span class="text-xs text-slate-400 ml-auto">Hôm qua</span>
+              </div>
+              <div class="font-semibold mt-1 text-sm">Lịch nghỉ lễ 30/4 - 1/5</div>
+            </div>
+          </div>
+          <div class="card p-3 mt-3 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-red-100 grid place-items-center text-red-600">
+              <i data-lucide="receipt" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-sm font-semibold">2 hóa đơn chưa thanh toán</div>
+              <div class="text-xs text-slate-500">Tổng 3.000.000 ₫</div>
+            </div>
+            <i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i>
+          </div>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab active">
+            <i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span>
+          </div>
+          <div class="tab"><i data-lucide="users" class="w-5 h-5"></i><span>Con tôi</span></div>
+          <div class="tab"><i data-lucide="bell" class="w-5 h-5"></i><span>Thông báo</span></div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

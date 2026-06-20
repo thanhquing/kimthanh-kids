@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Thanh toán — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/classrooms.html" class="nav-item"
+          ><i data-lucide="school" class="w-4 h-4"></i>Lớp học</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/attendance.html" class="nav-item"
+          ><i data-lucide="check-square" class="w-4 h-4"></i>Điểm danh</a
+        ><a href="/mock-ui/web/reports.html" class="nav-item"
+          ><i data-lucide="file-text" class="w-4 h-4"></i>Báo cáo hằng ngày</a
+        >
+        <div class="nav-group">Sức khỏe</div>
+        <a href="/mock-ui/web/medicine-requests.html" class="nav-item"
+          ><i data-lucide="pill" class="w-4 h-4"></i>Yêu cầu thuốc</a
+        ><a href="/mock-ui/web/health-records.html" class="nav-item"
+          ><i data-lucide="heart-pulse" class="w-4 h-4"></i>Hồ sơ sức khỏe</a
+        ><a href="/mock-ui/web/incidents.html" class="nav-item"
+          ><i data-lucide="alert-triangle" class="w-4 h-4"></i>Sự cố</a
+        >
+        <div class="nav-group">Tài chính</div>
+        <a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        ><a href="/mock-ui/web/payments.html" class="nav-item active"
+          ><i data-lucide="credit-card" class="w-4 h-4"></i>Thanh toán</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        ><a href="/mock-ui/web/profile.html" class="nav-item"
+          ><i data-lucide="user" class="w-4 h-4"></i>Hồ sơ</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Tài chính / Thanh toán</div>
+            <div class="font-bold text-slate-800">Thanh toán</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Tìm kiếm..." />
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="chip active !py-1">VI</span><span class="chip !py-1">EN</span>
+          </div>
+          <div class="relative">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i
+            ><span
+              class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] grid place-items-center"
+              >3</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="text-sm text-slate-500 mb-4">
+            Danh sách thanh toán suy ra từ hóa đơn có trạng thái <b>Đã thu</b>.
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Ngày</th>
+                <th>Hóa đơn</th>
+                <th>Học sinh</th>
+                <th>Số tiền</th>
+                <th>Phương thức</th>
+                <th>Tham chiếu</th>
+                <th>Người ghi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>15/05/2026</td>
+                <td>INV-2613</td>
+                <td>Trần Hùng</td>
+                <td><b>1.500.000 ₫</b></td>
+                <td>Chuyển khoản</td>
+                <td>VCB-2615012</td>
+                <td>Chị Tài</td>
+              </tr>
+              <tr>
+                <td>08/05/2026</td>
+                <td>INV-2612</td>
+                <td>Lê Mai</td>
+                <td><b>1.500.000 ₫</b></td>
+                <td>Tiền mặt</td>
+                <td>—</td>
+                <td>Chị Tài</td>
+              </tr>
+              <tr>
+                <td>03/05/2026</td>
+                <td>INV-2611</td>
+                <td>Phạm Nam</td>
+                <td><b>1.500.000 ₫</b></td>
+                <td>Chuyển khoản</td>
+                <td>MB-7811234</td>
+                <td>Chị Tài</td>
+              </tr>
+              <tr>
+                <td>30/04/2026</td>
+                <td>INV-2520</td>
+                <td>Đỗ Lan</td>
+                <td><b>1.500.000 ₫</b></td>
+                <td>Chuyển khoản</td>
+                <td>TCB-9912342</td>
+                <td>Chị Tài</td>
+              </tr>
+            </tbody>
+          </table>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

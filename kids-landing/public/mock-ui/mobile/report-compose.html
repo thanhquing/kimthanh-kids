@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Soạn báo cáo — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M8</span>Soạn báo cáo</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Báo cáo · Bé Minh</div>
+            <div class="w-5"></div>
+          </div>
+          <div class="h-14"></div>
+          <form class="space-y-4">
+            <div>
+              <label class="label">Tâm trạng hôm nay</label>
+              <div class="flex gap-2 flex-wrap">
+                <span class="chip active">😊 Vui</span><span class="chip">😐 Bình thường</span
+                ><span class="chip">😴 Mệt</span><span class="chip">😢 Quấy</span>
+              </div>
+            </div>
+            <div>
+              <label class="label">Bữa ăn</label
+              ><textarea class="field" rows="2">
+Ăn hết suất sáng. Trưa ăn 2/3, không ăn rau.</textarea
+              >
+            </div>
+            <div>
+              <label class="label">Ngủ trưa</label>
+              <div class="flex gap-2">
+                <span class="chip active">😴 Ngủ ngon</span><span class="chip">Khó ngủ</span
+                ><span class="chip">Không ngủ</span>
+              </div>
+            </div>
+            <div>
+              <label class="label">Hoạt động</label
+              ><textarea class="field" rows="2">
+Tham gia tô màu, chơi xếp hình. Hát theo nhạc rất sôi nổi.</textarea
+              >
+            </div>
+            <div>
+              <label class="label">Ghi chú cho phụ huynh</label
+              ><textarea class="field" rows="2" placeholder="Có gì đặc biệt..."></textarea>
+            </div>
+            <div>
+              <label class="label">Hình ảnh</label>
+              <div
+                class="card p-4 border-2 border-dashed border-slate-200 text-center text-slate-400 text-sm"
+              >
+                <i data-lucide="image" class="w-6 h-6 mx-auto mb-1"></i>Tải ảnh — <i>Sắp ra mắt</i>
+              </div>
+            </div>
+            <button type="button" onclick="toast('Đã lưu báo cáo')" class="btn-primary w-full">
+              Lưu báo cáo
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

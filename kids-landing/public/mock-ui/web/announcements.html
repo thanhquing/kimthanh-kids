@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Thông báo — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/classrooms.html" class="nav-item"
+          ><i data-lucide="school" class="w-4 h-4"></i>Lớp học</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/attendance.html" class="nav-item"
+          ><i data-lucide="check-square" class="w-4 h-4"></i>Điểm danh</a
+        ><a href="/mock-ui/web/reports.html" class="nav-item"
+          ><i data-lucide="file-text" class="w-4 h-4"></i>Báo cáo hằng ngày</a
+        >
+        <div class="nav-group">Sức khỏe</div>
+        <a href="/mock-ui/web/medicine-requests.html" class="nav-item"
+          ><i data-lucide="pill" class="w-4 h-4"></i>Yêu cầu thuốc</a
+        ><a href="/mock-ui/web/health-records.html" class="nav-item"
+          ><i data-lucide="heart-pulse" class="w-4 h-4"></i>Hồ sơ sức khỏe</a
+        ><a href="/mock-ui/web/incidents.html" class="nav-item"
+          ><i data-lucide="alert-triangle" class="w-4 h-4"></i>Sự cố</a
+        >
+        <div class="nav-group">Tài chính</div>
+        <a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        ><a href="/mock-ui/web/payments.html" class="nav-item"
+          ><i data-lucide="credit-card" class="w-4 h-4"></i>Thanh toán</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item active"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        ><a href="/mock-ui/web/profile.html" class="nav-item"
+          ><i data-lucide="user" class="w-4 h-4"></i>Hồ sơ</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Quản trị / Thông báo</div>
+            <div class="font-bold text-slate-800">Thông báo</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Tìm kiếm..." />
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="chip active !py-1">VI</span><span class="chip !py-1">EN</span>
+          </div>
+          <div class="relative">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i
+            ><span
+              class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] grid place-items-center"
+              >3</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="grid lg:grid-cols-2 gap-5">
+            <div>
+              <div class="flex items-center gap-2 mb-3">
+                <select class="field !py-1.5 !text-sm !w-auto">
+                  <option>Tất cả đối tượng</option>
+                </select>
+                <input class="field !py-1.5 !text-sm flex-1" placeholder="Tìm tiêu đề..." />
+                <button onclick="toast('Mở modal soạn')" class="btn-primary text-sm">+ Tạo</button>
+              </div>
+              <div class="space-y-2">
+                <div class="card p-4 ring-2 ring-[color:var(--primary)]/50 cursor-pointer">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="badge b-blue">Toàn trường</span
+                    ><span class="text-xs text-slate-400">2 giờ trước</span>
+                  </div>
+                  <div class="font-semibold">Lịch nghỉ lễ 30/4 - 1/5</div>
+                  <div class="text-xs text-slate-500 mt-1 line-clamp-2">
+                    Trường nghỉ từ 30/04 đến hết 02/05/2026. Trở lại học bình thường vào 03/05.
+                  </div>
+                </div>
+                <div class="card p-4 cursor-pointer">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="badge b-peach">Lớp Mầm A</span
+                    ><span class="text-xs text-slate-400">3 giờ trước</span>
+                  </div>
+                  <div class="font-semibold">Chuẩn bị dã ngoại thứ Sáu</div>
+                  <div class="text-xs text-slate-500 mt-1 line-clamp-2">
+                    Phụ huynh chuẩn bị mũ, nước, đồ ăn nhẹ. Xe khởi hành 7h30 sáng.
+                  </div>
+                </div>
+                <div class="card p-4 cursor-pointer">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="badge b-green">Phụ huynh</span
+                    ><span class="text-xs text-slate-400">Hôm qua</span>
+                  </div>
+                  <div class="font-semibold">Họp phụ huynh cuối năm</div>
+                  <div class="text-xs text-slate-500 mt-1 line-clamp-2">
+                    Trường tổ chức họp phụ huynh sáng Chủ nhật 09/06 lúc 8h00.
+                  </div>
+                </div>
+                <div class="card p-4 cursor-pointer">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="badge b-slate">Giáo viên</span
+                    ><span class="text-xs text-slate-400">2 ngày trước</span>
+                  </div>
+                  <div class="font-semibold">Tập huấn sơ cứu</div>
+                  <div class="text-xs text-slate-500 mt-1 line-clamp-2">
+                    Tất cả giáo viên tham gia tập huấn sơ cứu cơ bản thứ Bảy 30/05.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-6 h-fit sticky top-20">
+              <span class="badge b-blue mb-2">Toàn trường</span>
+              <h2 class="text-2xl font-bold mb-2">Lịch nghỉ lễ 30/4 - 1/5</h2>
+              <div class="text-xs text-slate-400 mb-4">Đăng bởi Admin · 24/05/2026 lúc 14:30</div>
+              <div class="prose prose-sm text-slate-700 space-y-3">
+                <p>Kính gửi quý phụ huynh,</p>
+                <p>
+                  Trường Mầm non KimThanh Kids xin thông báo lịch nghỉ lễ Giải phóng miền Nam 30/4
+                  và Quốc tế Lao động 1/5:
+                </p>
+                <ul class="list-disc pl-5">
+                  <li>Nghỉ từ <b>thứ Năm 30/04/2026</b></li>
+                  <li>Hết ngày <b>Chủ nhật 02/05/2026</b></li>
+                  <li>Trở lại học bình thường vào <b>thứ Hai 03/05/2026</b></li>
+                </ul>
+                <p>Trân trọng,<br />BGH Trường KimThanh Kids</p>
+              </div>
+              <div class="flex gap-2 mt-5">
+                <button class="btn-soft text-sm">Chỉnh sửa</button
+                ><button class="btn-soft text-sm text-red-600">Xóa</button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

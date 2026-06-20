@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Điểm danh — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/classrooms.html" class="nav-item"
+          ><i data-lucide="school" class="w-4 h-4"></i>Lớp học</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/attendance.html" class="nav-item active"
+          ><i data-lucide="check-square" class="w-4 h-4"></i>Điểm danh</a
+        ><a href="/mock-ui/web/reports.html" class="nav-item"
+          ><i data-lucide="file-text" class="w-4 h-4"></i>Báo cáo hằng ngày</a
+        >
+        <div class="nav-group">Sức khỏe</div>
+        <a href="/mock-ui/web/medicine-requests.html" class="nav-item"
+          ><i data-lucide="pill" class="w-4 h-4"></i>Yêu cầu thuốc</a
+        ><a href="/mock-ui/web/health-records.html" class="nav-item"
+          ><i data-lucide="heart-pulse" class="w-4 h-4"></i>Hồ sơ sức khỏe</a
+        ><a href="/mock-ui/web/incidents.html" class="nav-item"
+          ><i data-lucide="alert-triangle" class="w-4 h-4"></i>Sự cố</a
+        >
+        <div class="nav-group">Tài chính</div>
+        <a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        ><a href="/mock-ui/web/payments.html" class="nav-item"
+          ><i data-lucide="credit-card" class="w-4 h-4"></i>Thanh toán</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        ><a href="/mock-ui/web/profile.html" class="nav-item"
+          ><i data-lucide="user" class="w-4 h-4"></i>Hồ sơ</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Hoạt động / Điểm danh</div>
+            <div class="font-bold text-slate-800">Điểm danh</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Tìm kiếm..." />
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="chip active !py-1">VI</span><span class="chip !py-1">EN</span>
+          </div>
+          <div class="relative">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i
+            ><span
+              class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] grid place-items-center"
+              >3</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <select class="field !w-auto !py-1.5">
+              <option>Lớp Mầm A</option>
+            </select>
+            <input class="field !w-auto !py-1.5" type="date" value="2026-05-26" />
+            <div class="ml-auto flex gap-2">
+              <button class="btn-soft text-sm">Reset</button
+              ><button onclick="toast('Đã lưu điểm danh')" class="btn-primary text-sm">
+                Lưu thay đổi (3)
+              </button>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3 mb-4">
+            <div class="kpi">
+              <div class="lbl">Có mặt</div>
+              <div class="num text-emerald-600">20</div>
+              <div class="text-xs text-slate-400">83%</div>
+            </div>
+            <div class="kpi">
+              <div class="lbl">Đi muộn</div>
+              <div class="num text-amber-600">2</div>
+              <div class="text-xs text-slate-400">8%</div>
+            </div>
+            <div class="kpi">
+              <div class="lbl">Vắng</div>
+              <div class="num text-red-600">1</div>
+              <div class="text-xs text-slate-400">4%</div>
+            </div>
+            <div class="kpi">
+              <div class="lbl">Có phép</div>
+              <div class="num text-slate-500">1</div>
+              <div class="text-xs text-slate-400">4%</div>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Học sinh</th>
+                <th>Trạng thái</th>
+                <th>Check-in</th>
+                <th>Check-out</th>
+                <th>Ghi chú</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">N</div>
+                    Nguyễn Minh
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="07:45" /></td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="17:15" /></td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">T</div>
+                    Trần Hùng
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="07:45" /></td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="17:15" /></td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">L</div>
+                    Lê Bảo Mai
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="07:45" /></td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="17:15" /></td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">P</div>
+                    Phạm Nam
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td>—</td>
+                <td>—</td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">Đ</div>
+                    Đỗ Quỳnh Lan
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td>—</td>
+                <td>—</td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">H</div>
+                    Hoàng Khánh
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="07:45" /></td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="17:15" /></td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">V</div>
+                    Vũ Tấn Phát
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="07:45" /></td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="17:15" /></td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="avatar !w-8 !h-8 text-xs">B</div>
+                    Bùi Mỹ Linh
+                  </div>
+                </td>
+                <td>
+                  <div class="flex gap-1">
+                    <button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border bg-[color:var(--primary)] text-white border-[color:var(--primary)]"
+                    >
+                      Có mặt</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Muộn</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Vắng</button
+                    ><button
+                      class="px-2 py-1 rounded-md text-xs font-semibold border border-slate-200 text-slate-500"
+                    >
+                      Phép
+                    </button>
+                  </div>
+                </td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="07:45" /></td>
+                <td><input class="field !py-1 !text-xs !w-24" type="time" value="17:15" /></td>
+                <td><input class="field !py-1 !text-xs" placeholder="Ghi chú..." /></td>
+                <td><span class="text-xs text-emerald-600">✓ Đã lưu</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

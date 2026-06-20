@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tổng quan — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item active"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/classrooms.html" class="nav-item"
+          ><i data-lucide="school" class="w-4 h-4"></i>Lớp học</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/attendance.html" class="nav-item"
+          ><i data-lucide="check-square" class="w-4 h-4"></i>Điểm danh</a
+        ><a href="/mock-ui/web/reports.html" class="nav-item"
+          ><i data-lucide="file-text" class="w-4 h-4"></i>Báo cáo hằng ngày</a
+        >
+        <div class="nav-group">Sức khỏe</div>
+        <a href="/mock-ui/web/medicine-requests.html" class="nav-item"
+          ><i data-lucide="pill" class="w-4 h-4"></i>Yêu cầu thuốc</a
+        ><a href="/mock-ui/web/health-records.html" class="nav-item"
+          ><i data-lucide="heart-pulse" class="w-4 h-4"></i>Hồ sơ sức khỏe</a
+        ><a href="/mock-ui/web/incidents.html" class="nav-item"
+          ><i data-lucide="alert-triangle" class="w-4 h-4"></i>Sự cố</a
+        >
+        <div class="nav-group">Tài chính</div>
+        <a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        ><a href="/mock-ui/web/payments.html" class="nav-item"
+          ><i data-lucide="credit-card" class="w-4 h-4"></i>Thanh toán</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        ><a href="/mock-ui/web/profile.html" class="nav-item"
+          ><i data-lucide="user" class="w-4 h-4"></i>Hồ sơ</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Trang chủ</div>
+            <div class="font-bold text-slate-800">Tổng quan</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Tìm kiếm..." />
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="chip active !py-1">VI</span><span class="chip !py-1">EN</span>
+          </div>
+          <div class="relative">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i
+            ><span
+              class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] grid place-items-center"
+              >3</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 grid place-items-center">
+                <i data-lucide="baby" class="w-5 h-5"></i>
+              </div>
+              <div class="num">248</div>
+              <div class="lbl">Học sinh</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 grid place-items-center">
+                <i data-lucide="school" class="w-5 h-5"></i>
+              </div>
+              <div class="num">12</div>
+              <div class="lbl">Lớp học</div>
+            </div>
+            <div class="kpi">
+              <div
+                class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 grid place-items-center"
+              >
+                <i data-lucide="users" class="w-5 h-5"></i>
+              </div>
+              <div class="num">28</div>
+              <div class="lbl">Giáo viên</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 grid place-items-center">
+                <i data-lucide="receipt" class="w-5 h-5"></i>
+              </div>
+              <div class="num">17</div>
+              <div class="lbl">Hóa đơn chờ</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 grid place-items-center">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+              </div>
+              <div class="num">3</div>
+              <div class="lbl">Quá hạn</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-pink-50 text-pink-600 grid place-items-center">
+                <i data-lucide="pill" class="w-5 h-5"></i>
+              </div>
+              <div class="num">5</div>
+              <div class="lbl">Yêu cầu thuốc</div>
+            </div>
+          </div>
+          <div class="grid lg:grid-cols-3 gap-5">
+            <div class="card p-5 lg:col-span-2">
+              <div class="flex items-center justify-between mb-4">
+                <div class="font-bold">Xu hướng điểm danh (30 ngày)</div>
+                <span class="badge b-green">+4.2%</span>
+              </div>
+              <svg viewBox="0 0 600 200" class="w-full h-48">
+                <defs>
+                  <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#F26B5E" stop-opacity=".4" />
+                    <stop offset="100%" stop-color="#F26B5E" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <polyline
+                  fill="url(#g1)"
+                  stroke="none"
+                  points="0,200 0,140 50,120 100,130 150,90 200,100 250,70 300,80 350,60 400,75 450,50 500,65 550,40 600,55 600,200"
+                />
+                <polyline
+                  fill="none"
+                  stroke="#F26B5E"
+                  stroke-width="3"
+                  points="0,140 50,120 100,130 150,90 200,100 250,70 300,80 350,60 400,75 450,50 500,65 550,40 600,55"
+                />
+              </svg>
+            </div>
+            <div class="card p-5">
+              <div class="font-bold mb-3">Yêu cầu thuốc</div>
+              <div class="flex justify-center my-2">
+                <div class="relative w-32 h-32">
+                  <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="#E2E8F0"
+                      stroke-width="3"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="#F89A5B"
+                      stroke-width="3"
+                      stroke-dasharray="40 100"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="#F26B5E"
+                      stroke-width="3"
+                      stroke-dasharray="35 100"
+                      stroke-dashoffset="-40"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="#7BC796"
+                      stroke-width="3"
+                      stroke-dasharray="25 100"
+                      stroke-dashoffset="-75"
+                    />
+                  </svg>
+                  <div class="absolute inset-0 grid place-items-center">
+                    <div class="text-center">
+                      <div class="text-2xl font-bold">42</div>
+                      <div class="text-xs text-slate-400">Tháng này</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="text-xs space-y-1 mt-3">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2"
+                    ><span class="status-dot bg-[#F89A5B]"></span>Chờ duyệt</span
+                  ><b>17</b>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2"
+                    ><span class="status-dot bg-[#F26B5E]"></span>Đã cho uống</span
+                  ><b>14</b>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2"
+                    ><span class="status-dot bg-[#7BC796]"></span>Đã duyệt</span
+                  ><b>11</b>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="grid lg:grid-cols-3 gap-5 mt-5">
+            <div class="card p-5">
+              <div class="font-bold mb-3">Doanh thu theo tháng</div>
+              <svg viewBox="0 0 300 160" class="w-full h-40">
+                <rect x="10" y="70" width="30" height="90" rx="4" fill="#F26B5E" opacity=".6" />
+                <rect x="55" y="50" width="30" height="110" rx="4" fill="#F26B5E" opacity=".6" />
+                <rect x="100" y="80" width="30" height="80" rx="4" fill="#F26B5E" opacity=".6" />
+                <rect x="145" y="30" width="30" height="130" rx="4" fill="#F26B5E" opacity=".6" />
+                <rect x="190" y="60" width="30" height="100" rx="4" fill="#F26B5E" opacity=".6" />
+                <rect x="235" y="20" width="30" height="140" rx="4" fill="#F26B5E" opacity=".8" />
+              </svg>
+              <div class="flex justify-between text-xs text-slate-400 mt-1">
+                <span>T1</span><span>T2</span><span>T3</span><span>T4</span><span>T5</span
+                ><span>T6</span>
+              </div>
+            </div>
+            <div class="card p-5 lg:col-span-2">
+              <div class="font-bold mb-3">Thông báo gần đây</div>
+              <div class="divide-y divide-slate-100">
+                <div class="py-2.5 flex items-start gap-3">
+                  <span class="badge b-blue">Toàn trường</span>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Lịch nghỉ lễ 30/4 - 1/5</div>
+                    <div class="text-xs text-slate-400">2 giờ trước</div>
+                  </div>
+                </div>
+                <div class="py-2.5 flex items-start gap-3">
+                  <span class="badge b-peach">Lớp Mầm A</span>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Chuẩn bị dã ngoại thứ Sáu</div>
+                    <div class="text-xs text-slate-400">3 giờ trước</div>
+                  </div>
+                </div>
+                <div class="py-2.5 flex items-start gap-3">
+                  <span class="badge b-green">Phụ huynh</span>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Họp phụ huynh cuối năm</div>
+                    <div class="text-xs text-slate-400">Hôm qua</div>
+                  </div>
+                </div>
+                <div class="py-2.5 flex items-start gap-3">
+                  <span class="badge b-slate">Giáo viên</span>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Tập huấn kỹ năng sơ cứu</div>
+                    <div class="text-xs text-slate-400">2 ngày trước</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

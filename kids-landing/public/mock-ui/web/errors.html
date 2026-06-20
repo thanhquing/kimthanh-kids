@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Trang lỗi — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen grid place-items-center p-6">
+      <div class="grid md:grid-cols-2 gap-6 max-w-4xl">
+        <div class="card p-10 text-center">
+          <div class="text-7xl mb-3">🚫</div>
+          <div class="text-2xl font-bold mb-2">403 — Không có quyền</div>
+          <p class="text-sm text-slate-500 mb-5">
+            Bạn không có quyền truy cập trang này. Vui lòng liên hệ quản trị viên.
+          </p>
+          <a href="/mock-ui/web/dashboard.html" class="btn-primary inline-block">Về Tổng quan</a>
+        </div>
+        <div class="card p-10 text-center">
+          <div class="text-7xl mb-3">🧸</div>
+          <div class="text-2xl font-bold mb-2">404 — Không tìm thấy</div>
+          <p class="text-sm text-slate-500 mb-5">
+            Trang bạn tìm không tồn tại hoặc đã bị di chuyển.
+          </p>
+          <a href="/mock-ui/index.html" class="btn-primary inline-block">Về Catalog</a>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

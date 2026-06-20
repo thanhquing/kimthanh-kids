@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hồ sơ của tôi — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/classrooms.html" class="nav-item"
+          ><i data-lucide="school" class="w-4 h-4"></i>Lớp học</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/attendance.html" class="nav-item"
+          ><i data-lucide="check-square" class="w-4 h-4"></i>Điểm danh</a
+        ><a href="/mock-ui/web/reports.html" class="nav-item"
+          ><i data-lucide="file-text" class="w-4 h-4"></i>Báo cáo hằng ngày</a
+        >
+        <div class="nav-group">Sức khỏe</div>
+        <a href="/mock-ui/web/medicine-requests.html" class="nav-item"
+          ><i data-lucide="pill" class="w-4 h-4"></i>Yêu cầu thuốc</a
+        ><a href="/mock-ui/web/health-records.html" class="nav-item"
+          ><i data-lucide="heart-pulse" class="w-4 h-4"></i>Hồ sơ sức khỏe</a
+        ><a href="/mock-ui/web/incidents.html" class="nav-item"
+          ><i data-lucide="alert-triangle" class="w-4 h-4"></i>Sự cố</a
+        >
+        <div class="nav-group">Tài chính</div>
+        <a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        ><a href="/mock-ui/web/payments.html" class="nav-item"
+          ><i data-lucide="credit-card" class="w-4 h-4"></i>Thanh toán</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        ><a href="/mock-ui/web/profile.html" class="nav-item active"
+          ><i data-lucide="user" class="w-4 h-4"></i>Hồ sơ</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Cài đặt / Hồ sơ</div>
+            <div class="font-bold text-slate-800">Hồ sơ của tôi</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Tìm kiếm..." />
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="chip active !py-1">VI</span><span class="chip !py-1">EN</span>
+          </div>
+          <div class="relative">
+            <i data-lucide="bell" class="w-5 h-5 text-slate-600"></i
+            ><span
+              class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] grid place-items-center"
+              >3</span
+            >
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="grid lg:grid-cols-3 gap-5">
+            <div class="card p-6 text-center h-fit">
+              <div class="avatar !w-28 !h-28 mx-auto text-2xl mb-3">A</div>
+              <div class="text-lg font-bold">Admin KimThanh</div>
+              <div class="text-sm text-slate-500">admin@kimthanh.edu.vn</div>
+              <span class="badge b-blue mt-2 inline-block">Quản trị trường</span>
+              <button class="btn-soft w-full mt-4 text-sm">Đổi ảnh đại diện</button>
+            </div>
+            <div class="lg:col-span-2 space-y-5">
+              <div class="card p-6">
+                <div class="font-bold mb-4">Thông tin cá nhân</div>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="label">Họ tên</label
+                    ><input class="field" value="Admin KimThanh" />
+                  </div>
+                  <div>
+                    <label class="label">Email</label
+                    ><input class="field" value="admin@kimthanh.edu.vn" disabled />
+                  </div>
+                  <div>
+                    <label class="label">Số điện thoại</label
+                    ><input class="field" value="0901 234 567" />
+                  </div>
+                  <div>
+                    <label class="label">Ngôn ngữ</label
+                    ><select class="field">
+                      <option>Tiếng Việt</option>
+                      <option>English</option>
+                    </select>
+                  </div>
+                </div>
+                <button onclick="toast('Đã lưu thay đổi')" class="btn-primary mt-5">
+                  Lưu thay đổi
+                </button>
+              </div>
+              <div class="card p-6">
+                <div class="font-bold mb-4">Bảo mật</div>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="label">Mật khẩu hiện tại</label
+                    ><input class="field" type="password" />
+                  </div>
+                  <div></div>
+                  <div>
+                    <label class="label">Mật khẩu mới</label><input class="field" type="password" />
+                  </div>
+                  <div>
+                    <label class="label">Xác nhận mật khẩu</label
+                    ><input class="field" type="password" />
+                  </div>
+                </div>
+                <div class="flex items-center justify-between mt-5">
+                  <button class="btn-soft">Đổi mật khẩu</button>
+                  <button
+                    onclick="toast('Đã đăng xuất')"
+                    class="text-red-600 font-semibold text-sm"
+                  >
+                    Đăng xuất khỏi tất cả thiết bị
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

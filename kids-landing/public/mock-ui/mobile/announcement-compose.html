@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Soạn thông báo — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M15</span>Soạn thông báo</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Tạo thông báo</div>
+            <div class="w-5"></div>
+          </div>
+          <div class="h-14"></div>
+          <form class="space-y-4">
+            <div>
+              <label class="label">Tiêu đề</label
+              ><input class="field" value="Nhắc nhở mang ô đi học ngày mai" />
+            </div>
+            <div>
+              <label class="label">Đối tượng</label
+              ><select class="field">
+                <option>Lớp Mầm A (mặc định)</option>
+                <option>Tất cả phụ huynh</option>
+                <option>Toàn trường</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Nội dung</label
+              ><textarea class="field" rows="6">
+Dự báo có mưa lớn vào sáng mai. Phụ huynh nhớ chuẩn bị áo mưa hoặc ô cho các bé khi đến trường nhé!</textarea
+              >
+            </div>
+            <div>
+              <label class="label">Thời điểm đăng</label
+              ><input class="field" type="datetime-local" value="2026-05-26T17:00" />
+            </div>
+            <div class="card p-3 bg-slate-50">
+              <div class="text-xs text-slate-500 uppercase font-semibold mb-1">Xem trước</div>
+              <div class="font-semibold text-sm">Nhắc nhở mang ô đi học ngày mai</div>
+              <div class="text-xs text-slate-500 mt-1">Lớp Mầm A · sắp đăng</div>
+            </div>
+            <button type="button" onclick="toast('Đã đăng thông báo')" class="btn-primary w-full">
+              Đăng thông báo
+            </button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

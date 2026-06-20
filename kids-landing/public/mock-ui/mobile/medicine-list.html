@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Yêu cầu thuốc — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M10</span>Yêu cầu thuốc</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Yêu cầu thuốc</div>
+            <i data-lucide="plus" class="w-5 h-5"></i>
+          </div>
+          <div class="h-14"></div>
+          <div class="flex gap-2 mb-3 overflow-x-auto">
+            <span class="chip active">Tất cả</span><span class="chip">Chờ duyệt</span
+            ><span class="chip">Đã duyệt</span><span class="chip">Đã cho uống</span>
+          </div>
+          <div class="space-y-2">
+            <div class="card p-3">
+              <div class="flex items-center justify-between mb-1">
+                <div class="font-semibold text-sm">Siro ho Prospan</div>
+                <span class="badge b-blue">Đã cho uống</span>
+              </div>
+              <div class="text-xs text-slate-500">Bé Minh · 5ml × 2 lần/ngày</div>
+              <div class="text-xs text-slate-400 mt-1">24/05 → 27/05</div>
+            </div>
+
+            <div class="card p-3">
+              <div class="flex items-center justify-between mb-1">
+                <div class="font-semibold text-sm">Hapacol 250</div>
+                <span class="badge b-green">Đã duyệt</span>
+              </div>
+              <div class="text-xs text-slate-500">Bé An · 1 gói khi sốt</div>
+              <div class="text-xs text-slate-400 mt-1">26/05 → 28/05</div>
+            </div>
+
+            <div class="card p-3">
+              <div class="flex items-center justify-between mb-1">
+                <div class="font-semibold text-sm">Vitamin C</div>
+                <span class="badge b-amber">Chờ duyệt</span>
+              </div>
+              <div class="text-xs text-slate-500">Bé Minh · 1 viên/ngày</div>
+              <div class="text-xs text-slate-400 mt-1">26/05 → 02/06</div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab active">
+            <i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span>
+          </div>
+          <div class="tab"><i data-lucide="users" class="w-5 h-5"></i><span>Con tôi</span></div>
+          <div class="tab"><i data-lucide="bell" class="w-5 h-5"></i><span>Thông báo</span></div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

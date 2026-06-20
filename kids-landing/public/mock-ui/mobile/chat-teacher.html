@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Nhắn tin cô giáo — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">P16</span>Nhắn tin cô giáo</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Cô Trần Thu Hà</div>
+            <div class="w-5"></div>
+          </div>
+          <div class="h-14"></div>
+          <div class="space-y-3 mb-20">
+            <div class="flex justify-start">
+              <div class="bg-white rounded-2xl rounded-tl-sm p-3 max-w-[75%] shadow-sm">
+                <div class="text-sm">
+                  Chào chị Lan, hôm nay bé Minh rất ngoan, ăn hết phần cơm trưa ạ 😊
+                </div>
+                <div class="text-[10px] text-slate-400 mt-1">9:42</div>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <div class="brand-grad text-white rounded-2xl rounded-tr-sm p-3 max-w-[75%]">
+                <div class="text-sm">Dạ cảm ơn cô nhiều! Bé có ngủ trưa ngon không cô?</div>
+                <div class="text-[10px] opacity-70 mt-1">9:45</div>
+              </div>
+            </div>
+            <div class="flex justify-start">
+              <div class="bg-white rounded-2xl rounded-tl-sm p-3 max-w-[75%] shadow-sm">
+                <img src="/mock-ui/images/hero-kids.jpg" class="rounded-lg mb-2 w-full" />
+                <div class="text-sm">Bé ngủ ngon lắm chị, gửi chị ảnh giờ chơi nhé.</div>
+                <div class="text-[10px] text-slate-400 mt-1">13:20</div>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <div class="brand-grad text-white rounded-2xl rounded-tr-sm p-3 max-w-[75%]">
+                <div class="text-sm">Bé dễ thương quá ❤️</div>
+                <div class="text-[10px] opacity-70 mt-1">13:21</div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="absolute bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-3 flex items-center gap-2 z-30"
+          >
+            <i data-lucide="image" class="w-5 h-5 text-slate-400"></i>
+            <input class="field flex-1 !py-2" placeholder="Nhập tin nhắn..." />
+            <button onclick="toast('Đã gửi')" class="btn-primary !p-2">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab"><i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span></div>
+          <div class="tab"><i data-lucide="users" class="w-5 h-5"></i><span>Con tôi</span></div>
+          <div class="tab active">
+            <i data-lucide="message-circle" class="w-5 h-5"></i><span>Tin nhắn</span>
+          </div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

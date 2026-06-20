@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Đăng nhập — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M1</span>Đăng nhập</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div class="pt-2 text-center">
+            <img src="/mock-ui/images/hero-kids.jpg" alt="Các bé KimThanh" class="hero-img mb-4" />
+            <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="h-14 mx-auto mb-3" />
+            <div class="text-2xl font-bold">Chào mừng trở lại</div>
+            <div class="text-sm text-slate-500 mt-1">Đăng nhập để tiếp tục với KimThanh Kids</div>
+          </div>
+          <form class="mt-8 space-y-4">
+            <div>
+              <label class="label">Email</label
+              ><input
+                class="field"
+                type="email"
+                placeholder="email@kimthanh.edu.vn"
+                value="phuhuynh@kimthanh.edu.vn"
+              />
+            </div>
+            <div>
+              <label class="label">Mật khẩu</label>
+              <div class="relative">
+                <input class="field pr-10" type="password" value="••••••••" /><i
+                  data-lucide="eye"
+                  class="w-4 h-4 absolute right-3 top-3.5 text-slate-400"
+                ></i>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <a class="text-xs text-[color:var(--primary)] font-medium">Quên mật khẩu?</a>
+            </div>
+            <button
+              type="button"
+              onclick="toast('Đăng nhập thành công')"
+              class="btn-primary w-full"
+            >
+              Đăng nhập
+            </button>
+            <div class="text-center text-xs text-slate-500">
+              Chưa có tài khoản? <a class="text-[color:var(--primary)] font-semibold">Đăng ký</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sĩ số lớp — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">T4</span>Sĩ số Lớp Mầm A</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div
+            class="absolute top-0 left-0 right-0 pt-9 pb-3 px-5 flex items-center justify-between bg-white border-b border-slate-100 z-10"
+          >
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+            <div class="font-semibold text-slate-800">Lớp Mầm A · 24 bé</div>
+            <div class="w-5"></div>
+          </div>
+          <div class="h-14"></div>
+          <div class="grid grid-cols-3 gap-2 mb-3">
+            <div class="kpi !p-3">
+              <div class="num text-green-600">20</div>
+              <div class="lbl">Có mặt</div>
+            </div>
+            <div class="kpi !p-3">
+              <div class="num text-amber-600">2</div>
+              <div class="lbl">Muộn</div>
+            </div>
+            <div class="kpi !p-3">
+              <div class="num text-red-500">2</div>
+              <div class="lbl">Vắng</div>
+            </div>
+          </div>
+          <div class="flex gap-2 mb-3">
+            <div class="chip active">Tất cả</div>
+            <div class="chip">Có mặt</div>
+            <div class="chip">Vắng</div>
+          </div>
+          <div class="space-y-2">
+            <div class="card p-3 flex items-center gap-3">
+              <img src="/mock-ui/images/avatar-1.jpg" class="w-10 h-10 rounded-full object-cover" />
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Nguyễn Minh</div>
+                <div class="text-xs text-slate-500">PH: chị Lan</div>
+              </div>
+              <span class="badge b-green">Có mặt</span>
+            </div>
+            <div class="card p-3 flex items-center gap-3">
+              <img src="/mock-ui/images/avatar-2.jpg" class="w-10 h-10 rounded-full object-cover" />
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Trần An</div>
+                <div class="text-xs text-slate-500">PH: anh Hùng</div>
+              </div>
+              <span class="badge b-green">Có mặt</span>
+            </div>
+            <div class="card p-3 flex items-center gap-3">
+              <img src="/mock-ui/images/avatar-3.jpg" class="w-10 h-10 rounded-full object-cover" />
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Lê Hà</div>
+                <div class="text-xs text-slate-500">PH: chị Mai</div>
+              </div>
+              <span class="badge b-amber">Muộn</span>
+            </div>
+            <div class="card p-3 flex items-center gap-3">
+              <img src="/mock-ui/images/avatar-1.jpg" class="w-10 h-10 rounded-full object-cover" />
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Phạm Nam</div>
+                <div class="text-xs text-slate-500">PH: anh Tuấn</div>
+              </div>
+              <span class="badge b-red">Vắng</span>
+            </div>
+            <div class="card p-3 flex items-center gap-3">
+              <img src="/mock-ui/images/avatar-2.jpg" class="w-10 h-10 rounded-full object-cover" />
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Hoàng Linh</div>
+                <div class="text-xs text-slate-500">PH: chị Thu</div>
+              </div>
+              <span class="badge b-green">Có mặt</span>
+            </div>
+            <div class="card p-3 flex items-center gap-3">
+              <img src="/mock-ui/images/avatar-3.jpg" class="w-10 h-10 rounded-full object-cover" />
+              <div class="flex-1">
+                <div class="font-semibold text-sm">Đỗ Bảo</div>
+                <div class="text-xs text-slate-500">PH: chị Hoa</div>
+              </div>
+              <span class="badge b-red">Vắng</span>
+            </div>
+          </div>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab"><i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span></div>
+          <div class="tab active"><i data-lucide="school" class="w-5 h-5"></i><span>Lớp</span></div>
+          <div class="tab"><i data-lucide="file-text" class="w-5 h-5"></i><span>Báo cáo</span></div>
+          <div class="tab"><i data-lucide="bell" class="w-5 h-5"></i><span>Thông báo</span></div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
