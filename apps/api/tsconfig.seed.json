@@ -1,9 +1,0 @@
-{
-  "extends": "@kimthanh/tsconfig/nestjs.json",
-  "compilerOptions": {
-    "noEmit": true,
-    "rootDir": "."
-  },
-  "include": ["prisma/**/*"],
-  "exclude": ["node_modules"]
-}
