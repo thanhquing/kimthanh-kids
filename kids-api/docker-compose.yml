@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kids-api-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kids
+      POSTGRES_PASSWORD: kids
+      POSTGRES_DB: kids_api
+    ports:
+      - "5432:5432"
+    volumes:
+      - kids_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kids -d kids_api"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  kids_pgdata:

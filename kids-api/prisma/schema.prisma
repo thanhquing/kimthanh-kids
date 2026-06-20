@@ -1,0 +1,625 @@
+// KimThanh Kids — Phase 0 (Tầng A: Platform / SaaS)
+// Xem docs/ARCHITECTURE.md và docs/MULTI_TENANCY.md để hiểu thiết kế.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── ENUMS ─────────────────────────
+
+// Tenancy & identity
+enum TenancyMode {
+  POOL
+  SILO
+}
+
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELLED
+}
+
+enum UserType {
+  PLATFORM
+  TENANT
+}
+
+enum PlatformRole {
+  PLATFORM_SUPER_ADMIN
+  PLATFORM_SUPPORT
+  PLATFORM_BILLING
+}
+
+enum TenantRole {
+  SCHOOL_ADMIN
+  PRINCIPAL
+  TEACHER
+  NURSE
+  FINANCE
+  PARENT
+}
+
+enum DomainType {
+  SUBDOMAIN
+  CUSTOM
+}
+
+enum DomainStatus {
+  PENDING
+  VERIFYING
+  ACTIVE
+  FAILED
+}
+
+// Plan / pricing
+enum PlanTier {
+  STARTER
+  PRO
+  ENTERPRISE
+  CUSTOM
+}
+
+enum BillingCycle {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+}
+
+enum BillingCurrency {
+  VND
+  USD
+}
+
+enum LimitMetric {
+  STUDENTS
+  TEACHERS
+  CLASSROOMS
+  SCHOOLS
+  STORAGE_MB
+  PUSH_PER_MONTH
+  ADMIN_USERS
+}
+
+enum LimitEnforcement {
+  HARD
+  SOFT
+}
+
+// Subscription
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELED
+  EXPIRED
+}
+
+enum BillingMode {
+  GATEWAY
+  MANUAL
+  DEDICATED_FREE
+}
+
+enum SubscriptionChangeType {
+  CREATE
+  RENEW
+  UPGRADE
+  DOWNGRADE
+  CANCEL
+  REACTIVATE
+  TRIAL_CONVERT
+  EXPIRE
+  SUSPEND
+}
+
+// Invoice / payment (PLATFORM → TENANT; khác hẳn học phí trường→phụ huynh)
+enum PlatformInvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  OVERDUE
+  VOID
+  UNCOLLECTIBLE
+}
+
+enum PlatformInvoiceLineKind {
+  SUBSCRIPTION
+  PRORATION_CREDIT
+  PRORATION_CHARGE
+  OVERAGE
+  DISCOUNT
+  TAX
+  ADJUSTMENT
+}
+
+enum PlatformPaymentProvider {
+  VNPAY
+  MOMO
+  BANK_TRANSFER
+  MANUAL
+}
+
+enum PlatformPaymentStatus {
+  CREATED
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  CANCELED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum CouponDuration {
+  ONCE
+  REPEATING
+  FOREVER
+}
+
+enum DiscountKind {
+  PERCENT
+  FIXED_AMOUNT
+}
+
+// ───────────────────── NHÓM 1: IDENTITY & TENANCY ─────────────────────
+
+model Tenant {
+  id               String       @id @default(uuid())
+  slug             String       @unique
+  legalName        String
+  status           TenantStatus @default(TRIAL) // cache; nguồn chân lý = Subscription
+  tenancyMode      TenancyMode  @default(POOL)
+  planTier         PlanTier     @default(STARTER)
+  currentPeriodEnd DateTime? // cache cho SubscriptionGuard
+  trialEndsAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  createdById      String?
+  deletedAt        DateTime?
+
+  settings     TenantSettings?
+  schools      School[]
+  memberships  Membership[]
+  domains      TenantDomain[]
+  subscription Subscription?
+
+  @@index([status])
+  @@index([deletedAt])
+  @@map("tenants")
+}
+
+model TenantSettings {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  displayName    String
+  logoUrl        String?
+  faviconUrl     String?
+  primaryColor   String?  @default("#2563eb")
+  secondaryColor String?
+  emailFromName  String?
+  emailFromAddr  String?
+  supportEmail   String?
+  locale         String   @default("vi-VN")
+  timezone       String   @default("Asia/Ho_Chi_Minh")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("tenant_settings")
+}
+
+model TenantDomain {
+  id          String       @id @default(uuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  host        String       @unique
+  type        DomainType
+  status      DomainStatus @default(PENDING)
+  isPrimary   Boolean      @default(false)
+  verifyToken String?
+  verifiedAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("tenant_domains")
+}
+
+model School {
+  id          String       @id @default(uuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  name        String
+  code        String
+  address     String?
+  phone       String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  createdById String?
+  deletedAt   DateTime?
+  memberships Membership[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("schools")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  type         UserType
+  email        String
+  phone        String?
+  passwordHash String?
+  fullName     String
+  isActive     Boolean       @default(true)
+  platformRole PlatformRole? // chỉ set khi type=PLATFORM
+  tenantId     String? // null nếu PLATFORM
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+  memberships  Membership[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([type])
+  @@map("users")
+}
+
+model Membership {
+  id          String     @id @default(uuid())
+  tenantId    String
+  tenant      Tenant     @relation(fields: [tenantId], references: [id])
+  userId      String
+  user        User       @relation(fields: [userId], references: [id])
+  role        TenantRole
+  schoolId    String? // null = role toàn tenant (chuỗi)
+  school      School?    @relation(fields: [schoolId], references: [id])
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  createdById String?
+  deletedAt   DateTime?
+
+  @@unique([userId, role, schoolId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([schoolId])
+  @@map("memberships")
+}
+
+// ──────────────── NHÓM 2: PLAN / PRICING / FEATURE / LIMIT ────────────────
+
+model Plan {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  tier        PlanTier @default(STARTER)
+  isPublic    Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  trialDays   Int      @default(0)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  prices        PlanPrice[]
+  features      PlanFeature[]
+  limits        PlanLimit[]
+  subscriptions Subscription[]
+
+  @@index([isActive, isPublic])
+  @@map("plans")
+}
+
+model PlanPrice {
+  id           String          @id @default(uuid())
+  planId       String
+  plan         Plan            @relation(fields: [planId], references: [id], onDelete: Cascade)
+  billingCycle BillingCycle
+  currency     BillingCurrency @default(VND)
+  amount       Decimal         @db.Decimal(12, 2)
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([planId, billingCycle, currency])
+  @@map("plan_prices")
+}
+
+model PlanFeature {
+  id         String  @id @default(uuid())
+  planId     String
+  plan       Plan    @relation(fields: [planId], references: [id], onDelete: Cascade)
+  featureKey String
+  enabled    Boolean @default(true)
+  config     Json?
+
+  @@unique([planId, featureKey])
+  @@map("plan_features")
+}
+
+model PlanLimit {
+  id               String           @id @default(uuid())
+  planId           String
+  plan             Plan             @relation(fields: [planId], references: [id], onDelete: Cascade)
+  metric           LimitMetric
+  limitValue       Int? // null = unlimited
+  enforcement      LimitEnforcement @default(HARD)
+  overageUnitPrice Decimal?         @db.Decimal(12, 2)
+
+  @@unique([planId, metric])
+  @@map("plan_limits")
+}
+
+// ──────────────── NHÓM 3: SUBSCRIPTION & LỊCH SỬ ────────────────
+
+model Subscription {
+  id                 String             @id @default(uuid())
+  tenantId           String             @unique
+  tenant             Tenant             @relation(fields: [tenantId], references: [id])
+  planId             String
+  plan               Plan               @relation(fields: [planId], references: [id])
+  billingCycle       BillingCycle
+  currency           BillingCurrency    @default(VND)
+  billingMode        BillingMode        @default(GATEWAY)
+  status             SubscriptionStatus @default(TRIALING)
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialEndsAt        DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  canceledAt         DateTime?
+  endedAt            DateTime?
+  pastDueSince       DateTime?
+  suspendedAt        DateTime?
+  entitlementsCache  Json? // {features, limits} — cache cho guard
+  couponId           String?
+  coupon             Coupon?            @relation(fields: [couponId], references: [id])
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  deletedAt          DateTime?
+
+  invoices  PlatformInvoice[]
+  changes   SubscriptionChange[]
+  overrides TenantEntitlement[]
+  usage     UsageCounter[]
+
+  @@index([status])
+  @@index([currentPeriodEnd])
+  @@index([trialEndsAt])
+  @@index([pastDueSince])
+  @@map("subscriptions")
+}
+
+model SubscriptionChange {
+  id              String                 @id @default(uuid())
+  subscriptionId  String
+  subscription    Subscription           @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  type            SubscriptionChangeType
+  fromPlanId      String?
+  toPlanId        String?
+  fromCycle       BillingCycle?
+  toCycle         BillingCycle?
+  effectiveAt     DateTime
+  prorationAmount Decimal?               @db.Decimal(12, 2)
+  actorId         String?
+  reason          String?
+  metadata        Json?
+  createdAt       DateTime               @default(now())
+
+  @@index([subscriptionId, createdAt])
+  @@map("subscription_changes")
+}
+
+// ──────────────── NHÓM 4: HÓA ĐƠN / THANH TOÁN NỀN TẢNG ────────────────
+
+model PlatformInvoice {
+  id             String                @id @default(uuid())
+  invoiceNumber  String                @unique // PINV-YYYY-NNNNNN
+  tenantId       String
+  subscriptionId String?
+  subscription   Subscription?         @relation(fields: [subscriptionId], references: [id])
+  status         PlatformInvoiceStatus @default(DRAFT)
+  currency       BillingCurrency       @default(VND)
+  periodStart    DateTime
+  periodEnd      DateTime
+  subtotal       Decimal               @default(0) @db.Decimal(12, 2)
+  discount       Decimal               @default(0) @db.Decimal(12, 2)
+  tax            Decimal               @default(0) @db.Decimal(12, 2)
+  total          Decimal               @default(0) @db.Decimal(12, 2)
+  amountPaid     Decimal               @default(0) @db.Decimal(12, 2)
+  issuedAt       DateTime?
+  dueAt          DateTime?
+  paidAt         DateTime?
+  voidedAt       DateTime?
+  notes          String?
+  metadata       Json?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+
+  lines    PlatformInvoiceLine[]
+  payments PlatformPayment[]
+  credits  CreditLedger[]
+
+  @@index([tenantId, status])
+  @@index([status, dueAt])
+  @@index([subscriptionId])
+  @@map("platform_invoices")
+}
+
+model PlatformInvoiceLine {
+  id        String                  @id @default(uuid())
+  invoiceId String
+  invoice   PlatformInvoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  kind      PlatformInvoiceLineKind
+  label     String
+  quantity  Int                     @default(1)
+  unitPrice Decimal                 @db.Decimal(12, 2)
+  amount    Decimal                 @db.Decimal(12, 2) // có thể âm (credit/discount)
+  metadata  Json?
+  createdAt DateTime                @default(now())
+
+  @@index([invoiceId])
+  @@map("platform_invoice_lines")
+}
+
+model PlatformPayment {
+  id             String                  @id @default(uuid())
+  invoiceId      String
+  invoice        PlatformInvoice         @relation(fields: [invoiceId], references: [id])
+  tenantId       String
+  provider       PlatformPaymentProvider
+  status         PlatformPaymentStatus   @default(CREATED)
+  amount         Decimal                 @db.Decimal(12, 2)
+  currency       BillingCurrency         @default(VND)
+  gatewayRef     String?
+  redirectUrl    String?
+  rawPayload     Json?
+  expiresAt      DateTime?
+  paidAt         DateTime?
+  refundedAmount Decimal?                @db.Decimal(12, 2)
+  refundedAt     DateTime?
+  refundRef      String?
+  createdById    String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@unique([provider, gatewayRef])
+  @@index([invoiceId, status])
+  @@index([tenantId, status])
+  @@map("platform_payments")
+}
+
+model PlatformWebhookEvent {
+  id          String                  @id @default(uuid())
+  provider    PlatformPaymentProvider
+  eventId     String?
+  signature   String?
+  payload     Json
+  verified    Boolean                 @default(false)
+  processed   Boolean                 @default(false)
+  processedAt DateTime?
+  error       String?
+  createdAt   DateTime                @default(now())
+
+  @@unique([provider, eventId])
+  @@index([processed, createdAt])
+  @@map("platform_webhook_events")
+}
+
+// ──────────────── NHÓM 5: ENTITLEMENT / USAGE / COUPON / CREDIT ────────────────
+
+model TenantEntitlement {
+  id             String        @id @default(uuid())
+  tenantId       String
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  featureKey     String?
+  enabled        Boolean?
+  metric         LimitMetric?
+  limitValue     Int?
+  reason         String?
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([tenantId])
+  @@map("tenant_entitlements")
+}
+
+model UsageCounter {
+  id             String        @id @default(uuid())
+  tenantId       String
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
+  metric         LimitMetric
+  value          Int           @default(0)
+  periodStart    DateTime?
+  periodEnd      DateTime?
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([tenantId, metric])
+  @@index([tenantId])
+  @@map("usage_counters")
+}
+
+model Coupon {
+  id             String          @id @default(uuid())
+  code           String          @unique
+  kind           DiscountKind
+  amount         Decimal         @db.Decimal(12, 2)
+  currency       BillingCurrency?
+  duration       CouponDuration  @default(ONCE)
+  durationCount  Int?
+  maxRedemptions Int?
+  redeemedCount  Int             @default(0)
+  validFrom      DateTime?
+  validUntil     DateTime?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  subscriptions Subscription[]
+
+  @@index([isActive])
+  @@map("coupons")
+}
+
+model CreditLedger {
+  id        String           @id @default(uuid())
+  tenantId  String
+  invoiceId String?
+  invoice   PlatformInvoice? @relation(fields: [invoiceId], references: [id])
+  amount    Decimal          @db.Decimal(12, 2) // + cấp / - tiêu
+  currency  BillingCurrency  @default(VND)
+  reason    String
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  @@index([tenantId, createdAt])
+  @@map("credit_ledgers")
+}
+
+// ──────────────── AUDIT LOG (cross-cutting, hành động tài chính & admin) ────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String?
+  actorId    String?
+  actorType  UserType?
+  action     String // "subscription.upgrade", "invoice.void", "tenant.suspend"...
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ──────────────── AUTH: REFRESH TOKEN ────────────────
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

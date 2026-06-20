@@ -1,0 +1,77 @@
+import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import { PlatformRole } from "@prisma/client";
+import { BillingService } from "../billing/billing.service";
+import { PlatformRoles } from "../common/decorators/roles.decorator";
+import { PlatformService, CreatePlanInput } from "./platform.service";
+
+@ApiTags("platform-admin")
+@PlatformRoles(PlatformRole.PLATFORM_SUPER_ADMIN, PlatformRole.PLATFORM_BILLING)
+@Controller("platform")
+export class PlatformController {
+  constructor(
+    private readonly platform: PlatformService,
+    private readonly billing: BillingService,
+  ) {}
+
+  @Get("tenants")
+  listTenants(@Query("page") page?: string, @Query("status") status?: string) {
+    return this.platform.listTenants(Number(page) || 1, 20, status);
+  }
+
+  @Get("tenants/:id")
+  getTenant(@Param("id") id: string) {
+    return this.platform.getTenant(id);
+  }
+
+  @Post("tenants/:id/suspend")
+  async suspend(@Param("id") id: string) {
+    await this.platform.suspend(id);
+    return { ok: true };
+  }
+
+  @Post("tenants/:id/reactivate")
+  async reactivate(@Param("id") id: string) {
+    await this.platform.reactivate(id);
+    return { ok: true };
+  }
+
+  @Post("tenants/:id/entitlements")
+  setEntitlement(@Param("id") id: string, @Body() body: Record<string, never>) {
+    return this.platform.setEntitlementOverride(id, body);
+  }
+
+  @Get("subscriptions")
+  listSubscriptions(@Query("page") page?: string, @Query("status") status?: string) {
+    return this.platform.listSubscriptions(Number(page) || 1, 20, status);
+  }
+
+  @Get("invoices")
+  listInvoices(
+    @Query("page") page?: string,
+    @Query("tenantId") tenantId?: string,
+    @Query("status") status?: string,
+  ) {
+    return this.platform.listInvoices(Number(page) || 1, 20, tenantId, status);
+  }
+
+  @Post("invoices")
+  createInvoice(@Body() body: { tenantId: string }) {
+    return this.billing.createPeriodInvoice(body.tenantId);
+  }
+
+  @Post("invoices/:id/mark-paid")
+  markPaid(@Param("id") id: string, @Body() body: { amount?: number }) {
+    return this.billing.markInvoicePaid(id, body.amount ?? 0);
+  }
+
+  @Get("plans")
+  listPlans() {
+    return this.platform.listPlans();
+  }
+
+  @Post("plans")
+  createPlan(@Body() body: CreatePlanInput) {
+    return this.platform.createPlan(body);
+  }
+}
