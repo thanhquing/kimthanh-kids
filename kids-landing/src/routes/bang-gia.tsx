@@ -11,7 +11,7 @@ export const Route = createFileRoute("/bang-gia")({
       {
         name: "description",
         content:
-          "Bảng giá linh hoạt theo quy mô trường mầm non. Dùng thử miễn phí 30 ngày, không cần thẻ tín dụng.",
+          "Bảng giá linh hoạt theo quy mô trường mầm non (số giáo viên & học sinh). Bắt đầu miễn phí vĩnh viễn, không cần thẻ tín dụng.",
       },
       { property: "og:title", content: "Báo giá — KimThanh Kids" },
       { property: "og:description", content: "Lựa chọn gói phù hợp với mọi quy mô trường." },
@@ -21,14 +21,28 @@ export const Route = createFileRoute("/bang-gia")({
 
 const plans = [
   {
-    name: "Khởi đầu",
-    price: "Miễn phí",
-    note: "Cho trường dưới 50 bé",
+    name: "Miễn phí",
+    price: "0đ",
+    note: "2 giáo viên · 20 học sinh",
     features: [
       "Quản lý hồ sơ học sinh, giáo viên",
-      "Điểm danh cơ bản",
-      "Nhật ký hoạt động hằng ngày",
-      "Hỗ trợ qua email",
+      "Điểm danh & nhật ký hằng ngày",
+      "Hồ sơ sức khỏe, dặn thuốc, xin nghỉ",
+      "1 cơ sở · 1 GB lưu trữ ảnh",
+    ],
+    cta: "Bắt đầu miễn phí",
+    highlight: false,
+  },
+  {
+    name: "Khởi đầu",
+    price: "490.000đ",
+    suffix: "/ tháng",
+    note: "8 giáo viên · 100 học sinh",
+    features: [
+      "Toàn bộ tính năng gói Miễn phí",
+      "Nhắn tin giáo viên ↔ phụ huynh",
+      "Album ảnh lớp cho phụ huynh",
+      "5 GB lưu trữ · hỗ trợ qua email",
     ],
     cta: "Bắt đầu miễn phí",
     highlight: false,
@@ -37,21 +51,21 @@ const plans = [
     name: "Chuyên nghiệp",
     price: "1.200.000đ",
     suffix: "/ tháng",
-    note: "Phổ biến nhất cho trường 50–200 bé",
+    note: "25 giáo viên · 300 học sinh",
     features: [
       "Toàn bộ tính năng gói Khởi đầu",
       "Học phí & thanh toán online",
-      "Điểm danh AI nhận diện khuôn mặt",
-      "Báo cáo nâng cao + biểu đồ",
-      "Hỗ trợ ưu tiên 7 ngày/tuần",
+      "Giáo án (lesson plan) cho giáo viên",
+      "Báo cáo nâng cao + biểu đồ (analytics)",
+      "20 GB lưu trữ · hỗ trợ ưu tiên 7 ngày/tuần",
     ],
-    cta: "Dùng thử 30 ngày",
+    cta: "Dùng thử miễn phí",
     highlight: true,
   },
   {
     name: "Hệ thống",
     price: "Liên hệ",
-    note: "Cho chuỗi nhiều cơ sở",
+    note: "Không giới hạn GV/HS",
     features: [
       "Toàn bộ tính năng gói Chuyên nghiệp",
       "Quản lý đa cơ sở, đa thương hiệu",
@@ -85,7 +99,7 @@ function PricingPage() {
       </section>
 
       <section className="py-16 md:py-20">
-        <div className="container-narrow grid gap-6 md:grid-cols-3">
+        <div className="container-narrow grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {plans.map((p, i) => (
             <Reveal key={p.name} delay={i * 100}>
               <article

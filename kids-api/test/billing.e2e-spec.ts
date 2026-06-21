@@ -75,7 +75,7 @@ describe("Phase 0 edge — billing / quota / entitlement / webhook", () => {
     const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
     const sub = await prisma.system.subscription.findUnique({ where: { tenantId: tenant!.id } });
     expect(sub!.cancelAtPeriodEnd).toBe(true);
-    expect(sub!.status).toBe("TRIALING");
+    expect(sub!.status).toBe("ACTIVE"); // hủy cuối kỳ chưa đổi trạng thái (gói free ACTIVE)
   });
 
   // ─────────── TOÁN HÓA ĐƠN ───────────

@@ -59,6 +59,7 @@ enum DomainStatus {
 
 // Plan / pricing
 enum PlanTier {
+  FREE
   STARTER
   PRO
   ENTERPRISE

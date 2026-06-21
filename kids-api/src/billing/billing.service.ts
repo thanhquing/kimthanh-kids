@@ -50,9 +50,9 @@ export class BillingService {
     if (!plan) throw new BadRequestException({ code: "INVALID_PLAN", message: "Gói không hợp lệ" });
     const currentPlan = await this.prisma.system.plan.findUnique({ where: { id: sub.planId } });
 
-    const rank = { STARTER: 0, PRO: 1, ENTERPRISE: 2, CUSTOM: 3 } as const;
+    const rank = { FREE: 0, STARTER: 1, PRO: 2, ENTERPRISE: 3, CUSTOM: 4 } as const;
     const type =
-      rank[plan.tier] >= rank[currentPlan?.tier ?? "STARTER"]
+      rank[plan.tier] >= rank[currentPlan?.tier ?? "FREE"]
         ? SubscriptionChangeType.UPGRADE
         : SubscriptionChangeType.DOWNGRADE;
 

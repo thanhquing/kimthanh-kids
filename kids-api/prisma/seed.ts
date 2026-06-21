@@ -66,23 +66,45 @@ async function upsertPlan(args: {
 }
 
 async function main() {
-  // ─── 3 gói công khai (theo bang-gia.tsx) + 1 gói dedicated ẩn ───
+  // ─── 4 gói công khai (bậc theo số GV + HS) + 1 gói dedicated ẩn ───
+  // Free vĩnh viễn = entry tier khi đăng ký (xem provisioning.signup).
   await upsertPlan({
-    code: "starter",
-    name: "Khởi đầu",
-    tier: PlanTier.STARTER,
+    code: "free",
+    name: "Miễn phí",
+    tier: PlanTier.FREE,
     isPublic: true,
-    trialDays: 30,
-    sortOrder: 1,
+    trialDays: 0, // freemium: dùng mãi, không hết hạn
+    sortOrder: 0,
     prices: [{ billingCycle: BillingCycle.MONTHLY, amount: 0 }],
     features: {
-      messaging: true,
+      messaging: false,
       media_gallery: false,
       lesson_plan: false,
       analytics: false,
       api_access: false,
     },
-    limits: { STUDENTS: 50, TEACHERS: 10, CLASSROOMS: 5, SCHOOLS: 1, STORAGE_MB: 1024 },
+    limits: { STUDENTS: 20, TEACHERS: 2, CLASSROOMS: 2, SCHOOLS: 1, STORAGE_MB: 1024 },
+  });
+
+  await upsertPlan({
+    code: "starter",
+    name: "Khởi đầu",
+    tier: PlanTier.STARTER,
+    isPublic: true,
+    trialDays: 0,
+    sortOrder: 1,
+    prices: [
+      { billingCycle: BillingCycle.MONTHLY, amount: 490_000 },
+      { billingCycle: BillingCycle.ANNUAL, amount: 4_900_000 }, // ~10 tháng
+    ],
+    features: {
+      messaging: true,
+      media_gallery: true,
+      lesson_plan: false,
+      analytics: false,
+      api_access: false,
+    },
+    limits: { STUDENTS: 100, TEACHERS: 8, CLASSROOMS: 8, SCHOOLS: 1, STORAGE_MB: 5120 },
   });
 
   await upsertPlan({
@@ -104,7 +126,7 @@ async function main() {
       analytics: true,
       api_access: false,
     },
-    limits: { STUDENTS: 500, TEACHERS: 80, CLASSROOMS: 40, SCHOOLS: 1, STORAGE_MB: 20480 },
+    limits: { STUDENTS: 300, TEACHERS: 25, CLASSROOMS: 20, SCHOOLS: 1, STORAGE_MB: 20480 },
   });
 
   await upsertPlan({
@@ -162,7 +184,7 @@ async function main() {
   }
 
   // eslint-disable-next-line no-console
-  console.log("Seed xong: 4 plan (starter/pro/enterprise/dedicated) + platform super-admin");
+  console.log("Seed xong: 5 plan (free/starter/pro/enterprise/dedicated) + platform super-admin");
 }
 
 main()

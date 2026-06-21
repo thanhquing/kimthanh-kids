@@ -62,16 +62,17 @@ export class ProvisioningService {
     if (!check.available)
       throw new BadRequestException({ code: "SLUG_UNAVAILABLE", message: check.reason });
 
-    const starter = await this.prisma.system.plan.findUnique({ where: { code: "starter" } });
-    if (!starter)
+    const freePlan = await this.prisma.system.plan.findUnique({ where: { code: "free" } });
+    if (!freePlan)
       throw new BadRequestException({
-        code: "NO_STARTER_PLAN",
-        message: "Chưa cấu hình gói Khởi đầu",
+        code: "NO_FREE_PLAN",
+        message: "Chưa cấu hình gói Miễn phí",
       });
 
     const passwordHash = await bcrypt.hash(input.adminPassword, 10);
     const now = new Date();
-    const trialEnds = new Date(now.getTime() + starter.trialDays * 86_400_000);
+    // Freemium: gói Miễn phí dùng vĩnh viễn (ACTIVE), không có hạn dùng thử.
+    const periodEnd = new Date(now.getTime() + 100 * 365 * 86_400_000);
     const host = this.hostFor(input.slug);
 
     try {
@@ -80,10 +81,10 @@ export class ProvisioningService {
           data: {
             slug: input.slug,
             legalName: input.schoolName,
-            status: TenantStatus.TRIAL,
-            planTier: starter.tier,
-            trialEndsAt: trialEnds,
-            currentPeriodEnd: trialEnds,
+            status: TenantStatus.ACTIVE,
+            planTier: freePlan.tier,
+            trialEndsAt: null,
+            currentPeriodEnd: periodEnd,
             settings: { create: { displayName: input.schoolName } },
             domains: {
               create: {
@@ -118,13 +119,13 @@ export class ProvisioningService {
         const subscription = await tx.subscription.create({
           data: {
             tenantId: tenant.id,
-            planId: starter.id,
+            planId: freePlan.id,
             billingCycle: BillingCycle.MONTHLY,
             billingMode: "GATEWAY",
-            status: SubscriptionStatus.TRIALING,
+            status: SubscriptionStatus.ACTIVE,
             currentPeriodStart: now,
-            currentPeriodEnd: trialEnds,
-            trialEndsAt: trialEnds,
+            currentPeriodEnd: periodEnd,
+            trialEndsAt: null,
           },
         });
 
@@ -145,7 +146,7 @@ export class ProvisioningService {
             slug: tenant.slug,
             host,
             status: tenant.status,
-            trialEndsAt: trialEnds,
+            trialEndsAt: null,
           },
           school: { id: school.id },
           admin: { id: admin.id, email: admin.email },

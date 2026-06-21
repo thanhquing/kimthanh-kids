@@ -49,7 +49,7 @@ describe("Phase 0 — Platform layer (multi-tenant isolation)", () => {
 
   const api = () => request(app.getHttpServer());
 
-  it("signup tạo Tenant + School + admin + TRIAL subscription cho 2 trường", async () => {
+  it("signup tạo Tenant + School + admin + gói Miễn phí (ACTIVE) cho 2 trường", async () => {
     for (const t of [A, B]) {
       const res = await api()
         .post("/api/public/signup")
@@ -62,7 +62,7 @@ describe("Phase 0 — Platform layer (multi-tenant isolation)", () => {
         })
         .expect(201);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.subscription.status).toBe("TRIALING");
+      expect(res.body.data.subscription.status).toBe("ACTIVE"); // freemium vĩnh viễn
       expect(res.body.data.tenant.host).toBe(`${t.slug}.${ROOT}`);
     }
   });
@@ -123,11 +123,11 @@ describe("Phase 0 — Platform layer (multi-tenant isolation)", () => {
     expect(res.body.error.code).toBe("TENANT_MISMATCH");
   });
 
-  it("quota HARD: vượt giới hạn CLASSROOMS của gói starter (5) → QUOTA_EXCEEDED", async () => {
+  it("quota HARD: vượt giới hạn CLASSROOMS của gói free (2) → QUOTA_EXCEEDED", async () => {
     const tenant = await prisma.system.tenant.findFirst({ where: { slug: A.slug } });
     const tenantId = tenant!.id;
-    // starter limit CLASSROOMS = 5 → 5 lần OK, lần 6 ném lỗi.
-    for (let i = 0; i < 5; i++) {
+    // free limit CLASSROOMS = 2 → 2 lần OK, lần 3 ném lỗi.
+    for (let i = 0; i < 2; i++) {
       await expect(
         entitlements.consumeQuota(tenantId, LimitMetric.CLASSROOMS),
       ).resolves.toBeUndefined();
@@ -143,10 +143,11 @@ describe("Phase 0 — Platform layer (multi-tenant isolation)", () => {
     const tenant = await prisma.system.tenant.findFirst({ where: { slug: B.slug } });
     const tenantId = tenant!.id;
 
-    // Backdate trial về quá khứ rồi chạy job.
+    // Mô phỏng tenant đang dùng thử gói trả phí rồi backdate hạn → chạy job.
+    // (Signup mặc định là gói Miễn phí/ACTIVE nên phải set TRIALING tường minh.)
     await prisma.system.subscription.update({
       where: { tenantId },
-      data: { trialEndsAt: new Date(Date.now() - 86_400_000) },
+      data: { status: "TRIALING", trialEndsAt: new Date(Date.now() - 86_400_000) },
     });
     const expired = await jobs.expireTrials();
     expect(expired).toBeGreaterThanOrEqual(1);
