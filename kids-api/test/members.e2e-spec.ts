@@ -92,6 +92,32 @@ describe("Tạo tài khoản thành viên — định danh email/phone + login c
       .expect(201);
   });
 
+  it("gói Free: tối đa 2 giáo viên (TEACHERS=2) → GV thứ 3 bị 403; phụ huynh KHÔNG giới hạn", async () => {
+    const t = await createTenant(app);
+    const mkTeacher = (name: string) =>
+      api()
+        .post("/api/tenant/members")
+        .set(auth(t))
+        .send({ phone: randomPhone(), fullName: name, role: "TEACHER", password: "Password123" });
+
+    await mkTeacher("Cô A").expect(201);
+    await mkTeacher("Cô B").expect(201);
+    const blocked = await mkTeacher("Cô C").expect(403);
+    expect(blocked.body.error.code).toBe("QUOTA_EXCEEDED");
+
+    // phụ huynh không tiêu quota giáo viên → vẫn tạo được
+    await api()
+      .post("/api/tenant/members")
+      .set(auth(t))
+      .send({
+        phone: randomPhone(),
+        fullName: "Phụ huynh X",
+        role: "PARENT",
+        password: "Password123",
+      })
+      .expect(201);
+  });
+
   it("không phải chủ trường/hiệu trưởng → không tạo được tài khoản (403)", async () => {
     const t = await createTenant(app);
     // tạo 1 giáo viên rồi đăng nhập bằng tài khoản đó

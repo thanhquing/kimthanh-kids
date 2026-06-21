@@ -1,8 +1,21 @@
 import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
-import { TenantRole, UserType } from "@prisma/client";
+import { LimitMetric, TenantRole, UserType } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
+import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
+
+/**
+ * Vai trò → quota tính phí khi tạo tài khoản:
+ * - TEACHER → TEACHERS (giới hạn "số giáo viên" của gói).
+ * - SCHOOL_ADMIN/PRINCIPAL/NURSE/FINANCE → ADMIN_USERS (tài khoản quản lý/nghiệp vụ).
+ * - PARENT → null (không tính: phụ huynh không giới hạn).
+ */
+function quotaMetricForRole(role: TenantRole): LimitMetric | null {
+  if (role === TenantRole.TEACHER) return LimitMetric.TEACHERS;
+  if (role === TenantRole.PARENT) return null;
+  return LimitMetric.ADMIN_USERS;
+}
 
 export interface UpdateSettingsInput {
   displayName?: string;
@@ -26,7 +39,10 @@ export interface CreateMemberInput {
 
 @Injectable()
 export class TenantService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly entitlements: EntitlementService,
+  ) {}
 
   getSettings(tenantId: string) {
     return this.prisma.system.tenantSettings.findUnique({ where: { tenantId } });
@@ -84,19 +100,28 @@ export class TenantService {
         message: "Email hoặc số điện thoại đã được dùng trong trường",
       });
 
+    // Tiêu quota theo vai trò (PARENT không tính). HARD vượt hạn → 403 QUOTA_EXCEEDED.
+    const metric = quotaMetricForRole(input.role);
+    if (metric) await this.entitlements.consumeQuota(tenantId, metric);
+
     const passwordHash = await bcrypt.hash(input.password, 10);
-    return this.prisma.system.user.create({
-      data: {
-        type: UserType.TENANT,
-        tenantId,
-        email,
-        phone,
-        fullName: input.fullName,
-        passwordHash,
-        memberships: { create: { tenantId, role: input.role, schoolId: input.schoolId ?? null } },
-      },
-      select: { id: true, email: true, phone: true, fullName: true },
-    });
+    try {
+      return await this.prisma.system.user.create({
+        data: {
+          type: UserType.TENANT,
+          tenantId,
+          email,
+          phone,
+          fullName: input.fullName,
+          passwordHash,
+          memberships: { create: { tenantId, role: input.role, schoolId: input.schoolId ?? null } },
+        },
+        select: { id: true, email: true, phone: true, fullName: true },
+      });
+    } catch (e) {
+      if (metric) await this.entitlements.releaseQuota(tenantId, metric);
+      throw e;
+    }
   }
 
   listDomains(tenantId: string) {
