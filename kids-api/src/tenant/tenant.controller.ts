@@ -34,6 +34,7 @@ const createMemberSchema = z
     message: "Cần email hoặc số điện thoại",
     path: ["email"],
   });
+const memberStatusSchema = z.object({ isActive: z.boolean() });
 const schoolSchema = z.object({
   name: z.string().min(2).max(120),
   code: z.string().min(1).max(20),
@@ -82,6 +83,16 @@ export class TenantController {
     @Body(new ZodValidationPipe(createMemberSchema)) dto: z.infer<typeof createMemberSchema>,
   ) {
     return this.tenant.createMember(user.tenantId!, dto);
+  }
+
+  // Đổi trạng thái thành viên (bật/tắt tài khoản). Tắt → chặn đăng nhập + giải phóng quota.
+  @Patch("members/:userId/status")
+  setMemberStatus(
+    @Param("userId") userId: string,
+    @Body(new ZodValidationPipe(memberStatusSchema)) dto: z.infer<typeof memberStatusSchema>,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.tenant.setMemberStatus(user.tenantId!, userId, dto.isActive);
   }
 
   @Get("domains")

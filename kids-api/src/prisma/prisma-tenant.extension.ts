@@ -34,6 +34,7 @@ const TENANT_KEY: Record<string, "id" | "tenantId"> = {
   Incident: "tenantId",
   Allergy: "tenantId",
   LeaveRequest: "tenantId",
+  StaffAssignment: "tenantId",
 };
 
 /** Model có cột deletedAt → đọc tự bỏ bản ghi đã xoá. Soft-delete khi GHI là convention service. */

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Phân công — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/classrooms.html" class="nav-item"
+          ><i data-lucide="school" class="w-4 h-4"></i>Lớp học</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/attendance.html" class="nav-item"
+          ><i data-lucide="check-square" class="w-4 h-4"></i>Điểm danh</a
+        ><a href="/mock-ui/web/reports.html" class="nav-item"
+          ><i data-lucide="file-text" class="w-4 h-4"></i>Báo cáo hằng ngày</a
+        >
+        <div class="nav-group">Sức khỏe</div>
+        <a href="/mock-ui/web/medicine-requests.html" class="nav-item"
+          ><i data-lucide="pill" class="w-4 h-4"></i>Yêu cầu thuốc</a
+        ><a href="/mock-ui/web/health-records.html" class="nav-item"
+          ><i data-lucide="heart-pulse" class="w-4 h-4"></i>Hồ sơ sức khỏe</a
+        ><a href="/mock-ui/web/incidents.html" class="nav-item"
+          ><i data-lucide="alert-triangle" class="w-4 h-4"></i>Sự cố</a
+        >
+        <div class="nav-group">Tài chính</div>
+        <a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        ><a href="/mock-ui/web/payments.html" class="nav-item"
+          ><i data-lucide="credit-card" class="w-4 h-4"></i>Thanh toán</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/assignments.html" class="nav-item active"
+          ><i data-lucide="calendar-clock" class="w-4 h-4"></i>Phân công</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        ><a href="/mock-ui/web/profile.html" class="nav-item"
+          ><i data-lucide="user" class="w-4 h-4"></i>Hồ sơ</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Quản trị / Phân công</div>
+            <div class="font-bold text-slate-800">Lịch phân công làm việc</div>
+          </div>
+          <div class="flex items-center gap-1 text-xs">
+            <span class="chip active !py-1">VI</span><span class="chip !py-1">EN</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <select class="field !w-auto !py-1.5">
+              <option>Tất cả cơ sở</option>
+            </select>
+            <select class="field !w-auto !py-1.5">
+              <option>Tất cả lớp</option>
+            </select>
+            <select class="field !w-auto !py-1.5">
+              <option>Tất cả nhân sự</option>
+            </select>
+            <div class="ml-auto flex items-center gap-2">
+              <div class="flex items-center gap-1 text-sm text-slate-500">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Tuần này
+              </div>
+              <button class="btn-primary text-sm">
+                <i data-lucide="plus" class="w-4 h-4 inline"></i> Tạo phân công
+              </button>
+            </div>
+          </div>
+
+          <!-- Chú thích ca -->
+          <div class="flex items-center gap-4 mb-3 text-xs text-slate-500">
+            <span class="inline-flex items-center gap-1"
+              ><span class="w-3 h-3 rounded bg-blue-100 border border-blue-300"></span> Ca
+              sáng</span
+            >
+            <span class="inline-flex items-center gap-1"
+              ><span class="w-3 h-3 rounded bg-orange-100 border border-orange-300"></span> Ca
+              chiều</span
+            >
+            <span class="inline-flex items-center gap-1"
+              ><span class="w-3 h-3 rounded bg-violet-100 border border-violet-300"></span> Cả
+              ngày</span
+            >
+          </div>
+
+          <!-- Ma trận tuần: hàng = nhân sự, cột = thứ -->
+          <div class="card p-0 overflow-x-auto">
+            <table class="table min-w-[920px]">
+              <thead>
+                <tr>
+                  <th class="!sticky !left-0 bg-white">Nhân sự</th>
+                  <th>T2</th>
+                  <th>T3</th>
+                  <th>T4</th>
+                  <th>T5</th>
+                  <th>T6</th>
+                  <th class="text-slate-400">T7</th>
+                  <th class="text-slate-400">CN</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="!sticky !left-0 bg-white">
+                    <div class="flex items-center gap-2">
+                      <div class="avatar !w-8 !h-8 text-xs">T</div>
+                      <div>
+                        <div class="font-semibold text-sm">Trần Thu Hà</div>
+                        <div class="text-xs text-slate-400">Giáo viên</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight space-y-1">
+                      <div class="rounded bg-blue-50 text-blue-700 px-1.5 py-0.5">Sáng · Mầm A</div>
+                      <div class="rounded bg-orange-50 text-orange-700 px-1.5 py-0.5">
+                        Chiều · Trực trưa
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-blue-50 text-blue-700 px-1.5 py-0.5">Sáng · Mầm A</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-violet-50 text-violet-700 px-1.5 py-0.5">
+                        Cả ngày · Mầm A
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-blue-50 text-blue-700 px-1.5 py-0.5">Sáng · Mầm A</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-blue-50 text-blue-700 px-1.5 py-0.5">Sáng · Mầm A</div>
+                    </div>
+                  </td>
+                  <td class="text-center text-slate-300">–</td>
+                  <td class="text-center text-slate-300">–</td>
+                </tr>
+                <tr>
+                  <td class="!sticky !left-0 bg-white">
+                    <div class="flex items-center gap-2">
+                      <div class="avatar !w-8 !h-8 text-xs">L</div>
+                      <div>
+                        <div class="font-semibold text-sm">Lê Thị Lan</div>
+                        <div class="text-xs text-slate-400">Giáo viên</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-orange-50 text-orange-700 px-1.5 py-0.5">
+                        Chiều · Chồi B
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-orange-50 text-orange-700 px-1.5 py-0.5">
+                        Chiều · Chồi B
+                      </div>
+                    </div>
+                  </td>
+                  <td class="text-center text-slate-300">–</td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-orange-50 text-orange-700 px-1.5 py-0.5">
+                        Chiều · Chồi B
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-orange-50 text-orange-700 px-1.5 py-0.5">
+                        Chiều · Chồi B
+                      </div>
+                    </div>
+                  </td>
+                  <td class="text-center text-slate-300">–</td>
+                  <td class="text-center text-slate-300">–</td>
+                </tr>
+                <tr>
+                  <td class="!sticky !left-0 bg-white">
+                    <div class="flex items-center gap-2">
+                      <div class="avatar !w-8 !h-8 text-xs">N</div>
+                      <div>
+                        <div class="font-semibold text-sm">Nguyễn Thị Hoa</div>
+                        <div class="text-xs text-slate-400">Y tá</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-violet-50 text-violet-700 px-1.5 py-0.5">
+                        Cả ngày · Phòng y tế
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-violet-50 text-violet-700 px-1.5 py-0.5">
+                        Cả ngày · Phòng y tế
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-violet-50 text-violet-700 px-1.5 py-0.5">
+                        Cả ngày · Phòng y tế
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-violet-50 text-violet-700 px-1.5 py-0.5">
+                        Cả ngày · Phòng y tế
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="text-[11px] leading-tight">
+                      <div class="rounded bg-violet-50 text-violet-700 px-1.5 py-0.5">
+                        Cả ngày · Phòng y tế
+                      </div>
+                    </div>
+                  </td>
+                  <td class="text-center text-slate-300">–</td>
+                  <td class="text-center text-slate-300">–</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-slate-400 mt-3">
+            Lịch lặp theo tuần · 1 nhân sự chỉ 1 phân công cho mỗi (thứ, ca). Giáo viên xem lịch của
+            mình trên app.
+          </p>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

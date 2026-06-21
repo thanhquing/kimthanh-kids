@@ -4,6 +4,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { BillingModule } from "./billing/billing.module";
+import { AssignmentsModule } from "./assignments/assignments.module";
 import { AttendanceModule } from "./attendance/attendance.module";
 import { ClassroomsModule } from "./classrooms/classrooms.module";
 import { DailyReportsModule } from "./daily-reports/daily-reports.module";
@@ -48,6 +49,7 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     MedicineModule,
     IncidentsModule,
     LeaveModule,
+    AssignmentsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

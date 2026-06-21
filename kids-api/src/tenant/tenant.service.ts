@@ -141,14 +141,54 @@ export class TenantService {
     const { limits } = await this.entitlements.resolve(tenantId);
     const cap = limits.STUDENTS?.limitValue ?? null;
     if (cap === null) return;
+    // Chỉ đếm phụ huynh ĐANG hoạt động → vô hiệu hoá sẽ giải phóng chỗ.
     const count = await this.prisma.system.membership.count({
-      where: { tenantId, role: TenantRole.PARENT, deletedAt: null },
+      where: {
+        tenantId,
+        role: TenantRole.PARENT,
+        deletedAt: null,
+        user: { isActive: true, deletedAt: null },
+      },
     });
     if (count >= cap)
       throw new ForbiddenException({
         code: "QUOTA_EXCEEDED",
         message: `Đã đạt giới hạn số phụ huynh (theo số học sinh của gói: ${cap})`,
       });
+  }
+
+  /**
+   * Bật/tắt tài khoản thành viên (đổi trạng thái). Vô hiệu hoá → chặn đăng nhập + giải phóng
+   * quota (TEACHERS/ADMIN_USERS); kích hoạt lại → tiêu lại quota (có thể vượt hạn → 403).
+   */
+  async setMemberStatus(tenantId: string, userId: string, isActive: boolean) {
+    const user = await this.prisma.system.user.findFirst({
+      where: { id: userId, tenantId, type: UserType.TENANT, deletedAt: null },
+      include: { memberships: { where: { deletedAt: null }, select: { role: true } } },
+    });
+    if (!user)
+      throw new BadRequestException({ code: "NO_MEMBER", message: "Không tìm thấy thành viên" });
+    if (user.isActive === isActive) return { id: user.id, isActive };
+
+    const roles = user.memberships.map((m) => m.role);
+    const isParent = roles.includes(TenantRole.PARENT);
+    // Metric counter cho vai trò nhân sự (parent dùng đếm trực tiếp, không có counter).
+    const metric = roles.includes(TenantRole.TEACHER)
+      ? LimitMetric.TEACHERS
+      : isParent
+        ? null
+        : LimitMetric.ADMIN_USERS;
+
+    if (isActive) {
+      // Kích hoạt lại: kiểm tra hạn mức trước khi bật.
+      if (isParent) await this.assertParentWithinStudentLimit(tenantId);
+      if (metric) await this.entitlements.consumeQuota(tenantId, metric);
+    } else if (metric) {
+      await this.entitlements.releaseQuota(tenantId, metric);
+    }
+
+    await this.prisma.system.user.update({ where: { id: userId }, data: { isActive } });
+    return { id: userId, isActive };
   }
 
   listDomains(tenantId: string) {

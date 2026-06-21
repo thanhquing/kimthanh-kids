@@ -1,6 +1,6 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
-> ## ✅ Tiến độ (74 e2e pass / 9 suite · tsc + lint sạch)
+> ## ✅ Tiến độ (78 e2e pass / 10 suite · tsc + lint sạch)
 > - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` + `recordScopeWhere`/`ownedStudentWhere` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
 > - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
 > - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).
@@ -42,9 +42,12 @@
 - [ ] Model `Classroom` (name, ageGroup, capacity, homeroomTeacherId, schoolId) + enrollment + sĩ số.
 - [ ] Quota: `CLASSROOMS`.
 
-### B3. Staff/Teacher accounts (gap) — *mock: users*
-- [ ] Hoàn thiện luồng mời GV/y tá/kế toán (đã có `/tenant/members/invite` ở Phase 0): gán lớp chủ nhiệm, reset mật khẩu thật, đổi trạng thái.
-- [ ] Quota: `TEACHERS`, `ADMIN_USERS`.
+### B3. Staff/Teacher accounts — *mock: users, assignments, home-teacher* ✅ (reset mật khẩu thật → P2)
+- [x] **Tạo tài khoản trực tiếp** (KHÔNG mời): `POST /tenant/members` — chủ trường/HT tạo GV/y tá/kế toán/PH; định danh **email HOẶC số điện thoại**, login bằng cả hai.
+- [x] **Đổi trạng thái** (`PATCH /tenant/members/:id/status`): bật/tắt tài khoản — tắt chặn đăng nhập + giải phóng quota.
+- [x] **Phân công làm việc** (`StaffAssignment`, lặp theo tuần: thứ + ca Sáng/Chiều/Cả ngày + lớp/nhiệm vụ): admin/HT `POST /assignments`; GV xem lịch `GET /assignments/mine`.
+- [x] Quota enforce: `TEACHERS` (vai trò TEACHER), `ADMIN_USERS` (admin/HT/y tá/kế toán); **PARENT giới hạn theo `STUDENTS`** (1 HS ~ 1 PH). Gán lớp chủ nhiệm: qua `homeroomTeacherId` (classroom update).
+- [ ] **P2** Reset mật khẩu thật + email (đẩy sau).
 
 ---
 

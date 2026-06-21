@@ -58,6 +58,8 @@
           ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
         ><a href="/mock-ui/web/users.html" class="nav-item active"
           ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/assignments.html" class="nav-item"
+          ><i data-lucide="calendar-clock" class="w-4 h-4"></i>Phân công</a
         ><a href="/mock-ui/web/settings-school.html" class="nav-item"
           ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
         ><a href="/mock-ui/web/profile.html" class="nav-item"
@@ -100,13 +102,13 @@
             <select class="field !w-auto !py-1.5">
               <option>Tất cả trạng thái</option>
             </select>
-            <input class="field !w-72 !py-1.5" placeholder="Tìm theo email hoặc tên..." />
+            <input class="field !w-72 !py-1.5" placeholder="Tìm theo email/SĐT/tên..." />
             <div class="ml-auto flex gap-2">
               <button class="btn-soft text-sm">
                 <i data-lucide="download" class="w-4 h-4 inline"></i> Xuất CSV
               </button>
-              <button class="btn-primary text-sm opacity-60 cursor-not-allowed" title="Sắp ra mắt">
-                + Mời người dùng
+              <button class="btn-primary text-sm">
+                <i data-lucide="user-plus" class="w-4 h-4 inline"></i> Tạo tài khoản
               </button>
             </div>
           </div>
@@ -115,6 +117,7 @@
               <tr>
                 <th>Họ tên</th>
                 <th>Email</th>
+                <th>Điện thoại</th>
                 <th>Vai trò</th>
                 <th>Trạng thái</th>
                 <th>Ngày tạo</th>
@@ -130,11 +133,13 @@
                   </div>
                 </td>
                 <td>ha.tran@kimthanh.edu.vn</td>
+                <td>0901 234 567</td>
                 <td>Giáo viên</td>
                 <td><span class="badge b-green">ACTIVE</span></td>
                 <td>12/01/2026</td>
-                <td>
+                <td class="whitespace-nowrap">
                   <button class="text-[color:var(--primary)] text-xs font-semibold">Xem</button>
+                  <button class="text-slate-500 text-xs font-semibold ml-2">Tắt</button>
                 </td>
               </tr>
               <tr>
@@ -145,11 +150,13 @@
                   </div>
                 </td>
                 <td>hoa.nguyen@kimthanh.edu.vn</td>
+                <td>0902 345 678</td>
                 <td>Y tá</td>
                 <td><span class="badge b-green">ACTIVE</span></td>
                 <td>15/01/2026</td>
-                <td>
+                <td class="whitespace-nowrap">
                   <button class="text-[color:var(--primary)] text-xs font-semibold">Xem</button>
+                  <button class="text-slate-500 text-xs font-semibold ml-2">Tắt</button>
                 </td>
               </tr>
               <tr>
@@ -160,11 +167,13 @@
                   </div>
                 </td>
                 <td>tai.pham@kimthanh.edu.vn</td>
+                <td>0903 456 789</td>
                 <td>Tài chính</td>
                 <td><span class="badge b-green">ACTIVE</span></td>
                 <td>20/01/2026</td>
-                <td>
+                <td class="whitespace-nowrap">
                   <button class="text-[color:var(--primary)] text-xs font-semibold">Xem</button>
+                  <button class="text-slate-500 text-xs font-semibold ml-2">Tắt</button>
                 </td>
               </tr>
               <tr>
@@ -175,11 +184,13 @@
                   </div>
                 </td>
                 <td>lan.nguyen@gmail.com</td>
+                <td>0905 111 222</td>
                 <td>Phụ huynh</td>
                 <td><span class="badge b-green">ACTIVE</span></td>
                 <td>02/02/2026</td>
-                <td>
+                <td class="whitespace-nowrap">
                   <button class="text-[color:var(--primary)] text-xs font-semibold">Xem</button>
+                  <button class="text-slate-500 text-xs font-semibold ml-2">Tắt</button>
                 </td>
               </tr>
               <tr>
@@ -189,12 +200,14 @@
                     Lê Văn Hùng
                   </div>
                 </td>
-                <td>hung.le@gmail.com</td>
+                <td class="text-slate-400">—</td>
+                <td>0987 654 321</td>
                 <td>Phụ huynh</td>
-                <td><span class="badge b-amber">PENDING</span></td>
+                <td><span class="badge b-amber">INACTIVE</span></td>
                 <td>25/05/2026</td>
-                <td>
+                <td class="whitespace-nowrap">
                   <button class="text-[color:var(--primary)] text-xs font-semibold">Xem</button>
+                  <button class="text-green-600 text-xs font-semibold ml-2">Bật</button>
                 </td>
               </tr>
               <tr>
@@ -204,12 +217,14 @@
                     Đặng Minh Tuấn
                   </div>
                 </td>
-                <td>tuan.dang@gmail.com</td>
+                <td class="text-slate-400">—</td>
+                <td>0988 222 333</td>
                 <td>Phụ huynh</td>
-                <td><span class="badge b-red">SUSPENDED</span></td>
+                <td><span class="badge b-amber">INACTIVE</span></td>
                 <td>03/03/2026</td>
-                <td>
+                <td class="whitespace-nowrap">
                   <button class="text-[color:var(--primary)] text-xs font-semibold">Xem</button>
+                  <button class="text-green-600 text-xs font-semibold ml-2">Bật</button>
                 </td>
               </tr>
             </tbody>

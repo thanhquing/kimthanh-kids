@@ -271,6 +271,7 @@ model User {
   memberships  Membership[]
   homeroomClasses Classroom[]     @relation("HomeroomTeacher")
   childLinks      StudentParent[] @relation("ParentLinks")
+  assignments     StaffAssignment[] @relation("StaffAssignments")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -665,6 +666,7 @@ model Classroom {
   students          Student[]
   attendance        Attendance[]
   dailyReports      DailyReport[]
+  staffAssignments  StaffAssignment[]
 
   @@unique([schoolId, name])
   @@index([tenantId])
@@ -940,6 +942,38 @@ model Allergy {
   @@unique([studentId, allergen])
   @@index([tenantId])
   @@map("allergies")
+}
+
+// ──────────── B3 — Phân công làm việc cho nhân sự (Phase 1) ────────────
+
+enum Shift {
+  MORNING
+  AFTERNOON
+  FULL_DAY
+}
+
+// Lịch phân công LẶP theo tuần: GV/nhân sự ↔ (lớp) theo thứ + ca. App GV xem "lịch của tôi".
+model StaffAssignment {
+  id          String     @id @default(uuid())
+  tenantId    String
+  schoolId    String
+  staffId     String
+  staff       User       @relation("StaffAssignments", fields: [staffId], references: [id], onDelete: Cascade)
+  classroomId String? // null = nhiệm vụ không gắn lớp (trực trưa, đón trẻ...)
+  classroom   Classroom? @relation(fields: [classroomId], references: [id])
+  weekday     Int // 1=Thứ 2 ... 7=Chủ nhật (ISO)
+  shift       Shift
+  duty        String // "GV chính" | "GV phụ" | "Trực trưa" | "Đón trẻ"...
+  note        String?
+  createdById String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([staffId, weekday, shift]) // 1 người chỉ 1 phân công cho mỗi (thứ, ca)
+  @@index([tenantId])
+  @@index([schoolId, weekday])
+  @@index([classroomId])
+  @@map("staff_assignments")
 }
 
 // D4 — Đơn xin nghỉ: PH tạo → GV/admin duyệt.
