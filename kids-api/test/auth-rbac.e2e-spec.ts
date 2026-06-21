@@ -142,7 +142,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
       const t = await createTenant(app);
       const pemail = `parent@${rnd()}.vn`;
       await api()
-        .post("/api/tenant/members/invite")
+        .post("/api/tenant/members")
         .set("Host", t.host)
         .set("Authorization", `Bearer ${t.adminToken}`)
         .send({ email: pemail, fullName: "PH", role: "PARENT", password: "Password123" })

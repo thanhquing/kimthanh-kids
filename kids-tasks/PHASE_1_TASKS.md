@@ -1,6 +1,6 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
-> ## ✅ Tiến độ (63 e2e pass / 7 suite · tsc + lint sạch)
+> ## ✅ Tiến độ (72 e2e pass / 9 suite · tsc + lint sạch)
 > - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` + `recordScopeWhere`/`ownedStudentWhere` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
 > - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
 > - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).

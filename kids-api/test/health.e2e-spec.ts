@@ -22,7 +22,7 @@ describe("Phase 1 — D. Sức khỏe (health/medicine/incidents/leave)", () => 
   async function invitedParent(t: TenantFixture) {
     const email = `ph-${rnd()}@x.vn`;
     const r = await api()
-      .post("/api/tenant/members/invite")
+      .post("/api/tenant/members")
       .set(auth(t))
       .send({ email, fullName: "Phụ huynh", role: "PARENT", password: "Password123" })
       .expect(201);

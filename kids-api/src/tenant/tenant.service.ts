@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import { TenantRole, UserType } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
@@ -15,8 +15,9 @@ export interface UpdateSettingsInput {
   locale?: string;
   timezone?: string;
 }
-export interface InviteMemberInput {
-  email: string;
+export interface CreateMemberInput {
+  email?: string;
+  phone?: string;
   fullName: string;
   role: TenantRole;
   schoolId?: string | null;
@@ -55,18 +56,46 @@ export class TenantService {
     });
   }
 
-  async inviteMember(tenantId: string, input: InviteMemberInput) {
+  /**
+   * Tạo tài khoản thành viên (GV/PH/y tá/nhân viên...) trực tiếp — chủ trường (SCHOOL_ADMIN)
+   * hoặc hiệu trưởng (PRINCIPAL) thực hiện. Định danh = email HOẶC số điện thoại (ít nhất 1).
+   */
+  async createMember(tenantId: string, input: CreateMemberInput) {
+    const email = input.email?.trim() || null;
+    const phone = input.phone?.trim() || null;
+    if (!email && !phone)
+      throw new BadRequestException({
+        code: "NO_IDENTIFIER",
+        message: "Cần email hoặc số điện thoại",
+      });
+
+    // Báo lỗi thân thiện khi trùng trong cùng trường (thay vì để P2002 thô).
+    const dup = await this.prisma.system.user.findFirst({
+      where: {
+        tenantId,
+        deletedAt: null,
+        OR: [...(email ? [{ email }] : []), ...(phone ? [{ phone }] : [])],
+      },
+      select: { id: true },
+    });
+    if (dup)
+      throw new ConflictException({
+        code: "MEMBER_EXISTS",
+        message: "Email hoặc số điện thoại đã được dùng trong trường",
+      });
+
     const passwordHash = await bcrypt.hash(input.password, 10);
     return this.prisma.system.user.create({
       data: {
         type: UserType.TENANT,
         tenantId,
-        email: input.email,
+        email,
+        phone,
         fullName: input.fullName,
         passwordHash,
         memberships: { create: { tenantId, role: input.role, schoolId: input.schoolId ?? null } },
       },
-      select: { id: true, email: true, fullName: true },
+      select: { id: true, email: true, phone: true, fullName: true },
     });
   }
 

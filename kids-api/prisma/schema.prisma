@@ -258,7 +258,7 @@ model School {
 model User {
   id           String        @id @default(uuid())
   type         UserType
-  email        String
+  email        String? // định danh: email HOẶC phone (ít nhất 1)
   phone        String?
   passwordHash String?
   fullName     String
@@ -273,6 +273,7 @@ model User {
   childLinks      StudentParent[] @relation("ParentLinks")
 
   @@unique([tenantId, email])
+  @@unique([tenantId, phone])
   @@index([tenantId])
   @@index([type])
   @@map("users")

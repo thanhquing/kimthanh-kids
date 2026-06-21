@@ -6,7 +6,8 @@ import { TokenService } from "./token.service";
 import { UserContextService } from "./user-context.service";
 
 export interface LoginInput {
-  email: string;
+  identifier?: string;
+  email?: string;
   password: string;
 }
 export interface AuthTokens {
@@ -28,13 +29,16 @@ export class AuthService {
     meta: { userAgent?: string; ip?: string },
   ): Promise<AuthTokens & { userId: string }> {
     const ctx = TenantContextStore.get();
-    const where = ctx?.platformScope
-      ? { email: input.email, type: "PLATFORM" as const, tenantId: null }
+    const id = input.identifier ?? input.email ?? "";
+    // Định danh có thể là email hoặc số điện thoại.
+    const idMatch = { OR: [{ email: id }, { phone: id }] };
+    const scope = ctx?.platformScope
+      ? { type: "PLATFORM" as const, tenantId: null }
       : ctx?.tenantId
-        ? { email: input.email, type: "TENANT" as const, tenantId: ctx.tenantId }
+        ? { type: "TENANT" as const, tenantId: ctx.tenantId }
         : null;
 
-    if (!where) {
+    if (!scope) {
       throw new UnauthorizedException({
         code: "TENANT_REQUIRED",
         message: "Không xác định được trường (tenant). Hãy đăng nhập qua đúng tên miền của trường.",
@@ -42,12 +46,12 @@ export class AuthService {
     }
 
     const user = await this.prisma.system.user.findFirst({
-      where: { ...where, isActive: true, deletedAt: null },
+      where: { ...scope, ...idMatch, isActive: true, deletedAt: null },
     });
     if (!user || !user.passwordHash || !(await bcrypt.compare(input.password, user.passwordHash))) {
       throw new UnauthorizedException({
         code: "INVALID_CREDENTIALS",
-        message: "Email hoặc mật khẩu không đúng",
+        message: "Email/số điện thoại hoặc mật khẩu không đúng",
       });
     }
 

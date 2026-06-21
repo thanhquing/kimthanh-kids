@@ -33,7 +33,7 @@ describe("Phase 1 — domain (classrooms / students / guardians)", () => {
   async function invite(t: TenantFixture, role: string, schoolId?: string | null) {
     const email = `${role.toLowerCase()}-${rnd()}@x.vn`;
     const res = await api()
-      .post("/api/tenant/members/invite")
+      .post("/api/tenant/members")
       .set("Host", t.host)
       .set("Authorization", `Bearer ${t.adminToken}`)
       .send({

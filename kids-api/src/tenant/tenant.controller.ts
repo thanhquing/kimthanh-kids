@@ -18,13 +18,22 @@ const settingsSchema = z.object({
   locale: z.string().max(10).optional(),
   timezone: z.string().max(40).optional(),
 });
-const inviteSchema = z.object({
-  email: z.string().email(),
-  fullName: z.string().min(2).max(120),
-  role: z.nativeEnum(TenantRole),
-  schoolId: z.string().uuid().nullable().optional(),
-  password: z.string().min(8),
-});
+const createMemberSchema = z
+  .object({
+    email: z.string().email().optional(),
+    phone: z
+      .string()
+      .regex(/^(0|\+84)\d{8,10}$/, "Số điện thoại không hợp lệ")
+      .optional(),
+    fullName: z.string().min(2).max(120),
+    role: z.nativeEnum(TenantRole),
+    schoolId: z.string().uuid().nullable().optional(),
+    password: z.string().min(8),
+  })
+  .refine((d) => Boolean(d.email || d.phone), {
+    message: "Cần email hoặc số điện thoại",
+    path: ["email"],
+  });
 const schoolSchema = z.object({
   name: z.string().min(2).max(120),
   code: z.string().min(1).max(20),
@@ -66,12 +75,13 @@ export class TenantController {
     return this.tenant.listMembers(user.tenantId!);
   }
 
-  @Post("members/invite")
-  invite(
+  // Tạo tài khoản thành viên (GV/PH/y tá/nhân viên). Chỉ SCHOOL_ADMIN/PRINCIPAL (theo @Roles cấp class).
+  @Post("members")
+  createMember(
     @CurrentUser() user: AuthUser,
-    @Body(new ZodValidationPipe(inviteSchema)) dto: z.infer<typeof inviteSchema>,
+    @Body(new ZodValidationPipe(createMemberSchema)) dto: z.infer<typeof createMemberSchema>,
   ) {
-    return this.tenant.inviteMember(user.tenantId!, dto);
+    return this.tenant.createMember(user.tenantId!, dto);
   }
 
   @Get("domains")
