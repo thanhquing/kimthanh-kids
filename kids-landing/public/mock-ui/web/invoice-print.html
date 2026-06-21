@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Chứng từ HD-2026-0001 — KimThanh Kids</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        color: #0f172a;
+        margin: 0;
+        background: #f1f5f9;
+      }
+      .sheet {
+        max-width: 780px;
+        margin: 24px auto;
+        background: #fff;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 16px;
+      }
+      .org {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .muted {
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+        text-align: right;
+      }
+      .meta {
+        font-size: 13px;
+        text-align: right;
+        color: #475569;
+      }
+      .grid {
+        display: flex;
+        gap: 24px;
+        margin: 20px 0;
+      }
+      .grid > div {
+        flex: 1;
+      }
+      .label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #94a3b8;
+        margin-bottom: 4px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-size: 14px;
+      }
+      th,
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+      }
+      th {
+        background: #f8fafc;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #64748b;
+      }
+      .c {
+        text-align: center;
+      }
+      .r {
+        text-align: right;
+      }
+      .totals {
+        margin-left: auto;
+        width: 280px;
+        font-size: 14px;
+        margin-top: 12px;
+      }
+      .totals .row {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+      }
+      .totals .grand {
+        border-top: 2px solid #0f172a;
+        margin-top: 6px;
+        padding-top: 8px;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .b-unpaid {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+      .note {
+        margin-top: 16px;
+        font-size: 13px;
+        color: #475569;
+      }
+      .actions {
+        max-width: 780px;
+        margin: 0 auto 24px;
+        text-align: right;
+      }
+      .btn {
+        background: #2563eb;
+        color: #fff;
+        border: 0;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        .actions {
+          display: none;
+        }
+        .sheet {
+          box-shadow: none;
+          margin: 0;
+          border-radius: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="actions">
+      <a
+        href="/mock-ui/index.html"
+        style="float: left; color: #2563eb; text-decoration: none; font-size: 14px; padding-top: 10px"
+        >← Catalog</a
+      >
+      <button class="btn" onclick="window.print()">In chứng từ</button>
+    </div>
+    <div class="sheet">
+      <div class="top">
+        <div>
+          <div class="org">Trường Mầm non KimThanh</div>
+          <div class="muted">
+            123 Đường Hoa Sữa, Q. Cầu Giấy, Hà Nội<br />MST: 0101234567<br />ketoan@kimthanh.edu.vn
+          </div>
+        </div>
+        <div>
+          <h1>PHIẾU THU HỌC PHÍ</h1>
+          <div class="meta">
+            Số: <b>HD-2026-0001</b><br />Ngày lập: 01/07/2026<br />Hạn TT: 31/07/2026
+          </div>
+        </div>
+      </div>
+      <div class="grid">
+        <div>
+          <div class="label">Học sinh</div>
+          <div><b>Nguyễn Minh An</b></div>
+          <div class="muted">Kỳ: 2026-07 · Lớp Mầm A</div>
+        </div>
+        <div style="text-align: right">
+          <div class="label">Trạng thái</div>
+          <span class="badge b-unpaid">Chưa thanh toán</span>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="c">#</th>
+            <th>Khoản thu</th>
+            <th class="c">SL</th>
+            <th class="r">Đơn giá</th>
+            <th class="r">Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="c">1</td>
+            <td>Học phí tháng 7</td>
+            <td class="c">1</td>
+            <td class="r">2.000.000₫</td>
+            <td class="r">2.000.000₫</td>
+          </tr>
+          <tr>
+            <td class="c">2</td>
+            <td>Tiền ăn (22 ngày)</td>
+            <td class="c">22</td>
+            <td class="r">35.000₫</td>
+            <td class="r">770.000₫</td>
+          </tr>
+          <tr>
+            <td class="c">3</td>
+            <td>Xe đưa đón</td>
+            <td class="c">1</td>
+            <td class="r">600.000₫</td>
+            <td class="r">600.000₫</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="totals">
+        <div class="row"><span>Tạm tính</span><span>3.370.000₫</span></div>
+        <div class="row"><span>Giảm giá</span><span>- 50.000₫</span></div>
+        <div class="row grand"><span>Tổng cộng</span><span>3.320.000₫</span></div>
+        <div class="row"><span>Đã thanh toán</span><span>0₫</span></div>
+        <div class="row"><span>Còn lại</span><span>3.320.000₫</span></div>
+      </div>
+      <div class="note">
+        Chuyển khoản: <b>TRUONG MAM NON KIMTHANH</b> · STK 0123456789 (Vietcombank) · Nội dung:
+        <b>HD-2026-0001</b> — hoặc quét VietQR trên app phụ huynh.
+      </div>
+      <div class="note" style="text-align: center; margin-top: 28px; color: #94a3b8">
+        Chứng từ tạo bởi hệ thống KimThanh Kids — Trường Mầm non KimThanh
+      </div>
+    </div>
+  </body>
+</html>

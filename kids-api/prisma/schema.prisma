@@ -210,6 +210,12 @@ model TenantSettings {
   supportEmail   String?
   locale         String   @default("vi-VN")
   timezone       String   @default("Asia/Ho_Chi_Minh")
+  // Thông tin chứng từ/thanh toán (học phí trường→phụ huynh)
+  taxCode           String? // MST trường — phục vụ quyết toán thuế
+  invoiceAddress    String? // địa chỉ xuất hóa đơn
+  bankBin           String? // mã ngân hàng napas (VietQR)
+  bankAccountNumber String?
+  bankAccountName   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -699,6 +705,7 @@ model Student {
   incidents        Incident[]
   allergies        Allergy[]
   leaveRequests    LeaveRequest[]
+  tuitionInvoices  TuitionInvoice[]
 
   @@index([tenantId])
   @@index([schoolId])
@@ -1000,4 +1007,95 @@ model LeaveRequest {
   @@index([studentId])
   @@index([schoolId, status])
   @@map("leave_requests")
+}
+
+// ════════════════════════ E — HỌC PHÍ (trường → phụ huynh) ════════════════════════
+// KHÁC billing nền tảng (Phase 0). Chứng từ in được, phục vụ quyết toán thuế / kế toán.
+
+enum TuitionInvoiceStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELED
+}
+
+enum TuitionPaymentMethod {
+  CASH // tiền mặt (kế toán ghi nhận)
+  BANK_TRANSFER // chuyển khoản VietQR (đối soát thủ công/ngân hàng)
+  VNPAY // cổng VNPay (sandbox)
+}
+
+enum TuitionPaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+}
+
+model TuitionInvoice {
+  id            String               @id @default(uuid())
+  tenantId      String
+  schoolId      String
+  studentId     String
+  student       Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  invoiceNumber String // HD-YYYY-NNNN (tuần tự theo tenant + năm)
+  period        String // "2026-06" | "HK1 2026-2027"...
+  issueDate     DateTime             @db.Date
+  dueDate       DateTime             @db.Date
+  subtotal      Decimal              @default(0) @db.Decimal(12, 2)
+  discount      Decimal              @default(0) @db.Decimal(12, 2)
+  total         Decimal              @default(0) @db.Decimal(12, 2)
+  amountPaid    Decimal              @default(0) @db.Decimal(12, 2)
+  status        TuitionInvoiceStatus @default(UNPAID)
+  note          String?
+  createdById   String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  items         TuitionInvoiceItem[]
+  payments      TuitionPayment[]
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([schoolId, status])
+  @@index([studentId])
+  @@map("tuition_invoices")
+}
+
+model TuitionInvoiceItem {
+  id        String         @id @default(uuid())
+  tenantId  String
+  invoiceId String
+  invoice   TuitionInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  label     String // "Học phí tháng 6", "Tiền ăn", "Xe đưa đón"...
+  quantity  Int            @default(1)
+  unitPrice Decimal        @db.Decimal(12, 2)
+  amount    Decimal        @db.Decimal(12, 2)
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@map("tuition_invoice_items")
+}
+
+model TuitionPayment {
+  id           String               @id @default(uuid())
+  tenantId     String
+  schoolId     String
+  invoiceId    String
+  invoice      TuitionInvoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  method       TuitionPaymentMethod
+  status       TuitionPaymentStatus @default(PENDING)
+  amount       Decimal              @db.Decimal(12, 2)
+  reference    String? // mã chuyển khoản / ghi chú đối soát
+  gatewayRef   String? // mã giao dịch cổng (VNPay vnp_TxnRef)
+  paidAt       DateTime?
+  rawPayload   Json?
+  recordedById String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([method, gatewayRef])
+  @@index([tenantId])
+  @@index([invoiceId, status])
+  @@map("tuition_payments")
 }

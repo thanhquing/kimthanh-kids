@@ -14,6 +14,7 @@ import { LeaveModule } from "./leave/leave.module";
 import { MedicineModule } from "./medicine/medicine.module";
 import { MediaModule } from "./media/media.module";
 import { StudentsModule } from "./students/students.module";
+import { TuitionModule } from "./tuition/tuition.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
@@ -50,6 +51,7 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     IncidentsModule,
     LeaveModule,
     AssignmentsModule,
+    TuitionModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

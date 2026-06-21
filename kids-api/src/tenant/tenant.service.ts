@@ -33,6 +33,11 @@ export interface UpdateSettingsInput {
   supportEmail?: string;
   locale?: string;
   timezone?: string;
+  taxCode?: string;
+  invoiceAddress?: string;
+  bankBin?: string;
+  bankAccountNumber?: string;
+  bankAccountName?: string;
 }
 export interface CreateMemberInput {
   email?: string;

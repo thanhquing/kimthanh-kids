@@ -17,6 +17,15 @@ const settingsSchema = z.object({
   supportEmail: z.string().email().optional(),
   locale: z.string().max(10).optional(),
   timezone: z.string().max(40).optional(),
+  // Chứng từ / thanh toán học phí
+  taxCode: z.string().max(20).optional(),
+  invoiceAddress: z.string().max(200).optional(),
+  bankBin: z
+    .string()
+    .regex(/^\d{6}$/, "Mã ngân hàng napas gồm 6 số")
+    .optional(),
+  bankAccountNumber: z.string().max(30).optional(),
+  bankAccountName: z.string().max(120).optional(),
 });
 const createMemberSchema = z
   .object({

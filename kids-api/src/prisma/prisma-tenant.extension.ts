@@ -35,6 +35,10 @@ const TENANT_KEY: Record<string, "id" | "tenantId"> = {
   Allergy: "tenantId",
   LeaveRequest: "tenantId",
   StaffAssignment: "tenantId",
+  // ── E — Học phí (Phase 1) ──
+  TuitionInvoice: "tenantId",
+  TuitionInvoiceItem: "tenantId",
+  TuitionPayment: "tenantId",
 };
 
 /** Model có cột deletedAt → đọc tự bỏ bản ghi đã xoá. Soft-delete khi GHI là convention service. */
