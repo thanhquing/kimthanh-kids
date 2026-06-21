@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Mã giảm giá — Platform Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <div class="w-8 h-8 rounded-lg brand-grad grid place-items-center text-white font-bold">K</div>
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Platform Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/platform/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        >
+        <div class="nav-group">Khách hàng</div>
+        <a href="/mock-ui/platform/tenants.html" class="nav-item"
+          ><i data-lucide="building-2" class="w-4 h-4"></i>Trường thuê</a
+        ><a href="/mock-ui/platform/subscriptions.html" class="nav-item"
+          ><i data-lucide="repeat" class="w-4 h-4"></i>Thuê bao</a
+        >
+        <div class="nav-group">Doanh thu</div>
+        <a href="/mock-ui/platform/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn nền tảng</a
+        ><a href="/mock-ui/platform/coupons.html" class="nav-item active"
+          ><i data-lucide="ticket-percent" class="w-4 h-4"></i>Mã giảm giá</a
+        >
+        <div class="nav-group">Cấu hình</div>
+        <a href="/mock-ui/platform/plans.html" class="nav-item"
+          ><i data-lucide="package" class="w-4 h-4"></i>Gói dịch vụ</a
+        ><a href="/mock-ui/platform/login.html" class="nav-item"
+          ><i data-lucide="log-out" class="w-4 h-4"></i>Đăng xuất</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Doanh thu</div>
+            <div class="font-bold text-slate-800">Mã giảm giá</div>
+          </div>
+          <button
+            class="btn-primary inline-flex items-center gap-2 text-sm"
+            onclick="toast('Mock: tạo mã giảm giá')"
+          >
+            <i data-lucide="plus" class="w-4 h-4"></i>Tạo mã
+          </button>
+        </header>
+        <main class="p-6">
+          <div class="card overflow-hidden">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mã</th>
+                  <th>Loại</th>
+                  <th>Giá trị</th>
+                  <th>Áp dụng</th>
+                  <th>Lượt dùng</th>
+                  <th>Hiệu lực</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const rows = [
+        ["KHAIGIANG25", "Phần trăm", "-25%", "3 kỳ đầu", "42 / 100", "đến 31/08/2026", 1],
+        ["BANBE50", "Phần trăm", "-50%", "1 kỳ", "18 / 50", "đến 30/09/2026", 1],
+        ["TET2026", "Cố định", "-500.000đ", "1 kỳ", "30 / 30", "đã hết lượt", 0],
+        ["CHUOI10", "Phần trăm", "-10%", "Mọi kỳ", "7 / ∞", "không giới hạn", 1],
+      ];
+      document.getElementById("rows").innerHTML = rows
+        .map(
+          ([code, kind, val, dur, used, valid, active]) => `
+        <tr class="hover:bg-[#fff8f3]">
+          <td><span class="font-mono font-semibold bg-[#fff3ec] text-[color:var(--primary)] px-2 py-0.5 rounded">${code}</span></td>
+          <td>${kind}</td><td class="font-semibold">${val}</td><td>${dur}</td><td>${used}</td><td>${valid}</td>
+          <td><span class="badge ${active ? "b-green" : "b-slate"}">${active ? "Đang chạy" : "Ngừng"}</span></td>
+        </tr>`,
+        )
+        .join("");
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

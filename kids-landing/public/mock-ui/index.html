@@ -32,6 +32,24 @@
     <main class="max-w-7xl mx-auto px-6 py-10 space-y-12">
       <section>
         <div class="flex items-center gap-3 mb-1">
+          <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 grid place-items-center">
+            <i data-lucide="building-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold">🏢 Platform · Super Admin (Tầng A)</h2>
+            <p class="text-slate-500 text-sm">
+              Console nội bộ: quản lý trường thuê, gói cước, thuê bao, billing nền tảng, white-label
+            </p>
+          </div>
+        </div>
+        <div
+          id="platform-grid"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-5"
+        ></div>
+      </section>
+
+      <section>
+        <div class="flex items-center gap-3 mb-1">
           <div class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 grid place-items-center">
             <i data-lucide="users" class="w-5 h-5"></i>
           </div>
@@ -100,6 +118,16 @@
     </footer>
 
     <script>
+      const platform = [
+        ["A1", "Đăng nhập nội bộ", "login"],
+        ["A2", "Tổng quan nền tảng", "dashboard"],
+        ["A3", "Trường thuê", "tenants"],
+        ["A4", "Chi tiết trường", "tenant-detail"],
+        ["A5", "Thuê bao", "subscriptions"],
+        ["A6", "Hóa đơn nền tảng", "invoices"],
+        ["A7", "Gói dịch vụ", "plans"],
+        ["A8", "Mã giảm giá", "coupons"],
+      ];
       const parent = [
         ["P1", "Trang chủ Phụ huynh", "home-parent"],
         ["P2", "Danh sách con", "children-list"],
@@ -166,6 +194,9 @@
   <div class="font-semibold text-slate-800">${title}</div>
   <div class="text-xs text-slate-400 mt-1">${folder}/${slug}.html</div>
 </a>`;
+      document.getElementById("platform-grid").innerHTML = platform
+        .map((m) => card("platform", m, "b-green"))
+        .join("");
       document.getElementById("parent-grid").innerHTML = parent
         .map((m) => card("mobile", m, "b-peach"))
         .join("");

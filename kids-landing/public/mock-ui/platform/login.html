@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Đăng nhập — Platform Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen grid place-items-center brand-grad p-4">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="card w-full max-w-md p-8">
+      <div class="flex items-center gap-3 mb-1">
+        <div class="w-10 h-10 rounded-xl brand-grad grid place-items-center text-white font-bold">
+          K
+        </div>
+        <div>
+          <div class="font-bold text-lg leading-tight">KimThanh Kids</div>
+          <div class="text-xs text-slate-400">Platform Console · Nội bộ</div>
+        </div>
+      </div>
+      <h1 class="text-xl font-bold mt-5">Đăng nhập quản trị nền tảng</h1>
+      <p class="text-sm text-slate-500 mb-5">Dành riêng cho đội ngũ KimThanh Kids.</p>
+
+      <label class="label">Email</label>
+      <div class="relative mb-3">
+        <i data-lucide="mail" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+        <input class="field !pl-9" value="admin@kimthanhkids.vn" />
+      </div>
+      <label class="label">Mật khẩu</label>
+      <div class="relative mb-2">
+        <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+        <input type="password" class="field !pl-9" value="••••••••••" />
+      </div>
+      <div class="flex items-center justify-between text-sm mb-5">
+        <label class="flex items-center gap-2 text-slate-500"
+          ><input type="checkbox" class="rounded" checked />Ghi nhớ</label
+        >
+        <span class="text-[color:var(--primary)] font-medium cursor-pointer">Quên mật khẩu?</span>
+      </div>
+      <button class="btn-primary w-full" onclick="location.href='/mock-ui/platform/dashboard.html'">
+        Đăng nhập
+      </button>
+
+      <div class="mt-5 flex items-center gap-2 text-xs text-slate-400 bg-[#fff8f3] rounded-xl p-3">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+        Truy cập được ghi log &amp; yêu cầu 2FA ở môi trường production.
+      </div>
+    </div>
+  </body>
+</html>

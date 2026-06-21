@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Hóa đơn nền tảng — Platform Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <div class="w-8 h-8 rounded-lg brand-grad grid place-items-center text-white font-bold">K</div>
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Platform Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/platform/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        >
+        <div class="nav-group">Khách hàng</div>
+        <a href="/mock-ui/platform/tenants.html" class="nav-item"
+          ><i data-lucide="building-2" class="w-4 h-4"></i>Trường thuê</a
+        ><a href="/mock-ui/platform/subscriptions.html" class="nav-item"
+          ><i data-lucide="repeat" class="w-4 h-4"></i>Thuê bao</a
+        >
+        <div class="nav-group">Doanh thu</div>
+        <a href="/mock-ui/platform/invoices.html" class="nav-item active"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn nền tảng</a
+        ><a href="/mock-ui/platform/coupons.html" class="nav-item"
+          ><i data-lucide="ticket-percent" class="w-4 h-4"></i>Mã giảm giá</a
+        >
+        <div class="nav-group">Cấu hình</div>
+        <a href="/mock-ui/platform/plans.html" class="nav-item"
+          ><i data-lucide="package" class="w-4 h-4"></i>Gói dịch vụ</a
+        ><a href="/mock-ui/platform/login.html" class="nav-item"
+          ><i data-lucide="log-out" class="w-4 h-4"></i>Đăng xuất</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Doanh thu</div>
+            <div class="font-bold text-slate-800">Hóa đơn nền tảng</div>
+          </div>
+          <button class="btn-soft inline-flex items-center gap-2 text-sm">
+            <i data-lucide="download" class="w-4 h-4"></i>Xuất CSV
+          </button>
+        </header>
+        <main class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+            <div class="kpi"><div class="num text-emerald-600">156.2tr</div><div class="lbl">Đã thu (tháng này)</div></div>
+            <div class="kpi"><div class="num text-amber-600">18.4tr</div><div class="lbl">Chờ thu</div></div>
+            <div class="kpi"><div class="num text-red-600">5.6tr</div><div class="lbl">Quá hạn</div></div>
+            <div class="kpi"><div class="num">214</div><div class="lbl">Tổng hóa đơn</div></div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <span class="chip active">Tất cả</span>
+            <span class="chip">OPEN</span>
+            <span class="chip">PAID</span>
+            <span class="chip">OVERDUE</span>
+            <span class="chip">VOID</span>
+            <div class="relative ml-auto w-64">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+              ><input class="field !pl-9 !py-1.5" placeholder="Tìm số HĐ / trường..." />
+            </div>
+          </div>
+
+          <div class="card overflow-hidden">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Số hóa đơn</th>
+                  <th>Trường</th>
+                  <th>Kỳ</th>
+                  <th>Tổng</th>
+                  <th>Trạng thái</th>
+                  <th>Hạn</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const S = { OPEN: "b-amber", PAID: "b-green", OVERDUE: "b-red", VOID: "b-slate" };
+      const rows = [
+        ["PINV-2026-000210", "Rainbow Kids", "2026 (năm)", "4.500.000đ", "PAID", "01/06"],
+        ["PINV-2026-000204", "Hoa Mai Montessori", "06/2026", "1.200.000đ", "PAID", "12/06"],
+        ["PINV-2026-000205", "Sao Việt Kids", "Q2/2026", "3.240.000đ", "OPEN", "20/06"],
+        ["PINV-2026-000118", "Little Stars", "06/2026", "1.200.000đ", "OVERDUE", "10/06"],
+        ["PINV-2026-000121", "Rainbow Kids", "06/2026", "3.240.000đ", "OVERDUE", "13/06"],
+        ["PINV-2026-000090", "Eduplay+", "05/2026", "1.200.000đ", "VOID", "—"],
+      ];
+      const action = (st) =>
+        st === "OVERDUE" || st === "OPEN"
+          ? `<button class="btn-soft !py-1 !px-3 text-xs" onclick="event.stopPropagation();toast('Mock: đánh dấu đã thu')">Đánh dấu đã thu</button>`
+          : `<i data-lucide="chevron-right" class="w-4 h-4 text-slate-400"></i>`;
+      document.getElementById("rows").innerHTML = rows
+        .map(
+          ([num, school, period, total, st, due]) => `
+        <tr class="hover:bg-[#fff8f3]">
+          <td class="font-mono text-xs font-semibold">${num}</td>
+          <td>${school}</td><td>${period}</td><td class="font-semibold">${total}</td>
+          <td><span class="badge ${S[st]}">${st}</span></td><td>${due}</td>
+          <td class="text-right">${action(st)}</td>
+        </tr>`,
+        )
+        .join("");
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

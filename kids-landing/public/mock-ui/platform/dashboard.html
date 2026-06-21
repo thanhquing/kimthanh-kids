@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tổng quan — Platform Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <div class="w-8 h-8 rounded-lg brand-grad grid place-items-center text-white font-bold">
+            K
+          </div>
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Platform Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/platform/dashboard.html" class="nav-item active"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        >
+        <div class="nav-group">Khách hàng</div>
+        <a href="/mock-ui/platform/tenants.html" class="nav-item"
+          ><i data-lucide="building-2" class="w-4 h-4"></i>Trường thuê</a
+        ><a href="/mock-ui/platform/subscriptions.html" class="nav-item"
+          ><i data-lucide="repeat" class="w-4 h-4"></i>Thuê bao</a
+        >
+        <div class="nav-group">Doanh thu</div>
+        <a href="/mock-ui/platform/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn nền tảng</a
+        ><a href="/mock-ui/platform/coupons.html" class="nav-item"
+          ><i data-lucide="ticket-percent" class="w-4 h-4"></i>Mã giảm giá</a
+        >
+        <div class="nav-group">Cấu hình</div>
+        <a href="/mock-ui/platform/plans.html" class="nav-item"
+          ><i data-lucide="package" class="w-4 h-4"></i>Gói dịch vụ</a
+        ><a href="/mock-ui/platform/login.html" class="nav-item"
+          ><i data-lucide="log-out" class="w-4 h-4"></i>Đăng xuất</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Platform</div>
+            <div class="font-bold text-slate-800">Tổng quan</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Tìm trường, hóa đơn..." />
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">SA</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Super Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Nền tảng</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <!-- KPI -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 grid place-items-center">
+                <i data-lucide="building-2" class="w-5 h-5"></i>
+              </div>
+              <div class="num">142</div>
+              <div class="lbl">Tổng số trường</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 grid place-items-center">
+                <i data-lucide="circle-check" class="w-5 h-5"></i>
+              </div>
+              <div class="num">98</div>
+              <div class="lbl">Đang hoạt động</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 grid place-items-center">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </div>
+              <div class="num">31</div>
+              <div class="lbl">Đang dùng thử</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-red-50 text-red-600 grid place-items-center">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+              </div>
+              <div class="num">9</div>
+              <div class="lbl">Quá hạn</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-slate-100 text-slate-500 grid place-items-center">
+                <i data-lucide="lock" class="w-5 h-5"></i>
+              </div>
+              <div class="num">4</div>
+              <div class="lbl">Tạm khóa</div>
+            </div>
+            <div class="kpi">
+              <div class="w-9 h-9 rounded-xl bg-pink-50 text-pink-600 grid place-items-center">
+                <i data-lucide="trending-up" class="w-5 h-5"></i>
+              </div>
+              <div class="num">168.4<span class="text-base font-semibold">tr</span></div>
+              <div class="lbl">MRR (đ/tháng)</div>
+            </div>
+          </div>
+
+          <!-- Charts -->
+          <div class="grid lg:grid-cols-3 gap-5">
+            <div class="card p-5 lg:col-span-2">
+              <div class="flex items-center justify-between mb-4">
+                <div class="font-bold">Doanh thu định kỳ (MRR · 12 tháng)</div>
+                <span class="badge b-green">+12.6%</span>
+              </div>
+              <svg viewBox="0 0 600 200" class="w-full h-48">
+                <defs>
+                  <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#F26B5E" stop-opacity=".4" />
+                    <stop offset="100%" stop-color="#F26B5E" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <polyline
+                  fill="url(#g1)"
+                  stroke="none"
+                  points="0,200 0,160 50,150 100,140 150,135 200,120 250,110 300,95 350,90 400,72 450,65 500,50 550,40 600,32 600,200"
+                />
+                <polyline
+                  fill="none"
+                  stroke="#F26B5E"
+                  stroke-width="3"
+                  points="0,160 50,150 100,140 150,135 200,120 250,110 300,95 350,90 400,72 450,65 500,50 550,40 600,32"
+                />
+              </svg>
+              <div class="flex justify-between text-xs text-slate-400 mt-1">
+                <span>T7</span><span>T8</span><span>T9</span><span>T10</span><span>T11</span
+                ><span>T12</span><span>T1</span><span>T2</span><span>T3</span><span>T4</span
+                ><span>T5</span><span>T6</span>
+              </div>
+            </div>
+            <div class="card p-5">
+              <div class="font-bold mb-3">Phân bổ theo gói</div>
+              <div class="flex justify-center my-2">
+                <div class="relative w-32 h-32">
+                  <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="#E2E8F0" stroke-width="4" />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="#F89A5B"
+                      stroke-width="4"
+                      stroke-dasharray="46 100"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="#F26B5E"
+                      stroke-width="4"
+                      stroke-dasharray="38 100"
+                      stroke-dashoffset="-46"
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.9"
+                      fill="none"
+                      stroke="#7BC796"
+                      stroke-width="4"
+                      stroke-dasharray="16 100"
+                      stroke-dashoffset="-84"
+                    />
+                  </svg>
+                  <div class="absolute inset-0 grid place-items-center">
+                    <div class="text-center">
+                      <div class="text-2xl font-bold">142</div>
+                      <div class="text-xs text-slate-400">Trường</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="text-xs space-y-1 mt-3">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2"
+                    ><span class="status-dot bg-[#F89A5B]"></span>Khởi đầu</span
+                  ><b>65</b>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2"
+                    ><span class="status-dot bg-[#F26B5E]"></span>Chuyên nghiệp</span
+                  ><b>54</b>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2"
+                    ><span class="status-dot bg-[#7BC796]"></span>Hệ thống</span
+                  ><b>23</b>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-2 gap-5 mt-5">
+            <div class="card p-5">
+              <div class="flex items-center justify-between mb-3">
+                <div class="font-bold">Trường mới đăng ký</div>
+                <a
+                  href="/mock-ui/platform/tenants.html"
+                  class="text-xs text-[color:var(--primary)] font-semibold"
+                  >Xem tất cả</a
+                >
+              </div>
+              <div class="divide-y divide-slate-100">
+                <div class="py-2.5 flex items-center gap-3">
+                  <div class="avatar !w-8 !h-8 text-xs">MA</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Mầm non ABC</div>
+                    <div class="text-xs text-slate-400">abc · còn 28 ngày dùng thử</div>
+                  </div>
+                  <span class="badge b-amber">Trial</span>
+                </div>
+                <div class="py-2.5 flex items-center gap-3">
+                  <div class="avatar !w-8 !h-8 text-xs">HM</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Hoa Mai Montessori</div>
+                    <div class="text-xs text-slate-400">hoamai · còn 21 ngày dùng thử</div>
+                  </div>
+                  <span class="badge b-amber">Trial</span>
+                </div>
+                <div class="py-2.5 flex items-center gap-3">
+                  <div class="avatar !w-8 !h-8 text-xs">SV</div>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Sao Việt Kids</div>
+                    <div class="text-xs text-slate-400">saoviet · đã lên gói Chuyên nghiệp</div>
+                  </div>
+                  <span class="badge b-green">Active</span>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5">
+              <div class="flex items-center justify-between mb-3">
+                <div class="font-bold">Cần chú ý — hóa đơn quá hạn</div>
+                <a
+                  href="/mock-ui/platform/invoices.html"
+                  class="text-xs text-[color:var(--primary)] font-semibold"
+                  >Xem tất cả</a
+                >
+              </div>
+              <div class="divide-y divide-slate-100">
+                <div class="py-2.5 flex items-center gap-3">
+                  <i data-lucide="receipt" class="w-4 h-4 text-red-500"></i>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">PINV-2026-000118 · Little Stars</div>
+                    <div class="text-xs text-slate-400">1.200.000đ · trễ 5 ngày</div>
+                  </div>
+                  <span class="badge b-red">Quá hạn</span>
+                </div>
+                <div class="py-2.5 flex items-center gap-3">
+                  <i data-lucide="receipt" class="w-4 h-4 text-red-500"></i>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">PINV-2026-000121 · Rainbow Kids</div>
+                    <div class="text-xs text-slate-400">3.240.000đ · trễ 2 ngày</div>
+                  </div>
+                  <span class="badge b-red">Quá hạn</span>
+                </div>
+                <div class="py-2.5 flex items-center gap-3">
+                  <i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>
+                  <div class="flex-1">
+                    <div class="text-sm font-semibold">Eduplay+ · đã bị tạm khóa</div>
+                    <div class="text-xs text-slate-400">Quá hạn 9 ngày</div>
+                  </div>
+                  <span class="badge b-slate">Suspended</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

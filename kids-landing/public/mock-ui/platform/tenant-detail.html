@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Chi tiết trường — Platform Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <div class="w-8 h-8 rounded-lg brand-grad grid place-items-center text-white font-bold">
+            K
+          </div>
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Platform Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/platform/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        >
+        <div class="nav-group">Khách hàng</div>
+        <a href="/mock-ui/platform/tenants.html" class="nav-item active"
+          ><i data-lucide="building-2" class="w-4 h-4"></i>Trường thuê</a
+        ><a href="/mock-ui/platform/subscriptions.html" class="nav-item"
+          ><i data-lucide="repeat" class="w-4 h-4"></i>Thuê bao</a
+        >
+        <div class="nav-group">Doanh thu</div>
+        <a href="/mock-ui/platform/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn nền tảng</a
+        ><a href="/mock-ui/platform/coupons.html" class="nav-item"
+          ><i data-lucide="ticket-percent" class="w-4 h-4"></i>Mã giảm giá</a
+        >
+        <div class="nav-group">Cấu hình</div>
+        <a href="/mock-ui/platform/plans.html" class="nav-item"
+          ><i data-lucide="package" class="w-4 h-4"></i>Gói dịch vụ</a
+        ><a href="/mock-ui/platform/login.html" class="nav-item"
+          ><i data-lucide="log-out" class="w-4 h-4"></i>Đăng xuất</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <a
+            href="/mock-ui/platform/tenants.html"
+            class="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-sm"
+            ><i data-lucide="arrow-left" class="w-4 h-4"></i>Trường thuê</a
+          >
+          <div class="flex-1"></div>
+          <button
+            class="btn-soft inline-flex items-center gap-2 text-sm"
+            onclick="toast('Mock: tạo token impersonate (có audit)')"
+          >
+            <i data-lucide="log-in" class="w-4 h-4"></i>Đăng nhập hộ
+          </button>
+          <button
+            class="btn-soft inline-flex items-center gap-2 text-sm !text-amber-700"
+            onclick="toast('Mock: tạm khóa trường')"
+          >
+            <i data-lucide="lock" class="w-4 h-4"></i>Tạm khóa
+          </button>
+          <button
+            class="btn-primary inline-flex items-center gap-2 text-sm"
+            onclick="toast('Mock: tạo hóa đơn kỳ mới')"
+          >
+            <i data-lucide="receipt" class="w-4 h-4"></i>Tạo hóa đơn
+          </button>
+        </header>
+        <main class="p-6 space-y-5">
+          <!-- Header trường -->
+          <div class="card p-5 flex items-center gap-4">
+            <div class="avatar !w-14 !h-14 text-lg">HM</div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2">
+                <h1 class="text-xl font-bold">Hoa Mai Montessori</h1>
+                <span class="badge b-green">Hoạt động</span>
+                <span class="badge b-blue">Chuyên nghiệp</span>
+              </div>
+              <div class="text-sm text-slate-400 mt-0.5">hoamai.kimthanhkids.vn · 1 cơ sở · 180 học sinh</div>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-slate-400">MRR</div>
+              <div class="text-xl font-bold">1.200.000đ</div>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-3 gap-5">
+            <!-- Thông tin -->
+            <div class="card p-5">
+              <div class="font-bold mb-3 flex items-center gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-slate-400"></i>Thông tin
+              </div>
+              <dl class="text-sm space-y-2.5">
+                <div class="flex justify-between"><dt class="text-slate-400">Tên pháp lý</dt><dd class="font-medium">CT TNHH Hoa Mai</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Slug</dt><dd class="font-medium">hoamai</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Tenant ID</dt><dd class="font-mono text-xs">t_9f3a…21c</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Ngày tạo</dt><dd class="font-medium">02/03/2026</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Múi giờ</dt><dd class="font-medium">Asia/Ho_Chi_Minh</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Chế độ</dt><dd><span class="badge b-slate">POOL (shared)</span></dd></div>
+              </dl>
+            </div>
+
+            <!-- Thuê bao -->
+            <div class="card p-5">
+              <div class="flex items-center justify-between mb-3">
+                <div class="font-bold flex items-center gap-2">
+                  <i data-lucide="repeat" class="w-4 h-4 text-slate-400"></i>Thuê bao
+                </div>
+                <button class="text-xs text-[color:var(--primary)] font-semibold" onclick="toast('Mock: đổi gói')">Đổi gói</button>
+              </div>
+              <dl class="text-sm space-y-2.5">
+                <div class="flex justify-between"><dt class="text-slate-400">Gói</dt><dd class="font-medium">Chuyên nghiệp</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Chu kỳ</dt><dd class="font-medium">Hàng tháng</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Trạng thái</dt><dd><span class="badge b-green">ACTIVE</span></dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Kỳ hiện tại</dt><dd class="font-medium">12/06 – 12/07/2026</dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Thanh toán</dt><dd><span class="badge b-peach">GATEWAY</span></dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Tự gia hạn</dt><dd class="font-medium text-emerald-600">Bật</dd></div>
+              </dl>
+            </div>
+
+            <!-- White-label -->
+            <div class="card p-5">
+              <div class="font-bold mb-3 flex items-center gap-2">
+                <i data-lucide="palette" class="w-4 h-4 text-slate-400"></i>White-label
+              </div>
+              <dl class="text-sm space-y-2.5">
+                <div class="flex justify-between"><dt class="text-slate-400">Tên hiển thị</dt><dd class="font-medium">Hoa Mai Montessori</dd></div>
+                <div class="flex items-center justify-between"><dt class="text-slate-400">Màu chủ đạo</dt><dd class="flex items-center gap-2"><span class="w-5 h-5 rounded-md" style="background:#16a34a"></span><span class="font-mono text-xs">#16a34a</span></dd></div>
+                <div class="flex justify-between"><dt class="text-slate-400">Logo</dt><dd class="font-medium text-emerald-600">Đã tải lên</dd></div>
+                <div class="flex justify-between items-center"><dt class="text-slate-400">Custom domain</dt><dd><span class="badge b-amber">Chờ xác minh</span></dd></div>
+                <div class="text-xs text-slate-400 pt-1">app.hoamai.edu.vn — thêm bản ghi TXT để xác minh.</div>
+              </dl>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-3 gap-5">
+            <!-- Quota -->
+            <div class="card p-5">
+              <div class="font-bold mb-3 flex items-center gap-2">
+                <i data-lucide="gauge" class="w-4 h-4 text-slate-400"></i>Hạn mức (quota)
+              </div>
+              <div class="space-y-3 text-sm">
+                <div>
+                  <div class="flex justify-between mb-1"><span>Học sinh</span><b>180 / 500</b></div>
+                  <div class="h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-[#F26B5E]" style="width:36%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><span>Giáo viên</span><b>22 / 80</b></div>
+                  <div class="h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-[#F89A5B]" style="width:28%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><span>Lớp học</span><b>9 / 40</b></div>
+                  <div class="h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-[#7BC796]" style="width:22%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><span>Lưu trữ</span><b>3.1 / 20 GB</b></div>
+                  <div class="h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-blue-400" style="width:15%"></div></div>
+                </div>
+              </div>
+              <button class="btn-soft w-full mt-4 text-sm" onclick="toast('Mock: override hạn mức')">Override hạn mức</button>
+            </div>
+
+            <!-- Cơ sở -->
+            <div class="card p-5">
+              <div class="font-bold mb-3 flex items-center gap-2">
+                <i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>Cơ sở (1)
+              </div>
+              <div class="divide-y divide-slate-100 text-sm">
+                <div class="py-2.5 flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-[#fff3ec] text-[color:var(--primary)] grid place-items-center"><i data-lucide="school" class="w-4 h-4"></i></div>
+                  <div class="flex-1"><div class="font-semibold">Cơ sở chính</div><div class="text-xs text-slate-400">MAIN · 180 học sinh · 9 lớp</div></div>
+                  <span class="badge b-green">Đang mở</span>
+                </div>
+              </div>
+              <div class="text-xs text-slate-400 mt-3">Gói Hệ thống mới được thêm nhiều cơ sở (chuỗi).</div>
+            </div>
+
+            <!-- Hóa đơn -->
+            <div class="card p-5">
+              <div class="flex items-center justify-between mb-3">
+                <div class="font-bold flex items-center gap-2"><i data-lucide="receipt" class="w-4 h-4 text-slate-400"></i>Hóa đơn gần đây</div>
+                <a href="/mock-ui/platform/invoices.html" class="text-xs text-[color:var(--primary)] font-semibold">Tất cả</a>
+              </div>
+              <div class="divide-y divide-slate-100 text-sm">
+                <div class="py-2.5 flex items-center justify-between">
+                  <div><div class="font-medium">PINV-2026-000204</div><div class="text-xs text-slate-400">06/2026 · 1.200.000đ</div></div>
+                  <span class="badge b-green">Đã thu</span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <div><div class="font-medium">PINV-2026-000180</div><div class="text-xs text-slate-400">05/2026 · 1.200.000đ</div></div>
+                  <span class="badge b-green">Đã thu</span>
+                </div>
+                <div class="py-2.5 flex items-center justify-between">
+                  <div><div class="font-medium">PINV-2026-000151</div><div class="text-xs text-slate-400">04/2026 · 1.200.000đ</div></div>
+                  <span class="badge b-green">Đã thu</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

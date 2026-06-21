@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Thuê bao — Platform Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <div class="w-8 h-8 rounded-lg brand-grad grid place-items-center text-white font-bold">K</div>
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Platform Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/platform/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        >
+        <div class="nav-group">Khách hàng</div>
+        <a href="/mock-ui/platform/tenants.html" class="nav-item"
+          ><i data-lucide="building-2" class="w-4 h-4"></i>Trường thuê</a
+        ><a href="/mock-ui/platform/subscriptions.html" class="nav-item active"
+          ><i data-lucide="repeat" class="w-4 h-4"></i>Thuê bao</a
+        >
+        <div class="nav-group">Doanh thu</div>
+        <a href="/mock-ui/platform/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn nền tảng</a
+        ><a href="/mock-ui/platform/coupons.html" class="nav-item"
+          ><i data-lucide="ticket-percent" class="w-4 h-4"></i>Mã giảm giá</a
+        >
+        <div class="nav-group">Cấu hình</div>
+        <a href="/mock-ui/platform/plans.html" class="nav-item"
+          ><i data-lucide="package" class="w-4 h-4"></i>Gói dịch vụ</a
+        ><a href="/mock-ui/platform/login.html" class="nav-item"
+          ><i data-lucide="log-out" class="w-4 h-4"></i>Đăng xuất</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Khách hàng</div>
+            <div class="font-bold text-slate-800">Thuê bao</div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+            <div class="kpi"><div class="num text-emerald-600">98</div><div class="lbl">Đang hoạt động</div></div>
+            <div class="kpi"><div class="num text-amber-600">31</div><div class="lbl">Dùng thử</div></div>
+            <div class="kpi"><div class="num text-red-600">9</div><div class="lbl">Quá hạn</div></div>
+            <div class="kpi"><div class="num text-slate-500">6</div><div class="lbl">Đã hủy/hết hạn</div></div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <span class="chip active">Tất cả</span>
+            <span class="chip">TRIALING</span>
+            <span class="chip">ACTIVE</span>
+            <span class="chip">PAST_DUE</span>
+            <span class="chip">SUSPENDED</span>
+            <span class="chip">CANCELED</span>
+          </div>
+
+          <div class="card overflow-hidden">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Trường</th>
+                  <th>Gói</th>
+                  <th>Chu kỳ</th>
+                  <th>Trạng thái</th>
+                  <th>Kỳ hiện tại</th>
+                  <th>Tự gia hạn</th>
+                  <th>MRR</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const S = {
+        TRIALING: "b-amber",
+        ACTIVE: "b-green",
+        PAST_DUE: "b-red",
+        SUSPENDED: "b-slate",
+        CANCELED: "b-slate",
+      };
+      const rows = [
+        ["Hoa Mai Montessori", "Chuyên nghiệp", "Tháng", "ACTIVE", "12/06–12/07", "Bật", "1.2tr"],
+        ["Sao Việt Kids", "Chuyên nghiệp", "Quý", "ACTIVE", "Q2/2026", "Bật", "1.08tr"],
+        ["Rainbow Kids", "Hệ thống", "Năm", "ACTIVE", "2026", "Bật", "4.5tr"],
+        ["Mầm non ABC", "Khởi đầu", "—", "TRIALING", "Trial 30 ngày", "—", "0đ"],
+        ["Little Stars", "Chuyên nghiệp", "Tháng", "PAST_DUE", "Trễ 5 ngày", "Bật", "1.2tr"],
+        ["Eduplay+", "Chuyên nghiệp", "Tháng", "SUSPENDED", "Đã khóa", "Tắt", "1.2tr"],
+        ["Happy Bear", "Hệ thống (dedicated)", "Hợp đồng", "ACTIVE", "Theo HĐ", "—", "—"],
+      ];
+      document.getElementById("rows").innerHTML = rows
+        .map(
+          ([name, plan, cycle, st, period, renew, mrr]) => `
+        <tr class="hover:bg-[#fff8f3] cursor-pointer" onclick="location.href='/mock-ui/platform/tenant-detail.html'">
+          <td class="font-semibold">${name}</td><td>${plan}</td><td>${cycle}</td>
+          <td><span class="badge ${S[st]}">${st}</span></td><td>${period}</td>
+          <td>${renew}</td><td class="font-semibold">${mrr}</td>
+        </tr>`,
+        )
+        .join("");
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

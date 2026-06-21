@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Gói dịch vụ — Platform Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <div class="w-8 h-8 rounded-lg brand-grad grid place-items-center text-white font-bold">K</div>
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Platform Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/platform/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        >
+        <div class="nav-group">Khách hàng</div>
+        <a href="/mock-ui/platform/tenants.html" class="nav-item"
+          ><i data-lucide="building-2" class="w-4 h-4"></i>Trường thuê</a
+        ><a href="/mock-ui/platform/subscriptions.html" class="nav-item"
+          ><i data-lucide="repeat" class="w-4 h-4"></i>Thuê bao</a
+        >
+        <div class="nav-group">Doanh thu</div>
+        <a href="/mock-ui/platform/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn nền tảng</a
+        ><a href="/mock-ui/platform/coupons.html" class="nav-item"
+          ><i data-lucide="ticket-percent" class="w-4 h-4"></i>Mã giảm giá</a
+        >
+        <div class="nav-group">Cấu hình</div>
+        <a href="/mock-ui/platform/plans.html" class="nav-item active"
+          ><i data-lucide="package" class="w-4 h-4"></i>Gói dịch vụ</a
+        ><a href="/mock-ui/platform/login.html" class="nav-item"
+          ><i data-lucide="log-out" class="w-4 h-4"></i>Đăng xuất</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Cấu hình</div>
+            <div class="font-bold text-slate-800">Gói dịch vụ</div>
+          </div>
+          <button
+            class="btn-primary inline-flex items-center gap-2 text-sm"
+            onclick="toast('Mock: tạo gói mới')"
+          >
+            <i data-lucide="plus" class="w-4 h-4"></i>Thêm gói
+          </button>
+        </header>
+        <main class="p-6">
+          <div id="grid" class="grid md:grid-cols-2 xl:grid-cols-4 gap-5"></div>
+          <p class="text-xs text-slate-400 mt-5">
+            Mỗi gói gồm: giá theo chu kỳ (tháng/quý/năm), feature flag bật/tắt tính năng, và hạn mức
+            (quota) theo metric. Sửa gói không ảnh hưởng thuê bao đang chạy cho tới kỳ kế.
+          </p>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      const FEAT = {
+        messaging: "Nhắn tin GV↔PH",
+        media_gallery: "Album ảnh lớp",
+        lesson_plan: "Giáo án",
+        analytics: "Phân tích nâng cao",
+        api_access: "API truy cập",
+      };
+      const plans = [
+        {
+          code: "starter", name: "Khởi đầu", tier: "STARTER", accent: "b-peach",
+          price: "Miễn phí", sub: "Dùng thử 30 ngày",
+          feats: { messaging: 1, media_gallery: 0, lesson_plan: 0, analytics: 0, api_access: 0 },
+          limits: "50 HS · 10 GV · 5 lớp · 1GB", count: 65,
+        },
+        {
+          code: "pro", name: "Chuyên nghiệp", tier: "PRO", accent: "b-blue", popular: true,
+          price: "1.200.000đ", sub: "/tháng · quý 3.24tr · năm 12.24tr",
+          feats: { messaging: 1, media_gallery: 1, lesson_plan: 1, analytics: 1, api_access: 0 },
+          limits: "500 HS · 80 GV · 40 lớp · 20GB", count: 54,
+        },
+        {
+          code: "enterprise", name: "Hệ thống", tier: "ENTERPRISE", accent: "b-green",
+          price: "Liên hệ", sub: "Chuỗi nhiều cơ sở",
+          feats: { messaging: 1, media_gallery: 1, lesson_plan: 1, analytics: 1, api_access: 1 },
+          limits: "Không giới hạn", count: 23,
+        },
+        {
+          code: "dedicated", name: "Triển khai riêng", tier: "CUSTOM", accent: "b-slate", hidden: true,
+          price: "Hợp đồng", sub: "Deploy riêng (SILO) · white-label",
+          feats: { messaging: 1, media_gallery: 1, lesson_plan: 1, analytics: 1, api_access: 1 },
+          limits: "Không giới hạn", count: 3,
+        },
+      ];
+      const featRow = (on, label) =>
+        `<div class="flex items-center gap-2 ${on ? "" : "text-slate-300"}">
+          <i data-lucide="${on ? "check" : "x"}" class="w-4 h-4 ${on ? "text-emerald-500" : "text-slate-300"}"></i>${label}</div>`;
+      document.getElementById("grid").innerHTML = plans
+        .map(
+          (p) => `
+        <div class="card p-5 flex flex-col ${p.popular ? "ring-2 ring-[color:var(--primary)]" : ""}">
+          <div class="flex items-center justify-between">
+            <span class="badge ${p.accent}">${p.tier}</span>
+            ${p.popular ? '<span class="badge b-green">Phổ biến</span>' : p.hidden ? '<span class="badge b-slate">Ẩn</span>' : ""}
+          </div>
+          <div class="font-bold text-lg mt-3">${p.name}</div>
+          <div class="text-2xl font-bold mt-1">${p.price}</div>
+          <div class="text-xs text-slate-400">${p.sub}</div>
+          <div class="text-xs text-slate-400 mt-2">${p.count} trường đang dùng</div>
+          <div class="border-t border-slate-100 my-3"></div>
+          <div class="text-sm space-y-1.5 flex-1">
+            ${Object.keys(FEAT).map((k) => featRow(p.feats[k], FEAT[k])).join("")}
+          </div>
+          <div class="text-xs text-slate-500 bg-[#fff8f3] rounded-lg p-2.5 mt-3">
+            <b>Hạn mức:</b> ${p.limits}
+          </div>
+          <button class="btn-soft w-full mt-3 text-sm" onclick="toast('Mock: sửa gói ${p.code}')">Sửa gói</button>
+        </div>`,
+        )
+        .join("");
+      lucide.createIcons();
+    </script>
+  </body>
+</html>
