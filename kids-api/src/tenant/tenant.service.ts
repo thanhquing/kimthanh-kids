@@ -1,4 +1,9 @@
-import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+} from "@nestjs/common";
 import { LimitMetric, TenantRole, UserType } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
@@ -9,7 +14,8 @@ import { PrismaService } from "../prisma/prisma.service";
  * Vai trò → quota tính phí khi tạo tài khoản:
  * - TEACHER → TEACHERS (giới hạn "số giáo viên" của gói).
  * - SCHOOL_ADMIN/PRINCIPAL/NURSE/FINANCE → ADMIN_USERS (tài khoản quản lý/nghiệp vụ).
- * - PARENT → null (không tính: phụ huynh không giới hạn).
+ * - PARENT → null ở counter; thay vào đó bị chặn theo giới hạn STUDENTS
+ *   (1 học sinh ~ 1 phụ huynh đại diện) — xem assertParentWithinStudentLimit.
  */
 function quotaMetricForRole(role: TenantRole): LimitMetric | null {
   if (role === TenantRole.TEACHER) return LimitMetric.TEACHERS;
@@ -100,7 +106,10 @@ export class TenantService {
         message: "Email hoặc số điện thoại đã được dùng trong trường",
       });
 
-    // Tiêu quota theo vai trò (PARENT không tính). HARD vượt hạn → 403 QUOTA_EXCEEDED.
+    // Phụ huynh bị giới hạn theo số học sinh của gói (1 HS ~ 1 PH đại diện).
+    if (input.role === TenantRole.PARENT) await this.assertParentWithinStudentLimit(tenantId);
+
+    // Tiêu quota theo vai trò (PARENT không tính counter). HARD vượt hạn → 403 QUOTA_EXCEEDED.
     const metric = quotaMetricForRole(input.role);
     if (metric) await this.entitlements.consumeQuota(tenantId, metric);
 
@@ -122,6 +131,24 @@ export class TenantService {
       if (metric) await this.entitlements.releaseQuota(tenantId, metric);
       throw e;
     }
+  }
+
+  /**
+   * Số tài khoản phụ huynh ≤ giới hạn học sinh của gói (theo dõi trực tiếp số membership PARENT,
+   * nên tự bám theo STUDENTS kể cả khi platform override). STUDENTS null = không giới hạn.
+   */
+  private async assertParentWithinStudentLimit(tenantId: string) {
+    const { limits } = await this.entitlements.resolve(tenantId);
+    const cap = limits.STUDENTS?.limitValue ?? null;
+    if (cap === null) return;
+    const count = await this.prisma.system.membership.count({
+      where: { tenantId, role: TenantRole.PARENT, deletedAt: null },
+    });
+    if (count >= cap)
+      throw new ForbiddenException({
+        code: "QUOTA_EXCEEDED",
+        message: `Đã đạt giới hạn số phụ huynh (theo số học sinh của gói: ${cap})`,
+      });
   }
 
   listDomains(tenantId: string) {

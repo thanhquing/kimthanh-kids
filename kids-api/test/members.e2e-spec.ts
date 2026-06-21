@@ -1,9 +1,18 @@
 import { INestApplication } from "@nestjs/common";
 import request from "supertest";
-import { TenantFixture, bootstrap, createTenant, rnd } from "./helpers";
+import { PrismaService } from "../src/prisma/prisma.service";
+import {
+  PLATFORM_HOST,
+  TenantFixture,
+  bootstrap,
+  createTenant,
+  loginPlatform,
+  rnd,
+} from "./helpers";
 
 describe("Tạo tài khoản thành viên — định danh email/phone + login cả hai", () => {
   let app: INestApplication;
+  let prisma: PrismaService;
   const api = () => request(app.getHttpServer());
   const auth = (t: TenantFixture, token = t.adminToken) => ({
     Host: t.host,
@@ -13,6 +22,7 @@ describe("Tạo tài khoản thành viên — định danh email/phone + login c
 
   beforeAll(async () => {
     app = await bootstrap();
+    prisma = app.get(PrismaService);
   });
   afterAll(async () => app.close());
 
@@ -105,7 +115,7 @@ describe("Tạo tài khoản thành viên — định danh email/phone + login c
     const blocked = await mkTeacher("Cô C").expect(403);
     expect(blocked.body.error.code).toBe("QUOTA_EXCEEDED");
 
-    // phụ huynh không tiêu quota giáo viên → vẫn tạo được
+    // phụ huynh không tiêu quota giáo viên → vẫn tạo được (Free STUDENTS=20 > 0)
     await api()
       .post("/api/tenant/members")
       .set(auth(t))
@@ -116,6 +126,40 @@ describe("Tạo tài khoản thành viên — định danh email/phone + login c
         password: "Password123",
       })
       .expect(201);
+  });
+
+  it("PARENT giới hạn theo STUDENTS (override=1): phụ huynh thứ 2 → 403 QUOTA_EXCEEDED", async () => {
+    const t = await createTenant(app);
+    const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
+    const ptoken = await loginPlatform(app);
+    await api()
+      .post(`/api/platform/tenants/${tenant!.id}/entitlements`)
+      .set("Host", PLATFORM_HOST)
+      .set("Authorization", `Bearer ${ptoken}`)
+      .send({ metric: "STUDENTS", limitValue: 1 })
+      .expect(201);
+
+    await api()
+      .post("/api/tenant/members")
+      .set(auth(t))
+      .send({
+        phone: randomPhone(),
+        fullName: "Phụ huynh 1",
+        role: "PARENT",
+        password: "Password123",
+      })
+      .expect(201);
+    const blocked = await api()
+      .post("/api/tenant/members")
+      .set(auth(t))
+      .send({
+        phone: randomPhone(),
+        fullName: "Phụ huynh 2",
+        role: "PARENT",
+        password: "Password123",
+      })
+      .expect(403);
+    expect(blocked.body.error.code).toBe("QUOTA_EXCEEDED");
   });
 
   it("không phải chủ trường/hiệu trưởng → không tạo được tài khoản (403)", async () => {
