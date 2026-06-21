@@ -690,6 +690,11 @@ model Student {
   parents     StudentParent[]
   attendance  Attendance[]
   dailyReports DailyReport[]
+  healthRecords    HealthRecord[]
+  medicineRequests MedicineRequest[]
+  incidents        Incident[]
+  allergies        Allergy[]
+  leaveRequests    LeaveRequest[]
 
   @@index([tenantId])
   @@index([schoolId])
@@ -803,4 +808,160 @@ model Media {
 
   @@index([tenantId])
   @@map("media")
+}
+
+// ──────────── D — Sức khỏe (Phase 1) ────────────
+
+enum MedicineStatus {
+  PENDING
+  APPROVED
+  ADMINISTERED
+  REJECTED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum LeaveType {
+  SICK
+  FAMILY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// D1 — Hồ sơ sức khỏe (y tá ghi: chiều cao/cân nặng/thân nhiệt). Nguồn dữ liệu biểu đồ tăng trưởng.
+model HealthRecord {
+  id           String   @id @default(uuid())
+  tenantId     String
+  schoolId     String
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date         DateTime @db.Date
+  heightCm     Float?
+  weightKg     Float?
+  temperatureC Float?
+  note         String?
+  recordedById String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([studentId, date])
+  @@index([schoolId])
+  @@map("health_records")
+}
+
+// D2 — Yêu cầu cho uống thuốc: PH tạo → y tá duyệt/từ chối/đánh dấu đã cho uống.
+model MedicineRequest {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  schoolId      String
+  studentId     String
+  student       Student                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  medicineName  String
+  dosage        String
+  schedule      String // giờ uống, dạng text: "8h, 14h"
+  startDate     DateTime                @db.Date
+  endDate       DateTime                @db.Date
+  reason        String?
+  status        MedicineStatus          @default(PENDING)
+  requestedById String? // phụ huynh tạo
+  handledById   String? // y tá/GV xử lý
+  handledAt     DateTime?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  history       MedicineStatusHistory[]
+
+  @@index([tenantId])
+  @@index([studentId])
+  @@index([schoolId, status])
+  @@map("medicine_requests")
+}
+
+// Timeline đổi trạng thái + ghi chú y tá cho mỗi yêu cầu thuốc.
+model MedicineStatusHistory {
+  id        String          @id @default(uuid())
+  tenantId  String
+  requestId String
+  request   MedicineRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  status    MedicineStatus
+  note      String?
+  actorId   String?
+  createdAt DateTime        @default(now())
+
+  @@index([tenantId])
+  @@index([requestId, createdAt])
+  @@map("medicine_status_history")
+}
+
+// D3 — Sự cố (té ngã, ốm…) — staff ghi, sẽ notify PH (đẩy sau).
+model Incident {
+  id           String           @id @default(uuid())
+  tenantId     String
+  schoolId     String
+  studentId    String
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date         DateTime         @db.Date
+  type         String // phân loại tự do: "Té ngã" | "Sốt" | "Xô xát"...
+  severity     IncidentSeverity @default(LOW)
+  description  String
+  actionTaken  String?
+  reportedById String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([tenantId])
+  @@index([studentId])
+  @@index([schoolId, date])
+  @@map("incidents")
+}
+
+// Dị ứng — dùng cảnh báo thực đơn (F3) về sau.
+model Allergy {
+  id        String   @id @default(uuid())
+  tenantId  String
+  schoolId  String
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  allergen  String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, allergen])
+  @@index([tenantId])
+  @@map("allergies")
+}
+
+// D4 — Đơn xin nghỉ: PH tạo → GV/admin duyệt.
+model LeaveRequest {
+  id            String      @id @default(uuid())
+  tenantId      String
+  schoolId      String
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  leaveType     LeaveType
+  startDate     DateTime    @db.Date
+  endDate       DateTime    @db.Date
+  reason        String?
+  attachmentUrl String?
+  status        LeaveStatus @default(PENDING)
+  requestedById String? // phụ huynh tạo
+  handledById   String? // GV/admin duyệt
+  handledAt     DateTime?
+  decisionNote  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([tenantId])
+  @@index([studentId])
+  @@index([schoolId, status])
+  @@map("leave_requests")
 }

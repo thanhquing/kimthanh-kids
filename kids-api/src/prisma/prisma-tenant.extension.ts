@@ -27,6 +27,13 @@ const TENANT_KEY: Record<string, "id" | "tenantId"> = {
   Attendance: "tenantId",
   DailyReport: "tenantId",
   Media: "tenantId",
+  // ── D — Sức khỏe (Phase 1) ──
+  HealthRecord: "tenantId",
+  MedicineRequest: "tenantId",
+  MedicineStatusHistory: "tenantId",
+  Incident: "tenantId",
+  Allergy: "tenantId",
+  LeaveRequest: "tenantId",
 };
 
 /** Model có cột deletedAt → đọc tự bỏ bản ghi đã xoá. Soft-delete khi GHI là convention service. */

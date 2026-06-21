@@ -7,6 +7,10 @@ import { BillingModule } from "./billing/billing.module";
 import { AttendanceModule } from "./attendance/attendance.module";
 import { ClassroomsModule } from "./classrooms/classrooms.module";
 import { DailyReportsModule } from "./daily-reports/daily-reports.module";
+import { HealthModule } from "./health/health.module";
+import { IncidentsModule } from "./incidents/incidents.module";
+import { LeaveModule } from "./leave/leave.module";
+import { MedicineModule } from "./medicine/medicine.module";
 import { MediaModule } from "./media/media.module";
 import { StudentsModule } from "./students/students.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
@@ -40,6 +44,10 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     AttendanceModule,
     DailyReportsModule,
     MediaModule,
+    HealthModule,
+    MedicineModule,
+    IncidentsModule,
+    LeaveModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

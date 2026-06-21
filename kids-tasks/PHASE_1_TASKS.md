@@ -1,12 +1,13 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
-> ## ✅ Tiến độ (45 e2e pass / 6 suite · tsc + lint sạch)
-> - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
+> ## ✅ Tiến độ (51 e2e pass / 7 suite · tsc + lint sạch)
+> - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` + `recordScopeWhere`/`ownedStudentWhere` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
 > - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
 > - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).
 > - **Media (lưu nội bộ + nén):** `MediaService` dùng **sharp** — resize cạnh ≤ `MEDIA_MAX_DIM` (1280px), **webp** quality `MEDIA_QUALITY` (72, đủ cho PH xem), xoá metadata; lưu `MEDIA_ROOT/<tenantId>/<id>.webp`; quota `STORAGE_MB` (HARD); upload (staff) + serve (StreamableFile, cô lập theo tenant).
-> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** export CSV (cuối P1), reset mật khẩu thật + email (P2), push FCM (cuối P1/P2), seed demo + reconcile-counter (cuối P1).
-> - **Kế tiếp:** D (Sức khỏe: health records, medicine + duyệt, incidents, leave + duyệt).
+> - **D — Sức khỏe:** Health (y tá ghi chỉ số + API growth chiều cao/cân nặng) · Medicine (PH tạo → y tá duyệt/từ chối/đánh dấu đã uống, có `MedicineStatusHistory` timeline + ràng buộc chuyển trạng thái) · Incidents (staff ghi, PH xem con) + Allergies (unique studentId+allergen, cho cảnh báo thực đơn F3) · Leave (PH tạo → GV/admin duyệt 1 lần). Quyền xem dùng `recordScopeWhere`/`ownedStudentWhere`.
+> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** export CSV (cuối P1), reset mật khẩu thật + email (P2), push FCM + notify incidents/leave (cuối P1/P2), seed demo + reconcile-counter (cuối P1).
+> - **Kế tiếp:** E (Tài chính học phí: TuitionInvoice + TuitionPayment + cổng VNPay/Momo).
 
 > **Chiến lược:** API-first toàn bộ. Làm **dứt điểm tất cả các phase API** (`kids-api`) trước; **UI/UX** (kids-crm, kids-mobile-native, kids-mobile-web) là **phase riêng SAU CÙNG**, tiêu thụ lại API đã ổn định. File này chỉ liệt kê **task API**.
 >
@@ -61,22 +62,22 @@
 
 ## D. Sức khỏe (P0–P1)
 
-### D1. Health records — *mock: health-records*
-- [ ] **P0** Model `HealthRecord` (heightCm, weightKg, temperatureC, date, recordedById) — y tá ghi.
-- [ ] **P1** API tăng trưởng (gap): dữ liệu biểu đồ chiều cao/cân nặng theo thời gian.
+### D1. Health records — *mock: health-records* ✅
+- [x] **P0** Model `HealthRecord` (heightCm, weightKg, temperatureC, date, recordedById) — y tá ghi.
+- [x] **P1** API tăng trưởng (gap): dữ liệu biểu đồ chiều cao/cân nặng theo thời gian (`GET /health/student/:id/growth`).
 
-### D2. Medicine requests — *mock: medicine-list/create/detail (PH) → medicine-approve (GV/NURSE)*
-- [ ] **P0** Model `MedicineRequest` (medicineName, dosage, schedule, startDate, endDate, reason, status PENDING/APPROVED/ADMINISTERED/REJECTED, handledById).
-- [ ] **P0** Model `MedicineStatusHistory` (gap): timeline đổi trạng thái + ghi chú y tá.
-- [ ] API: PH tạo/track; y tá duyệt/từ chối/đánh dấu đã cho uống.
+### D2. Medicine requests — *mock: medicine-list/create/detail (PH) → medicine-approve (GV/NURSE)* ✅
+- [x] **P0** Model `MedicineRequest` (medicineName, dosage, schedule, startDate, endDate, reason, status PENDING/APPROVED/ADMINISTERED/REJECTED, handledById).
+- [x] **P0** Model `MedicineStatusHistory` (gap): timeline đổi trạng thái + ghi chú y tá.
+- [x] API: PH tạo/track (`/mine`); y tá duyệt/từ chối/đánh dấu đã cho uống (`/:id/handle`, ràng buộc ADMINISTERED phải sau APPROVED).
 
-### D3. Incidents & Allergies — *mock: incidents*
-- [ ] **P1** Model `Incident` (date, type, severity LOW/MEDIUM/HIGH, description, actionTaken, reportedById) + notify PH.
-- [ ] **P1** Model `Allergy` (studentId, allergen) — dùng cảnh báo thực đơn.
+### D3. Incidents & Allergies — *mock: incidents* ✅
+- [x] **P1** Model `Incident` (date, type, severity LOW/MEDIUM/HIGH, description, actionTaken, reportedById). *(notify PH đẩy sau cùng push FCM.)*
+- [x] **P1** Model `Allergy` (studentId, allergen, unique) — dùng cảnh báo thực đơn (F3).
 
-### D4. Leave requests (gap) — *mock: leave-request (PH); thiếu màn GV duyệt*
-- [ ] **P0** Model `LeaveRequest` (studentId, leaveType SICK/FAMILY/OTHER, dates, reason, attachmentUrl, status PENDING/APPROVED/REJECTED).
-- [ ] **P0** API: PH tạo; **GV/admin duyệt** (bổ sung nghiệp vụ còn thiếu).
+### D4. Leave requests (gap) — *mock: leave-request (PH); thiếu màn GV duyệt* ✅
+- [x] **P0** Model `LeaveRequest` (studentId, leaveType SICK/FAMILY/OTHER, dates, reason, attachmentUrl, status PENDING/APPROVED/REJECTED).
+- [x] **P0** API: PH tạo (`/mine`); **GV/admin duyệt** (`/:id/decide`, chỉ xử lý 1 lần khi PENDING).
 
 ---
 

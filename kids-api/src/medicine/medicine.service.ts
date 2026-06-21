@@ -1,0 +1,129 @@
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { MedicineStatus } from "@prisma/client";
+import { AuthUser } from "../common/decorators/current-user.decorator";
+import { ownedStudentWhere, recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
+import { PrismaService } from "../prisma/prisma.service";
+
+export interface CreateMedicineInput {
+  studentId: string;
+  medicineName: string;
+  dosage: string;
+  schedule: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;
+  reason?: string;
+}
+
+// Trạng thái y tá được phép chuyển tới (từ PENDING/APPROVED).
+const HANDLE_TARGETS: MedicineStatus[] = [
+  MedicineStatus.APPROVED,
+  MedicineStatus.REJECTED,
+  MedicineStatus.ADMINISTERED,
+];
+
+@Injectable()
+export class MedicineService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  /** PH (hoặc staff) tạo yêu cầu cho con/học sinh; mở timeline với mốc PENDING. */
+  async create(user: AuthUser, input: CreateMedicineInput) {
+    const student = await this.prisma.db.student.findFirst({
+      where: ownedStudentWhere(user, input.studentId),
+      select: { id: true, schoolId: true },
+    });
+    if (!student)
+      throw new NotFoundException({ code: "NO_STUDENT", message: "Không tìm thấy học sinh" });
+
+    return this.prisma.db.medicineRequest.create({
+      data: {
+        schoolId: student.schoolId,
+        studentId: input.studentId,
+        medicineName: input.medicineName,
+        dosage: input.dosage,
+        schedule: input.schedule,
+        startDate: new Date(input.startDate),
+        endDate: new Date(input.endDate),
+        reason: input.reason,
+        requestedById: user.id,
+        history: {
+          create: {
+            tenantId: user.tenantId!, // nested create KHÔNG được extension auto-gán
+            status: MedicineStatus.PENDING,
+            note: "Phụ huynh tạo yêu cầu",
+            actorId: user.id,
+          },
+        },
+      } as never,
+    });
+  }
+
+  /** Yêu cầu của các con phụ huynh đang đăng nhập. */
+  listMine(user: AuthUser) {
+    return this.prisma.db.medicineRequest.findMany({
+      where: { student: { parents: { some: { parentId: user.id } } } },
+      include: { student: { select: { id: true, fullName: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /** Danh sách cho staff (lọc theo trạng thái); mặc định PENDING để duyệt. */
+  listForStaff(user: AuthUser, status?: MedicineStatus) {
+    return this.prisma.db.medicineRequest.findMany({
+      where: { ...schoolWhere(user), ...(status ? { status } : {}) },
+      include: { student: { select: { id: true, fullName: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /** Chi tiết + timeline — staff (school-scope) hoặc phụ huynh sở hữu. */
+  async get(user: AuthUser, id: string) {
+    const req = await this.prisma.db.medicineRequest.findFirst({
+      where: { id, ...recordScopeWhere(user) },
+      include: {
+        student: { select: { id: true, fullName: true } },
+        history: { orderBy: { createdAt: "asc" } },
+      },
+    });
+    if (!req)
+      throw new NotFoundException({
+        code: "NO_MEDICINE_REQUEST",
+        message: "Không tìm thấy yêu cầu",
+      });
+    return req;
+  }
+
+  /** Y tá/staff duyệt / từ chối / đánh dấu đã cho uống — ghi thêm mốc timeline. */
+  async handle(user: AuthUser, id: string, status: MedicineStatus, note?: string) {
+    if (!HANDLE_TARGETS.includes(status))
+      throw new BadRequestException({ code: "BAD_STATUS", message: "Trạng thái không hợp lệ" });
+
+    const req = await this.prisma.db.medicineRequest.findFirst({
+      where: { id, ...schoolWhere(user) },
+      select: { id: true, status: true },
+    });
+    if (!req)
+      throw new NotFoundException({
+        code: "NO_MEDICINE_REQUEST",
+        message: "Không tìm thấy yêu cầu",
+      });
+    if (req.status === MedicineStatus.REJECTED)
+      throw new BadRequestException({ code: "ALREADY_REJECTED", message: "Yêu cầu đã bị từ chối" });
+    // Chỉ cho ADMINISTERED khi đã APPROVED.
+    if (status === MedicineStatus.ADMINISTERED && req.status !== MedicineStatus.APPROVED)
+      throw new BadRequestException({
+        code: "NOT_APPROVED",
+        message: "Cần duyệt trước khi đánh dấu đã cho uống",
+      });
+
+    const [updated] = await this.prisma.db.$transaction([
+      this.prisma.db.medicineRequest.update({
+        where: { id },
+        data: { status, handledById: user.id, handledAt: new Date() },
+      }),
+      this.prisma.db.medicineStatusHistory.create({
+        data: { tenantId: user.tenantId!, requestId: id, status, note, actorId: user.id } as never,
+      }),
+    ]);
+    return updated;
+  }
+}

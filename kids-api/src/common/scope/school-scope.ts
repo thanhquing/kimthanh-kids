@@ -43,3 +43,25 @@ export function defaultSchoolId(user: AuthUser): string | null {
   if (user.allowedSchoolIds && user.allowedSchoolIds.length === 1) return user.allowedSchoolIds[0];
   return null;
 }
+
+/**
+ * WHERE-fragment đọc bản ghi domain (có cột `schoolId` + quan hệ `student`) theo quyền xem:
+ * - staff → school-scope (`schoolWhere`).
+ * - phụ huynh → chỉ bản ghi của con mình.
+ */
+export function recordScopeWhere(user: AuthUser): object {
+  return isStaff(user)
+    ? schoolWhere(user)
+    : { student: { parents: { some: { parentId: user.id } } } };
+}
+
+/**
+ * WHERE để tìm 1 học sinh mà user được phép thao tác:
+ * - staff → trong school-scope.
+ * - phụ huynh → phải là con mình.
+ */
+export function ownedStudentWhere(user: AuthUser, studentId: string): object {
+  return isStaff(user)
+    ? { id: studentId, ...schoolWhere(user) }
+    : { id: studentId, parents: { some: { parentId: user.id } } };
+}
