@@ -273,4 +273,96 @@ describe("Phase 1 — D. Sức khỏe (health/medicine/incidents/leave)", () => 
       .send({ studentId: s1, leaveType: "OTHER", startDate: "2026-06-24", endDate: "2026-06-22" })
       .expect(400);
   });
+
+  // ── D: nhánh từ chối + ranh giới quyền (rủi ro khi ghép UI) ──
+  it("D2: nhánh REJECT — từ chối rồi không xử lý lại được; PARENT không được /handle (403)", async () => {
+    const created = await api()
+      .post("/api/medicine")
+      .set(auth(t, parent.token))
+      .send({
+        studentId: s1,
+        medicineName: "Siro ho",
+        dosage: "5ml",
+        schedule: "20h",
+        startDate: "2026-06-25",
+        endDate: "2026-06-26",
+      })
+      .expect(201);
+    const id = created.body.data.id;
+
+    // PARENT không được xử lý
+    await api()
+      .post(`/api/medicine/${id}/handle`)
+      .set(auth(t, parent.token))
+      .send({ status: "APPROVED" })
+      .expect(403);
+
+    const rejected = await api()
+      .post(`/api/medicine/${id}/handle`)
+      .set(auth(t))
+      .send({ status: "REJECTED", note: "Thiếu đơn thuốc" })
+      .expect(201);
+    expect(rejected.body.data.status).toBe("REJECTED");
+
+    // đã reject → mọi xử lý tiếp đều 400
+    await api()
+      .post(`/api/medicine/${id}/handle`)
+      .set(auth(t))
+      .send({ status: "APPROVED" })
+      .expect(400);
+  });
+
+  it("D4: nhánh REJECT; PARENT không được /decide (403)", async () => {
+    const created = await api()
+      .post("/api/leave")
+      .set(auth(t, parent.token))
+      .send({ studentId: s1, leaveType: "FAMILY", startDate: "2026-07-01", endDate: "2026-07-02" })
+      .expect(201);
+    const id = created.body.data.id;
+
+    await api()
+      .post(`/api/leave/${id}/decide`)
+      .set(auth(t, parent.token))
+      .send({ status: "APPROVED" })
+      .expect(403);
+
+    const res = await api()
+      .post(`/api/leave/${id}/decide`)
+      .set(auth(t))
+      .send({ status: "REJECTED", note: "Trùng lịch sự kiện" })
+      .expect(201);
+    expect(res.body.data.status).toBe("REJECTED");
+  });
+
+  it("D1/D3: PARENT không được tạo health record / allergy / incident (403); staff xoá allergy + list incidents", async () => {
+    await api()
+      .post("/api/health")
+      .set(auth(t, parent.token))
+      .send({ studentId: s1, date: "2026-06-25", heightCm: 96 })
+      .expect(403);
+    await api()
+      .post("/api/allergies")
+      .set(auth(t, parent.token))
+      .send({ studentId: s1, allergen: "Hải sản" })
+      .expect(403);
+    await api()
+      .post("/api/incidents")
+      .set(auth(t, parent.token))
+      .send({ studentId: s1, date: "2026-06-25", type: "x", description: "y" })
+      .expect(403);
+
+    // staff: danh sách sự cố toàn trường
+    const incidents = await api().get("/api/incidents").set(auth(t)).expect(200);
+    expect(incidents.body.data.length).toBeGreaterThanOrEqual(1);
+
+    // staff: tạo rồi xoá allergy
+    const al = await api()
+      .post("/api/allergies")
+      .set(auth(t))
+      .send({ studentId: s2, allergen: "Phấn hoa" })
+      .expect(201);
+    await api().delete(`/api/allergies/${al.body.data.id}`).set(auth(t)).expect(200);
+    const after = await api().get(`/api/allergies/student/${s2}`).set(auth(t)).expect(200);
+    expect(after.body.data.find((a: { id: string }) => a.id === al.body.data.id)).toBeUndefined();
+  });
 });

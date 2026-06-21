@@ -166,4 +166,80 @@ describe("Phase 1 — domain (classrooms / students / guardians)", () => {
     const aList = await api().get("/api/students").set(auth(t)).expect(200);
     expect(aList.body.data.length).toBe(2);
   });
+
+  // ─────────── B: cập nhật / xoá học sinh ───────────
+  it("cập nhật học sinh (PATCH) → phản ánh; xoá (soft-delete) → biến khỏi list", async () => {
+    const t = await createTenant(app);
+    const school = await mainSchool(t);
+    const st = await createStudent(t, school, "Bé Cũ").expect(201);
+    const id = st.body.data.id;
+
+    const upd = await api()
+      .patch(`/api/students/${id}`)
+      .set(auth(t))
+      .send({ fullName: "Bé Mới", status: "INACTIVE" })
+      .expect(200);
+    expect(upd.body.data.fullName).toBe("Bé Mới");
+    expect(upd.body.data.status).toBe("INACTIVE");
+
+    await api().delete(`/api/students/${id}`).set(auth(t)).expect(200);
+    const list = await api().get("/api/students").set(auth(t)).expect(200);
+    expect(list.body.data.find((s: { id: string }) => s.id === id)).toBeUndefined();
+    // GET bản ghi đã xoá → 404
+    await api().get(`/api/students/${id}`).set(auth(t)).expect(404);
+  });
+
+  // ─────────── B: gán / gỡ phụ huynh rời ───────────
+  it("gán + gỡ phụ huynh qua endpoint guardians; /mine của PH cập nhật theo", async () => {
+    const t = await createTenant(app);
+    const school = await mainSchool(t);
+    const st = await createStudent(t, school, "Bé Có PH").expect(201);
+    const id = st.body.data.id;
+    const parent = await invite(t, "PARENT");
+
+    // gán
+    await api()
+      .post(`/api/students/${id}/guardians`)
+      .set(auth(t))
+      .send({ parentId: parent.userId, relationship: "Ba", isPrimary: true })
+      .expect(201);
+    let mine = await api().get("/api/students/mine").set(auth(t, parent.token)).expect(200);
+    expect(mine.body.data.length).toBe(1);
+
+    const detail = await api().get(`/api/students/${id}`).set(auth(t)).expect(200);
+    expect(detail.body.data.parents.length).toBe(1);
+
+    // gỡ
+    await api().delete(`/api/students/${id}/guardians/${parent.userId}`).set(auth(t)).expect(200);
+    mine = await api().get("/api/students/mine").set(auth(t, parent.token)).expect(200);
+    expect(mine.body.data.length).toBe(0);
+  });
+
+  // ─────────── B: classroom CRUD + sĩ số ───────────
+  it("classroom: get (sĩ số) + update + delete (soft-delete khỏi list)", async () => {
+    const t = await createTenant(app);
+    const school = await mainSchool(t);
+    const cls = await api()
+      .post("/api/classrooms")
+      .set(auth(t))
+      .send({ schoolId: school, name: "Lớp Lá A", capacity: 20 })
+      .expect(201);
+    const id = cls.body.data.id;
+    await createStudent(t, school, "HS A", { classroomId: id }).expect(201);
+    await createStudent(t, school, "HS B", { classroomId: id }).expect(201);
+
+    const got = await api().get(`/api/classrooms/${id}`).set(auth(t)).expect(200);
+    expect(got.body.data._count.students).toBe(2);
+
+    const upd = await api()
+      .patch(`/api/classrooms/${id}`)
+      .set(auth(t))
+      .send({ name: "Lớp Lá A1", capacity: 25 })
+      .expect(200);
+    expect(upd.body.data.name).toBe("Lớp Lá A1");
+
+    await api().delete(`/api/classrooms/${id}`).set(auth(t)).expect(200);
+    const list = await api().get("/api/classrooms").set(auth(t)).expect(200);
+    expect(list.body.data.find((c: { id: string }) => c.id === id)).toBeUndefined();
+  });
 });

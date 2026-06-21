@@ -157,4 +157,77 @@ describe("Phase 1 — attendance / daily reports", () => {
       .send({ classroomId, date: today, entries: [{ studentId: s1, status: "PRESENT" }] })
       .expect(403);
   });
+
+  it("điểm danh lớp không tồn tại → 404 NO_CLASSROOM", async () => {
+    const res = await api()
+      .post("/api/attendance/mark")
+      .set(auth(t))
+      .send({
+        classroomId: "00000000-0000-0000-0000-000000000000",
+        date: today,
+        entries: [{ studentId: s1, status: "PRESENT" }],
+      })
+      .expect(404);
+    expect(res.body.error.code).toBe("NO_CLASSROOM");
+  });
+
+  it("điểm danh học sinh ngoài lớp → bị bỏ qua (skipped), không tạo bản ghi", async () => {
+    const other = await api()
+      .post("/api/students")
+      .set(auth(t))
+      .send({ schoolId, fullName: "Bé Ngoài Lớp", dateOfBirth: "2021-03-03", gender: "MALE" })
+      .expect(201);
+    const res = await api()
+      .post("/api/attendance/mark")
+      .set(auth(t))
+      .send({
+        classroomId,
+        date: "2026-06-22",
+        entries: [
+          { studentId: s1, status: "PRESENT" },
+          { studentId: other.body.data.id, status: "PRESENT" }, // không thuộc lớp
+        ],
+      })
+      .expect(201);
+    expect(res.body.data.marked).toBe(1);
+    expect(res.body.data.skipped).toBe(1);
+  });
+
+  it("PARENT không được soạn báo cáo (403)", async () => {
+    await api()
+      .post("/api/daily-reports")
+      .set(auth(t, parent.token))
+      .send({ studentId: s1, date: today, mood: "HAPPY" })
+      .expect(403);
+  });
+
+  it("soạn báo cáo cho học sinh không tồn tại → 404 NO_STUDENT", async () => {
+    const res = await api()
+      .post("/api/daily-reports")
+      .set(auth(t))
+      .send({ studentId: "00000000-0000-0000-0000-000000000000", date: today, mood: "HAPPY" })
+      .expect(404);
+    expect(res.body.error.code).toBe("NO_STUDENT");
+  });
+
+  it("báo cáo upsert: soạn lại cùng student+date → ghi đè, không nhân đôi", async () => {
+    await api()
+      .post("/api/daily-reports")
+      .set(auth(t))
+      .send({ studentId: s2, date: "2026-06-22", mood: "NEUTRAL", note: "v1" })
+      .expect(201);
+    await api()
+      .post("/api/daily-reports")
+      .set(auth(t))
+      .send({ studentId: s2, date: "2026-06-22", mood: "TIRED", note: "v2" })
+      .expect(201);
+    const byClass = await api()
+      .get(`/api/daily-reports?classroomId=${classroomId}&date=2026-06-22`)
+      .set(auth(t))
+      .expect(200);
+    const rows = byClass.body.data.filter((r: { studentId: string }) => r.studentId === s2);
+    expect(rows.length).toBe(1);
+    expect(rows[0].mood).toBe("TIRED");
+    expect(rows[0].note).toBe("v2");
+  });
 });
