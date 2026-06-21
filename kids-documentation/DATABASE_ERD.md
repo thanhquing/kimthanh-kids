@@ -232,3 +232,99 @@ erDiagram
 - `PlatformPayment`: `@@unique([provider, gatewayRef])` (idempotent webhook).
 - `PlatformWebhookEvent`: `@@unique([provider, eventId])` (dedupe).
 - `UsageCounter`: `@@unique([tenantId, metric])`.
+
+---
+
+## Tầng B — Domain (Phase 1, đang mở rộng)
+
+> Mỗi bảng domain có `tenantId` (scalar, extension auto-filter) + `schoolId` (nghiệp vụ, scope theo `allowedSchoolIds`).
+
+```mermaid
+erDiagram
+  School ||--o{ Classroom : ""
+  School ||--o{ Student : ""
+  Classroom ||--o{ Student : "xếp lớp (nullable)"
+  Student ||--o{ StudentParent : ""
+  User ||--o{ StudentParent : "parent (role PARENT)"
+  User ||--o{ Classroom : "homeroomTeacher"
+
+  Classroom {
+    uuid id PK
+    string tenantId
+    uuid schoolId FK
+    string name "UK theo (schoolId,name)"
+    string ageGroup
+    int capacity
+    uuid homeroomTeacherId FK
+    datetime deletedAt
+  }
+  Student {
+    uuid id PK
+    string tenantId
+    uuid schoolId FK
+    uuid classroomId FK "nullable"
+    string fullName
+    string nickname
+    date dateOfBirth
+    enum gender "MALE|FEMALE|OTHER"
+    enum status "ACTIVE|INACTIVE|GRADUATED|WITHDRAWN"
+    datetime deletedAt
+  }
+  StudentParent {
+    uuid studentId PK,FK
+    uuid parentId PK,FK
+    string tenantId
+    string relationship "Mẹ|Ba|..."
+    bool isPrimary
+  }
+```
+
+**Đã có:** `Classroom`, `Student`, `StudentParent`. Các bảng domain tiếp theo (Attendance, DailyReport, Health, Tuition, Announcement, Chat, Menu, LessonPlan, Notification…) sẽ thêm dần theo [kids-tasks/PHASE_1_TASKS.md](../kids-tasks/PHASE_1_TASKS.md), mỗi bảng đều mang `tenantId` + `schoolId`.
+
+### C — Điểm danh & Báo cáo + Media (Phase 1)
+
+```mermaid
+erDiagram
+  Student ||--o{ Attendance : ""
+  Classroom ||--o{ Attendance : ""
+  Student ||--o{ DailyReport : ""
+  Classroom ||--o{ DailyReport : ""
+
+  Attendance {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    uuid classroomId FK
+    date date "UK theo (studentId,date)"
+    enum status "PRESENT|LATE|ABSENT|EXCUSED"
+    datetime checkInAt
+    string note
+  }
+  DailyReport {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    uuid classroomId FK "nullable"
+    date date "UK theo (studentId,date)"
+    enum mood "HAPPY|NEUTRAL|TIRED|FUSSY"
+    string meals
+    string nap
+    string activities
+    string note
+  }
+  Media {
+    uuid id PK
+    string tenantId
+    uuid schoolId "nullable"
+    enum kind "REPORT_PHOTO|ALBUM|AVATAR|DOCUMENT|OTHER"
+    string path "<tenantId>/<id>.webp"
+    string mimeType
+    int sizeBytes
+    int width
+    int height
+  }
+```
+
+**Media — lưu trữ nội bộ + nén:** ảnh được nén bằng `sharp` (resize cạnh ≤ `MEDIA_MAX_DIM`=1280px, **webp** quality `MEDIA_QUALITY`=72, xoá metadata) trước khi ghi xuống `MEDIA_ROOT/<tenantId>/<id>.webp` — đủ chất lượng cho phụ huynh xem, tiết kiệm dung lượng. Quota `STORAGE_MB` enforce theo tổng `sizeBytes` của tenant. Phục vụ qua `GET /api/media/:id/file` (StreamableFile, cô lập theo tenant). Xem `kids-api/src/media/`.

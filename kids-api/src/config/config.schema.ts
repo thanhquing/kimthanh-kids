@@ -26,6 +26,11 @@ export const configSchema = z.object({
   VNPAY_TMN_CODE: z.string().optional().default(""),
   VNPAY_HASH_SECRET: z.string().optional().default(""),
   VNPAY_RETURN_URL: z.string().optional().default(""),
+
+  // ─── Media (lưu trữ nội bộ + nén) ───
+  MEDIA_ROOT: z.string().default("storage"),
+  MEDIA_MAX_DIM: z.coerce.number().int().positive().default(1280), // px cạnh dài nhất
+  MEDIA_QUALITY: z.coerce.number().int().min(40).max(95).default(72), // webp quality (đủ cho PH xem)
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

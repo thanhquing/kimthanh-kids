@@ -246,6 +246,8 @@ model School {
   createdById String?
   deletedAt   DateTime?
   memberships Membership[]
+  classrooms  Classroom[]
+  students    Student[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -266,6 +268,8 @@ model User {
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?
   memberships  Membership[]
+  homeroomClasses Classroom[]     @relation("HomeroomTeacher")
+  childLinks      StudentParent[] @relation("ParentLinks")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -622,4 +626,181 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+// ════════════════════════ TẦNG B — DOMAIN (Phase 1) ════════════════════════
+// Mọi bảng domain BẮT BUỘC có tenantId (bảo mật, scalar — extension auto-filter)
+// + schoolId (nghiệp vụ). Thêm tên model vào TENANT_KEY của prisma-tenant.extension.
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+  WITHDRAWN
+}
+
+model Classroom {
+  id                String    @id @default(uuid())
+  tenantId          String
+  schoolId          String
+  school            School    @relation(fields: [schoolId], references: [id])
+  name              String
+  ageGroup          String?
+  capacity          Int       @default(25)
+  homeroomTeacherId String?
+  homeroomTeacher   User?     @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  createdById       String?
+  deletedAt         DateTime?
+  students          Student[]
+  attendance        Attendance[]
+  dailyReports      DailyReport[]
+
+  @@unique([schoolId, name])
+  @@index([tenantId])
+  @@index([schoolId])
+  @@map("classrooms")
+}
+
+model Student {
+  id          String          @id @default(uuid())
+  tenantId    String
+  schoolId    String
+  school      School          @relation(fields: [schoolId], references: [id])
+  classroomId String?
+  classroom   Classroom?      @relation(fields: [classroomId], references: [id])
+  fullName    String
+  nickname    String?
+  dateOfBirth DateTime        @db.Date
+  gender      Gender
+  avatarUrl   String?
+  status      StudentStatus   @default(ACTIVE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  createdById String?
+  deletedAt   DateTime?
+  parents     StudentParent[]
+  attendance  Attendance[]
+  dailyReports DailyReport[]
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([classroomId])
+  @@map("students")
+}
+
+// Junction phụ huynh ↔ học sinh (N-N). parent = User role PARENT.
+model StudentParent {
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parentId     String
+  parent       User     @relation("ParentLinks", fields: [parentId], references: [id])
+  tenantId     String
+  relationship String // "Mẹ" | "Ba" | "Người giám hộ"...
+  isPrimary    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@id([studentId, parentId])
+  @@index([tenantId])
+  @@index([parentId])
+  @@map("student_parents")
+}
+
+// ──────────── C — Điểm danh & Báo cáo hằng ngày (Phase 1) ────────────
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+enum Mood {
+  HAPPY
+  NEUTRAL
+  TIRED
+  FUSSY
+}
+
+model Attendance {
+  id           String           @id @default(uuid())
+  tenantId     String
+  schoolId     String
+  studentId    String
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classroomId  String
+  classroom    Classroom        @relation(fields: [classroomId], references: [id])
+  date         DateTime         @db.Date
+  status       AttendanceStatus
+  checkInAt    DateTime?
+  note         String?
+  recordedById String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([studentId, date])
+  @@index([tenantId])
+  @@index([classroomId, date])
+  @@index([schoolId, date])
+  @@map("attendance")
+}
+
+model DailyReport {
+  id          String     @id @default(uuid())
+  tenantId    String
+  schoolId    String
+  studentId   String
+  student     Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classroomId String?
+  classroom   Classroom? @relation(fields: [classroomId], references: [id])
+  date        DateTime   @db.Date
+  mood        Mood?
+  meals       String? // ăn uống
+  nap         String? // ngủ trưa
+  activities  String? // hoạt động
+  note        String?
+  authorId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([studentId, date])
+  @@index([tenantId])
+  @@index([classroomId, date])
+  @@map("daily_reports")
+}
+
+// ──────────── Media (lưu trữ nội bộ, nén trước khi lưu) ────────────
+
+enum MediaKind {
+  REPORT_PHOTO
+  ALBUM
+  AVATAR
+  DOCUMENT
+  OTHER
+}
+
+model Media {
+  id           String    @id @default(uuid())
+  tenantId     String
+  schoolId     String?
+  kind         MediaKind @default(OTHER)
+  path         String // tương đối dưới MEDIA_ROOT: <tenantId>/<id>.webp
+  mimeType     String
+  sizeBytes    Int
+  width        Int?
+  height       Int?
+  originalName String?
+  uploadedById String?
+  createdAt    DateTime  @default(now())
+
+  @@index([tenantId])
+  @@map("media")
 }

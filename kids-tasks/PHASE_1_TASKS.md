@@ -1,5 +1,13 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
+> ## ✅ Tiến độ (45 e2e pass / 6 suite · tsc + lint sạch)
+> - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
+> - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
+> - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).
+> - **Media (lưu nội bộ + nén):** `MediaService` dùng **sharp** — resize cạnh ≤ `MEDIA_MAX_DIM` (1280px), **webp** quality `MEDIA_QUALITY` (72, đủ cho PH xem), xoá metadata; lưu `MEDIA_ROOT/<tenantId>/<id>.webp`; quota `STORAGE_MB` (HARD); upload (staff) + serve (StreamableFile, cô lập theo tenant).
+> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** export CSV (cuối P1), reset mật khẩu thật + email (P2), push FCM (cuối P1/P2), seed demo + reconcile-counter (cuối P1).
+> - **Kế tiếp:** D (Sức khỏe: health records, medicine + duyệt, incidents, leave + duyệt).
+
 > **Chiến lược:** API-first toàn bộ. Làm **dứt điểm tất cả các phase API** (`kids-api`) trước; **UI/UX** (kids-crm, kids-mobile-native, kids-mobile-web) là **phase riêng SAU CÙNG**, tiêu thụ lại API đã ổn định. File này chỉ liệt kê **task API**.
 >
 > **Tiền đề:** Phase 0 (Tầng A — nền tảng SaaS) đã xong. Mọi bảng domain dưới đây **BẮT BUỘC** có `tenantId` (non-null) + `schoolId`, và thêm tên model vào `TENANT_KEY` trong [`prisma-tenant.extension.ts`](../kids-api/src/prisma/prisma-tenant.extension.ts) để tự cô lập.

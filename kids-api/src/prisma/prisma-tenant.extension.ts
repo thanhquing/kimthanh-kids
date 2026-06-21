@@ -20,6 +20,13 @@ const TENANT_KEY: Record<string, "id" | "tenantId"> = {
   TenantEntitlement: "tenantId",
   UsageCounter: "tenantId",
   CreditLedger: "tenantId",
+  // ── Tầng B domain (Phase 1) ──
+  Classroom: "tenantId",
+  Student: "tenantId",
+  StudentParent: "tenantId",
+  Attendance: "tenantId",
+  DailyReport: "tenantId",
+  Media: "tenantId",
 };
 
 /** Model có cột deletedAt → đọc tự bỏ bản ghi đã xoá. Soft-delete khi GHI là convention service. */
@@ -30,6 +37,8 @@ const SOFT_DELETE = new Set<string>([
   "Plan",
   "Subscription",
   "PlatformInvoice",
+  "Classroom",
+  "Student",
 ]);
 
 const READ_MANY = new Set([

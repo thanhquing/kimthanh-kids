@@ -1,4 +1,10 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor,
+  StreamableFile,
+} from "@nestjs/common";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { ApiSuccess, Paginated } from "../http/api-response";
@@ -11,10 +17,12 @@ function isPaginated(v: unknown): v is Paginated<unknown> {
 
 /** Bọc mọi response thành { success: true, data, meta? }. */
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<T, ApiSuccess<unknown>> {
-  intercept(_ctx: ExecutionContext, next: CallHandler<T>): Observable<ApiSuccess<unknown>> {
+export class TransformInterceptor<T> implements NestInterceptor<T, ApiSuccess<unknown> | T> {
+  intercept(_ctx: ExecutionContext, next: CallHandler<T>): Observable<ApiSuccess<unknown> | T> {
     return next.handle().pipe(
-      map((payload): ApiSuccess<unknown> => {
+      map((payload): ApiSuccess<unknown> | T => {
+        // File stream: trả thẳng, không bọc envelope.
+        if (payload instanceof StreamableFile) return payload as T;
         if (isPaginated(payload)) {
           return { success: true, data: payload.items, meta: payload.meta };
         }
