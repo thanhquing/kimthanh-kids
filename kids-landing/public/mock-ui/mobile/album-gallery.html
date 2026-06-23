@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Album ảnh lớp — KimThanh Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <main class="min-h-screen flex flex-col items-center justify-start py-10 px-4 bg-[#F1F5F9]">
+      <div class="frame-label"><span class="num">M·F5</span>Album ảnh lớp (Phụ huynh)</div>
+      <div class="phone">
+        <div class="phone-body">
+          <div class="flex items-center gap-2">
+            <i data-lucide="chevron-left" class="w-5 h-5 text-slate-500"></i>
+            <div class="font-bold text-lg">Album lớp Mầm A</div>
+          </div>
+          <div class="text-xs text-slate-500 mt-0.5">Dã ngoại công viên · 24 ảnh · 12/06/2026</div>
+
+          <div class="grid grid-cols-3 gap-1.5 mt-4">
+            <img src="/mock-ui/images/hero-kids.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/teacher.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/school.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/blog-1.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/blog-2.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/blog-3.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/avatar-1.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/avatar-2.jpg" class="aspect-square object-cover rounded-lg" />
+            <img src="/mock-ui/images/avatar-3.jpg" class="aspect-square object-cover rounded-lg" />
+          </div>
+
+          <div class="card p-3 mt-4 flex items-center gap-3">
+            <i data-lucide="lock" class="w-5 h-5 text-slate-400"></i>
+            <div class="text-xs text-slate-500">
+              Album chỉ hiển thị cho phụ huynh có con trong lớp · tính năng gói
+              <b>Khởi đầu</b> trở lên.
+            </div>
+          </div>
+        </div>
+        <div class="phone-tabbar">
+          <div class="tab"><i data-lucide="home" class="w-5 h-5"></i><span>Trang chủ</span></div>
+          <div class="tab"><i data-lucide="users" class="w-5 h-5"></i><span>Con tôi</span></div>
+          <div class="tab active">
+            <i data-lucide="image" class="w-5 h-5"></i><span>Album</span>
+          </div>
+          <div class="tab"><i data-lucide="bell" class="w-5 h-5"></i><span>Thông báo</span></div>
+          <div class="tab"><i data-lucide="user" class="w-5 h-5"></i><span>Hồ sơ</span></div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

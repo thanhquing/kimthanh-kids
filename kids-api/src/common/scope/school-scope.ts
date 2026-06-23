@@ -65,3 +65,18 @@ export function ownedStudentWhere(user: AuthUser, studentId: string): object {
     ? { id: studentId, ...schoolWhere(user) }
     : { id: studentId, parents: { some: { parentId: user.id } } };
 }
+
+/**
+ * OR-fragment cho nội dung phụ huynh xem được (menu/album): bản ghi toàn trường
+ * (`classroomId: null`) của trường con đang học, hoặc bản ghi gắn với lớp của con.
+ * Dùng chung cho menus/albums để tránh lặp.
+ */
+export function contentScopeForKids(
+  kids: { schoolId: string; classroomId: string | null }[],
+): object {
+  const schoolIds = [...new Set(kids.map((k) => k.schoolId))];
+  const classroomIds = kids.map((k) => k.classroomId).filter((c): c is string => !!c);
+  return {
+    OR: [{ classroomId: null, schoolId: { in: schoolIds } }, { classroomId: { in: classroomIds } }],
+  };
+}

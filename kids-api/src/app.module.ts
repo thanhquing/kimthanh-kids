@@ -4,8 +4,12 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "./auth/auth.module";
 import { BillingModule } from "./billing/billing.module";
+import { AlbumsModule } from "./albums/albums.module";
+import { AnnouncementsModule } from "./announcements/announcements.module";
 import { AssignmentsModule } from "./assignments/assignments.module";
 import { AttendanceModule } from "./attendance/attendance.module";
+import { LessonPlansModule } from "./lesson-plans/lesson-plans.module";
+import { MenusModule } from "./menus/menus.module";
 import { ClassroomsModule } from "./classrooms/classrooms.module";
 import { DailyReportsModule } from "./daily-reports/daily-reports.module";
 import { HealthModule } from "./health/health.module";
@@ -52,6 +56,10 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     LeaveModule,
     AssignmentsModule,
     TuitionModule,
+    AnnouncementsModule,
+    MenusModule,
+    LessonPlansModule,
+    AlbumsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

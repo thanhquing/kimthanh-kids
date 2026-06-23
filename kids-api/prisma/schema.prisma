@@ -673,6 +673,10 @@ model Classroom {
   attendance        Attendance[]
   dailyReports      DailyReport[]
   staffAssignments  StaffAssignment[]
+  announcements     Announcement[]
+  weeklyMenus       WeeklyMenu[]
+  lessonPlans       LessonPlan[]
+  albums            Album[]
 
   @@unique([schoolId, name])
   @@index([tenantId])
@@ -816,6 +820,7 @@ model Media {
   originalName String?
   uploadedById String?
   createdAt    DateTime  @default(now())
+  albumPhotos  AlbumPhoto[]
 
   @@index([tenantId])
   @@map("media")
@@ -1098,4 +1103,147 @@ model TuitionPayment {
   @@index([tenantId])
   @@index([invoiceId, status])
   @@map("tuition_payments")
+}
+
+// ════════════════════════ F — GIAO TIẾP & NỘI DUNG (Phase 1) ════════════════════════
+
+enum AnnouncementAudience {
+  ALL // toàn trường
+  PARENTS // chỉ phụ huynh
+  TEACHERS // chỉ nhân sự
+  CLASS // 1 lớp (classroomId)
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  SNACK
+  DINNER
+}
+
+// F1 — Thông báo: soạn theo phạm vi (audience), PH/GV xem feed.
+model Announcement {
+  id          String               @id @default(uuid())
+  tenantId    String
+  schoolId    String
+  audience    AnnouncementAudience  @default(ALL)
+  classroomId String? // bắt buộc khi audience=CLASS
+  classroom   Classroom?            @relation(fields: [classroomId], references: [id])
+  title       String
+  body        String
+  publishedAt DateTime? // null = nháp
+  authorId    String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([tenantId])
+  @@index([schoolId, publishedAt])
+  @@index([classroomId])
+  @@map("announcements")
+}
+
+// F3 — Thực đơn tuần + bữa ăn (cảnh báo dị ứng đối chiếu Allergy).
+model WeeklyMenu {
+  id          String     @id @default(uuid())
+  tenantId    String
+  schoolId    String
+  classroomId String? // null = áp dụng toàn trường
+  classroom   Classroom? @relation(fields: [classroomId], references: [id])
+  weekStart   DateTime   @db.Date // thứ 2 đầu tuần
+  note        String?
+  createdById String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  meals       Meal[]
+
+  @@index([tenantId])
+  @@index([schoolId, weekStart])
+  @@map("weekly_menus")
+}
+
+model Meal {
+  id          String     @id @default(uuid())
+  tenantId    String
+  menuId      String
+  menu        WeeklyMenu @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  weekday     Int // 1=Thứ 2 ... 7=CN
+  mealType    MealType
+  name        String // "Cơm gà, canh rau"
+  ingredients String? // liệt kê nguyên liệu — dùng dò dị ứng
+
+  @@index([tenantId])
+  @@index([menuId])
+  @@map("meals")
+}
+
+// F4 — Giáo án tuần (GV nội bộ, @RequireFeature lesson_plan).
+model LessonPlan {
+  id          String     @id @default(uuid())
+  tenantId    String
+  schoolId    String
+  classroomId String
+  classroom   Classroom  @relation(fields: [classroomId], references: [id])
+  week        String // "2026-W27" | ngày đầu tuần
+  theme       String
+  note        String?
+  authorId    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  activities  Activity[]
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([classroomId, week])
+  @@map("lesson_plans")
+}
+
+model Activity {
+  id        String     @id @default(uuid())
+  tenantId  String
+  planId    String
+  plan      LessonPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  dayOfWeek Int // 1..7
+  startTime String? // "08:00"
+  title     String
+  materials String?
+
+  @@index([tenantId])
+  @@index([planId])
+  @@map("activities")
+}
+
+// F5 — Album ảnh lớp cho PH xem (@RequireFeature media_gallery), tái dùng Media.
+model Album {
+  id          String       @id @default(uuid())
+  tenantId    String
+  schoolId    String
+  classroomId String? // null = album toàn trường
+  classroom   Classroom?   @relation(fields: [classroomId], references: [id])
+  title       String
+  description String?
+  createdById String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  photos      AlbumPhoto[]
+
+  @@index([tenantId])
+  @@index([schoolId])
+  @@index([classroomId])
+  @@map("albums")
+}
+
+model AlbumPhoto {
+  id       String   @id @default(uuid())
+  tenantId String
+  albumId  String
+  album    Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  mediaId  String
+  media    Media    @relation(fields: [mediaId], references: [id])
+  caption  String?
+  sortOrder Int     @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([albumId])
+  @@map("album_photos")
 }

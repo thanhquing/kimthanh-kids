@@ -1,6 +1,6 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
-> ## ✅ Tiến độ (91 e2e pass / 11 suite · tsc + lint sạch)
+> ## ✅ Tiến độ (95 e2e pass / 12 suite · tsc + lint sạch)
 > - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` + `recordScopeWhere`/`ownedStudentWhere` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
 > - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
 > - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).
@@ -8,8 +8,9 @@
 > - **D — Sức khỏe:** Health (y tá ghi chỉ số + API growth chiều cao/cân nặng) · Medicine (PH tạo → y tá duyệt/từ chối/đánh dấu đã uống, có `MedicineStatusHistory` timeline + ràng buộc chuyển trạng thái) · Incidents (staff ghi, PH xem con) + Allergies (unique studentId+allergen, cho cảnh báo thực đơn F3) · Leave (PH tạo → GV/admin duyệt 1 lần). Quyền xem dùng `recordScopeWhere`/`ownedStudentWhere`.
 > - **B3 — Nhân sự:** tạo tài khoản trực tiếp (email/phone, login cả hai), đổi trạng thái (tắt → nhả quota), lịch phân công tuần (`StaffAssignment`); quota TEACHERS/ADMIN_USERS + PARENT theo STUDENTS.
 > - **E — Học phí:** `TuitionInvoice`/`Item`/`Payment` (số HĐ tuần tự, line-items) · thanh toán **VietQR (tự sinh, miễn phí) + Tiền mặt + VNPay sandbox (webhook idempotent)** · **chứng từ in HTML** + xuất CSV + cấu hình bank/MST cho quyết toán thuế · cron `markOverdue`.
-> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** reset mật khẩu thật + email (P2), push FCM + notify incidents/leave (cuối P1/P2), seed demo + reconcile-counter (cuối P1), cổng MoMo/ZaloPay + đối soát VietQR tự động (P2).
-> - **Kế tiếp:** F (Giao tiếp & nội dung: Announcements, Chat, Weekly Menu, Album).
+> - **F — Giao tiếp & nội dung:** Announcements (audience ALL/PARENTS/TEACHERS/CLASS, feed lọc theo người xem) · Weekly Menu + cảnh báo dị ứng theo `Allergy` · Lesson Plan (feature-gate `lesson_plan`) · Album ảnh (feature-gate `media_gallery`, dùng `Media`). **Chat (F2) tách riêng — chưa làm.**
+> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** reset mật khẩu thật + email (P2), push FCM + notify (cuối P1/P2), seed demo + reconcile-counter (cuối P1), cổng MoMo/ZaloPay + đối soát VietQR tự động (P2), **Chat realtime F2** (task riêng).
+> - **Kế tiếp:** G (Notification feed, dashboard KPI, analytics, audit log) — hoặc F2 Chat.
 
 > **Chiến lược:** API-first toàn bộ. Làm **dứt điểm tất cả các phase API** (`kids-api`) trước; **UI/UX** (kids-crm, kids-mobile-native, kids-mobile-web) là **phase riêng SAU CÙNG**, tiêu thụ lại API đã ổn định. File này chỉ liệt kê **task API**.
 >
@@ -100,21 +101,20 @@
 
 ## F. Giao tiếp & nội dung (P0–P2)
 
-### F1. Announcements — *mock: announcements, announcement-compose, announcements-feed*
-- [ ] **P0** Model `Announcement` (title, body, audience ALL/PARENTS/TEACHERS/CLASS, classroomId?, publishedAt, authorId). API soạn theo phạm vi + notify.
+### F1. Announcements — *mock: announcements, announcement-compose, announcements-feed* ✅
+- [x] **P0** Model `Announcement` (audience ALL/PARENTS/TEACHERS/CLASS, classroomId?, publishedAt). Soạn theo phạm vi (`@Roles` GV/HT/admin); feed lọc theo người xem (PH chỉ thấy toàn trường/PH + lớp của con; TEACHERS ẩn với PH); nháp → publish. *(Notify đẩy sau cùng push.)*
 
 ### F2. Chat/Messaging (`@RequireFeature('messaging')`) — *mock: chat-parent, chat-teacher*
-- [ ] **P1** Model `Conversation` + `Message` (1-1 GV↔PH; cân nhắc nhóm lớp). Realtime WebSocket/SSE.
-- [ ] Quyết định: nhóm cả lớp vs 1-1; ai khởi tạo.
+- [ ] **P1 (TÁCH RIÊNG):** Model `Conversation` + `Message` (1-1 GV↔PH) + realtime — **chưa làm** (cần chốt WebSocket/SSE/polling). Để task riêng sau.
 
-### F3. Weekly Menu — *mock: menu-weekly*
-- [ ] **P1** Model `WeeklyMenu` + `Meal` (date, mealType, name, calories, nutritionTags) + cảnh báo dị ứng theo `Allergy`.
+### F3. Weekly Menu — *mock: menu-weekly* ✅
+- [x] **P1** Model `WeeklyMenu` + `Meal` (weekday, mealType, name, ingredients) + **cảnh báo dị ứng** đối chiếu `Allergy` của học sinh (`GET /menus/:id/allergy-warnings`). PH xem thực đơn trường/lớp con.
 
-### F4. Lesson Plan (`@RequireFeature('lesson_plan')`) — *mock: lesson-plan*
-- [ ] **P2** Model `LessonPlan` + `Activity` (week, theme, activities[] time/title/materials). GV nội bộ.
+### F4. Lesson Plan (`@RequireFeature('lesson_plan')`) — *mock: lesson-plan* ✅
+- [x] **P2** Model `LessonPlan` + `Activity` (week, theme, activities[] day/time/title/materials). GV nội bộ, **feature-gate** (Free → 403 FEATURE_NOT_AVAILABLE, Pro+ dùng được).
 
-### F5. Media/Album (gap, `@RequireFeature('media_gallery')`)
-- [ ] **P1** API album ảnh lớp cho PH xem (gắn DailyReport/Classroom) — dùng object storage ở mục A.
+### F5. Media/Album (`@RequireFeature('media_gallery')`) ✅
+- [x] **P1** Model `Album` + `AlbumPhoto` (tái dùng `Media`); GV gắn ảnh đã upload, PH xem album lớp con. Feature-gate (Starter+).
 
 ---
 
