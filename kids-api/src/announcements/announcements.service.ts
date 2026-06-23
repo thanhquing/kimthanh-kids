@@ -1,8 +1,22 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { AnnouncementAudience } from "@prisma/client";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { AnnouncementAudience, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
-import { assertSchoolAccess, isStaff, schoolWhere } from "../common/scope/school-scope";
+import {
+  STAFF_ROLE_LIST,
+  assertSchoolAccess,
+  isStaff,
+  schoolWhere,
+} from "../common/scope/school-scope";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
+
+interface NotifiableAnnouncement {
+  id: string;
+  audience: AnnouncementAudience;
+  schoolId: string;
+  classroomId: string | null;
+  title: string;
+}
 
 export interface CreateAnnouncementInput {
   audience: AnnouncementAudience;
@@ -15,7 +29,66 @@ export interface CreateAnnouncementInput {
 
 @Injectable()
 export class AnnouncementsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AnnouncementsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
+
+  /** Người nhận thông báo theo audience: PH (toàn trường/PH/lớp) và/hoặc nhân sự (TEACHERS/ALL). */
+  private async resolveRecipients(a: NotifiableAnnouncement): Promise<string[]> {
+    const ids: string[] = [];
+
+    const wantsParents =
+      a.audience === AnnouncementAudience.ALL ||
+      a.audience === AnnouncementAudience.PARENTS ||
+      a.audience === AnnouncementAudience.CLASS;
+    if (wantsParents) {
+      const studentWhere =
+        a.audience === AnnouncementAudience.CLASS
+          ? { classroomId: a.classroomId }
+          : { schoolId: a.schoolId };
+      const links = await this.prisma.db.studentParent.findMany({
+        where: { student: studentWhere },
+        select: { parentId: true },
+      });
+      ids.push(...links.map((l) => l.parentId));
+    }
+
+    const wantsStaff =
+      a.audience === AnnouncementAudience.ALL || a.audience === AnnouncementAudience.TEACHERS;
+    if (wantsStaff) {
+      const members = await this.prisma.db.membership.findMany({
+        where: {
+          role: { in: STAFF_ROLE_LIST },
+          isActive: true,
+          OR: [{ schoolId: null }, { schoolId: a.schoolId }],
+        },
+        select: { userId: true },
+      });
+      ids.push(...members.map((m) => m.userId));
+    }
+    return ids;
+  }
+
+  /**
+   * Phát thông báo in-app khi 1 announcement chuyển sang trạng thái đã đăng.
+   * Best-effort: việc giải resolveRecipients + notify không được làm hỏng create/publish.
+   */
+  private async notifyPublished(tenantId: string, a: NotifiableAnnouncement): Promise<void> {
+    try {
+      const recipients = await this.resolveRecipients(a);
+      await this.notifications.notify(tenantId, recipients, {
+        type: NotificationType.ANNOUNCEMENT,
+        title: a.title,
+        linkType: "Announcement",
+        linkId: a.id,
+      });
+    } catch (e) {
+      this.logger.error(`notifyPublished thất bại (announcement=${a.id})`, e as Error);
+    }
+  }
 
   /** Admin/HT/GV soạn thông báo theo phạm vi (audience). CLASS → cần classroomId. */
   async create(user: AuthUser, input: CreateAnnouncementInput) {
@@ -38,7 +111,7 @@ export class AnnouncementsService {
       });
     assertSchoolAccess(user, schoolId);
 
-    return this.prisma.db.announcement.create({
+    const announcement = await this.prisma.db.announcement.create({
       data: {
         schoolId,
         audience: input.audience,
@@ -49,6 +122,9 @@ export class AnnouncementsService {
         authorId: user.id,
       } as never,
     });
+
+    if (announcement.publishedAt) await this.notifyPublished(user.tenantId!, announcement);
+    return announcement;
   }
 
   /** Danh sách cho staff (school-scope, gồm cả nháp). */
@@ -106,11 +182,14 @@ export class AnnouncementsService {
   }
 
   async publish(user: AuthUser, id: string) {
-    await this.get(user, id);
-    return this.prisma.db.announcement.update({
+    const current = await this.get(user, id);
+    const updated = await this.prisma.db.announcement.update({
       where: { id },
       data: { publishedAt: new Date() },
     });
+    // Chỉ phát thông báo khi chuyển TỪ nháp sang đăng (tránh notify lại nếu publish trùng).
+    if (!current.publishedAt) await this.notifyPublished(user.tenantId!, updated);
+    return updated;
   }
 
   async remove(user: AuthUser, id: string) {

@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { MedicineStatus } from "@prisma/client";
+import { MedicineStatus, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { ownedStudentWhere, recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface CreateMedicineInput {
@@ -23,7 +24,10 @@ const HANDLE_TARGETS: MedicineStatus[] = [
 
 @Injectable()
 export class MedicineService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** PH (hoặc staff) tạo yêu cầu cho con/học sinh; mở timeline với mốc PENDING. */
   async create(user: AuthUser, input: CreateMedicineInput) {
@@ -99,7 +103,7 @@ export class MedicineService {
 
     const req = await this.prisma.db.medicineRequest.findFirst({
       where: { id, ...schoolWhere(user) },
-      select: { id: true, status: true },
+      select: { id: true, status: true, requestedById: true, medicineName: true },
     });
     if (!req)
       throw new NotFoundException({
@@ -124,6 +128,21 @@ export class MedicineService {
         data: { tenantId: user.tenantId!, requestId: id, status, note, actorId: user.id } as never,
       }),
     ]);
+
+    if (req.requestedById) {
+      const label: Record<string, string> = {
+        APPROVED: "đã được duyệt",
+        REJECTED: "bị từ chối",
+        ADMINISTERED: "đã cho bé uống",
+      };
+      await this.notifications.notify(user.tenantId!, [req.requestedById], {
+        type: NotificationType.MEDICINE,
+        title: `Yêu cầu thuốc ${req.medicineName}: ${label[status] ?? status}`,
+        body: note,
+        linkType: "MedicineRequest",
+        linkId: id,
+      });
+    }
     return updated;
   }
 }

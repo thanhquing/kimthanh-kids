@@ -1,7 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { TuitionInvoiceStatus } from "@prisma/client";
+import { NotificationType, TuitionInvoiceStatus } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
+import { AuditService } from "../audit/audit.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface InvoiceItemInput {
@@ -27,7 +29,11 @@ const invoiceInclude = {
 
 @Injectable()
 export class TuitionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+    private readonly audit: AuditService,
+  ) {}
 
   /** Kế toán/admin tạo hóa đơn học phí cho 1 học sinh (số hóa đơn tuần tự theo năm). */
   async create(user: AuthUser, input: CreateInvoiceInput) {
@@ -58,7 +64,7 @@ export class TuitionService {
     const issueDate = input.issueDate ? new Date(input.issueDate) : new Date();
     const invoiceNumber = await this.nextInvoiceNumber(issueDate.getFullYear());
 
-    return this.prisma.db.tuitionInvoice.create({
+    const invoice = await this.prisma.db.tuitionInvoice.create({
       data: {
         schoolId: student.schoolId,
         studentId: input.studentId,
@@ -77,6 +83,15 @@ export class TuitionService {
       } as never,
       include: invoiceInclude,
     });
+
+    await this.notifications.notifyStudentParents(user.tenantId!, input.studentId, {
+      type: NotificationType.INVOICE,
+      title: `Hóa đơn học phí ${invoice.invoiceNumber}`,
+      body: `Kỳ ${input.period} · ${total.toLocaleString("vi-VN")}đ · hạn ${input.dueDate}`,
+      linkType: "TuitionInvoice",
+      linkId: invoice.id,
+    });
+    return invoice;
   }
 
   private async nextInvoiceNumber(year: number): Promise<string> {
@@ -132,10 +147,12 @@ export class TuitionService {
         code: "HAS_PAYMENT",
         message: "Hóa đơn đã có thanh toán, không thể hủy",
       });
-    return this.prisma.db.tuitionInvoice.update({
+    const canceled = await this.prisma.db.tuitionInvoice.update({
       where: { id },
       data: { status: TuitionInvoiceStatus.CANCELED },
     });
+    await this.audit.logAs(user, "invoice.cancel", { type: "TuitionInvoice", id });
+    return canceled;
   }
 
   /** Cộng dồn thanh toán vào hóa đơn → cập nhật amountPaid + trạng thái PAID/PARTIAL. */

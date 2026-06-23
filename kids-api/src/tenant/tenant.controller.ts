@@ -91,7 +91,7 @@ export class TenantController {
     @CurrentUser() user: AuthUser,
     @Body(new ZodValidationPipe(createMemberSchema)) dto: z.infer<typeof createMemberSchema>,
   ) {
-    return this.tenant.createMember(user.tenantId!, dto);
+    return this.tenant.createMember(user.tenantId!, dto, user.id);
   }
 
   // Đổi trạng thái thành viên (bật/tắt tài khoản). Tắt → chặn đăng nhập + giải phóng quota.
@@ -101,7 +101,7 @@ export class TenantController {
     @Body(new ZodValidationPipe(memberStatusSchema)) dto: z.infer<typeof memberStatusSchema>,
     @CurrentUser() user: AuthUser,
   ) {
-    return this.tenant.setMemberStatus(user.tenantId!, userId, dto.isActive);
+    return this.tenant.setMemberStatus(user.tenantId!, userId, dto.isActive, user.id);
   }
 
   @Get("domains")

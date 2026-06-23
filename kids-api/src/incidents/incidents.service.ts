@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { IncidentSeverity } from "@prisma/client";
+import { IncidentSeverity, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface CreateIncidentInput {
@@ -15,18 +16,21 @@ export interface CreateIncidentInput {
 
 @Injectable()
 export class IncidentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
-  /** Staff ghi nhận sự cố cho 1 học sinh. (Notify PH — đẩy sau cùng push.) */
+  /** Staff ghi nhận sự cố cho 1 học sinh → thông báo phụ huynh (in-app; push đẩy sau). */
   async create(user: AuthUser, input: CreateIncidentInput) {
     const student = await this.prisma.db.student.findFirst({
       where: { id: input.studentId, ...schoolWhere(user) },
-      select: { id: true, schoolId: true },
+      select: { id: true, schoolId: true, fullName: true },
     });
     if (!student)
       throw new NotFoundException({ code: "NO_STUDENT", message: "Không tìm thấy học sinh" });
 
-    return this.prisma.db.incident.create({
+    const incident = await this.prisma.db.incident.create({
       data: {
         schoolId: student.schoolId,
         studentId: input.studentId,
@@ -38,6 +42,15 @@ export class IncidentsService {
         reportedById: user.id,
       } as never,
     });
+
+    await this.notifications.notifyStudentParents(user.tenantId!, input.studentId, {
+      type: NotificationType.INCIDENT,
+      title: `Sự cố của bé ${student.fullName}`,
+      body: input.description,
+      linkType: "Incident",
+      linkId: incident.id,
+    });
+    return incident;
   }
 
   /** Danh sách sự cố cho staff (school-scope, lọc theo học sinh nếu có). */

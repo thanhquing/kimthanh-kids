@@ -2,13 +2,16 @@ import { ForbiddenException } from "@nestjs/common";
 import { TenantRole } from "@prisma/client";
 import { AuthUser } from "../decorators/current-user.decorator";
 
-const STAFF_ROLES = new Set<TenantRole>([
+/** Danh sách vai trò nhân sự trường (không phải PARENT). Nguồn dùng chung cho service/controller. */
+export const STAFF_ROLE_LIST: TenantRole[] = [
   TenantRole.SCHOOL_ADMIN,
   TenantRole.PRINCIPAL,
   TenantRole.TEACHER,
   TenantRole.NURSE,
   TenantRole.FINANCE,
-]);
+];
+
+const STAFF_ROLES = new Set<TenantRole>(STAFF_ROLE_LIST);
 
 /** true nếu user là nhân sự trường (không phải PARENT). */
 export function isStaff(user: AuthUser): boolean {

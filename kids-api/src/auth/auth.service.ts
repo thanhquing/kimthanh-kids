@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 import { TenantContextStore } from "../common/context/tenant-context";
 import { PrismaService } from "../prisma/prisma.service";
+import { UsageService } from "../usage/usage.service";
 import { TokenService } from "./token.service";
 import { UserContextService } from "./user-context.service";
 
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly tokens: TokenService,
     private readonly users: UserContextService,
+    private readonly usage: UsageService,
   ) {}
 
   /** Đăng nhập theo ngữ cảnh host: platform host → platform user; tenant host → user của tenant đó. */
@@ -54,6 +56,11 @@ export class AuthService {
         message: "Email/số điện thoại hoặc mật khẩu không đúng",
       });
     }
+
+    // Track đăng nhập (DAU/MAU). Best-effort — không để lỗi telemetry chặn đăng nhập.
+    await this.usage
+      .track("login", { tenantId: user.tenantId, userId: user.id, meta: { type: user.type } })
+      .catch(() => undefined);
 
     return {
       ...(await this.issueTokens(user.id, user.type, user.tenantId, user.platformRole, meta)),

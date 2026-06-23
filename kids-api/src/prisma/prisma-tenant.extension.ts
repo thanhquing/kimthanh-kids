@@ -47,6 +47,10 @@ const TENANT_KEY: Record<string, "id" | "tenantId"> = {
   Activity: "tenantId",
   Album: "tenantId",
   AlbumPhoto: "tenantId",
+  // ── G — Thông báo / observability (Phase 1) ──
+  Notification: "tenantId",
+  NotificationPreference: "tenantId",
+  UsageEvent: "tenantId",
 };
 
 /** Model có cột deletedAt → đọc tự bỏ bản ghi đã xoá. Soft-delete khi GHI là convention service. */

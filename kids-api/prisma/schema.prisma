@@ -1247,3 +1247,60 @@ model AlbumPhoto {
   @@index([albumId])
   @@map("album_photos")
 }
+
+// ════════════════════════ G — THÔNG BÁO / DASHBOARD / OBSERVABILITY (Phase 1) ════════════════════════
+
+enum NotificationType {
+  ATTENDANCE
+  DAILY_REPORT
+  ANNOUNCEMENT
+  INVOICE
+  MEDICINE
+  LEAVE
+  INCIDENT
+}
+
+// Thông báo in-app gửi tới 1 người dùng (PH/GV). Push FCM đẩy sau, tái dùng cùng điểm phát.
+model Notification {
+  id        String           @id @default(uuid())
+  tenantId  String
+  userId    String // người nhận
+  type      NotificationType
+  title     String
+  body      String?
+  linkType  String? // "TuitionInvoice" | "DailyReport" | "Announcement"...
+  linkId    String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([tenantId, userId, readAt])
+  @@index([tenantId, userId, createdAt])
+  @@map("notifications")
+}
+
+// Tuỳ chọn bật/tắt theo loại; chỉ lưu khi user GHI ĐÈ mặc định (mặc định coi như bật).
+model NotificationPreference {
+  id       String           @id @default(uuid())
+  tenantId String
+  userId   String
+  type     NotificationType
+  enabled  Boolean          @default(true)
+
+  @@unique([userId, type])
+  @@index([tenantId])
+  @@map("notification_preferences")
+}
+
+// Event log generic cho metric vận hành (DAU/MAU, feature-hit). Operator đọc cross-tenant qua prisma.system.
+model UsageEvent {
+  id        String   @id @default(uuid())
+  tenantId  String?
+  userId    String?
+  type      String // "login" | "signup" | "feature.lesson_plan"...
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([type, createdAt])
+  @@map("usage_events")
+}

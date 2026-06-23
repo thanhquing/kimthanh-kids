@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { Gender, LimitMetric, StudentStatus } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { assertSchoolAccess, schoolWhere } from "../common/scope/school-scope";
+import { AuditService } from "../audit/audit.service";
 import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -42,6 +43,7 @@ export class StudentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly entitlements: EntitlementService,
+    private readonly audit: AuditService,
   ) {}
 
   list(user: AuthUser, opts: { classroomId?: string; schoolId?: string } = {}) {
@@ -115,6 +117,7 @@ export class StudentsService {
     await this.get(user, id);
     await this.prisma.db.student.update({ where: { id }, data: { deletedAt: new Date() } });
     await this.entitlements.releaseQuota(user.tenantId!, LimitMetric.STUDENTS);
+    await this.audit.logAs(user, "student.delete", { type: "Student", id });
     return { ok: true };
   }
 

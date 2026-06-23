@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Nhật ký hệ thống — KimThanh Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/mock-ui/shared.css" />
+    <script src="/mock-ui/shared.js" defer></script>
+  </head>
+  <body class="min-h-screen bg-[#F1F5F9]">
+    <div class="fixed top-4 left-4 z-50">
+      <a href="/mock-ui/index.html" class="btn-soft inline-flex items-center gap-2 text-sm shadow"
+        ><i data-lucide="arrow-left" class="w-4 h-4"></i>Catalog</a
+      >
+    </div>
+    <div class="flex">
+      <aside class="sidebar">
+        <div class="flex items-center gap-2 px-2 mb-5">
+          <img src="/mock-ui/logo.png" alt="KimThanh Kids" class="brand-logo" />
+          <div>
+            <div class="font-bold text-sm">KimThanh Kids</div>
+            <div class="text-xs text-slate-400">Admin Console</div>
+          </div>
+        </div>
+        <a href="/mock-ui/web/dashboard.html" class="nav-item"
+          ><i data-lucide="layout-dashboard" class="w-4 h-4"></i>Tổng quan</a
+        ><a href="/mock-ui/web/students.html" class="nav-item"
+          ><i data-lucide="baby" class="w-4 h-4"></i>Học sinh</a
+        ><a href="/mock-ui/web/invoices.html" class="nav-item"
+          ><i data-lucide="receipt" class="w-4 h-4"></i>Hóa đơn</a
+        >
+        <div class="nav-group">Quản trị</div>
+        <a href="/mock-ui/web/announcements.html" class="nav-item"
+          ><i data-lucide="megaphone" class="w-4 h-4"></i>Thông báo</a
+        ><a href="/mock-ui/web/users.html" class="nav-item"
+          ><i data-lucide="users" class="w-4 h-4"></i>Người dùng</a
+        ><a href="/mock-ui/web/assignments.html" class="nav-item"
+          ><i data-lucide="calendar-clock" class="w-4 h-4"></i>Phân công</a
+        ><a href="/mock-ui/web/audit-log.html" class="nav-item active"
+          ><i data-lucide="scroll-text" class="w-4 h-4"></i>Nhật ký</a
+        ><a href="/mock-ui/web/settings-school.html" class="nav-item"
+          ><i data-lucide="settings" class="w-4 h-4"></i>Cài đặt trường</a
+        >
+      </aside>
+      <div class="flex-1 min-h-screen">
+        <header class="topbar">
+          <div class="flex-1">
+            <div class="text-xs text-slate-400">Quản trị / Nhật ký</div>
+            <div class="font-bold text-slate-800">Nhật ký hành động (Audit log)</div>
+          </div>
+          <div class="relative w-72">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i
+            ><input class="field !pl-9 !py-1.5" placeholder="Lọc theo hành động..." />
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="avatar !w-8 !h-8 text-xs">A</div>
+            <div class="text-sm">
+              <div class="font-semibold leading-tight">Admin</div>
+              <div class="text-xs text-slate-400 leading-tight">Trường KimThanh</div>
+            </div>
+          </div>
+        </header>
+        <main class="p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <span class="chip active">Tất cả</span><span class="chip">member.*</span
+            ><span class="chip">invoice.*</span><span class="chip">student.*</span>
+          </div>
+          <div class="card overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 text-slate-500 text-left">
+                <tr>
+                  <th class="px-4 py-3 font-medium">Thời gian</th>
+                  <th class="px-4 py-3 font-medium">Hành động</th>
+                  <th class="px-4 py-3 font-medium">Người thực hiện</th>
+                  <th class="px-4 py-3 font-medium">Đối tượng</th>
+                  <th class="px-4 py-3 font-medium">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr>
+                  <td class="px-4 py-3 text-slate-500">23/06/2026 09:41</td>
+                  <td class="px-4 py-3"><span class="badge b-red">invoice.cancel</span></td>
+                  <td class="px-4 py-3">Kế toán Lan</td>
+                  <td class="px-4 py-3 text-slate-500">TuitionInvoice · HD-2026-0042</td>
+                  <td class="px-4 py-3 text-slate-400">—</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-slate-500">23/06/2026 09:30</td>
+                  <td class="px-4 py-3"><span class="badge b-green">invoice.payment</span></td>
+                  <td class="px-4 py-3">Kế toán Lan</td>
+                  <td class="px-4 py-3 text-slate-500">TuitionInvoice · HD-2026-0041</td>
+                  <td class="px-4 py-3 text-slate-500">CASH · 2.000.000đ</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-slate-500">22/06/2026 16:12</td>
+                  <td class="px-4 py-3"><span class="badge b-blue">member.create</span></td>
+                  <td class="px-4 py-3">Hiệu trưởng Hà</td>
+                  <td class="px-4 py-3 text-slate-500">User · Cô Mai (TEACHER)</td>
+                  <td class="px-4 py-3 text-slate-500">role: TEACHER</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-slate-500">22/06/2026 15:50</td>
+                  <td class="px-4 py-3"><span class="badge b-amber">member.deactivate</span></td>
+                  <td class="px-4 py-3">Hiệu trưởng Hà</td>
+                  <td class="px-4 py-3 text-slate-500">User · Cô Lan (NURSE)</td>
+                  <td class="px-4 py-3 text-slate-400">—</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 text-slate-500">21/06/2026 11:05</td>
+                  <td class="px-4 py-3"><span class="badge b-red">student.delete</span></td>
+                  <td class="px-4 py-3">Admin</td>
+                  <td class="px-4 py-3 text-slate-500">Student · Bé Nam</td>
+                  <td class="px-4 py-3 text-slate-400">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-slate-400 mt-3">
+            Chỉ ghi các hành động nhạy cảm (tài khoản, học sinh, hóa đơn). Operator nền tảng xem thêm
+            DAU/MAU ở console nội bộ (<code>/platform/usage/overview</code>).
+          </p>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

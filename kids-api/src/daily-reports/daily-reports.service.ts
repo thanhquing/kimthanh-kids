@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Mood } from "@prisma/client";
+import { Mood, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { isStaff, schoolWhere } from "../common/scope/school-scope";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface UpsertReportInput {
@@ -16,18 +17,26 @@ export interface UpsertReportInput {
 
 @Injectable()
 export class DailyReportsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** GV soạn/cập nhật báo cáo 1 học sinh trong 1 ngày (upsert theo studentId+date). */
   async upsert(user: AuthUser, input: UpsertReportInput) {
     const student = await this.prisma.db.student.findFirst({
       where: { id: input.studentId, ...schoolWhere(user) },
-      select: { id: true, schoolId: true, classroomId: true },
+      select: { id: true, schoolId: true, classroomId: true, fullName: true },
     });
     if (!student)
       throw new NotFoundException({ code: "NO_STUDENT", message: "Không tìm thấy học sinh" });
 
     const date = new Date(input.date);
+    // Chỉ thông báo lần TẠO MỚI (không spam PH mỗi lần GV chỉnh sửa trong ngày).
+    const existing = await this.prisma.db.dailyReport.findFirst({
+      where: { studentId: input.studentId, date },
+      select: { id: true },
+    });
     const fields = {
       mood: input.mood,
       meals: input.meals,
@@ -36,7 +45,7 @@ export class DailyReportsService {
       note: input.note,
       authorId: user.id,
     };
-    return this.prisma.db.dailyReport.upsert({
+    const report = await this.prisma.db.dailyReport.upsert({
       // upsert KHÔNG được extension auto-gán tenantId → set tường minh ở create.
       where: { studentId_date: { studentId: input.studentId, date } },
       create: {
@@ -49,6 +58,17 @@ export class DailyReportsService {
       },
       update: fields,
     });
+
+    if (!existing) {
+      await this.notifications.notifyStudentParents(user.tenantId!, input.studentId, {
+        type: NotificationType.DAILY_REPORT,
+        title: `Báo cáo ngày của bé ${student.fullName}`,
+        body: input.note ?? input.activities,
+        linkType: "DailyReport",
+        linkId: report.id,
+      });
+    }
+    return report;
   }
 
   /** Báo cáo của 1 lớp trong 1 ngày. */

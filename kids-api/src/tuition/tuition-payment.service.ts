@@ -3,6 +3,7 @@ import { TuitionPaymentMethod, TuitionPaymentStatus } from "@prisma/client";
 import { createHmac, randomUUID } from "node:crypto";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
+import { AuditService } from "../audit/audit.service";
 import { EnvService } from "../config/env.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { TuitionService } from "./tuition.service";
@@ -16,6 +17,7 @@ export class TuitionPaymentService {
     private readonly prisma: PrismaService,
     private readonly env: EnvService,
     private readonly tuition: TuitionService,
+    private readonly audit: AuditService,
   ) {}
 
   private async invoiceForStaff(user: AuthUser, invoiceId: string) {
@@ -67,6 +69,15 @@ export class TuitionPaymentService {
       } as never,
     });
     await this.tuition.applyPayment(invoiceId, amount);
+    await this.audit.logAs(
+      user,
+      "invoice.payment",
+      { type: "TuitionInvoice", id: invoiceId },
+      {
+        method: input.method,
+        amount,
+      },
+    );
     return payment;
   }
 

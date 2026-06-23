@@ -8,6 +8,10 @@ import { AlbumsModule } from "./albums/albums.module";
 import { AnnouncementsModule } from "./announcements/announcements.module";
 import { AssignmentsModule } from "./assignments/assignments.module";
 import { AttendanceModule } from "./attendance/attendance.module";
+import { AuditModule } from "./audit/audit.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
+import { NotificationsModule } from "./notifications/notifications.module";
+import { UsageModule } from "./usage/usage.module";
 import { LessonPlansModule } from "./lesson-plans/lesson-plans.module";
 import { MenusModule } from "./menus/menus.module";
 import { ClassroomsModule } from "./classrooms/classrooms.module";
@@ -38,6 +42,9 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     AppConfigModule,
     PrismaModule,
     EntitlementModule,
+    NotificationsModule,
+    AuditModule,
+    UsageModule,
     AuthModule,
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
@@ -60,6 +67,7 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     MenusModule,
     LessonPlansModule,
     AlbumsModule,
+    DashboardModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

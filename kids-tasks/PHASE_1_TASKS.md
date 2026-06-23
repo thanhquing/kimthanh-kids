@@ -1,6 +1,6 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
-> ## ✅ Tiến độ (95 e2e pass / 12 suite · tsc + lint sạch)
+> ## ✅ Tiến độ (99 e2e pass / 13 suite · tsc + lint sạch)
 > - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` + `recordScopeWhere`/`ownedStudentWhere` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
 > - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
 > - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).
@@ -9,8 +9,9 @@
 > - **B3 — Nhân sự:** tạo tài khoản trực tiếp (email/phone, login cả hai), đổi trạng thái (tắt → nhả quota), lịch phân công tuần (`StaffAssignment`); quota TEACHERS/ADMIN_USERS + PARENT theo STUDENTS.
 > - **E — Học phí:** `TuitionInvoice`/`Item`/`Payment` (số HĐ tuần tự, line-items) · thanh toán **VietQR (tự sinh, miễn phí) + Tiền mặt + VNPay sandbox (webhook idempotent)** · **chứng từ in HTML** + xuất CSV + cấu hình bank/MST cho quyết toán thuế · cron `markOverdue`.
 > - **F — Giao tiếp & nội dung:** Announcements (audience ALL/PARENTS/TEACHERS/CLASS, feed lọc theo người xem) · Weekly Menu + cảnh báo dị ứng theo `Allergy` · Lesson Plan (feature-gate `lesson_plan`) · Album ảnh (feature-gate `media_gallery`, dùng `Media`). **Chat (F2) tách riêng — chưa làm.**
-> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** reset mật khẩu thật + email (P2), push FCM + notify (cuối P1/P2), seed demo + reconcile-counter (cuối P1), cổng MoMo/ZaloPay + đối soát VietQR tự động (P2), **Chat realtime F2** (task riêng).
-> - **Kế tiếp:** G (Notification feed, dashboard KPI, analytics, audit log) — hoặc F2 Chat.
+> - **G — Thông báo / dashboard / observability:** `Notification` in-app + `NotificationPreference` (bật/tắt theo loại) — feed cá nhân, phát từ 6 sự kiện (báo cáo ngày, announcement publish, sự cố, hóa đơn, duyệt thuốc, duyệt nghỉ); là chốt chặn duy nhất để gắn push FCM sau · `GET /dashboard/summary` KPI theo cơ sở (sĩ số, điểm danh hôm nay, thuốc/nghỉ chờ duyệt, công nợ, doanh thu tháng) · `AuditLog` ghi hành động nhạy cảm (member.create/activate/deactivate, student.delete, invoice.cancel/payment) + `GET /audit-logs` · `UsageEvent` nhẹ (track login) + `GET /platform/usage/overview` DAU/WAU/MAU cho operator. **Analytics nâng cao (G3) + Mixpanel/GA: KHÔNG làm (tự host đủ quản lý).**
+> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** reset mật khẩu thật + email (P2), **push FCM** (tái dùng `NotificationsService.notify` làm điểm phát), seed demo + reconcile-counter (cuối P1), cổng MoMo/ZaloPay + đối soát VietQR tự động (P2), **Chat realtime F2** (task riêng), Analytics nâng cao G3/audit pipeline G5 (P2).
+> - **Kế tiếp:** F2 Chat realtime (chốt transport) — hoặc push FCM, hoặc seed demo, rồi chuyển phase UI.
 
 > **Chiến lược:** API-first toàn bộ. Làm **dứt điểm tất cả các phase API** (`kids-api`) trước; **UI/UX** (kids-crm, kids-mobile-native, kids-mobile-web) là **phase riêng SAU CÙNG**, tiêu thụ lại API đã ổn định. File này chỉ liệt kê **task API**.
 >
@@ -118,12 +119,13 @@
 
 ---
 
-## G. Thông báo, dashboard, audit (P1–P2)
+## G. Thông báo, dashboard, audit (P1–P2) ✅ (trừ analytics nâng cao + admissions → P2)
 
-- [ ] **P1** `Notification` feed + cấu hình bật/tắt theo loại (attendance/report/announcement/invoice) — *mock: notifications*.
-- [ ] **P1** API dashboard tổng hợp KPI cho admin — *mock: dashboard*.
-- [ ] **P2** Analytics (`@RequireFeature('analytics')`): xu hướng điểm danh, tăng trưởng, doanh thu.
-- [ ] **P2** Ghi `AuditLog` cho hành động nhạy cảm (sửa hóa đơn, xóa học sinh, đổi quyền).
+- [x] **P1** `Notification` feed + `NotificationPreference` bật/tắt theo loại — *mock: notifications*. `NotificationsService.notify`/`notifyStudentParents` (@Global) phát từ 6 sự kiện: daily-report (tạo mới), announcement publish, incident, tuition invoice, medicine handle, leave decide. Mặc định bật; PH/GV tự tắt từng loại. **Là điểm phát duy nhất để gắn push FCM về sau.**
+- [x] **P1** API dashboard tổng hợp KPI cho admin (`GET /dashboard/summary`, school-scope) — *mock: dashboard*. Sĩ số/lớp/nhân sự, điểm danh hôm nay theo trạng thái, thuốc + nghỉ chờ duyệt, công nợ (số HĐ + số tiền), doanh thu tháng.
+- [x] **P1/P2** Ghi `AuditLog` cho hành động nhạy cảm + `GET /audit-logs` (admin xem, lọc theo action): `member.create`/`member.activate`/`member.deactivate`, `student.delete`, `invoice.cancel`, `invoice.payment`. `AuditService` (@Global, tái dùng model Phase 0).
+- [x] **(thêm) Observability vận hành:** `UsageEvent` nhẹ (track `login`) + `GET /platform/usage/overview` (operator) → DAU/WAU/MAU + top event. Thay cho Mixpanel/GA: tự host, đủ để quản lý.
+- [ ] **P2** Analytics (`@RequireFeature('analytics')`): xu hướng điểm danh, tăng trưởng, doanh thu — **chưa làm** (tách khi cần bán theo gói).
 - [ ] **P2** Tuyển sinh/ghi danh (admissions pipeline) — ngoài mock, cân nhắc.
 
 ---

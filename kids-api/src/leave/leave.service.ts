@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { LeaveStatus, LeaveType } from "@prisma/client";
+import { LeaveStatus, LeaveType, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { ownedStudentWhere, recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface CreateLeaveInput {
@@ -15,7 +16,10 @@ export interface CreateLeaveInput {
 
 @Injectable()
 export class LeaveService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** PH (hoặc staff) tạo đơn xin nghỉ cho con/học sinh. */
   async create(user: AuthUser, input: CreateLeaveInput) {
@@ -81,15 +85,27 @@ export class LeaveService {
 
     const req = await this.prisma.db.leaveRequest.findFirst({
       where: { id, ...schoolWhere(user) },
-      select: { id: true, status: true },
+      select: { id: true, status: true, requestedById: true },
     });
     if (!req) throw new NotFoundException({ code: "NO_LEAVE", message: "Không tìm thấy đơn" });
     if (req.status !== LeaveStatus.PENDING)
       throw new BadRequestException({ code: "ALREADY_DECIDED", message: "Đơn đã được xử lý" });
 
-    return this.prisma.db.leaveRequest.update({
+    const updated = await this.prisma.db.leaveRequest.update({
       where: { id },
       data: { status, handledById: user.id, handledAt: new Date(), decisionNote: note },
     });
+
+    if (req.requestedById) {
+      await this.notifications.notify(user.tenantId!, [req.requestedById], {
+        type: NotificationType.LEAVE,
+        title:
+          status === LeaveStatus.APPROVED ? "Đơn xin nghỉ được duyệt" : "Đơn xin nghỉ bị từ chối",
+        body: note,
+        linkType: "LeaveRequest",
+        linkId: id,
+      });
+    }
+    return updated;
   }
 }

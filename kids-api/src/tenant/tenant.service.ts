@@ -7,6 +7,7 @@ import {
 import { LimitMetric, TenantRole, UserType } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
+import { AuditService } from "../audit/audit.service";
 import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -53,6 +54,7 @@ export class TenantService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly entitlements: EntitlementService,
+    private readonly audit: AuditService,
   ) {}
 
   getSettings(tenantId: string) {
@@ -87,7 +89,7 @@ export class TenantService {
    * Tạo tài khoản thành viên (GV/PH/y tá/nhân viên...) trực tiếp — chủ trường (SCHOOL_ADMIN)
    * hoặc hiệu trưởng (PRINCIPAL) thực hiện. Định danh = email HOẶC số điện thoại (ít nhất 1).
    */
-  async createMember(tenantId: string, input: CreateMemberInput) {
+  async createMember(tenantId: string, input: CreateMemberInput, actorId?: string) {
     const email = input.email?.trim() || null;
     const phone = input.phone?.trim() || null;
     if (!email && !phone)
@@ -120,7 +122,7 @@ export class TenantService {
 
     const passwordHash = await bcrypt.hash(input.password, 10);
     try {
-      return await this.prisma.system.user.create({
+      const member = await this.prisma.system.user.create({
         data: {
           type: UserType.TENANT,
           tenantId,
@@ -132,6 +134,15 @@ export class TenantService {
         },
         select: { id: true, email: true, phone: true, fullName: true },
       });
+      await this.audit.log({
+        tenantId,
+        actorId,
+        action: "member.create",
+        targetType: "User",
+        targetId: member.id,
+        metadata: { role: input.role },
+      });
+      return member;
     } catch (e) {
       if (metric) await this.entitlements.releaseQuota(tenantId, metric);
       throw e;
@@ -166,7 +177,7 @@ export class TenantService {
    * Bật/tắt tài khoản thành viên (đổi trạng thái). Vô hiệu hoá → chặn đăng nhập + giải phóng
    * quota (TEACHERS/ADMIN_USERS); kích hoạt lại → tiêu lại quota (có thể vượt hạn → 403).
    */
-  async setMemberStatus(tenantId: string, userId: string, isActive: boolean) {
+  async setMemberStatus(tenantId: string, userId: string, isActive: boolean, actorId?: string) {
     const user = await this.prisma.system.user.findFirst({
       where: { id: userId, tenantId, type: UserType.TENANT, deletedAt: null },
       include: { memberships: { where: { deletedAt: null }, select: { role: true } } },
@@ -193,6 +204,13 @@ export class TenantService {
     }
 
     await this.prisma.system.user.update({ where: { id: userId }, data: { isActive } });
+    await this.audit.log({
+      tenantId,
+      actorId,
+      action: isActive ? "member.activate" : "member.deactivate",
+      targetType: "User",
+      targetId: userId,
+    });
     return { id: userId, isActive };
   }
 
