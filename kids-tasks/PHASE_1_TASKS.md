@@ -8,10 +8,11 @@
 > - **D — Sức khỏe:** Health (y tá ghi chỉ số + API growth chiều cao/cân nặng) · Medicine (PH tạo → y tá duyệt/từ chối/đánh dấu đã uống, có `MedicineStatusHistory` timeline + ràng buộc chuyển trạng thái) · Incidents (staff ghi, PH xem con) + Allergies (unique studentId+allergen, cho cảnh báo thực đơn F3) · Leave (PH tạo → GV/admin duyệt 1 lần). Quyền xem dùng `recordScopeWhere`/`ownedStudentWhere`.
 > - **B3 — Nhân sự:** tạo tài khoản trực tiếp (email/phone, login cả hai), đổi trạng thái (tắt → nhả quota), lịch phân công tuần (`StaffAssignment`); quota TEACHERS/ADMIN_USERS + PARENT theo STUDENTS.
 > - **E — Học phí:** `TuitionInvoice`/`Item`/`Payment` (số HĐ tuần tự, line-items) · thanh toán **VietQR (tự sinh, miễn phí) + Tiền mặt + VNPay sandbox (webhook idempotent)** · **chứng từ in HTML** + xuất CSV + cấu hình bank/MST cho quyết toán thuế · cron `markOverdue`.
-> - **F — Giao tiếp & nội dung:** Announcements (audience ALL/PARENTS/TEACHERS/CLASS, feed lọc theo người xem) · Weekly Menu + cảnh báo dị ứng theo `Allergy` · Lesson Plan (feature-gate `lesson_plan`) · Album ảnh (feature-gate `media_gallery`, dùng `Media`). **Chat (F2) tách riêng — chưa làm.**
+> - **F — Giao tiếp & nội dung:** Announcements (audience ALL/PARENTS/TEACHERS/CLASS, feed lọc theo người xem) · Weekly Menu + cảnh báo dị ứng theo `Allergy` · Lesson Plan (feature-gate `lesson_plan`) · Album ảnh (feature-gate `media_gallery`, dùng `Media`).
 > - **G — Thông báo / dashboard / observability:** `Notification` in-app + `NotificationPreference` (bật/tắt theo loại) — feed cá nhân, phát từ 6 sự kiện (báo cáo ngày, announcement publish, sự cố, hóa đơn, duyệt thuốc, duyệt nghỉ); là chốt chặn duy nhất để gắn push FCM sau · `GET /dashboard/summary` KPI theo cơ sở (sĩ số, điểm danh hôm nay, thuốc/nghỉ chờ duyệt, công nợ, doanh thu tháng) · `AuditLog` ghi hành động nhạy cảm (member.create/activate/deactivate, student.delete, invoice.cancel/payment) + `GET /audit-logs` · `UsageEvent` nhẹ (track login) + `GET /platform/usage/overview` DAU/WAU/MAU cho operator. **Analytics nâng cao (G3) + Mixpanel/GA: KHÔNG làm (tự host đủ quản lý).**
-> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** reset mật khẩu thật + email (P2), **push FCM** (tái dùng `NotificationsService.notify` làm điểm phát), seed demo + reconcile-counter (cuối P1), cổng MoMo/ZaloPay + đối soát VietQR tự động (P2), **Chat realtime F2** (task riêng), Analytics nâng cao G3/audit pipeline G5 (P2).
-> - **Kế tiếp:** F2 Chat realtime (chốt transport) — hoặc push FCM, hoặc seed demo, rồi chuyển phase UI.
+> - **Seed demo:** `pnpm prisma:seed:demo` — 1 trường mẫu đầy đủ (gói PRO) để dev/demo UI. ✅
+> - **Còn lại (đẩy sau theo trigger — đã thống nhất):** reset mật khẩu thật + email (P2), **push FCM** (làm cùng phase mobile — tái dùng `NotificationsService.notify` làm điểm phát), reconcile-counter (cuối P1), cổng MoMo/ZaloPay + đối soát VietQR tự động (P2), Analytics nâng cao G3/audit pipeline G5 (P2).
+> - **Kế tiếp:** API Phase 1 coi như đóng → chuyển sang phase UI (kids-crm / mobile). Push FCM làm trong phase mobile.
 
 > **Chiến lược:** API-first toàn bộ. Làm **dứt điểm tất cả các phase API** (`kids-api`) trước; **UI/UX** (kids-crm, kids-mobile-native, kids-mobile-web) là **phase riêng SAU CÙNG**, tiêu thụ lại API đã ổn định. File này chỉ liệt kê **task API**.
 >
@@ -30,7 +31,7 @@
 - [ ] **P0** Tích hợp `consumeQuota`/`releaseQuota` vào create/delete của Student, Teacher(member), Classroom; reconcile job đếm lại counter.
 - [ ] **P1** Lưu trữ media: object storage (Cloudflare R2 / S3) + signed upload URL; model `Media` + liên kết.
 - [ ] **P1** Push notification: tích hợp FCM/Expo; model `Notification` + `DeviceToken` + service fan-out.
-- [ ] **P1** Seed dữ liệu demo domain (1 trường: lớp, học sinh, phụ huynh, giáo viên).
+- [x] **P1** Seed dữ liệu demo domain — `prisma/seed-demo.ts` (`pnpm prisma:seed:demo`, idempotent theo slug `demo`): 1 trường gói **PRO** đủ tính năng, 3 lớp · 12 HS+PH · 6 nhân sự · điểm danh/báo cáo hôm nay · sức khỏe/thuốc/sự cố/nghỉ phép · thực đơn tuần (có cảnh báo dị ứng) · 2 thông báo · 12 hóa đơn (PAID/PARTIAL/UNPAID) · giáo án · album · thông báo in-app · usage login. Đăng nhập: `admin@hoasen.edu.vn` / `Password123` tại host `demo.<ROOT_DOMAIN>`.
 
 ---
 
@@ -104,9 +105,6 @@
 
 ### F1. Announcements — *mock: announcements, announcement-compose, announcements-feed* ✅
 - [x] **P0** Model `Announcement` (audience ALL/PARENTS/TEACHERS/CLASS, classroomId?, publishedAt). Soạn theo phạm vi (`@Roles` GV/HT/admin); feed lọc theo người xem (PH chỉ thấy toàn trường/PH + lớp của con; TEACHERS ẩn với PH); nháp → publish. *(Notify đẩy sau cùng push.)*
-
-### F2. Chat/Messaging (`@RequireFeature('messaging')`) — *mock: chat-parent, chat-teacher*
-- [ ] **P1 (TÁCH RIÊNG):** Model `Conversation` + `Message` (1-1 GV↔PH) + realtime — **chưa làm** (cần chốt WebSocket/SSE/polling). Để task riêng sau.
 
 ### F3. Weekly Menu — *mock: menu-weekly* ✅
 - [x] **P1** Model `WeeklyMenu` + `Meal` (weekday, mealType, name, ingredients) + **cảnh báo dị ứng** đối chiếu `Allergy` của học sinh (`GET /menus/:id/allergy-warnings`). PH xem thực đơn trường/lớp con.
