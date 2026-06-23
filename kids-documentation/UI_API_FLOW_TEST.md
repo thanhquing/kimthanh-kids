@@ -152,6 +152,106 @@ Fix da thuc hien trong qua trinh test (deu o phia script test, **khong sua backe
 
 Ket qua: **49/49 PASS**, khong con case fail. Backend CRM chu truong khop 100% voi mock UI.
 
-## Dang Do
+## App Nho / Mobile (Giao vien + Phu huynh)
 
-App nho/mobile theo role giao vien va phu huynh (`mock-ui/mobile/`) chua chay. Day la buoc tiep theo: dang nhap mobile theo role TEACHER/PARENT -> cac man feed (bao cao ngay, diem danh, thong bao, hoa don, suc khoe...) tuong ung quyen doc/ghi gioi han.
+Mock UI source (`kids-landing/public/mock-ui/mobile/`):
+
+- Chung: `login.html`, `splash.html`, `profile.html`, `notifications.html`
+- Giao vien: `home-teacher.html`, `class-roster.html`, `attendance-mark.html`, `attendance-history.html`, `report-compose.html`, `report-feed.html`, `medicine-list.html`, `medicine-approve.html`, `menu-weekly.html`, `announcement-compose.html`, `announcements-feed.html`, `album-gallery.html`, `lesson-plan.html`
+- Phu huynh: `home-parent.html`, `children-list.html`, `student-detail.html`, `attendance-history.html`, `report-feed.html`, `medicine-create.html`, `medicine-detail.html`, `invoices.html`, `payment-checkout.html`, `leave-request.html`, `menu-weekly.html`
+
+Run: `1782233245`.
+Fixture tenant: `mob1782233245.kimthanhkids.vn` (platform tao tenant + bat feature `media_gallery` & `lesson_plan` qua entitlement override).
+Tai khoan: `teacher@mob1782233245.edu.vn` (GV), `parent@mob1782233245.edu.vn` (PH), mat khau `Password123`.
+Temp dir: `/tmp/kids-mobile-flow-1782233245`.
+
+Luong: platform tao tenant + cap feature -> admin dung fixture (GV, PH, lop, HS, gan PH, thuc don, hoa don) -> GV thao tac app -> PH thao tac app -> GV duyet yeu cau cua PH.
+
+### Setup (platform + admin)
+
+| ID | Behavior | cURL/API | Expected | Actual | Result |
+|---|---|---|---:|---:|---|
+| S01 | Platform tao tenant cho app | `POST /platform/tenants` | `201` | `201` | PASS |
+| S02 | Bat feature media_gallery | `POST /platform/tenants/:id/entitlements` | `201` | `201` | PASS |
+| S03 | Bat feature lesson_plan | `POST /platform/tenants/:id/entitlements` | `201` | `201` | PASS |
+| S04 | Admin tao giao vien | `POST /tenant/members` | `201` | `201` | PASS |
+| S05 | Admin tao phu huynh | `POST /tenant/members` | `201` | `201` | PASS |
+| S06 | Admin tao lop (gan GVCN) | `POST /classrooms` | `201` | `201` | PASS |
+| S07 | Admin tao hoc sinh | `POST /students` | `201` | `201` | PASS |
+| S08 | Admin gan phu huynh - HS | `POST /students/:id/guardians` | `201` | `201` | PASS |
+| S09 | Admin tao thuc don tuan | `POST /menus` | `201` | `201` | PASS |
+| S10 | Admin tao hoa don cho PH | `POST /tuition/invoices` | `201` | `201` | PASS |
+
+### Giao vien (home-teacher)
+
+| ID | UI behavior | cURL/API | Expected | Actual | Result |
+|---|---|---|---:|---:|---|
+| TC01 | GV xem profile | `GET /auth/me` | `200` | `200` | PASS |
+| TC02 | GV home: phan cong cua toi | `GET /assignments/mine` | `200` | `200` | PASS |
+| TC03 | GV danh sach lop | `GET /classrooms` | `200` | `200` | PASS |
+| TC04 | class-roster: HS trong lop | `GET /students?classroomId=` | `200` | `200` | PASS |
+| TC05 | attendance-mark: diem danh | `POST /attendance/mark` | `201` | `201` | PASS |
+| TC06 | attendance-history | `GET /attendance?classroomId=&date=` | `200` | `200` | PASS |
+| TC07 | report-compose: so lien lac | `POST /daily-reports` | `201` | `201` | PASS |
+| TC08 | report-feed theo lop | `GET /daily-reports?classroomId=&date=` | `200` | `200` | PASS |
+| TC09 | menu-weekly: xem thuc don | `GET /menus?weekStart=` | `200` | `200` | PASS |
+| TC10 | announcement-compose: thong bao lop | `POST /announcements` | `201` | `201` | PASS |
+| TC11 | announcements-feed | `GET /announcements/feed` | `200` | `200` | PASS |
+| TC12 | notifications | `GET /notifications` | `200` | `200` | PASS |
+| TC13 | dem chua doc | `GET /notifications/unread-count` | `200` | `200` | PASS |
+| TC14 | upload anh lop | `POST /media?kind=ALBUM` | `201` | `201` | PASS |
+| TC15 | tao album | `POST /albums` | `201` | `201` | PASS |
+| TC16 | them anh vao album | `POST /albums/:id/photos` | `201` | `201` | PASS |
+| TC17 | album-gallery: danh sach album | `GET /albums` | `200` | `200` | PASS |
+| TC18 | lesson-plan: tao ke hoach | `POST /lesson-plans` | `201` | `201` | PASS |
+| TC19 | xem lesson-plan | `GET /lesson-plans?classroomId=` | `200` | `200` | PASS |
+
+### Phu huynh (home-parent)
+
+| ID | UI behavior | cURL/API | Expected | Actual | Result |
+|---|---|---|---:|---:|---|
+| PR01 | PH xem profile | `GET /auth/me` | `200` | `200` | PASS |
+| PR02 | children-list: con cua toi | `GET /students/mine` | `200` | `200` | PASS |
+| PR03 | attendance-history cua con | `GET /attendance/student/:id` | `200` | `200` | PASS |
+| PR04 | report-feed cua con | `GET /daily-reports/student/:id` | `200` | `200` | PASS |
+| PR05 | student-detail: suc khoe con | `GET /health/student/:id` | `200` | `200` | PASS |
+| PR06 | medicine-create: gui cap thuoc | `POST /medicine` | `201` | `201` | PASS |
+| PR07 | medicine-list cua minh | `GET /medicine/mine` | `200` | `200` | PASS |
+| PR08 | medicine-detail | `GET /medicine/:id` | `200` | `200` | PASS |
+| PR09 | invoices cua minh | `GET /tuition/invoices/mine` | `200` | `200` | PASS |
+| PR10 | chi tiet hoa don | `GET /tuition/invoices/:id` | `200` | `200` | PASS |
+| PR11 | lay VietQR | `GET /tuition/invoices/:id/vietqr` | `200` | `200` | PASS |
+| PR12 | payment-checkout (VNPAY) | `POST /tuition/invoices/:id/pay/gateway` | `201` | `201` | PASS |
+| PR13 | leave-request: xin nghi | `POST /leave` | `201` | `201` | PASS |
+| PR14 | xem don nghi cua minh | `GET /leave/mine` | `200` | `200` | PASS |
+| PR15 | announcements-feed | `GET /announcements/feed` | `200` | `200` | PASS |
+| PR16 | menu-weekly | `GET /menus?weekStart=` | `200` | `200` | PASS |
+| PR17 | album-gallery (viewer) | `GET /albums` | `200` | `200` | PASS |
+| PR18 | notifications | `GET /notifications` | `200` | `200` | PASS |
+| PR19 | danh dau da doc tat ca | `POST /notifications/read-all` | `201` | `201` | PASS |
+
+### Cross-role + Edge
+
+| ID | Behavior | cURL/API | Expected | Actual | Result |
+|---|---|---|---:|---:|---|
+| XC01 | GV duyet yeu cau thuoc cua PH | `POST /medicine/:id/handle` | `201` | `201` | PASS |
+| XC02 | GV duyet don nghi cua PH | `POST /leave/:id/decide` | `201` | `201` | PASS |
+| ME01 | Edge: PH goi list HS (staff-only) | `GET /students` | `403` | `403` | PASS |
+| ME02 | Edge: PH diem danh (cam) | `POST /attendance/mark` | `403` | `403` | PASS |
+| ME03 | Edge: GV xem audit-log (admin-only) | `GET /audit-logs` | `403` | `403` | PASS |
+| ME04 | Edge: PH tu duyet don nghi (cam) | `POST /leave/:id/decide` | `403` | `403` | PASS |
+| ME05 | Edge: thieu token | `GET /notifications` | `401` | `401` | PASS |
+
+Ghi chu: feature `media_gallery` (album) va `lesson_plan` khong co trong goi `free`, phai bat qua entitlement override (S02/S03) -> dung thiet ke gating. Upload anh dung multipart `POST /media` (sharp -> webp) roi gan `mediaId` vao album. `pay/gateway` tra `redirectUrl` VNPay sandbox, khong can cau hinh rieng.
+
+Ket qua: **55/55 PASS**, khong sua backend.
+
+## Hoan Tat
+
+Ca 3 vung da chay het bang cURL thuc te tren DB Docker, **khong con case fail**:
+
+- Platform tenant: 23/23 PASS (co fix backend: create tenant / impersonate / coupons).
+- CRM chu truong: 49/49 PASS (backend giu nguyen).
+- App nho/mobile (GV + PH): 55/55 PASS (backend giu nguyen).
+
+Tong: 127 case PASS. Backend khop voi toan bo mock UI cho ca 3 platform/role -> san sang integrate UI thuc.
