@@ -65,6 +65,8 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 | `LimitMetric` | `STUDENTS`, `TEACHERS`, `CLASSROOMS`, `SCHOOLS`, `STORAGE_MB`, `PUSH_PER_MONTH`, `ADMIN_USERS` |
 | `LimitEnforcement` | `HARD`, `SOFT` |
 | `PlatformPaymentProvider` | `VNPAY`, `MOMO`, `BANK_TRANSFER`, `MANUAL` |
+| `CouponDuration` | `ONCE`, `REPEATING`, `FOREVER` |
+| `DiscountKind` | `PERCENT`, `FIXED_AMOUNT` |
 
 `Date` trong request body dùng chuỗi `YYYY-MM-DD`; `DateTime` dùng ISO string.
 
@@ -200,17 +202,36 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | Method | Path | Body / Query | Data trả về |
 |---|---|---|---|
 | `GET` | `/platform/tenants?page=&status=` | `page?: number`, `status?: TenantStatus` | paginated tenant list |
+| `POST` | `/platform/tenants` | `PlatformCreateTenantInput` | `{ tenant, school, admin, subscription }` |
 | `GET` | `/platform/tenants/:id` | - | tenant detail + settings/domains/schools/subscription/invoices |
 | `POST` | `/platform/tenants/:id/suspend` | - | `{ ok: true }` |
 | `POST` | `/platform/tenants/:id/reactivate` | - | `{ ok: true }` |
 | `POST` | `/platform/tenants/:id/entitlements` | `EntitlementOverrideInput` | `TenantEntitlement` |
+| `POST` | `/platform/tenants/:id/impersonate` | - | tenant admin access token, no refresh token |
 | `GET` | `/platform/subscriptions?page=&status=` | `page?: number`, `status?: SubscriptionStatus` | paginated subscriptions |
 | `GET` | `/platform/invoices?page=&tenantId=&status=` | filters | paginated platform invoices |
 | `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice |
 | `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | invoice after payment |
 | `GET` | `/platform/plans` | - | all plans |
 | `POST` | `/platform/plans` | `CreatePlanInput` | created plan + nested config |
+| `GET` | `/platform/coupons?page=&isActive=` | filters | paginated coupons |
+| `POST` | `/platform/coupons` | `CreateCouponInput` | created coupon |
 | `GET` | `/platform/usage/overview` | - | `{ tenants, activeTenants, users, dau, wau, mau, topEvents }` |
+
+`PlatformCreateTenantInput` dùng cùng schema với `SignupInput` nhưng chỉ dành cho platform console:
+
+```ts
+{
+  schoolName: string;
+  slug: string;
+  adminEmail: string;
+  adminPassword: string;
+  adminFullName: string;
+  phone?: string;
+}
+```
+
+`POST /platform/tenants/:id/impersonate` chỉ cho `PLATFORM_SUPER_ADMIN`, chọn SCHOOL_ADMIN active đầu tiên của tenant, ghi audit `platform.tenant.impersonate`, và trả access token ngắn hạn không kèm refresh token.
 
 `CreatePlanInput`:
 
@@ -237,6 +258,23 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
     limitValue: number | null; // null = unlimited
     enforcement?: LimitEnforcement;
   }>;
+}
+```
+
+`CreateCouponInput`:
+
+```ts
+{
+  code: string;                    // lưu uppercase
+  kind: DiscountKind;              // PERCENT hoặc FIXED_AMOUNT
+  amount: number;                  // PERCENT: 0 < amount <= 100
+  currency?: BillingCurrency;      // thường dùng cho FIXED_AMOUNT
+  duration?: CouponDuration;       // default ONCE
+  durationCount?: number;
+  maxRedemptions?: number;
+  validFrom?: string;              // DateTime
+  validUntil?: string;             // DateTime, phải sau validFrom
+  isActive?: boolean;              // default true
 }
 ```
 

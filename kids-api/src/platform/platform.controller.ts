@@ -2,8 +2,14 @@ import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { PlatformRole } from "@prisma/client";
 import { BillingService } from "../billing/billing.service";
+import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { PlatformRoles } from "../common/decorators/roles.decorator";
-import { PlatformService, CreatePlanInput } from "./platform.service";
+import {
+  CreateCouponInput,
+  CreatePlanInput,
+  PlatformCreateTenantInput,
+  PlatformService,
+} from "./platform.service";
 
 @ApiTags("platform-admin")
 @PlatformRoles(PlatformRole.PLATFORM_SUPER_ADMIN, PlatformRole.PLATFORM_BILLING)
@@ -17,6 +23,12 @@ export class PlatformController {
   @Get("tenants")
   listTenants(@Query("page") page?: string, @Query("status") status?: string) {
     return this.platform.listTenants(Number(page) || 1, 20, status);
+  }
+
+  @PlatformRoles(PlatformRole.PLATFORM_SUPER_ADMIN)
+  @Post("tenants")
+  createTenant(@CurrentUser() user: AuthUser, @Body() body: PlatformCreateTenantInput) {
+    return this.platform.createTenant(body, user.id);
   }
 
   @Get("tenants/:id")
@@ -39,6 +51,12 @@ export class PlatformController {
   @Post("tenants/:id/entitlements")
   setEntitlement(@Param("id") id: string, @Body() body: Record<string, never>) {
     return this.platform.setEntitlementOverride(id, body);
+  }
+
+  @PlatformRoles(PlatformRole.PLATFORM_SUPER_ADMIN)
+  @Post("tenants/:id/impersonate")
+  impersonate(@CurrentUser() user: AuthUser, @Param("id") id: string) {
+    return this.platform.impersonateTenantAdmin(id, user.id);
   }
 
   @Get("subscriptions")
@@ -73,5 +91,15 @@ export class PlatformController {
   @Post("plans")
   createPlan(@Body() body: CreatePlanInput) {
     return this.platform.createPlan(body);
+  }
+
+  @Get("coupons")
+  listCoupons(@Query("page") page?: string, @Query("isActive") isActive?: string) {
+    return this.platform.listCoupons(Number(page) || 1, 20, isActive);
+  }
+
+  @Post("coupons")
+  createCoupon(@Body() body: CreateCouponInput) {
+    return this.platform.createCoupon(body);
   }
 }

@@ -184,6 +184,60 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .set("Authorization", `Bearer ${token}`)
         .expect(200);
     });
+
+    it("platform console: tạo tenant, impersonate chủ trường, tạo/list coupon", async () => {
+      const token = await loginPlatform(app);
+      const slug = `pf-${rnd()}`;
+      const host = `${slug}.kimthanhkids.vn`;
+      const created = await api()
+        .post("/api/platform/tenants")
+        .set("Host", PLATFORM_HOST)
+        .set("Authorization", `Bearer ${token}`)
+        .send({
+          schoolName: `Platform ${slug}`,
+          slug,
+          adminEmail: `admin@${slug}.vn`,
+          adminPassword: "Password123",
+          adminFullName: "Platform Owner",
+        })
+        .expect(201);
+      const tenantId = created.body.data.tenant.id;
+
+      await api()
+        .get(`/api/platform/tenants/${tenantId}`)
+        .set("Host", PLATFORM_HOST)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(200);
+
+      const impersonated = await api()
+        .post(`/api/platform/tenants/${tenantId}/impersonate`)
+        .set("Host", PLATFORM_HOST)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(201);
+      await api()
+        .get("/api/tenant/settings")
+        .set("Host", host)
+        .set("Authorization", `Bearer ${impersonated.body.data.accessToken}`)
+        .expect(200);
+
+      const couponCode = `SALE${rnd()}`.toUpperCase();
+      const coupon = await api()
+        .post("/api/platform/coupons")
+        .set("Host", PLATFORM_HOST)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ code: couponCode, kind: "PERCENT", amount: 10 })
+        .expect(201);
+      expect(coupon.body.data.code).toBe(couponCode);
+
+      const coupons = await api()
+        .get("/api/platform/coupons?isActive=true")
+        .set("Host", PLATFORM_HOST)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(200);
+      expect(coupons.body.data.some((item: { code: string }) => item.code === couponCode)).toBe(
+        true,
+      );
+    });
   });
 
   // ─────────── SUBSCRIPTION GUARD ───────────
