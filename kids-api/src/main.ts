@@ -16,8 +16,8 @@ async function bootstrap(): Promise<void> {
 
   if (!env.isProd) {
     const config = new DocumentBuilder()
-      .setTitle("KimThanh Kids API — Platform layer (Phase 0)")
-      .setDescription("Multi-tenant SaaS: tenants, subscriptions, billing, white-label")
+      .setTitle("KimThanh Kids API")
+      .setDescription("Multi-tenant SaaS backend: platform billing + preschool domain API A-G")
       .setVersion("0.1.0")
       .addBearerAuth()
       .build();

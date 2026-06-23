@@ -52,10 +52,18 @@ erDiagram
     string displayName "thay 'KimThanh Kids'"
     string logoUrl
     string faviconUrl
-    string primaryColor
+    string primaryColor "default #2563eb"
+    string secondaryColor
     string emailFromName
-    string locale
-    string timezone
+    string emailFromAddr
+    string supportEmail
+    string locale "default vi-VN"
+    string timezone "default Asia/Ho_Chi_Minh"
+    string taxCode "MST — quyết toán thuế"
+    string invoiceAddress
+    string bankBin "VietQR napas"
+    string bankAccountNumber
+    string bankAccountName
   }
   TenantDomain {
     uuid id PK
@@ -77,9 +85,11 @@ erDiagram
   User {
     uuid id PK
     enum type "PLATFORM|TENANT"
-    string email "UK theo tenant; partial UK khi PLATFORM"
+    string email "nullable — định danh email HOẶC phone; UK (tenantId,email)"
+    string phone "nullable; UK (tenantId,phone) — login bằng cả hai"
     string passwordHash
     string fullName
+    bool isActive "tắt → chặn đăng nhập"
     enum platformRole "chỉ khi PLATFORM"
     uuid tenantId FK "null nếu PLATFORM"
     datetime deletedAt
@@ -90,6 +100,9 @@ erDiagram
     uuid userId FK
     enum role "SCHOOL_ADMIN|PRINCIPAL|TEACHER|NURSE|FINANCE|PARENT"
     uuid schoolId FK "null = toàn tenant (chuỗi)"
+    bool isActive
+    uuid createdById
+    datetime deletedAt
   }
   RefreshToken {
     uuid id PK
@@ -100,11 +113,11 @@ erDiagram
   }
   Plan {
     uuid id PK
-    string code UK "starter|pro|enterprise|dedicated"
-    enum tier "STARTER|PRO|ENTERPRISE|CUSTOM"
-    bool isPublic
+    string code UK "free|starter|pro|enterprise|dedicated"
+    enum tier "FREE|STARTER|PRO|ENTERPRISE|CUSTOM"
+    bool isPublic "dedicated = false (ẩn)"
     bool isActive
-    int trialDays
+    int trialDays "seed = 0 (freemium, không trial)"
   }
   PlanPrice {
     uuid id PK
@@ -279,7 +292,7 @@ erDiagram
   }
 ```
 
-**Đã có:** `Classroom`, `Student`, `StudentParent`. Các bảng domain tiếp theo (Attendance, DailyReport, Health, Tuition, Announcement, Chat, Menu, LessonPlan, Notification…) sẽ thêm dần theo [kids-tasks/PHASE_1_TASKS.md](../kids-tasks/PHASE_1_TASKS.md), mỗi bảng đều mang `tenantId` + `schoolId`.
+**Đã hoàn thành toàn bộ domain Phase 1 (A→G)** — ER chi tiết theo từng nhóm (D/B3/E/F/G) ở các mục bên dưới + [chỉ mục nhanh cuối tài liệu](#bảng-domain-phase-1-ag--chỉ-mục-nhanh) (Attendance, DailyReport, Health/Medicine/Incident/Allergy/Leave, StaffAssignment, Tuition*, Announcement, WeeklyMenu/Meal, LessonPlan, Album, Notification, UsageEvent…). Mỗi bảng đều mang `tenantId` + `schoolId`. *(Chat đã loại khỏi kế hoạch.)*
 
 ### C — Điểm danh & Báo cáo + Media (Phase 1)
 
@@ -328,3 +341,313 @@ erDiagram
 ```
 
 **Media — lưu trữ nội bộ + nén:** ảnh được nén bằng `sharp` (resize cạnh ≤ `MEDIA_MAX_DIM`=1280px, **webp** quality `MEDIA_QUALITY`=72, xoá metadata) trước khi ghi xuống `MEDIA_ROOT/<tenantId>/<id>.webp` — đủ chất lượng cho phụ huynh xem, tiết kiệm dung lượng. Quota `STORAGE_MB` enforce theo tổng `sizeBytes` của tenant. Phục vụ qua `GET /api/media/:id/file` (StreamableFile, cô lập theo tenant). Xem `kids-api/src/media/`.
+
+### D — Sức khỏe (Phase 1)
+
+```mermaid
+erDiagram
+  Student ||--o{ HealthRecord : ""
+  Student ||--o{ MedicineRequest : ""
+  MedicineRequest ||--o{ MedicineStatusHistory : ""
+  Student ||--o{ Incident : ""
+  Student ||--o{ Allergy : ""
+  Student ||--o{ LeaveRequest : ""
+
+  HealthRecord {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    date date
+    float heightCm "nullable"
+    float weightKg "nullable"
+    float temperatureC "nullable"
+    string note
+    uuid recordedById
+  }
+  MedicineRequest {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    string medicineName
+    string dosage
+    string schedule "vd 8h,14h"
+    date startDate
+    date endDate
+    string reason
+    enum status "PENDING|APPROVED|ADMINISTERED|REJECTED"
+    uuid requestedById "PH tạo"
+    uuid handledById "y tá/GV xử lý"
+    datetime handledAt
+  }
+  MedicineStatusHistory {
+    uuid id PK
+    string tenantId
+    uuid requestId FK
+    enum status "PENDING|APPROVED|ADMINISTERED|REJECTED"
+    string note
+    uuid actorId
+    datetime createdAt
+  }
+  Incident {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    date date
+    string type "Té ngã|Sốt|..."
+    enum severity "LOW|MEDIUM|HIGH"
+    string description
+    string actionTaken
+    uuid reportedById
+  }
+  Allergy {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    string allergen "UK (studentId,allergen)"
+    string note
+  }
+  LeaveRequest {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    enum leaveType "SICK|FAMILY|OTHER"
+    date startDate
+    date endDate
+    string reason
+    string attachmentUrl
+    enum status "PENDING|APPROVED|REJECTED"
+    uuid requestedById
+    uuid handledById
+    datetime handledAt
+    string decisionNote
+  }
+```
+
+### B3 — Phân công nhân sự (Phase 1)
+
+```mermaid
+erDiagram
+  User ||--o{ StaffAssignment : "staff"
+  Classroom ||--o{ StaffAssignment : ""
+
+  StaffAssignment {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid staffId FK
+    uuid classroomId FK "nullable"
+    int weekday "1=T2..7=CN"
+    enum shift "MORNING|AFTERNOON|FULL_DAY"
+    string duty "GV chính|Trực trưa|..."
+    string note
+    uuid createdById
+  }
+```
+
+> **UK** `(staffId, weekday, shift)` — 1 người chỉ 1 phân công cho mỗi (thứ, ca).
+
+### E — Học phí (Phase 1)
+
+```mermaid
+erDiagram
+  Student ||--o{ TuitionInvoice : ""
+  TuitionInvoice ||--o{ TuitionInvoiceItem : ""
+  TuitionInvoice ||--o{ TuitionPayment : ""
+
+  TuitionInvoice {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    string invoiceNumber "UK (tenantId,invoiceNumber) HD-YYYY-NNNN"
+    string period "2026-06|HK1..."
+    date issueDate
+    date dueDate
+    decimal subtotal
+    decimal discount
+    decimal total
+    decimal amountPaid
+    enum status "UNPAID|PARTIAL|PAID|OVERDUE|CANCELED"
+    string note
+    uuid createdById
+  }
+  TuitionInvoiceItem {
+    uuid id PK
+    string tenantId
+    uuid invoiceId FK
+    string label
+    int quantity
+    decimal unitPrice
+    decimal amount
+  }
+  TuitionPayment {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid invoiceId FK
+    enum method "CASH|BANK_TRANSFER|VNPAY"
+    enum status "PENDING|SUCCEEDED|FAILED|CANCELED"
+    decimal amount
+    string reference "ghi chú đối soát"
+    string gatewayRef "UK (method,gatewayRef)"
+    datetime paidAt
+    json rawPayload
+    uuid recordedById
+  }
+```
+
+### F — Giao tiếp & nội dung (Phase 1)
+
+```mermaid
+erDiagram
+  Classroom ||--o{ Announcement : "nullable"
+  Classroom ||--o{ WeeklyMenu : "nullable"
+  WeeklyMenu ||--o{ Meal : ""
+  Classroom ||--o{ LessonPlan : ""
+  LessonPlan ||--o{ Activity : ""
+  Classroom ||--o{ Album : "nullable"
+  Album ||--o{ AlbumPhoto : ""
+  Media ||--o{ AlbumPhoto : ""
+
+  Announcement {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    enum audience "ALL|PARENTS|TEACHERS|CLASS"
+    uuid classroomId FK "nullable (bắt buộc khi CLASS)"
+    string title
+    string body
+    datetime publishedAt "null = nháp"
+    uuid authorId
+  }
+  WeeklyMenu {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid classroomId FK "nullable = toàn trường"
+    date weekStart "thứ 2 đầu tuần"
+    string note
+    uuid createdById
+  }
+  Meal {
+    uuid id PK
+    string tenantId
+    uuid menuId FK
+    int weekday "1..7"
+    enum mealType "BREAKFAST|LUNCH|SNACK|DINNER"
+    string name
+    string ingredients "dùng dò dị ứng"
+  }
+  LessonPlan {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid classroomId FK
+    string week "2026-W27"
+    string theme
+    string note
+    uuid authorId
+  }
+  Activity {
+    uuid id PK
+    string tenantId
+    uuid planId FK
+    int dayOfWeek "1..7"
+    string startTime "08:00"
+    string title
+    string materials
+  }
+  Album {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid classroomId FK "nullable"
+    string title
+    string description
+    uuid createdById
+  }
+  AlbumPhoto {
+    uuid id PK
+    string tenantId
+    uuid albumId FK
+    uuid mediaId FK
+    string caption
+    int sortOrder
+  }
+```
+
+> Giáo án gate `@RequireFeature lesson_plan`; album gate `@RequireFeature media_gallery`. `AlbumPhoto` tái dùng `Media` (đã nén webp).
+
+### G — Thông báo / Observability (Phase 1)
+
+```mermaid
+erDiagram
+  User ||--o{ Notification : ""
+  User ||--o{ NotificationPreference : ""
+
+  Notification {
+    uuid id PK
+    string tenantId
+    uuid userId FK "người nhận"
+    enum type "ATTENDANCE|DAILY_REPORT|ANNOUNCEMENT|INVOICE|MEDICINE|LEAVE|INCIDENT"
+    string title
+    string body
+    string linkType "TuitionInvoice|Announcement|..."
+    string linkId
+    datetime readAt "null = chưa đọc"
+    datetime createdAt
+  }
+  NotificationPreference {
+    uuid id PK
+    string tenantId
+    uuid userId FK
+    enum type "ATTENDANCE|...|INCIDENT"
+    bool enabled "UK (userId,type); mặc định true"
+  }
+  UsageEvent {
+    uuid id PK
+    string tenantId "nullable"
+    uuid userId "nullable"
+    string type "login|signup|feature.*"
+    json meta
+    datetime createdAt
+  }
+```
+
+> `AuditLog` (hành động nhạy cảm) đã định nghĩa ở phần Tầng A; `UsageEvent` + `AuditLog` được operator đọc xuyên tenant qua `prisma.system`.
+
+---
+
+## Bảng domain Phase 1 (A→G) — chỉ mục nhanh
+
+> Mọi bảng dưới đây có `tenantId` (cô lập, trong `TENANT_KEY`) + (hầu hết) `schoolId`. Khoá/ràng buộc quan trọng liệt kê ở cột cuối. Soft-delete (`deletedAt`) áp cho `Classroom`, `Student` (ngoài các bảng Tầng A).
+
+| Bảng | Quan hệ chính | Ràng buộc / ghi chú |
+| --- | --- | --- |
+| `Classroom` | School 1–N; `homeroomTeacherId`→User | unique `(schoolId, name)`; `capacity` |
+| `Student` | School/Classroom N–1; soft-delete | quota STUDENTS |
+| `StudentParent` | Student N–N User(PARENT) | PK `(studentId, parentId)`; `relationship`, `isPrimary` |
+| `Attendance` | Student/Classroom | **unique `(studentId, date)`**; status PRESENT/LATE/ABSENT/EXCUSED |
+| `DailyReport` | Student/Classroom | **unique `(studentId, date)`**; mood/meals/nap/activities |
+| `HealthRecord` | Student | heightCm/weightKg/temperatureC (nguồn biểu đồ growth) |
+| `MedicineRequest` + `MedicineStatusHistory` | Student; history N–1 request | status PENDING→APPROVED→ADMINISTERED/REJECTED; history ghi timeline |
+| `Incident` | Student | severity LOW/MEDIUM/HIGH |
+| `Allergy` | Student | **unique `(studentId, allergen)`**; dùng cảnh báo menu |
+| `LeaveRequest` | Student | status PENDING→APPROVED/REJECTED (duyệt 1 lần) |
+| `StaffAssignment` | User(staff)/Classroom? | **unique `(staffId, weekday, shift)`**; shift MORNING/AFTERNOON/FULL_DAY |
+| `TuitionInvoice` + `TuitionInvoiceItem` + `TuitionPayment` | Student; items/payments N–1 invoice | invoice unique `(tenantId, invoiceNumber)` `HD-YYYY-NNNN`; payment unique `(method, gatewayRef)`; status UNPAID/PARTIAL/PAID/OVERDUE/CANCELED |
+| `Announcement` | Classroom? | audience ALL/PARENTS/TEACHERS/CLASS; `publishedAt` null = nháp |
+| `WeeklyMenu` + `Meal` | Classroom?; meals N–1 menu | mealType BREAKFAST/LUNCH/SNACK/DINNER; `ingredients` dùng dò dị ứng |
+| `LessonPlan` + `Activity` | Classroom; activities N–1 plan | feature `lesson_plan` |
+| `Album` + `AlbumPhoto` | Classroom?; photo→Media | feature `media_gallery`; `sortOrder` nối tiếp khi gắn nhiều batch |
+| `Notification` | User (người nhận) | type ATTENDANCE/DAILY_REPORT/ANNOUNCEMENT/INVOICE/MEDICINE/LEAVE/INCIDENT; `readAt` |
+| `NotificationPreference` | User | **unique `(userId, type)`**; mặc định bật, chỉ lưu khi ghi đè |
+| `UsageEvent` | (tenant/user nullable) | type "login"… ; operator đọc xuyên tenant cho DAU/WAU/MAU |
+| `AuditLog` (Tầng A, tái dùng) | — (global) | hành động nhạy cảm: member.create/activate/deactivate, student.delete, invoice.cancel/payment |
+
+> **Lưu ý trạng thái thuê bao:** signup hiện tạo gói `free` **ACTIVE** (`trialEndsAt=null`); enum `Tenant.status`/`Subscription.status` vẫn giữ `TRIAL/TRIALING` cho cấu hình gói có `trialDays>0` (seed = 0). Xem [BILLING.md](./BILLING.md).

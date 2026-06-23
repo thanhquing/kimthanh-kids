@@ -30,8 +30,17 @@ kids-api/src/
 ├── entitlement/             # EntitlementService (resolve features/limits + quota)
 ├── provisioning/            # POST /public/signup + branding + availability
 ├── billing/                 # plan/subscription/invoice/payment/webhook/cron/lifecycle
-├── platform/                # platform-admin (tenants/subscriptions/invoices/plans)
-└── tenant/                  # self-service (settings/white-label/schools/members/domains)
+├── platform/                # platform-admin (tenants/subscriptions/invoices/plans) + usage overview
+├── tenant/                  # self-service (settings/white-label/schools/members/domains)
+│   ── Phase 1 (domain nghiệp vụ A→G) ──
+├── students/ classrooms/    # B  hồ sơ học sinh + lớp + guardian
+├── attendance/ daily-reports/  # C  điểm danh + báo cáo ngày
+├── media/                   #    upload ảnh (sharp → webp, quota STORAGE_MB)
+├── health/ medicine/ incidents/ leave/  # D  sức khỏe (+ allergies)
+├── assignments/             # B3 phân công nhân sự (lịch tuần)
+├── tuition/                 # E  học phí (VietQR/cash/VNPay + print + CSV)
+├── announcements/ menus/ lesson-plans/ albums/  # F  giao tiếp & nội dung
+└── notifications/ dashboard/ audit/ usage/      # G  observability (@Global services)
 ```
 
 ## Vòng đời request
@@ -72,9 +81,38 @@ Request
 4. **Tách 2 lớp billing**: platform (bạn ← trường) vs tuition (trường ← phụ huynh, thuộc Phase 1). Bảng platform có prefix `Platform*`.
 5. **`prisma.db` (auto-filter) vs `prisma.system` (raw)** — phân tách rõ để chống rò rỉ.
 
+## Domain nghiệp vụ (Phase 1 — A→G)
+
+Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` (nghiệp vụ). Quy ước module: Prisma model → migration → service (`prisma.db`) → controller (`@Roles` + scope) → Zod DTO → e2e cô lập.
+
+| Nhóm | Module | Điểm chính |
+| --- | --- | --- |
+| **B** Hồ sơ/tổ chức | students, classrooms (+ guardians) | CRUD, gán phụ huynh (`StudentParent` N-N), "con của tôi" cho PH; quota STUDENTS/CLASSROOMS |
+| **B3** Nhân sự | assignments | tạo tài khoản trực tiếp (`/tenant/members`, email **hoặc** phone), bật/tắt (nhả quota); lịch phân công tuần (weekday+shift+duty) |
+| **C** Vận hành | attendance, daily-reports, media | điểm danh hàng loạt theo lớp (unique studentId+date); báo cáo ngày (upsert); ảnh nén webp |
+| **D** Sức khỏe | health, medicine, incidents, leave | chỉ số + API growth; đơn thuốc (state machine PENDING→APPROVED→ADMINISTERED + history); sự cố; dị ứng (cho cảnh báo menu); đơn nghỉ duyệt 1 lần |
+| **E** Học phí | tuition | `TuitionInvoice/Item/Payment`, số HĐ tuần tự; **VietQR** (EMVCo+CRC16, miễn phí) + **tiền mặt** + **VNPay sandbox** (webhook idempotent); bản in HTML + xuất CSV; cron `markOverdue` |
+| **F** Giao tiếp | announcements, menus, lesson-plans, albums | thông báo (audience ALL/PARENTS/TEACHERS/CLASS, feed lọc theo người xem); thực đơn + cảnh báo dị ứng; giáo án (`@RequireFeature lesson_plan`); album (`@RequireFeature media_gallery`) |
+| **G** Observability | notifications, dashboard, audit, usage | thông báo in-app + preference; dashboard KPI school-scope; `AuditLog` hành động nhạy cảm; `UsageEvent` (DAU/WAU/MAU operator) |
+
+**Scope đọc dữ liệu** (`src/common/scope/school-scope.ts`): `schoolWhere` (staff theo cơ sở), `recordScopeWhere`/`ownedStudentWhere` (PH chỉ thấy con), `contentScopeForKids` (menu/album của trường/lớp con), `STAFF_ROLE_LIST`.
+
+**Quan sát khi sửa code (gotchas):**
+
+- `findUnique/update/delete` theo PK **không** được extension inject `tenantId` → dùng `findFirst` trước, hoặc set `tenantId` tường minh ở `create` lồng nhau / `upsert` / `createMany`.
+- Validate query param bằng `ZodValidationPipe` (vd `audience`, `studentId`, `weekStart`) để tránh 500 do Prisma nhận sai kiểu.
+- `NotificationsService.notify` + `AuditService.log` là **best-effort** (tự nuốt lỗi + Logger) — không bao giờ làm hỏng hành động chính. `notify` là **điểm phát duy nhất** để gắn push FCM về sau.
+- Cột `@db.Date` lưu UTC-midnight của chuỗi `YYYY-MM-DD`; dashboard tính "hôm nay" theo `TenantSettings.timezone` (mặc định `Asia/Ho_Chi_Minh`).
+- `AuditLog`/`UsageEvent` đọc xuyên tenant qua `prisma.system`; ghi set `tenantId` tường minh.
+
+**Luồng tiêu biểu:**
+
+- *Notification fan-out:* 6 sự kiện phát in-app — tạo báo cáo ngày, publish announcement (theo audience), tạo sự cố, phát hành hóa đơn, y tá xử lý thuốc, duyệt đơn nghỉ.
+- *Thanh toán học phí:* VietQR tự sinh (không cổng) · tiền mặt (KT ghi `pay/manual`) · VNPay (`pay/gateway` → IPN `tuition/webhooks/vnpay` idempotent). Đối soát VietQR tự động + MoMo/ZaloPay = P2.
+
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — e2e cô lập đa-tenant (8/8 pass).
+- `pnpm test:e2e` — **99 e2e / 13 suite pass** (gồm isolation đa-tenant 8/8).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.
 - Cron billing chạy tự động (`@nestjs/schedule`); logic tách ở `BillingJobsService` để test gọi trực tiếp.

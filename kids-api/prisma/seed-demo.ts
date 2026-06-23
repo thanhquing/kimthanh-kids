@@ -174,7 +174,11 @@ async function main() {
     });
   }
   const admin = await createStaff("admin@hoasen.edu.vn", "Trần Quản Trị", TenantRole.SCHOOL_ADMIN);
-  await createStaff("hieutruong@hoasen.edu.vn", "Lê Thị Hiệu", TenantRole.PRINCIPAL);
+  const hieuTruong = await createStaff(
+    "hieutruong@hoasen.edu.vn",
+    "Lê Thị Hiệu",
+    TenantRole.PRINCIPAL,
+  );
   const coMai = await createStaff("co.mai@hoasen.edu.vn", "Nguyễn Thị Mai", TenantRole.TEACHER);
   const coLan = await createStaff("co.lan@hoasen.edu.vn", "Phạm Thị Lan", TenantRole.TEACHER);
   const nurse = await createStaff("yta.hoa@hoasen.edu.vn", "Đỗ Thị Hoa", TenantRole.NURSE);
@@ -645,6 +649,54 @@ async function main() {
         body: "Vui lòng thanh toán trước hạn.",
         linkType: "TuitionInvoice",
       },
+    ],
+  });
+
+  // ─── Audit log mẫu (vài hành động gần đây) ───
+  await prisma.auditLog.createMany({
+    data: [
+      {
+        tenantId,
+        actorId: admin.id,
+        actorType: UserType.TENANT,
+        action: "tenant.settings.update",
+        targetType: "TenantSettings",
+        targetId: tenantId,
+        metadata: { schoolName: tenant.legalName },
+        createdAt: new Date(now.getTime() - 2 * 3_600_000),
+      },
+      {
+        tenantId,
+        actorId: admin.id,
+        actorType: UserType.TENANT,
+        action: "member.invite",
+        targetType: "User",
+        targetId: coMai.id,
+        metadata: { email: "co.mai@hoasen.edu.vn", role: "TEACHER" },
+        createdAt: new Date(now.getTime() - 6 * 3_600_000),
+      },
+      {
+        tenantId,
+        actorId: hieuTruong.id,
+        actorType: UserType.TENANT,
+        action: "classroom.create",
+        targetType: "Classroom",
+        targetId: clsLa.id,
+        metadata: { name: "Lớp Lá" },
+        createdAt: new Date(now.getTime() - 24 * 3_600_000),
+      },
+    ],
+  });
+
+  // ─── Notification preferences mẫu (bật/tắt kênh) ───
+  await prisma.notificationPreference.createMany({
+    data: [
+      { tenantId, userId: admin.id, type: NotificationType.INVOICE, enabled: true },
+      { tenantId, userId: admin.id, type: NotificationType.ANNOUNCEMENT, enabled: true },
+      { tenantId, userId: coMai.id, type: NotificationType.ATTENDANCE, enabled: true },
+      { tenantId, userId: coMai.id, type: NotificationType.DAILY_REPORT, enabled: true },
+      { tenantId, userId: nurse.id, type: NotificationType.MEDICINE, enabled: true },
+      { tenantId, userId: nurse.id, type: NotificationType.INCIDENT, enabled: true },
     ],
   });
 

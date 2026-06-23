@@ -7,7 +7,7 @@
 | Phase | Tên | Trạng thái | Phụ thuộc | File chi tiết |
 |---|---|---|---|---|
 | **0** | Nền tảng SaaS (Tầng A) | ✅ **Xong** | — | (đã code: `kids-api`) |
-| **1** | Domain nghiệp vụ (Tầng B) | ⏳ Kế tiếp | Phase 0 | [PHASE_1_TASKS.md](./PHASE_1_TASKS.md) |
+| **1** | Domain nghiệp vụ (Tầng B) | ✅ **Xong** | Phase 0 | [PHASE_1_TASKS.md](./PHASE_1_TASKS.md) |
 | **2** | Tích hợp & hạ tầng | ◻️ Chưa | Phase 1 | *(tạo khi tới)* |
 | **3** | AI & nâng cao | ◻️ Chưa | Phase 1–2 | *(tạo khi tới)* |
 | **0.5** | Hoàn thiện billing | ◻️ Chèn khi cần | Phase 0 | *(tạo khi tới)* |
@@ -20,9 +20,9 @@
 Đa-tenant (POOL+SILO), tenant/school, white-label, gói cước, subscription, billing nền tảng (platform→trường), feature-gating, quota, RBAC 2 cấp, auth JWT, provisioning signup.
 → Tài liệu: [`../kids-documentation/`](../kids-documentation/README.md).
 
-## Phase 1 — Domain nghiệp vụ (Tầng B) ⏳
+## Phase 1 — Domain nghiệp vụ (Tầng B) ✅
 
-Toàn bộ luồng API trong mock-ui: students/guardians, classrooms, attendance, daily reports, health/medicine (+leave), học phí (trường→phụ huynh), announcements, chat, menu, lesson plan, notifications, media/album, dashboard.
+Toàn bộ luồng API trong mock-ui: students/guardians, classrooms, attendance, daily reports, health/medicine (+leave), học phí (trường→phụ huynh), announcements, menu, lesson plan, notifications, media/album, dashboard.
 → Chi tiết & ưu tiên: [PHASE_1_TASKS.md](./PHASE_1_TASKS.md). **Đủ để 1 trường vận hành thật.**
 
 ## Phase 2 — Tích hợp & hạ tầng ◻️

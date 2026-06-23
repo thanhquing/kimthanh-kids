@@ -2,14 +2,19 @@
 
 > **Lưu ý:** Đây là billing **platform → trường** (trường trả tiền thuê dịch vụ). KHÁC với **học phí** (trường → phụ huynh) thuộc Phase 1. Mọi bảng ở đây có prefix `Platform*` / `Plan*` / `Subscription*`.
 
-## Gói cước (seed mặc định)
+## Gói cước (seed mặc định — `prisma/seed.ts`)
 
-| code | tier | Giá | Trial | Đặc điểm |
+| code | tier | Giá | HS / GV / Lớp / Lưu trữ | Tính năng bật |
 |---|---|---|---|---|
-| `starter` | STARTER | 0đ/tháng | 30 ngày | messaging; limit STUDENTS 50, CLASSROOMS 5 |
-| `pro` | PRO | 1.2tr/th · 3.24tr/quý · 12.24tr/năm | — | +media_gallery, lesson_plan, analytics; STUDENTS 500 |
-| `enterprise` | ENTERPRISE | thỏa thuận | — | tất cả tính năng; quota unlimited (chuỗi nhiều cơ sở) |
-| `dedicated` | CUSTOM | thỏa thuận (ẩn) | — | deploy riêng (SILO); `billingMode=DEDICATED_FREE` |
+| `free` | FREE | 0đ — **vĩnh viễn** | 20 / 2 / 2 / 1GB | — |
+| `starter` | STARTER | 490k/th · 4.9tr/năm | 100 / 8 / 8 / 5GB | media_gallery |
+| `pro` | PRO | 1.2tr/th · 3.24tr/quý · 12.24tr/năm | 300 / 25 / 20 / 20GB | media_gallery, lesson_plan, analytics |
+| `enterprise` | ENTERPRISE | thỏa thuận | ∞ | tất cả + api_access |
+| `dedicated` | CUSTOM | thỏa thuận (ẩn) | ∞ | tất cả; deploy riêng |
+
+> **Freemium:** `POST /public/signup` luôn gắn gói **`free` ở trạng thái ACTIVE vĩnh viễn** (`trialEndsAt=null`, `currentPeriodEnd ≈ +100 năm`) — **không qua TRIAL**. Tất cả gói seed hiện đặt `trialDays=0`; state `TRIALING` + cron `expireTrials` chỉ kích hoạt nếu cấu hình gói có `trialDays>0`.
+> **Feature key:** `media_gallery` (Album), `lesson_plan` (Giáo án), `analytics` (báo cáo nâng cao — chưa xây), `api_access`. Cờ `messaging` vẫn tồn tại nhưng **module Chat đã loại khỏi kế hoạch** — không dùng/quảng bá.
+> **Quota PARENT:** không đếm bằng counter mà **giới hạn theo `STUDENTS`** (1 học sinh ~ 1 phụ huynh đại diện).
 
 Mô hình giá **linh hoạt**: `PlanPrice` (theo chu kỳ × tiền tệ) + `PlanFeature` (bật/tắt tính năng) + `PlanLimit` (quota theo metric). Đổi giá/feature/limit không cần đổi schema.
 
