@@ -21,6 +21,7 @@ const CYCLE_SHORT: Record<string, string> = {
 const EMPTY: CreateTenantInput = {
   schoolName: "",
   slug: "",
+  taxCode: "",
   adminFullName: "",
   adminEmail: "",
   adminPassword: "",
@@ -310,6 +311,14 @@ export function TenantsPage() {
             placeholder="vd: hoasen"
             value={form.slug}
             onChange={(e) => setForm({ ...form, slug: e.target.value })}
+          />
+        </Field>
+        <Field label="Mã số thuế (MST)">
+          <input
+            className="field"
+            placeholder="10 hoặc 13 chữ số"
+            value={form.taxCode}
+            onChange={(e) => setForm({ ...form, taxCode: e.target.value })}
           />
         </Field>
         <Field label="Họ tên quản trị">

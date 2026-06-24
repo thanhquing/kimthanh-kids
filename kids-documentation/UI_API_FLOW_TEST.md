@@ -59,6 +59,19 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P15 | Tam khoa truong | `POST /platform/tenants/:id/suspend` | `201` | `201` | PASS | ok |
 | P16 | Verify chi tiet sau suspend | `GET /platform/tenants/:id` | `200` | `200` | PASS | tenant detail returned |
 | P17 | Mo khoa lai tenant test | `POST /platform/tenants/:id/reactivate` | `201` | `201` | PASS | ok |
+| P18 | Dashboard tong quan (KPI+MRR+phan bo+2 list) | `GET /platform/overview` | `200` | `200` | PASS | kpis{tenants,active,trial,overdue,suspended,mrr} + mrrSeries[12] + mrrGrowthPct |
+| P19 | Doanh thu MRR 12 thang | `GET /platform/revenue?months=12` | `200` | `200` | PASS | series 12 diem |
+| P20 | Doanh thu MRR 24 thang | `GET /platform/revenue?months=24` | `200` | `200` | PASS | series 24, source CRON/BACKFILL/DERIVED; cap <=24 |
+| P21 | Backfill snapshot MRR | `POST /platform/mrr/backfill?months=24` | `201` | `201` | PASS | `{ok,written}`; chi ghi thang con thieu |
+| P22 | Dem tenant theo trang thai (chip) | `GET /platform/tenants/stats` | `200` | `200` | PASS | `{total,ACTIVE,TRIAL,PAST_DUE,SUSPENDED}` |
+| P23 | Tim truong server-side | `GET /platform/tenants?q=demo` | `200` | `200` | PASS | loc theo slug/legalName/displayName |
+| P24 | Chi tiet truong giau truong | `GET /platform/tenants/:id` | `200` | `200` | PASS | demo: mrr 1.200.000, studentCount 12, quota[STUDENTS 12/300,TEACHERS 2/25,CLASSROOMS 3/20,STORAGE_MB 0/20480], schools[]._count |
+| M01 | Signup MST sai checksum | `POST /public/signup` (taxCode `1234567890`) | `400` | `400` | PASS | `VALIDATION_FAILED` |
+| M02 | Signup MST trung (1 MST=1 truong) | `POST /public/signup` (taxCode da dung) | `409` | `409` | PASS | `TAX_CODE_TAKEN` |
+| M03 | Signup MST hop le | `POST /public/signup` (taxCode dung checksum) | `201` | `201` | PASS | tenant + admin created |
+| E04 | Edge: tenant admin xem doanh thu | `GET /platform/revenue` | `403` | `403` | PASS | `FORBIDDEN` |
+| E05 | Edge: tenant admin backfill | `POST /platform/mrr/backfill` | `403` | `403` | PASS | `FORBIDDEN` (chi SUPER_ADMIN) |
+| E06 | Edge: tenant admin xem stats | `GET /platform/tenants/stats` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |
@@ -70,6 +83,14 @@ Fix da thuc hien trong qua trinh test:
 - Them `POST /platform/tenants/:id/impersonate` cho `PLATFORM_SUPER_ADMIN`; token khong co refresh token va co audit log `platform.tenant.impersonate`.
 - Them `GET /platform/coupons` va `POST /platform/coupons` vi schema da co `Coupon` va mock UI co trang coupon.
 - Dong bo `kids-documentation/API.md` cho cac endpoint tren.
+
+Bo sung dot 2 (dashboard/tenants/MST — run sau khi reset DB sach, tenant demo PRO):
+
+- `GET /platform/overview` (dashboard giau du lieu) + `GET /platform/revenue` + `POST /platform/mrr/backfill` (snapshot MRR theo thang, cron dau thang) — P18..P21.
+- `GET /platform/tenants/stats` (chip dem theo trang thai) + `?q=` (search server-side) + detail tra them `mrr/studentCount/quota/schools._count` — P22..P24.
+- Signup **bat buoc MST** (`Tenant.taxCode` unique + checksum Tong cuc Thue): M01 sai checksum 400, M02 trung 409 `TAX_CODE_TAKEN`, M03 hop le 201.
+- Edge phan quyen endpoint moi (chi `PLATFORM_SUPER_ADMIN/BILLING`): E04..E06 → 403.
+- Tat ca da co e2e tuong ung (`test/observability.e2e-spec.ts`, `test/auth-rbac.e2e-spec.ts`).
 
 ## CRM Chu Truong
 

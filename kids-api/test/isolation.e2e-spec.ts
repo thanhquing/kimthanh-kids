@@ -6,6 +6,7 @@ import { AppModule } from "../src/app.module";
 import { BillingJobsService } from "../src/billing/billing-jobs.service";
 import { EntitlementService } from "../src/entitlement/entitlement.service";
 import { PrismaService } from "../src/prisma/prisma.service";
+import { genTaxCode } from "./helpers";
 
 const ROOT = "kimthanhkids.vn";
 const PLATFORM_HOST = "admin.kimthanhkids.vn";
@@ -56,6 +57,7 @@ describe("Phase 0 — Platform layer (multi-tenant isolation)", () => {
         .send({
           schoolName: `Trường ${t.slug}`,
           slug: t.slug,
+          taxCode: genTaxCode(),
           adminEmail: t.email,
           adminPassword: t.password,
           adminFullName: "Hiệu trưởng",

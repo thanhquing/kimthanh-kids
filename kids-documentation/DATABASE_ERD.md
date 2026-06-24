@@ -39,6 +39,8 @@ erDiagram
     uuid id PK
     string slug UK "→ slug.kimthanhkids.vn"
     string legalName
+    string taxCode UK "MST pháp nhân — 1 MST = 1 trường (chống mở trùng)"
+    datetime taxVerifiedAt "đã xác minh MST với cơ quan thuế"
     enum status "TRIAL|ACTIVE|PAST_DUE|SUSPENDED|CANCELLED (cache)"
     enum tenancyMode "POOL|SILO"
     enum planTier
@@ -79,6 +81,7 @@ erDiagram
     uuid tenantId FK
     string name
     string code "UK theo tenant"
+    string moetCode "mã trường Bộ GD&ĐT (CSDL ngành)"
     bool isActive
     datetime deletedAt
   }

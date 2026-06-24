@@ -19,6 +19,17 @@ export function rnd(): string {
   return Math.random().toString(36).slice(2, 8);
 }
 
+/** Sinh MST 10 số hợp lệ (đúng checksum Tổng cục Thuế) — ngẫu nhiên để không trùng giữa các test. */
+export function genTaxCode(): string {
+  const w = [31, 29, 23, 19, 17, 13, 7, 5, 3];
+  const first9 = Array.from({ length: 9 }, (_, i) =>
+    i === 0 ? 1 + Math.floor(Math.random() * 9) : Math.floor(Math.random() * 10),
+  );
+  const sum = first9.reduce((s, d, i) => s + d * w[i], 0);
+  const check = (10 - (sum % 11)) % 10;
+  return first9.join("") + check;
+}
+
 export interface TenantFixture {
   slug: string;
   host: string;
@@ -39,6 +50,7 @@ export async function createTenant(app: INestApplication): Promise<TenantFixture
     .send({
       schoolName: `Trường ${slug}`,
       slug,
+      taxCode: genTaxCode(),
       adminEmail: email,
       adminPassword: password,
       adminFullName: "HT",

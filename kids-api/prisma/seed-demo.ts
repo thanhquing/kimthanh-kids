@@ -113,6 +113,7 @@ async function main() {
     data: {
       slug: SLUG,
       legalName: "Mầm non Hoa Sen",
+      taxCode: "0312345673", // MST hợp lệ (đúng checksum)
       status: TenantStatus.ACTIVE,
       planTier: proPlan.tier,
       currentPeriodEnd: periodEnd,
@@ -122,7 +123,7 @@ async function main() {
           primaryColor: "#16a34a",
           secondaryColor: "#f59e0b",
           supportEmail: "lienhe@hoasen.edu.vn",
-          taxCode: "0312345678",
+          taxCode: "0312345673",
           invoiceAddress: "12 Nguyễn Huệ, Quận 1, TP.HCM",
           bankBin: "970436", // Vietcombank
           bankAccountNumber: "0071000123456",

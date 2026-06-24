@@ -62,19 +62,12 @@ export function LoginPage() {
             placeholder="••••••••••"
           />
         </div>
-        <div className="flex items-center justify-between text-sm mb-5">
-          <label className="flex items-center gap-2 text-slate-500">
-            <input type="checkbox" className="rounded" defaultChecked />
-            Ghi nhớ
-          </label>
-          <span className="text-[color:var(--primary)] font-medium cursor-pointer">Quên mật khẩu?</span>
-        </div>
 
         {error && (
           <div className="mb-3 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</div>
         )}
 
-        <button type="submit" className="btn-primary w-full" disabled={loading}>
+        <button type="submit" className="btn-primary w-full mt-4" disabled={loading}>
           {loading ? "Đang đăng nhập…" : "Đăng nhập"}
         </button>
 

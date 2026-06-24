@@ -7,6 +7,7 @@ import {
   UserType,
 } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import { isValidTaxCode, normalizeTaxCode } from "../common/validation/tax-code";
 import { EnvService } from "../config/env.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -29,6 +30,7 @@ const SLUG_RE = /^[a-z][a-z0-9-]{1,30}[a-z0-9]$/;
 export interface SignupInput {
   schoolName: string;
   slug: string;
+  taxCode: string;
   adminEmail: string;
   adminPassword: string;
   adminFullName: string;
@@ -62,6 +64,23 @@ export class ProvisioningService {
     if (!check.available)
       throw new BadRequestException({ code: "SLUG_UNAVAILABLE", message: check.reason });
 
+    // MST: bắt buộc, đúng format/checksum, và mỗi MST chỉ mở 1 trường (chống tạo trial ảo hàng loạt).
+    const taxCode = normalizeTaxCode(input.taxCode);
+    if (!isValidTaxCode(taxCode))
+      throw new BadRequestException({
+        code: "INVALID_TAX_CODE",
+        message: "Mã số thuế không hợp lệ (10 hoặc 13 chữ số)",
+      });
+    const taxTaken = await this.prisma.system.tenant.findFirst({
+      where: { taxCode, deletedAt: null },
+      select: { id: true },
+    });
+    if (taxTaken)
+      throw new ConflictException({
+        code: "TAX_CODE_TAKEN",
+        message: "Mã số thuế này đã được dùng để đăng ký một trường khác",
+      });
+
     const freePlan = await this.prisma.system.plan.findUnique({ where: { code: "free" } });
     if (!freePlan)
       throw new BadRequestException({
@@ -81,11 +100,12 @@ export class ProvisioningService {
           data: {
             slug: input.slug,
             legalName: input.schoolName,
+            taxCode,
             status: TenantStatus.ACTIVE,
             planTier: freePlan.tier,
             trialEndsAt: null,
             currentPeriodEnd: periodEnd,
-            settings: { create: { displayName: input.schoolName } },
+            settings: { create: { displayName: input.schoolName, taxCode } },
             domains: {
               create: {
                 host,

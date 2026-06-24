@@ -175,6 +175,8 @@ model Tenant {
   id               String       @id @default(uuid())
   slug             String       @unique
   legalName        String
+  taxCode          String?      @unique // MST pháp nhân — định danh tài khoản, 1 MST = 1 trường (chống mở trùng)
+  taxVerifiedAt    DateTime? // đã xác minh MST với cơ quan thuế (null = mới chỉ đúng format/checksum)
   status           TenantStatus @default(TRIAL) // cache; nguồn chân lý = Subscription
   tenancyMode      TenancyMode  @default(POOL)
   planTier         PlanTier     @default(STARTER)
@@ -245,6 +247,7 @@ model School {
   tenant      Tenant       @relation(fields: [tenantId], references: [id])
   name        String
   code        String
+  moetCode    String? // mã trường trên CSDL ngành GD&ĐT (Bộ GD&ĐT) — định danh cơ sở chuẩn ngành
   address     String?
   phone       String?
   isActive    Boolean      @default(true)

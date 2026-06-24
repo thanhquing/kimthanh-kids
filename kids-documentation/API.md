@@ -76,7 +76,7 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 
 | Method | Path | Body / Query | Data trả về |
 |---|---|---|---|
-| `POST` | `/public/signup` | Body `SignupInput` | `{ tenant, school, admin, subscription, host }` |
+| `POST` | `/public/signup` | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | `{ tenant, school, admin, subscription, host }`. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400) |
 | `GET` | `/public/availability?slug=` | Query `slug: string` | `{ available: boolean }` |
 | `GET` | `/public/branding?host=` | Query `host: string` | branding/settings theo host |
 

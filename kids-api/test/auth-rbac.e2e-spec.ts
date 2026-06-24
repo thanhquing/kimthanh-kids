@@ -1,7 +1,7 @@
 import { INestApplication } from "@nestjs/common";
 import request from "supertest";
 import { PrismaService } from "../src/prisma/prisma.service";
-import { PLATFORM_HOST, bootstrap, createTenant, loginPlatform, rnd } from "./helpers";
+import { PLATFORM_HOST, bootstrap, createTenant, genTaxCode, loginPlatform, rnd } from "./helpers";
 
 describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", () => {
   let app: INestApplication;
@@ -91,6 +91,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .send({
           schoolName: "Trường khác",
           slug: t.slug,
+          taxCode: genTaxCode(),
           adminEmail: `other@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
@@ -105,6 +106,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .send({
           schoolName: "Trường Admin",
           slug: "admin",
+          taxCode: genTaxCode(),
           adminEmail: `a@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
@@ -125,6 +127,48 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         })
         .expect(400);
       expect(res.body.error.code).toBe("VALIDATION_FAILED");
+    });
+
+    it("MST sai format/checksum → 400 VALIDATION_FAILED", async () => {
+      const res = await api()
+        .post("/api/public/signup")
+        .send({
+          schoolName: "Trường MST sai",
+          slug: `t-${rnd()}`,
+          taxCode: "1234567890", // 10 số nhưng sai checksum
+          adminEmail: `a@${rnd()}.vn`,
+          adminPassword: "Password123",
+          adminFullName: "Người dùng",
+        })
+        .expect(400);
+      expect(res.body.error.code).toBe("VALIDATION_FAILED");
+    });
+
+    it("MST trùng → 409 TAX_CODE_TAKEN (1 MST = 1 trường)", async () => {
+      const taxCode = genTaxCode();
+      await api()
+        .post("/api/public/signup")
+        .send({
+          schoolName: "Trường A",
+          slug: `t-${rnd()}`,
+          taxCode,
+          adminEmail: `a@${rnd()}.vn`,
+          adminPassword: "Password123",
+          adminFullName: "Người dùng",
+        })
+        .expect(201);
+      const res = await api()
+        .post("/api/public/signup")
+        .send({
+          schoolName: "Trường B",
+          slug: `t-${rnd()}`,
+          taxCode, // cùng MST
+          adminEmail: `b@${rnd()}.vn`,
+          adminPassword: "Password123",
+          adminFullName: "Người dùng",
+        })
+        .expect(409);
+      expect(res.body.error.code).toBe("TAX_CODE_TAKEN");
     });
 
     it("availability phản ánh slug đã dùng", async () => {
@@ -196,6 +240,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .send({
           schoolName: `Platform ${slug}`,
           slug,
+          taxCode: genTaxCode(),
           adminEmail: `admin@${slug}.vn`,
           adminPassword: "Password123",
           adminFullName: "Platform Owner",

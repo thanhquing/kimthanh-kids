@@ -180,6 +180,23 @@ export function TenantDetailPage() {
             </div>
             <dl className="text-sm space-y-2.5">
               <Row k="Tên pháp lý" v={t.legalName} />
+              <Row
+                k="Mã số thuế"
+                v={
+                  t.taxCode ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-mono text-xs">{t.taxCode}</span>
+                      {t.taxVerifiedAt ? (
+                        <span className="badge b-green">Đã xác minh</span>
+                      ) : (
+                        <span className="badge b-amber">Chưa xác minh</span>
+                      )}
+                    </span>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
               <Row k="Tên miền (slug)" v={t.slug} />
               <Row k="Mã trường" v={<span className="font-mono text-xs">{t.id}</span>} />
               <Row k="Ngày tạo" v={formatDate(t.createdAt)} />

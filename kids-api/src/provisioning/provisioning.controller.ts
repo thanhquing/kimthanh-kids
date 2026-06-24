@@ -3,11 +3,15 @@ import { ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { Public } from "../common/decorators/public.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
+import { isValidTaxCode } from "../common/validation/tax-code";
 import { ProvisioningService } from "./provisioning.service";
 
 const signupSchema = z.object({
   schoolName: z.string().min(2).max(120),
   slug: z.string().min(3).max(32),
+  taxCode: z
+    .string()
+    .refine(isValidTaxCode, { message: "Mã số thuế không hợp lệ (10 hoặc 13 chữ số)" }),
   adminEmail: z.string().email(),
   adminPassword: z.string().min(8),
   adminFullName: z.string().min(2).max(120),
