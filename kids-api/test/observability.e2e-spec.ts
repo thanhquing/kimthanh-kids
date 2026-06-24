@@ -219,4 +219,32 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const t = await createTenant(app);
     await api().get("/api/platform/overview").set(auth(t)).expect(403);
   });
+
+  // ── Doanh thu theo tháng + snapshot MRR (GET /platform/revenue, POST /platform/mrr/backfill) ──
+  it("platform revenue: backfill snapshot + chuỗi 24 tháng đầy đủ", async () => {
+    await createTenant(app);
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+
+    // Backfill 24 tháng (super-admin) — idempotent, không đè snapshot thực.
+    const bf = await api().post("/api/platform/mrr/backfill?months=24").set(phead).expect(201);
+    expect(bf.body.data.ok).toBe(true);
+    expect(bf.body.data.written).toBeGreaterThanOrEqual(0);
+
+    // Chuỗi 24 tháng: đủ 24 điểm, mới nhất ở cuối, có nguồn (CRON/BACKFILL/DERIVED).
+    const r = await api().get("/api/platform/revenue?months=24").set(phead).expect(200);
+    expect(r.body.data.months).toBe(24);
+    expect(r.body.data.series).toHaveLength(24);
+    expect(typeof r.body.data.growthPct).toBe("number");
+    expect(["CRON", "BACKFILL", "DERIVED"]).toContain(r.body.data.series[23].source);
+
+    // Quá biên bị kẹp về [1,24].
+    const capped = await api().get("/api/platform/revenue?months=99").set(phead).expect(200);
+    expect(capped.body.data.months).toBe(24);
+
+    // Tenant thường không xem doanh thu / không backfill được.
+    const t = await createTenant(app);
+    await api().get("/api/platform/revenue").set(auth(t)).expect(403);
+    await api().post("/api/platform/mrr/backfill").set(auth(t)).expect(403);
+  });
 });

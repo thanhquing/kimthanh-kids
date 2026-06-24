@@ -528,6 +528,27 @@ model PlatformWebhookEvent {
   @@map("platform_webhook_events")
 }
 
+// Snapshot MRR theo tháng (platform-global, KHÔNG tenant-scoped) — nguồn cho biểu đồ doanh thu
+// nhiều tháng. source=CRON là số thực chốt định kỳ; BACKFILL là số suy ngược lúc khởi tạo.
+model MrrSnapshot {
+  id          String            @id @default(uuid())
+  periodMonth DateTime          @unique // 00:00 ngày 1 của tháng (mốc đại diện, UTC)
+  mrr         Decimal           @default(0) @db.Decimal(14, 2)
+  activeSubs  Int               @default(0)
+  byTier      Json? // { FREE: number, STARTER: number, ... } — MRR (VND/tháng) theo tier
+  source      MrrSnapshotSource @default(CRON)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([periodMonth])
+  @@map("mrr_snapshots")
+}
+
+enum MrrSnapshotSource {
+  CRON
+  BACKFILL
+}
+
 // ──────────────── NHÓM 5: ENTITLEMENT / USAGE / COUPON / CREDIT ────────────────
 
 model TenantEntitlement {

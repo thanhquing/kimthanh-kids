@@ -192,6 +192,14 @@ erDiagram
     bool verified
     bool processed
   }
+  MrrSnapshot {
+    uuid id PK
+    datetime periodMonth "UK — 00:00 ngày 1 tháng (UTC)"
+    decimal mrr "MRR VND/tháng"
+    int activeSubs
+    json byTier "MRR theo tier"
+    enum source "CRON số thực | BACKFILL suy ngược"
+  }
   TenantEntitlement {
     uuid id PK
     uuid tenantId
@@ -233,6 +241,7 @@ erDiagram
 2. **Plan / Pricing:** `Plan`, `PlanPrice`, `PlanFeature`, `PlanLimit`.
 3. **Subscription:** `Subscription` (1/tenant), `SubscriptionChange` (audit + proration).
 4. **Billing nền tảng:** `PlatformInvoice`, `PlatformInvoiceLine`, `PlatformPayment`, `PlatformWebhookEvent`.
+   - `MrrSnapshot`: platform-global (KHÔNG tenant-scoped), `@@unique(periodMonth)`. Chốt MRR theo tháng cho biểu đồ doanh thu nhiều tháng — cron đầu tháng ghi số thực (`source=CRON`); `backfill` suy ngược lịch sử (`source=BACKFILL`, gần đúng vì mù churn).
 5. **Entitlement / Quota / Khuyến mãi:** `TenantEntitlement`, `UsageCounter`, `Coupon`, `CreditLedger`.
 6. **Cross-cutting:** `AuditLog`.
 

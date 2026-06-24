@@ -18,6 +18,7 @@ import { paginated } from "../common/http/api-response";
 import { LifecycleService } from "../billing/lifecycle.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { ProvisioningService, SignupInput } from "../provisioning/provisioning.service";
+import { MrrSnapshotService } from "./mrr-snapshot.service";
 
 export interface CreatePlanInput {
   code: string;
@@ -54,7 +55,15 @@ export class PlatformService {
     private readonly lifecycle: LifecycleService,
     private readonly provisioning: ProvisioningService,
     private readonly tokens: TokenService,
+    private readonly mrr: MrrSnapshotService,
   ) {}
+
+  /** Chuỗi doanh thu MRR theo tháng (cho biểu đồ 12/24 tháng). Giới hạn 1..24. */
+  async revenue(months = 12) {
+    const m = Math.min(24, Math.max(1, Math.floor(months) || 12));
+    const series = await this.mrr.monthlySeries(m);
+    return { months: m, series, growthPct: this.mrr.growthPct(series.map((p) => p.value)) };
+  }
 
   /**
    * Tổng quan dashboard cho operator nền tảng (xuyên tenant). Một phát trả đủ:
@@ -87,23 +96,7 @@ export class PlatformService {
       include: { plan: { include: { prices: true } } },
     });
 
-    const subMrr = (sub: (typeof subs)[number]): number => {
-      const price = sub.plan?.prices.find(
-        (p) => p.billingCycle === sub.billingCycle && p.currency === BillingCurrency.VND,
-      );
-      if (!price) return 0;
-      const amount = Number(price.amount);
-      switch (sub.billingCycle) {
-        case BillingCycle.QUARTERLY:
-          return amount / 3;
-        case BillingCycle.ANNUAL:
-          return amount / 12;
-        default:
-          return amount; // MONTHLY
-      }
-    };
-
-    const mrr = Math.round(subs.reduce((sum, s) => sum + subMrr(s), 0));
+    const mrr = Math.round(subs.reduce((sum, s) => sum + this.mrr.subMrr(s), 0));
 
     // Phân bổ theo gói: nhóm theo TIER (FREE/STARTER/PRO/ENTERPRISE/CUSTOM) — KHÔNG theo planId,
     // vì mỗi tenant CUSTOM thường là 1 plan riêng → gộp theo tier mới ra số lát hợp lý.
@@ -116,24 +109,9 @@ export class PlatformService {
       .map(([tier, count]) => ({ tier, count }))
       .sort((a, b) => b.count - a.count);
 
-    // MRR 12 tháng gần nhất: mỗi tháng cộng MRR của các thuê bao đã tạo tính tới cuối tháng đó
-    // (đường tăng trưởng theo ngày bắt đầu thật — chưa có snapshot MRR lịch sử).
-    const mrrSeries: { month: string; value: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
-      const value = subs
-        .filter((s) => s.createdAt <= monthEnd)
-        .reduce((sum, s) => sum + subMrr(s), 0);
-      mrrSeries.push({ month: `T${monthEnd.getMonth() + 1}`, value: Math.round(value) });
-    }
-
-    // % tăng trưởng MRR (luôn hiện): so tháng gần nhất với tháng liền trước; nếu tháng liền trước = 0
-    // thì lấy mốc là tháng ĐẦU TIÊN có MRR trong cửa sổ 12 tháng; chưa từng có MRR → 0%.
-    const seriesVals = mrrSeries.map((s) => s.value);
-    const lastMrr = seriesVals[seriesVals.length - 1] ?? 0;
-    const prevMrr = seriesVals[seriesVals.length - 2] ?? 0;
-    const baseMrr = prevMrr > 0 ? prevMrr : (seriesVals.find((v) => v > 0) ?? 0);
-    const mrrGrowthPct = baseMrr > 0 ? Math.round(((lastMrr - baseMrr) / baseMrr) * 1000) / 10 : 0;
+    // MRR 12 tháng: ưu tiên snapshot thật (bất biến, không mù churn); tháng thiếu → suy ngược.
+    const mrrSeries = await this.mrr.monthlySeries(12);
+    const mrrGrowthPct = this.mrr.growthPct(mrrSeries.map((p) => p.value));
 
     // Trường mới đăng ký (5 gần nhất).
     const recentTenantsRaw = await this.prisma.system.tenant.findMany({

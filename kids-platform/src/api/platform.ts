@@ -73,6 +73,16 @@ export type Coupon = {
   isActive: boolean;
 };
 
+// 1 điểm doanh thu theo tháng. source: CRON (số thực) | BACKFILL | DERIVED (suy ngược, gần đúng).
+export type RevenuePoint = {
+  period: string; // "YYYY-MM"
+  month: string; // "T6"
+  value: number; // VND/tháng
+  source: "CRON" | "BACKFILL" | "DERIVED";
+};
+
+export type RevenueSeries = { months: number; series: RevenuePoint[]; growthPct: number };
+
 // Payload dashboard nền tảng (GET /platform/overview). Số tiền: VND/tháng.
 export type DashboardOverview = {
   kpis: {
@@ -83,7 +93,7 @@ export type DashboardOverview = {
     suspendedTenants: number;
     mrr: number;
   };
-  mrrSeries: { month: string; value: number }[];
+  mrrSeries: RevenuePoint[];
   mrrGrowthPct: number;
   planDistribution: { tier: string; count: number }[];
   recentTenants: {
@@ -147,6 +157,8 @@ export type EntitlementInput = {
 // ─── theo đúng luồng cURL đã test (ledger Platform Tenant) ───
 export const platform = {
   overview: () => api.get<DashboardOverview>("/platform/overview"),
+  revenue: (months: number) =>
+    api.get<RevenueSeries>("/platform/revenue", { query: { months } }),
 
   listTenants: (page = 1, status?: string) =>
     api.get<Tenant[]>("/platform/tenants", { query: { page, status } }),

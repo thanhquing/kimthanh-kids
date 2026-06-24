@@ -4,6 +4,7 @@ import { PlatformRole } from "@prisma/client";
 import { BillingService } from "../billing/billing.service";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { PlatformRoles } from "../common/decorators/roles.decorator";
+import { MrrSnapshotService } from "./mrr-snapshot.service";
 import {
   CreateCouponInput,
   CreatePlanInput,
@@ -18,11 +19,24 @@ export class PlatformController {
   constructor(
     private readonly platform: PlatformService,
     private readonly billing: BillingService,
+    private readonly mrr: MrrSnapshotService,
   ) {}
 
   @Get("overview")
   overview() {
     return this.platform.dashboard();
+  }
+
+  @Get("revenue")
+  revenue(@Query("months") months?: string) {
+    return this.platform.revenue(Number(months) || 12);
+  }
+
+  @PlatformRoles(PlatformRole.PLATFORM_SUPER_ADMIN)
+  @Post("mrr/backfill")
+  async backfillMrr(@Query("months") months?: string) {
+    const written = await this.mrr.backfill(Number(months) || 24);
+    return { ok: true, written };
   }
 
   @Get("tenants")

@@ -30,7 +30,7 @@ kids-api/src/
 ├── entitlement/             # EntitlementService (resolve features/limits + quota)
 ├── provisioning/            # POST /public/signup + branding + availability
 ├── billing/                 # plan/subscription/invoice/payment/webhook/cron/lifecycle
-├── platform/                # platform-admin (tenants/subscriptions/invoices/plans) + usage overview
+├── platform/                # platform-admin (tenants/subscriptions/invoices/plans) + dashboard overview + MRR snapshot/cron
 ├── tenant/                  # self-service (settings/white-label/schools/members/domains)
 │   ── Phase 1 (domain nghiệp vụ A→G) ──
 ├── students/ classrooms/    # B  hồ sơ học sinh + lớp + guardian
@@ -116,3 +116,4 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.
 - Cron billing chạy tự động (`@nestjs/schedule`); logic tách ở `BillingJobsService` để test gọi trực tiếp.
+- Cron MRR (`MrrSnapshotCron`, đầu mỗi tháng) chốt `MrrSnapshot` số thực; logic ở `MrrSnapshotService` (test + backfill gọi trực tiếp). Dashboard/biểu đồ doanh thu đọc snapshot, thiếu tháng nào thì suy ngược (DERIVED).

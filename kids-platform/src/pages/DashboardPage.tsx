@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Building2, CircleCheck, Lock, Receipt, Search, Sparkles, TrendingUp } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { platform } from "@/api/platform";
+import { platform, type RevenuePoint } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { badgeFor, TENANT_STATUS, TIER_LABEL } from "@/lib/labels";
 
@@ -56,12 +56,22 @@ export function DashboardPage() {
     queryFn: () => platform.overview(),
   });
 
+  // Toggle 12/24 tháng: 12 tháng dùng luôn dữ liệu overview; 24 tháng gọi /platform/revenue.
+  const [range, setRange] = useState<12 | 24>(12);
+  const { data: rev } = useQuery({
+    queryKey: ["platform-revenue", range],
+    queryFn: () => platform.revenue(range),
+    enabled: range === 24,
+  });
+
   const k = data?.kpis;
   const n = (v?: number): ReactNode => (isLoading ? "…" : (v ?? 0));
 
-  const series = data?.mrrSeries ?? [];
+  const series: RevenuePoint[] = range === 24 ? (rev?.series ?? []) : (data?.mrrSeries ?? []);
+  const growth = range === 24 ? (rev?.growthPct ?? 0) : (data?.mrrGrowthPct ?? 0);
   const line = linePoints(series.map((s) => s.value));
   const area = line ? `0,200 ${line} 600,200` : "";
+  const label = (p: RevenuePoint) => (range === 24 ? `${p.month}/${p.period.slice(2, 4)}` : p.month);
 
   const dist = data?.planDistribution ?? [];
   const distTotal = dist.reduce((s, d) => s + d.count, 0);
@@ -105,13 +115,28 @@ export function DashboardPage() {
         <div className="grid lg:grid-cols-3 gap-5">
           <div className="card p-5 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <div className="font-bold">Doanh thu định kỳ (MRR · 12 tháng)</div>
-              {data?.mrrGrowthPct != null && (
-                <span className={`badge ${data.mrrGrowthPct >= 0 ? "b-green" : "b-red"}`}>
-                  {data.mrrGrowthPct >= 0 ? "+" : ""}
-                  {data.mrrGrowthPct}%
+              <div className="font-bold">Doanh thu định kỳ (MRR · {range} tháng)</div>
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-lg border border-[#f1e3dc] overflow-hidden text-xs font-medium">
+                  {([12, 24] as const).map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setRange(r)}
+                      className={
+                        r === range
+                          ? "px-2.5 py-1 bg-[color:var(--primary)] text-white"
+                          : "px-2.5 py-1 text-slate-500 hover:bg-[#fff3ec]"
+                      }
+                    >
+                      {r}T
+                    </button>
+                  ))}
+                </div>
+                <span className={`badge ${growth >= 0 ? "b-green" : "b-red"}`}>
+                  {growth >= 0 ? "+" : ""}
+                  {growth}%
                 </span>
-              )}
+              </div>
             </div>
             <svg viewBox="0 0 600 200" className="w-full h-48" preserveAspectRatio="none">
               <defs>
@@ -125,7 +150,10 @@ export function DashboardPage() {
             </svg>
             <div className="flex justify-between text-xs text-slate-400 mt-1">
               {series.map((s, i) => (
-                <span key={`${s.month}-${i}`}>{s.month}</span>
+                // 24 tháng: chỉ hiện nhãn cách 1 tháng (offset 2) để khỏi chồng chữ; vẫn giữ chỗ để thẳng cột.
+                <span key={`${s.period}-${i}`} className="text-center">
+                  {range === 24 && i % 2 !== 0 ? "" : label(s)}
+                </span>
               ))}
             </div>
           </div>

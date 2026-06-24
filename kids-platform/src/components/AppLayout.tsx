@@ -67,7 +67,7 @@ export function AppLayout() {
           </div>
         ))}
 
-        <button onClick={onLogout} className="nav-item mt-2 w-full text-left">
+        <button onClick={onLogout} className="nav-item w-full text-left">
           <LogOut className="w-4 h-4" />
           Đăng xuất
         </button>
