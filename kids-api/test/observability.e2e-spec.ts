@@ -267,6 +267,15 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
       expect(row).toHaveProperty(f);
     }
 
+    // Search server-side theo slug: từ khóa không tồn tại → rỗng; theo slug có thật → khớp.
+    const none = await api()
+      .get("/api/platform/tenants?q=zzz-khong-ton-tai-xyz")
+      .set(phead)
+      .expect(200);
+    expect(none.body.meta.total).toBe(0);
+    const hit = await api().get(`/api/platform/tenants?q=${row.slug}`).set(phead).expect(200);
+    expect(hit.body.data.some((x: { slug: string }) => x.slug === row.slug)).toBe(true);
+
     // Tenant thường không xem stats nền tảng.
     const t = await createTenant(app);
     await api().get("/api/platform/tenants/stats").set(auth(t)).expect(403);

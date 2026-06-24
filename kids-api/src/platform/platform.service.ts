@@ -173,8 +173,23 @@ export class PlatformService {
     };
   }
 
-  async listTenants(page = 1, pageSize = 20, status?: string) {
-    const where = { ...(status ? { status: status as never } : {}), deletedAt: null };
+  async listTenants(page = 1, pageSize = 20, status?: string, q?: string) {
+    const term = q?.trim();
+    const where = {
+      ...(status ? { status: status as never } : {}),
+      deletedAt: null,
+      ...(term
+        ? {
+            OR: [
+              { slug: { contains: term, mode: "insensitive" as const } },
+              { legalName: { contains: term, mode: "insensitive" as const } },
+              {
+                settings: { is: { displayName: { contains: term, mode: "insensitive" as const } } },
+              },
+            ],
+          }
+        : {}),
+    };
     const [items, total] = await Promise.all([
       this.prisma.system.tenant.findMany({
         where,

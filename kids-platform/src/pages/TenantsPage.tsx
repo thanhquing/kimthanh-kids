@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Download, Plus, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "@/api/http";
 import { platform, type CreateTenantInput, type Tenant } from "@/api/platform";
@@ -66,12 +66,22 @@ export function TenantsPage() {
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<CreateTenantInput>(EMPTY);
 
+  // Debounce 350ms: chỉ gọi server sau khi ngừng gõ; đổi từ khóa → về trang 1.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedQ(search.trim());
+      setPage(1);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [search]);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["tenants", "list", status, page],
-    queryFn: () => platform.listTenants(page, status || undefined),
+    queryKey: ["tenants", "list", status, page, debouncedQ],
+    queryFn: () => platform.listTenants(page, status || undefined, debouncedQ || undefined),
   });
   const { data: stats } = useQuery({
     queryKey: ["tenants", "stats"],
@@ -79,10 +89,7 @@ export function TenantsPage() {
   });
 
   const total = data?.meta.total ?? 0;
-  const rows = (data?.items ?? []).filter((t) => {
-    const q = search.trim().toLowerCase();
-    return !q || t.slug.toLowerCase().includes(q) || name(t).toLowerCase().includes(q);
-  });
+  const rows = data?.items ?? []; // lọc ở server (param q)
 
   const CHIPS = [
     { key: "", label: "Tất cả", count: stats?.total },

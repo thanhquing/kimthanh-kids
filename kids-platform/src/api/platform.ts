@@ -173,8 +173,8 @@ export const platform = {
   revenue: (months: number) =>
     api.get<RevenueSeries>("/platform/revenue", { query: { months } }),
 
-  listTenants: (page = 1, status?: string) =>
-    api.getPage<Tenant>("/platform/tenants", { query: { page, status } }),
+  listTenants: (page = 1, status?: string, q?: string) =>
+    api.getPage<Tenant>("/platform/tenants", { query: { page, status, q: q || undefined } }),
   tenantStats: () => api.get<TenantStats>("/platform/tenants/stats"),
   getTenant: (id: string) => api.get<Tenant>(`/platform/tenants/${id}`),
   createTenant: (body: CreateTenantInput) =>

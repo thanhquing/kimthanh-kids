@@ -204,7 +204,7 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `GET` | `/platform/overview` | - | dashboard console: `{ kpis{tenants,activeTenants,trialTenants,overdueInvoices,suspendedTenants,mrr}, mrrSeries[12], mrrGrowthPct, planDistribution[], recentTenants[], recentOverdue[] }` |
 | `GET` | `/platform/revenue?months=` | `months?: 1..24` (mặc định 12, kẹp ≤24) | `{ months, series:[{period,month,value,source}], growthPct }` — chuỗi MRR theo tháng (`source`: `CRON` số thực \| `BACKFILL` \| `DERIVED` suy ngược) |
 | `POST` | `/platform/mrr/backfill?months=` | `months?: number` (mặc định 24); **chỉ `PLATFORM_SUPER_ADMIN`** | `{ ok, written }` — backfill snapshot các tháng còn thiếu (không đè số thực) |
-| `GET` | `/platform/tenants?page=&status=` | `page?: number`, `status?: TenantStatus` | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
+| `GET` | `/platform/tenants?page=&status=&q=` | `page?: number`, `status?: TenantStatus`, `q?: string` (tìm theo slug/legalName/displayName, server-side) | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
 | `GET` | `/platform/tenants/stats` | - | đếm tenant theo trạng thái: `{ total, ACTIVE, TRIAL, PAST_DUE, SUSPENDED }` (cho chip lọc) |
 | `POST` | `/platform/tenants` | `PlatformCreateTenantInput` | `{ tenant, school, admin, subscription }` |
 | `GET` | `/platform/tenants/:id` | - | tenant detail + settings/domains/schools/subscription/invoices |
