@@ -8,6 +8,7 @@ import {
   LimitMetric,
   PlanTier,
   PlatformInvoiceStatus,
+  StudentStatus,
   SubscriptionStatus,
   TenantRole,
   TenantStatus,
@@ -173,22 +174,58 @@ export class PlatformService {
   }
 
   async listTenants(page = 1, pageSize = 20, status?: string) {
-    const where = status ? { status: status as never } : {};
+    const where = { ...(status ? { status: status as never } : {}), deletedAt: null };
     const [items, total] = await Promise.all([
       this.prisma.system.tenant.findMany({
-        where: { ...where, deletedAt: null },
+        where,
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: "desc" },
         include: {
           settings: true,
-          subscription: { include: { plan: true } },
+          subscription: { include: { plan: { include: { prices: true } } } },
           _count: { select: { schools: true } },
         },
       }),
-      this.prisma.system.tenant.count({ where: { ...where, deletedAt: null } }),
+      this.prisma.system.tenant.count({ where }),
     ]);
-    return paginated(items, { page, pageSize, total });
+
+    // Số học sinh đang học theo tenant (1 query gộp cho cả trang).
+    const ids = items.map((t) => t.id);
+    const grouped = ids.length
+      ? await this.prisma.system.student.groupBy({
+          by: ["tenantId"],
+          where: { tenantId: { in: ids }, status: StudentStatus.ACTIVE, deletedAt: null },
+          _count: { _all: true },
+        })
+      : [];
+    const studentCount = new Map(grouped.map((g) => [g.tenantId, g._count._all]));
+
+    const rows = items.map((t) => ({
+      ...t,
+      planTier: t.subscription?.plan?.tier ?? null,
+      billingCycle: t.subscription?.billingCycle ?? null,
+      studentCount: studentCount.get(t.id) ?? 0,
+      mrr: t.subscription ? Math.round(this.mrr.subMrr(t.subscription)) : 0,
+    }));
+    return paginated(rows, { page, pageSize, total });
+  }
+
+  /** Đếm tenant theo trạng thái (cho chip lọc) — xuyên trang, không phụ thuộc phân trang. */
+  async tenantStats() {
+    const grouped = await this.prisma.system.tenant.groupBy({
+      by: ["status"],
+      where: { deletedAt: null },
+      _count: { _all: true },
+    });
+    const by = (s: TenantStatus) => grouped.find((g) => g.status === s)?._count._all ?? 0;
+    return {
+      total: grouped.reduce((sum, g) => sum + g._count._all, 0),
+      ACTIVE: by(TenantStatus.ACTIVE),
+      TRIAL: by(TenantStatus.TRIAL),
+      PAST_DUE: by(TenantStatus.PAST_DUE),
+      SUSPENDED: by(TenantStatus.SUSPENDED),
+    };
   }
 
   async getTenant(id: string) {

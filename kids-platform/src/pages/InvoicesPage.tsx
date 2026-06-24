@@ -126,7 +126,7 @@ export function InvoicesPage() {
         <Field label="Chọn trường">
           <select className="field" value={tenantId} onChange={(e) => setTenantId(e.target.value)}>
             <option value="">— Chọn trường —</option>
-            {(tenants.data ?? []).map((t) => (
+            {(tenants.data?.items ?? []).map((t) => (
               <option key={t.id} value={t.id}>
                 {t.legalName ?? t.slug} ({t.slug})
               </option>

@@ -247,4 +247,28 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     await api().get("/api/platform/revenue").set(auth(t)).expect(403);
     await api().post("/api/platform/mrr/backfill").set(auth(t)).expect(403);
   });
+
+  // ── Bảng Tenants: stats theo trạng thái + list có MRR/học sinh/chu kỳ + meta phân trang ──
+  it("platform tenants: stats + list giàu trường + meta", async () => {
+    await createTenant(app);
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+
+    const stats = await api().get("/api/platform/tenants/stats").set(phead).expect(200);
+    expect(stats.body.data.total).toBeGreaterThanOrEqual(1);
+    for (const key of ["ACTIVE", "TRIAL", "PAST_DUE", "SUSPENDED"]) {
+      expect(typeof stats.body.data[key]).toBe("number");
+    }
+
+    const list = await api().get("/api/platform/tenants?page=1").set(phead).expect(200);
+    expect(list.body.meta.total).toBeGreaterThanOrEqual(1);
+    const row = list.body.data[0];
+    for (const f of ["studentCount", "mrr", "planTier", "billingCycle"]) {
+      expect(row).toHaveProperty(f);
+    }
+
+    // Tenant thường không xem stats nền tảng.
+    const t = await createTenant(app);
+    await api().get("/api/platform/tenants/stats").set(auth(t)).expect(403);
+  });
 });

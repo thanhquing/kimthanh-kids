@@ -44,6 +44,12 @@ export class PlatformController {
     return this.platform.listTenants(Number(page) || 1, 20, status);
   }
 
+  // Đặt TRƯỚC "tenants/:id" để route tĩnh không bị param ":id" nuốt.
+  @Get("tenants/stats")
+  tenantStats() {
+    return this.platform.tenantStats();
+  }
+
   @PlatformRoles(PlatformRole.PLATFORM_SUPER_ADMIN)
   @Post("tenants")
   createTenant(@CurrentUser() user: AuthUser, @Body() body: PlatformCreateTenantInput) {

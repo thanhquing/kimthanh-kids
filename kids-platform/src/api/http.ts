@@ -95,7 +95,7 @@ async function parse<T>(res: Response): Promise<T> {
   throw new ApiError(err.code ?? "UNKNOWN", err.message ?? res.statusText, res.status);
 }
 
-async function request<T>(method: string, path: string, opts: Options = {}): Promise<T> {
+async function send(method: string, path: string, opts: Options = {}): Promise<Response> {
   let res = await raw(method, path, opts, tokenStore.access);
   if (res.status === 401 && opts.auth !== false) {
     if (await refreshTokens()) {
@@ -105,11 +105,30 @@ async function request<T>(method: string, path: string, opts: Options = {}): Pro
       onUnauthorized?.();
     }
   }
-  return parse<T>(res);
+  return res;
+}
+
+async function request<T>(method: string, path: string, opts: Options = {}): Promise<T> {
+  return parse<T>(await send(method, path, opts));
+}
+
+export type Meta = { page?: number; pageSize?: number; total?: number; [k: string]: unknown };
+export type Page<T> = { items: T[]; meta: Meta };
+
+/** GET danh sách phân trang: trả cả `items` lẫn `meta` (envelope `{ data, meta }`). */
+async function getPage<T>(path: string, opts: Options = {}): Promise<Page<T>> {
+  const res = await send("GET", path, opts);
+  const json = await res.json().catch(() => null);
+  if (res.ok && json?.success !== false) {
+    return { items: (json?.data ?? []) as T[], meta: (json?.meta ?? {}) as Meta };
+  }
+  const err = json?.error ?? {};
+  throw new ApiError(err.code ?? "UNKNOWN", err.message ?? res.statusText, res.status);
 }
 
 export const api = {
   get: <T>(path: string, opts?: Options) => request<T>("GET", path, opts ?? {}),
+  getPage,
   post: <T>(path: string, body?: unknown, opts?: Options) =>
     request<T>("POST", path, { ...opts, body }),
   patch: <T>(path: string, body?: unknown, opts?: Options) =>

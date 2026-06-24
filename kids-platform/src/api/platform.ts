@@ -24,6 +24,7 @@ export type Tenant = {
   planTier: string;
   tenancyMode?: string;
   currentPeriodEnd?: string | null;
+  trialEndsAt?: string | null;
   createdAt: string;
   settings?: { displayName?: string | null; primaryColor?: string | null } | null;
   subscription?: {
@@ -35,6 +36,18 @@ export type Tenant = {
   } | null;
   schools?: { id: string }[];
   _count?: { schools?: number };
+  // Bổ sung ở GET /platform/tenants (list) cho bảng Tenants:
+  billingCycle?: string | null;
+  studentCount?: number;
+  mrr?: number;
+};
+
+export type TenantStats = {
+  total: number;
+  ACTIVE: number;
+  TRIAL: number;
+  PAST_DUE: number;
+  SUSPENDED: number;
 };
 
 export type Subscription = {
@@ -161,7 +174,8 @@ export const platform = {
     api.get<RevenueSeries>("/platform/revenue", { query: { months } }),
 
   listTenants: (page = 1, status?: string) =>
-    api.get<Tenant[]>("/platform/tenants", { query: { page, status } }),
+    api.getPage<Tenant>("/platform/tenants", { query: { page, status } }),
+  tenantStats: () => api.get<TenantStats>("/platform/tenants/stats"),
   getTenant: (id: string) => api.get<Tenant>(`/platform/tenants/${id}`),
   createTenant: (body: CreateTenantInput) =>
     api.post<{ tenant: Tenant }>("/platform/tenants", body),
