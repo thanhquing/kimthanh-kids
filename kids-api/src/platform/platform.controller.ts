@@ -20,6 +20,11 @@ export class PlatformController {
     private readonly billing: BillingService,
   ) {}
 
+  @Get("overview")
+  overview() {
+    return this.platform.dashboard();
+  }
+
   @Get("tenants")
   listTenants(@Query("page") page?: string, @Query("status") status?: string) {
     return this.platform.listTenants(Number(page) || 1, 20, status);

@@ -188,4 +188,34 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     await api().get("/api/platform/usage/overview").set(auth(t)).expect(403);
     expect(prisma).toBeDefined();
   });
+
+  // ── Dashboard nền tảng (GET /platform/overview) ──
+  it("platform overview: KPI + chuỗi MRR 12 tháng + phân bổ gói + 2 list", async () => {
+    await createTenant(app);
+    const ptoken = await loginPlatform(app);
+    const r = await api()
+      .get("/api/platform/overview")
+      .set("Host", PLATFORM_HOST)
+      .set("Authorization", `Bearer ${ptoken}`)
+      .expect(200);
+
+    const d = r.body.data;
+    // KPI đầy đủ.
+    expect(d.kpis.tenants).toBeGreaterThanOrEqual(1);
+    expect(typeof d.kpis.activeTenants).toBe("number");
+    expect(typeof d.kpis.trialTenants).toBe("number");
+    expect(typeof d.kpis.overdueInvoices).toBe("number");
+    expect(typeof d.kpis.suspendedTenants).toBe("number");
+    expect(typeof d.kpis.mrr).toBe("number");
+    // Chuỗi MRR đúng 12 điểm.
+    expect(d.mrrSeries).toHaveLength(12);
+    // Các list là mảng.
+    expect(Array.isArray(d.planDistribution)).toBe(true);
+    expect(Array.isArray(d.recentTenants)).toBe(true);
+    expect(Array.isArray(d.recentOverdue)).toBe(true);
+
+    // Tenant thường không xem được dashboard nền tảng.
+    const t = await createTenant(app);
+    await api().get("/api/platform/overview").set(auth(t)).expect(403);
+  });
 });

@@ -7,8 +7,10 @@ import {
   LimitEnforcement,
   LimitMetric,
   PlanTier,
+  PlatformInvoiceStatus,
   SubscriptionStatus,
   TenantRole,
+  TenantStatus,
   UserType,
 } from "@prisma/client";
 import { TokenService } from "../auth/token.service";
@@ -53,6 +55,135 @@ export class PlatformService {
     private readonly provisioning: ProvisioningService,
     private readonly tokens: TokenService,
   ) {}
+
+  /**
+   * Tổng quan dashboard cho operator nền tảng (xuyên tenant). Một phát trả đủ:
+   * KPI (trường/active/trial/overdue/suspended/MRR), chuỗi MRR 12 tháng, phân bổ theo gói,
+   * trường mới đăng ký + hóa đơn quá hạn. Số tiền quy VND/tháng từ giá gói thật (không bịa).
+   */
+  async dashboard() {
+    const now = new Date();
+
+    const [tenants, activeTenants, trialTenants, suspendedTenants, overdueInvoiceCount] =
+      await Promise.all([
+        this.prisma.system.tenant.count({ where: { deletedAt: null } }),
+        this.prisma.system.tenant.count({
+          where: { deletedAt: null, status: TenantStatus.ACTIVE },
+        }),
+        this.prisma.system.tenant.count({
+          where: { deletedAt: null, status: TenantStatus.TRIAL },
+        }),
+        this.prisma.system.tenant.count({
+          where: { deletedAt: null, status: TenantStatus.SUSPENDED },
+        }),
+        this.prisma.system.platformInvoice.count({
+          where: { status: PlatformInvoiceStatus.OVERDUE, deletedAt: null },
+        }),
+      ]);
+
+    // Thuê bao đang chạy → nguồn để tính MRR + phân bổ gói.
+    const subs = await this.prisma.system.subscription.findMany({
+      where: { status: SubscriptionStatus.ACTIVE },
+      include: { plan: { include: { prices: true } } },
+    });
+
+    const subMrr = (sub: (typeof subs)[number]): number => {
+      const price = sub.plan?.prices.find(
+        (p) => p.billingCycle === sub.billingCycle && p.currency === BillingCurrency.VND,
+      );
+      if (!price) return 0;
+      const amount = Number(price.amount);
+      switch (sub.billingCycle) {
+        case BillingCycle.QUARTERLY:
+          return amount / 3;
+        case BillingCycle.ANNUAL:
+          return amount / 12;
+        default:
+          return amount; // MONTHLY
+      }
+    };
+
+    const mrr = Math.round(subs.reduce((sum, s) => sum + subMrr(s), 0));
+
+    // Phân bổ theo gói: nhóm theo TIER (FREE/STARTER/PRO/ENTERPRISE/CUSTOM) — KHÔNG theo planId,
+    // vì mỗi tenant CUSTOM thường là 1 plan riêng → gộp theo tier mới ra số lát hợp lý.
+    const distMap = new Map<PlanTier, number>();
+    for (const s of subs) {
+      if (!s.plan) continue;
+      distMap.set(s.plan.tier, (distMap.get(s.plan.tier) ?? 0) + 1);
+    }
+    const planDistribution = [...distMap.entries()]
+      .map(([tier, count]) => ({ tier, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // MRR 12 tháng gần nhất: mỗi tháng cộng MRR của các thuê bao đã tạo tính tới cuối tháng đó
+    // (đường tăng trưởng theo ngày bắt đầu thật — chưa có snapshot MRR lịch sử).
+    const mrrSeries: { month: string; value: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999);
+      const value = subs
+        .filter((s) => s.createdAt <= monthEnd)
+        .reduce((sum, s) => sum + subMrr(s), 0);
+      mrrSeries.push({ month: `T${monthEnd.getMonth() + 1}`, value: Math.round(value) });
+    }
+
+    // Trường mới đăng ký (5 gần nhất).
+    const recentTenantsRaw = await this.prisma.system.tenant.findMany({
+      where: { deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      include: { settings: true, subscription: { include: { plan: true } } },
+    });
+    const recentTenants = recentTenantsRaw.map((t) => ({
+      id: t.id,
+      slug: t.slug,
+      displayName: t.settings?.displayName ?? t.legalName,
+      status: t.status,
+      planName: t.subscription?.plan?.name ?? null,
+      trialEndsAt: t.trialEndsAt,
+    }));
+
+    // Hóa đơn quá hạn (5 gần hạn nhất) — PlatformInvoice không có quan hệ `tenant`,
+    // nên tra tên trường riêng theo tenantId.
+    const overdueRaw = await this.prisma.system.platformInvoice.findMany({
+      where: { status: PlatformInvoiceStatus.OVERDUE, deletedAt: null },
+      orderBy: { dueAt: "asc" },
+      take: 5,
+    });
+    const tenantNames = new Map<string, string>();
+    if (overdueRaw.length) {
+      const rows = await this.prisma.system.tenant.findMany({
+        where: { id: { in: [...new Set(overdueRaw.map((i) => i.tenantId))] } },
+        include: { settings: true },
+      });
+      for (const r of rows) tenantNames.set(r.id, r.settings?.displayName ?? r.legalName);
+    }
+    const recentOverdue = overdueRaw.map((inv) => ({
+      id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      tenantName: tenantNames.get(inv.tenantId) ?? null,
+      amountDue: Number(inv.total) - Number(inv.amountPaid),
+      dueAt: inv.dueAt,
+      daysLate: inv.dueAt
+        ? Math.max(0, Math.floor((now.getTime() - inv.dueAt.getTime()) / 86_400_000))
+        : null,
+    }));
+
+    return {
+      kpis: {
+        tenants,
+        activeTenants,
+        trialTenants,
+        overdueInvoices: overdueInvoiceCount,
+        suspendedTenants,
+        mrr,
+      },
+      mrrSeries,
+      planDistribution,
+      recentTenants,
+      recentOverdue,
+    };
+  }
 
   async listTenants(page = 1, pageSize = 20, status?: string) {
     const where = status ? { status: status as never } : {};

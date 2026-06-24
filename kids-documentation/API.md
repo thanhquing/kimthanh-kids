@@ -201,6 +201,7 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 
 | Method | Path | Body / Query | Data trả về |
 |---|---|---|---|
+| `GET` | `/platform/overview` | - | dashboard console: `{ kpis{tenants,activeTenants,trialTenants,overdueInvoices,suspendedTenants,mrr}, mrrSeries[12], planDistribution[], recentTenants[], recentOverdue[] }` |
 | `GET` | `/platform/tenants?page=&status=` | `page?: number`, `status?: TenantStatus` | paginated tenant list |
 | `POST` | `/platform/tenants` | `PlatformCreateTenantInput` | `{ tenant, school, admin, subscription }` |
 | `GET` | `/platform/tenants/:id` | - | tenant detail + settings/domains/schools/subscription/invoices |

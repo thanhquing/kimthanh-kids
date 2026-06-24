@@ -73,14 +73,34 @@ export type Coupon = {
   isActive: boolean;
 };
 
-export type Overview = {
-  tenants: number;
-  activeTenants: number;
-  users: number;
-  dau: number;
-  wau: number;
-  mau: number;
-  topEvents: { type: string; count: number }[];
+// Payload dashboard nền tảng (GET /platform/overview). Số tiền: VND/tháng.
+export type DashboardOverview = {
+  kpis: {
+    tenants: number;
+    activeTenants: number;
+    trialTenants: number;
+    overdueInvoices: number;
+    suspendedTenants: number;
+    mrr: number;
+  };
+  mrrSeries: { month: string; value: number }[];
+  planDistribution: { tier: string; count: number }[];
+  recentTenants: {
+    id: string;
+    slug: string;
+    displayName: string;
+    status: string;
+    planName: string | null;
+    trialEndsAt: string | null;
+  }[];
+  recentOverdue: {
+    id: string;
+    invoiceNumber: string;
+    tenantName: string | null;
+    amountDue: number;
+    dueAt: string | null;
+    daysLate: number | null;
+  }[];
 };
 
 export type CreateTenantInput = {
@@ -125,7 +145,7 @@ export type EntitlementInput = {
 
 // ─── theo đúng luồng cURL đã test (ledger Platform Tenant) ───
 export const platform = {
-  overview: () => api.get<Overview>("/platform/usage/overview"),
+  overview: () => api.get<DashboardOverview>("/platform/overview"),
 
   listTenants: (page = 1, status?: string) =>
     api.get<Tenant[]>("/platform/tenants", { query: { page, status } }),
