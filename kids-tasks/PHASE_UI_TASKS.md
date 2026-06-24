@@ -12,7 +12,7 @@
 
 | # | Quyết định | Đề xuất | Lý do | Trạng thái |
 |---|---|---|---|---|
-| D1 | Cấu trúc repo | **pnpm workspace (monorepo) tại gốc** + Turborepo | 4 app FE + `kids-api` là folder anh em trong 1 git repo; chia sẻ `packages/api-client` sinh từ OpenAPI cho cả platform/CRM/mobile | ✅ **chốt: monorepo** |
+| D1 | Cấu trúc repo | **Mỗi app độc lập trong cùng 1 git repo (KHÔNG workspace/monorepo)** | Deploy cơ bản trên VPS, tránh phức tạp Turborepo + Expo-trong-monorepo. Mỗi app build/deploy như project chuẩn; type vẫn đồng bộ vì cùng sinh từ `kids-api/openapi.json` (xem §3) | ✅ **chốt: tách độc lập** |
 | D2 | Stack CRM web (`kids-crm`) | **React + TypeScript + Vite** | CORS đã whitelist `:5173`; mock-ui là web desktop; hệ sinh thái table/form admin tốt | ◻️ |
 | D3 | Thư viện UI CRM | **Mantine** (hoặc Ant Design) | CRM nhiều bảng/form → cần DataTable/Form sẵn; Mantine free, hooks tốt; AntD nếu thích table mạnh | ◻️ |
 | D4 | Stack mobile | **Expo (React Native + react-native-web)** — 1 codebase → iOS + Android + Web | Memory: mobile luôn làm cả 3 nền tảng. Expo build được cả 3 từ 1 nguồn | ◻️ |
@@ -20,7 +20,7 @@
 | D6 | Server-state | **TanStack Query (React Query)** cho cả platform/CRM/mobile | Hợp REST + cache + retry 401→refresh; codegen sinh sẵn hook | ◻️ |
 | D7 | Codegen từ OpenAPI | **orval** (hoặc `@hey-api/openapi-ts`) → sinh type + **React Query hooks** + zod | Khớp D6; orval cho phép **custom mutator** để bóc envelope `{success,data}` tại 1 chỗ | ◻️ |
 | D8 | Form + validate | **react-hook-form + zod** (tái dùng shape Zod backend) | Đồng bộ rule với DTO backend (date `YYYY-MM-DD`, phone, v.v.) | ◻️ |
-| D9 | Platform Console: gộp vào CRM hay tách app | **Tách app riêng `kids-platform/`** | Khác **realm quyền** (platform role vs tenant role), khác **host** (`admin.*` vs `<slug>.*`), khác đối tượng & deploy. Vẫn tái dùng `packages/api-client` + component lib nên chi phí tách thấp. Impersonate = handoff sang kids-crm kèm token | ✅ **chốt: tách riêng** |
+| D9 | Platform Console: gộp vào CRM hay tách app | **Tách app riêng `kids-platform/`** | Khác **realm quyền** (platform role vs tenant role), khác **host** (`admin.*` vs `<slug>.*`), khác đối tượng & deploy. Vẫn dùng chung `kids-api/openapi.json` để sinh client nên chi phí tách thấp. Impersonate = handoff sang kids-crm kèm token | ✅ **chốt: tách riêng** |
 
 > ⚠️ D1/D5/D9 là các điểm rẽ kiến trúc — đã chốt.
 
@@ -55,18 +55,25 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 ---
 
-## 3. Lớp API client dùng chung (`packages/api-client`) — P0
+## 3. Type-safe KHÔNG cần monorepo — sinh từ `openapi.json` chung rồi copy vào app
 
-> Một nguồn type duy nhất cho cả **kids-platform + kids-crm + mobile**. Backend đổi contract → chạy lại codegen → FE báo lỗi compile ngay.
+> Đã dựng (xem [`../DEVELOPMENT.md`](../DEVELOPMENT.md)): root `package.json` + `scripts/gen-api.mjs` sinh type chung → **copy** vào `src/api/generated/` từng app (copy thay vì alias để Metro/Expo + build VPS khỏi vướng). Đánh đổi: **regen + copy** khi API đổi (1 lệnh `pnpm gen:api --fresh`).
 
-- [ ] **Xuất OpenAPI JSON** từ `kids-api`: thêm script `openapi:json` dùng `SwaggerModule.createDocument` ghi ra `openapi.json` (chạy không cần bật server).
-- [ ] **Codegen** (orval/hey-api): sinh type + React Query hooks vào `packages/api-client/src`.
-- [ ] **Custom mutator** (axios/fetch instance) xử lý tập trung:
-  - [ ] gắn base URL + `Host` (theo tenant đang chọn) + `Authorization`;
+**Đã xong:**
+- [x] `kids-api` script `openapi:json` → `kids-api/openapi.json` (commit làm nguồn chung).
+- [x] Root `gen:api` (openapi-typescript) sinh `api-client/generated/api.d.ts` → copy vào từng app (bỏ qua app chưa scaffold).
+
+**Quyết định về độ giàu spec (đã chốt):** **dùng spec mỏng hiện tại** — type có sẵn **path + param + operationId**; **body/response gõ type tay** theo ledger + Swagger khi dựng từng màn. KHÔNG đụng backend đã đóng băng (tránh rủi ro đổi error envelope `{code,message}` mà 127 cURL + 100 e2e đang dựa vào). Nếu sau này gõ tay quá nhiều → làm giàu spec bằng `@asteasolutions/zod-to-openapi` (additive, không đổi runtime) → pipeline tự tốt lên, không phải sửa plumbing.
+
+**Mỗi app cần (P0, khi scaffold):**
+- [ ] **Lớp `http.ts` (~1 file/app)** — mỗi app giữ bản riêng (lặp nhẹ, khỏi workspace):
+  - [ ] gắn base URL + `Host` (theo tenant/host của app) + `Authorization`;
   - [ ] **bóc `data`** khi `success:true`, **ném `ApiError(code,message)`** khi `success:false`;
-  - [ ] interceptor `401 → refresh → retry once → logout`.
-- [ ] **Lưu token** an toàn: CRM web → cookie httpOnly/`localStorage` có chủ đích; mobile → `expo-secure-store`.
+  - [ ] interceptor `401 → refresh → retry once → logout`;
+  - [ ] dùng type từ `src/api/generated/api.d.ts` cho path/param; khai type body/response tại chỗ gọi (theo ledger).
+- [ ] **TanStack Query** bọc các call; **Lưu token** an toàn: web → `localStorage` có chủ đích, mobile → `expo-secure-store`.
 - [ ] Map `error.code` → thông điệp tiếng Việt (vd `NO_BANK_CONFIG`, `SLUG_UNAVAILABLE`, `FORBIDDEN`, quota…).
+- [ ] **Quy ước**: API đổi → ở `kids-api` chạy `openapi:json` → vào từng app chạy `pnpm gen:api` → `tsc` bắt lỗi.
 
 ---
 
@@ -131,7 +138,7 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 ## 7. Định nghĩa "Xong" cho phase UI
 
 - [ ] Mỗi màn map đúng flow trong ledger; lỗi hiển thị theo `error.code`.
-- [ ] Type FE sinh từ OpenAPI, `tsc` sạch cả monorepo; đổi API → codegen bắt lỗi.
+- [ ] Type FE sinh từ OpenAPI, `tsc` sạch ở mọi app; đổi API → regen → bắt lỗi compile.
 - [ ] Platform: Kim Thanh tạo được tenant + cấu hình/bán gói + coupon + hóa đơn nền tảng.
 - [ ] CRM: 1 chủ trường vận hành trọn vẹn 1 ngày (điểm danh → báo cáo → hóa đơn → thông báo).
 - [ ] Mobile chạy iOS + Android + Web từ 1 codebase Expo.
@@ -141,9 +148,9 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 ## 8. Thứ tự đề xuất
 
-1. ✅ Chốt kiến trúc **D1 (monorepo) · D5 (Expo hợp nhất) · D9 (tách kids-platform)**.
-2. Dựng monorepo (pnpm workspace + turbo) + `packages/api-client` + mutator envelope/auth (§3) — **nền chung**.
-3. **kids-platform P0** (§4) — cửa tạo tenant + bán gói; thực ra cần có trước để onboard trường thật. Đồng thời chốt pattern auth realm platform.
+1. ✅ Chốt kiến trúc **D1 (app độc lập, không monorepo) · D5 (Expo hợp nhất) · D9 (tách kids-platform)**.
+2. Ở `kids-api`: thêm script `openapi:json` + commit `openapi.json` (§3) — **nguồn type chung**.
+3. **kids-platform P0** (§4) — cửa tạo tenant + bán gói; cần có trước để onboard trường thật. Dựng lớp `http` + `gen:api` ở app này trước làm mẫu để copy sang các app sau.
 4. **kids-crm P0** (§5) — chốt pattern auth/tenant/query/form/error cho realm tenant (tái dùng cho mobile).
 5. **mobile P0** (§6) — GV + PH, tái dùng pattern + client từ bước 4.
 6. P1 → P2 mỗi app theo nhu cầu vận hành thật.

@@ -1,0 +1,29 @@
+{
+  "name": "kimthanh-kids",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Workspace tiện ích (KHÔNG phải monorepo): script chạy/build từng app + generate api-client chung từ OpenAPI.",
+  "scripts": {
+    "openapi": "cd kids-api && pnpm openapi:json",
+    "gen:api": "node scripts/gen-api.mjs",
+
+    "dev:api": "cd kids-api && pnpm start:dev",
+    "dev:platform": "cd kids-platform && pnpm dev",
+    "dev:crm": "cd kids-crm && pnpm dev",
+    "dev:mobile": "cd kids-mobile-native && pnpm start",
+
+    "build:platform": "cd kids-platform && pnpm build",
+    "build:crm": "cd kids-crm && pnpm build",
+    "build:mobile-web": "cd kids-mobile-native && pnpm build:web",
+
+    "install:platform": "cd kids-platform && pnpm install",
+    "install:crm": "cd kids-crm && pnpm install",
+    "install:mobile": "cd kids-mobile-native && pnpm install"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

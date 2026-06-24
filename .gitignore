@@ -45,6 +45,10 @@ pnpm-debug.log*
 ios/Pods/
 *.xcworkspace
 
+# api-client sinh tự động (nguồn là kids-api/openapi.json — file đó VẪN commit)
+api-client/generated/
+**/src/api/generated/
+
 # OS / Editor
 .DS_Store
 Thumbs.db
