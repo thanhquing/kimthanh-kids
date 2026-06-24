@@ -1,10 +1,18 @@
 import type { ReactNode } from "react";
 
-export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+export function PageHeader({
+  title,
+  section = "Platform",
+  children,
+}: {
+  title: string;
+  section?: string;
+  children?: ReactNode;
+}) {
   return (
     <header className="topbar">
       <div className="flex-1">
-        <div className="text-xs text-slate-400">Platform</div>
+        <div className="text-xs text-slate-400">{section}</div>
         <div className="font-bold text-slate-800">{title}</div>
       </div>
       {children}
