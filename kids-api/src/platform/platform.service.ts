@@ -17,6 +17,7 @@ import {
 import { TokenService } from "../auth/token.service";
 import { paginated } from "../common/http/api-response";
 import { LifecycleService } from "../billing/lifecycle.service";
+import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { ProvisioningService, SignupInput } from "../provisioning/provisioning.service";
 import { MrrSnapshotService } from "./mrr-snapshot.service";
@@ -57,6 +58,7 @@ export class PlatformService {
     private readonly provisioning: ProvisioningService,
     private readonly tokens: TokenService,
     private readonly mrr: MrrSnapshotService,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   /** Chuỗi doanh thu MRR theo tháng (cho biểu đồ 12/24 tháng). Giới hạn 1..24. */
@@ -249,15 +251,62 @@ export class PlatformService {
       include: {
         settings: true,
         domains: true,
-        schools: true,
+        schools: {
+          where: { deletedAt: null },
+          include: { _count: { select: { students: true, classrooms: true } } },
+        },
         subscription: {
-          include: { plan: true, invoices: { orderBy: { createdAt: "desc" }, take: 10 } },
+          include: {
+            plan: { include: { prices: true } },
+            invoices: { orderBy: { createdAt: "desc" }, take: 10 },
+          },
         },
       },
     });
     if (!tenant)
       throw new NotFoundException({ code: "NO_TENANT", message: "Không tìm thấy tenant" });
-    return tenant;
+
+    // Đếm usage thật + giới hạn gói → quota cho card hạn mức.
+    const [studentCount, teacherIds, classroomCount, storageAgg, ent] = await Promise.all([
+      this.prisma.system.student.count({
+        where: { tenantId: id, status: StudentStatus.ACTIVE, deletedAt: null },
+      }),
+      this.prisma.system.membership.findMany({
+        where: { tenantId: id, role: TenantRole.TEACHER, isActive: true, deletedAt: null },
+        distinct: ["userId"],
+        select: { userId: true },
+      }),
+      this.prisma.system.classroom.count({ where: { tenantId: id, deletedAt: null } }),
+      this.prisma.system.media.aggregate({ where: { tenantId: id }, _sum: { sizeBytes: true } }),
+      this.entitlements.resolve(id),
+    ]);
+
+    const teacherCount = teacherIds.length;
+    const storageUsedMb = Math.round((storageAgg._sum.sizeBytes ?? 0) / (1024 * 1024));
+    const usedByMetric: Partial<Record<LimitMetric, number>> = {
+      [LimitMetric.STUDENTS]: studentCount,
+      [LimitMetric.TEACHERS]: teacherCount,
+      [LimitMetric.CLASSROOMS]: classroomCount,
+      [LimitMetric.SCHOOLS]: tenant.schools.length,
+      [LimitMetric.STORAGE_MB]: storageUsedMb,
+    };
+    const quota = (
+      [
+        LimitMetric.STUDENTS,
+        LimitMetric.TEACHERS,
+        LimitMetric.CLASSROOMS,
+        LimitMetric.STORAGE_MB,
+      ] as const
+    ).map((metric) => ({
+      metric,
+      used: usedByMetric[metric] ?? 0,
+      limit: ent.limits[metric]?.limitValue ?? null, // null = không giới hạn
+      enforcement: ent.limits[metric]?.enforcement ?? null,
+    }));
+
+    const mrr = tenant.subscription ? Math.round(this.mrr.subMrr(tenant.subscription)) : 0;
+
+    return { ...tenant, studentCount, mrr, quota };
   }
 
   async createTenant(input: PlatformCreateTenantInput, actorId: string) {

@@ -276,6 +276,20 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const hit = await api().get(`/api/platform/tenants?q=${row.slug}`).set(phead).expect(200);
     expect(hit.body.data.some((x: { slug: string }) => x.slug === row.slug)).toBe(true);
 
+    // Detail: getTenant giàu trường (mrr, studentCount, quota usage, cơ sở có _count).
+    const detail = await api().get(`/api/platform/tenants/${row.id}`).set(phead).expect(200);
+    const dt = detail.body.data;
+    expect(typeof dt.mrr).toBe("number");
+    expect(typeof dt.studentCount).toBe("number");
+    const metrics = dt.quota.map((x: { metric: string }) => x.metric);
+    expect(metrics).toEqual(
+      expect.arrayContaining(["STUDENTS", "TEACHERS", "CLASSROOMS", "STORAGE_MB"]),
+    );
+    const sQuota = dt.quota.find((x: { metric: string }) => x.metric === "STUDENTS");
+    expect(sQuota).toHaveProperty("used");
+    expect(sQuota).toHaveProperty("limit");
+    if (dt.schools[0]) expect(dt.schools[0]._count).toHaveProperty("students");
+
     // Tenant thường không xem stats nền tảng.
     const t = await createTenant(app);
     await api().get("/api/platform/tenants/stats").set(auth(t)).expect(403);

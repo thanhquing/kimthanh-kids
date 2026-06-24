@@ -207,7 +207,7 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `GET` | `/platform/tenants?page=&status=&q=` | `page?: number`, `status?: TenantStatus`, `q?: string` (tìm theo slug/legalName/displayName, server-side) | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
 | `GET` | `/platform/tenants/stats` | - | đếm tenant theo trạng thái: `{ total, ACTIVE, TRIAL, PAST_DUE, SUSPENDED }` (cho chip lọc) |
 | `POST` | `/platform/tenants` | `PlatformCreateTenantInput` | `{ tenant, school, admin, subscription }` |
-| `GET` | `/platform/tenants/:id` | - | tenant detail + settings/domains/schools/subscription/invoices |
+| `GET` | `/platform/tenants/:id` | - | tenant detail + settings/domains/subscription/invoices; **bổ sung**: `mrr`, `studentCount`, `quota[{metric,used,limit,enforcement}]` (STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB), `schools[]` kèm `_count{students,classrooms}` |
 | `POST` | `/platform/tenants/:id/suspend` | - | `{ ok: true }` |
 | `POST` | `/platform/tenants/:id/reactivate` | - | `{ ok: true }` |
 | `POST` | `/platform/tenants/:id/entitlements` | `EntitlementOverrideInput` | `TenantEntitlement` |

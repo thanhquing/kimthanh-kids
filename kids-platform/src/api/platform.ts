@@ -43,12 +43,20 @@ export type Tenant = {
     invoices?: PlatformInvoice[];
   } | null;
   domains?: { domain: string; isPrimary?: boolean; verifiedAt?: string | null }[];
-  schools?: { id: string; name?: string; code?: string; status?: string }[];
+  schools?: {
+    id: string;
+    name?: string;
+    code?: string;
+    status?: string;
+    _count?: { students?: number; classrooms?: number };
+  }[];
   _count?: { schools?: number };
   // Bổ sung ở GET /platform/tenants (list) cho bảng Tenants:
   billingCycle?: string | null;
   studentCount?: number;
   mrr?: number;
+  // Bổ sung ở GET /platform/tenants/:id (detail):
+  quota?: { metric: string; used: number; limit: number | null; enforcement: string | null }[];
 };
 
 export type TenantStats = {

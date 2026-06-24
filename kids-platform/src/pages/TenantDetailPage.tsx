@@ -19,16 +19,23 @@ import { cn, formatVnd } from "@/lib/utils";
 
 const METRICS = ["STUDENTS", "TEACHERS", "CLASSROOMS", "SCHOOLS", "STORAGE_MB", "ADMIN_USERS"];
 
-// TĨNH — chờ BE getTenant mở rộng (số HS, MRR, billingMode, autoRenew, quota usage, logo).
-// Dựng layout khớp mock trước; nối số thật ở bước BE.
-const QUOTA_TODO = [
-  { label: "Học sinh", cur: 180, max: 500, color: "#F26B5E" },
-  { label: "Giáo viên", cur: 22, max: 80, color: "#F89A5B" },
-  { label: "Lớp học", cur: 9, max: 40, color: "#7BC796" },
-  { label: "Lưu trữ", cur: 3.1, max: 20, unit: " GB", color: "#60a5fa" },
-];
-const STUDENTS_TODO = 180;
-const MRR_TODO = 1_200_000;
+// Cấu hình hiển thị quota (nhãn + màu). STORAGE_MB quy MB→GB khi show.
+const QUOTA_META: Record<string, { label: string; color: string; unit?: string }> = {
+  STUDENTS: { label: "Học sinh", color: "#F26B5E" },
+  TEACHERS: { label: "Giáo viên", color: "#F89A5B" },
+  CLASSROOMS: { label: "Lớp học", color: "#7BC796" },
+  STORAGE_MB: { label: "Lưu trữ", color: "#60a5fa", unit: " GB" },
+};
+
+/** Quy đổi 1 dòng quota → {label, used, max, unit, pct} cho thanh hiển thị. */
+function quotaView(q: { metric: string; used: number; limit: number | null }) {
+  const meta = QUOTA_META[q.metric] ?? { label: q.metric, color: "#94a3b8" };
+  const toGb = meta.unit === " GB";
+  const used = toGb ? Math.round((q.used / 1024) * 10) / 10 : q.used;
+  const max = q.limit == null ? null : toGb ? Math.round((q.limit / 1024) * 10) / 10 : q.limit;
+  const pct = q.limit && q.limit > 0 ? Math.min(100, (q.used / q.limit) * 100) : 0;
+  return { ...meta, used, max, pct };
+}
 
 export function TenantDetailPage() {
   const { id = "" } = useParams();
@@ -153,12 +160,12 @@ export function TenantDetailPage() {
               <span className="badge b-blue">{TIER_LABEL[t.planTier] ?? t.planTier}</span>
             </div>
             <div className="text-sm text-slate-400 mt-0.5">
-              {t.slug}.kimthanhkids.vn · {schools.length} cơ sở · {STUDENTS_TODO} học sinh
+              {t.slug}.kimthanhkids.vn · {schools.length} cơ sở · {t.studentCount ?? 0} học sinh
             </div>
           </div>
           <div className="text-right">
             <div className="text-xs text-slate-400">MRR</div>
-            <div className="text-xl font-bold">{formatVnd(MRR_TODO)}</div>
+            <div className="text-xl font-bold">{formatVnd(t.mrr ?? 0)}</div>
           </div>
         </div>
 
@@ -265,23 +272,26 @@ export function TenantDetailPage() {
               <Gauge className="w-4 h-4 text-slate-400" />Hạn mức (quota)
             </div>
             <div className="space-y-3 text-sm">
-              {QUOTA_TODO.map((m) => (
-                <div key={m.label}>
-                  <div className="flex justify-between mb-1">
-                    <span>{m.label}</span>
-                    <b>
-                      {m.cur} / {m.max}
-                      {m.unit ?? ""}
-                    </b>
+              {(t.quota ?? []).map((q) => {
+                const m = quotaView(q);
+                return (
+                  <div key={q.metric}>
+                    <div className="flex justify-between mb-1">
+                      <span>{m.label}</span>
+                      <b>
+                        {m.used} / {m.max ?? "∞"}
+                        {m.unit ?? ""}
+                      </b>
+                    </div>
+                    <div className="h-2 rounded-full bg-slate-100">
+                      <div
+                        className="h-2 rounded-full"
+                        style={{ width: `${m.pct}%`, background: m.color }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 rounded-full bg-slate-100">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{ width: `${Math.min(100, (m.cur / m.max) * 100)}%`, background: m.color }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <button className="btn-soft w-full mt-4 text-sm" onClick={() => setOvOpen(true)}>
               Override hạn mức
@@ -302,7 +312,9 @@ export function TenantDetailPage() {
                   </div>
                   <div className="flex-1">
                     <div className="font-semibold">{s.name ?? "Cơ sở"}</div>
-                    <div className="text-xs text-slate-400">{s.code ?? "—"}</div>
+                    <div className="text-xs text-slate-400">
+                      {s.code ?? "—"} · {s._count?.students ?? 0} học sinh · {s._count?.classrooms ?? 0} lớp
+                    </div>
                   </div>
                   <span className={cn("badge", s.status === "CLOSED" ? "b-slate" : "b-green")}>
                     {s.status === "CLOSED" ? "Đã đóng" : "Đang mở"}
