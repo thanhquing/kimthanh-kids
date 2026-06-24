@@ -40,6 +40,27 @@ export const CYCLE_LABEL: Record<string, string> = {
   ANNUAL: "Hàng năm",
 };
 
+export const BILLING_MODE_LABEL: Record<string, string> = {
+  GATEWAY: "Cổng thanh toán",
+  MANUAL: "Thủ công",
+  DEDICATED_FREE: "Miễn phí (triển khai riêng)",
+};
+
+export const TENANCY_LABEL: Record<string, string> = {
+  POOL: "Dùng chung",
+  SILO: "Riêng biệt",
+};
+
+export const METRIC_LABEL: Record<string, string> = {
+  STUDENTS: "Học sinh",
+  TEACHERS: "Giáo viên",
+  CLASSROOMS: "Lớp học",
+  SCHOOLS: "Cơ sở",
+  STORAGE_MB: "Lưu trữ",
+  PUSH_PER_MONTH: "Thông báo đẩy / tháng",
+  ADMIN_USERS: "Tài khoản quản trị",
+};
+
 export function badgeFor(map: Record<string, { label: string; badge: string }>, key?: string) {
   return (key && map[key]) || { label: key ?? "—", badge: "b-slate" };
 }

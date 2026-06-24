@@ -8,10 +8,13 @@ import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import {
   badgeFor,
+  BILLING_MODE_LABEL,
   CYCLE_LABEL,
   formatDate,
   INVOICE_STATUS,
+  METRIC_LABEL,
   SUB_STATUS,
+  TENANCY_LABEL,
   TENANT_STATUS,
   TIER_LABEL,
 } from "@/lib/labels";
@@ -75,7 +78,7 @@ export function TenantDetailPage() {
   });
   const override = useMutation({
     mutationFn: () => platform.setEntitlement(id, ov),
-    onSuccess: () => { toast("Đã override hạn mức"); setOvOpen(false); invalidate(); },
+    onSuccess: () => { toast("Đã ghi đè hạn mức"); setOvOpen(false); invalidate(); },
     onError: onErr,
   });
   const createInvoice = useMutation({
@@ -177,11 +180,18 @@ export function TenantDetailPage() {
             </div>
             <dl className="text-sm space-y-2.5">
               <Row k="Tên pháp lý" v={t.legalName} />
-              <Row k="Slug" v={t.slug} />
-              <Row k="Tenant ID" v={<span className="font-mono text-xs">{t.id}</span>} />
+              <Row k="Tên miền (slug)" v={t.slug} />
+              <Row k="Mã trường" v={<span className="font-mono text-xs">{t.id}</span>} />
               <Row k="Ngày tạo" v={formatDate(t.createdAt)} />
               <Row k="Múi giờ" v={t.settings?.timezone ?? "Asia/Ho_Chi_Minh"} />
-              <Row k="Chế độ" v={<span className="badge b-slate">{t.tenancyMode ?? "POOL"}</span>} />
+              <Row
+                k="Chế độ vận hành"
+                v={
+                  <span className="badge b-slate">
+                    {TENANCY_LABEL[t.tenancyMode ?? "POOL"] ?? t.tenancyMode}
+                  </span>
+                }
+              />
             </dl>
           </div>
 
@@ -204,7 +214,14 @@ export function TenantDetailPage() {
                     : "—"
                 }
               />
-              <Row k="Thanh toán" v={<span className="badge b-peach">{sub?.billingMode ?? "GATEWAY"}</span>} />
+              <Row
+                k="Thanh toán"
+                v={
+                  <span className="badge b-peach">
+                    {BILLING_MODE_LABEL[sub?.billingMode ?? "GATEWAY"] ?? sub?.billingMode}
+                  </span>
+                }
+              />
               <Row
                 k="Tự gia hạn"
                 v={
@@ -219,7 +236,7 @@ export function TenantDetailPage() {
           {/* White-label */}
           <div className="card p-5">
             <div className="font-bold mb-3 flex items-center gap-2">
-              <Palette className="w-4 h-4 text-slate-400" />White-label
+              <Palette className="w-4 h-4 text-slate-400" />Thương hiệu riêng
             </div>
             <dl className="text-sm space-y-2.5">
               <Row k="Tên hiển thị" v={t.settings?.displayName ?? t.legalName} />
@@ -244,7 +261,7 @@ export function TenantDetailPage() {
                 }
               />
               <div className="flex justify-between items-center">
-                <dt className="text-slate-400">Custom domain</dt>
+                <dt className="text-slate-400">Tên miền riêng</dt>
                 <dd>
                   {customDomain ? (
                     <span className={cn("badge", customDomain.verifiedAt ? "b-green" : "b-amber")}>
@@ -294,7 +311,7 @@ export function TenantDetailPage() {
               })}
             </div>
             <button className="btn-soft w-full mt-4 text-sm" onClick={() => setOvOpen(true)}>
-              Override hạn mức
+              Ghi đè hạn mức
             </button>
           </div>
 
@@ -375,24 +392,24 @@ export function TenantDetailPage() {
       <Modal
         open={ovOpen}
         onClose={() => setOvOpen(false)}
-        title="Override hạn mức"
+        title="Ghi đè hạn mức"
         footer={
           <>
             <button className="btn-soft text-sm" onClick={() => setOvOpen(false)}>Hủy</button>
             <button className="btn-primary text-sm" disabled={override.isPending} onClick={() => override.mutate()}>
-              {override.isPending ? "Đang lưu…" : "Lưu override"}
+              {override.isPending ? "Đang lưu…" : "Lưu thay đổi"}
             </button>
           </>
         }
       >
-        <Field label="Metric">
+        <Field label="Loại hạn mức">
           <select
             className="field"
             value={ov.metric}
             onChange={(e) => setOv({ ...ov, metric: e.target.value })}
           >
             {METRICS.map((m) => (
-              <option key={m} value={m}>{m}</option>
+              <option key={m} value={m}>{METRIC_LABEL[m] ?? m}</option>
             ))}
           </select>
         </Field>
