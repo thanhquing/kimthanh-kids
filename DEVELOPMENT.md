@@ -43,10 +43,13 @@ gắn `Authorization` + `Host`, `401 → refresh`). Lớp này mỗi app giữ 1
 
 ```bash
 pnpm dev:api            # kids-api (NestJS) — cần Docker Postgres: cd kids-api && pnpm db:up
-pnpm dev:platform       # console chủ Kim Thanh (admin.kimthanhkids.vn)
+pnpm dev:landing        # landing page (TanStack Start)
+pnpm dev:platform       # console chủ Kim Thanh (admin.kimthanhkids.vn) — :5174
 pnpm dev:crm            # CRM chủ trường (<slug>.kimthanhkids.vn)
 pnpm dev:mobile         # Expo (iOS/Android/Web)
 ```
+
+> ⚠️ `kids-landing` (TanStack Start) và `kids-api` cùng mặc định cổng 3000 — đừng chạy 2 cái cùng lúc, hoặc đổi cổng một bên.
 
 > Dev cần subdomain trỏ localhost: thêm vào `/etc/hosts`
 > `127.0.0.1 admin.kimthanhkids.vn demo.kimthanhkids.vn app.kimthanhkids.vn`.

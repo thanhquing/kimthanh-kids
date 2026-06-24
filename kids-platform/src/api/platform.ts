@@ -1,0 +1,158 @@
+import { api } from "./http";
+
+// Kiểu dữ liệu khai theo ledger UI_API_FLOW_TEST + schema kids-api (spec OpenAPI mỏng → khai tay).
+// LƯU Ý: với endpoint phân trang, TransformInterceptor trả { success, data: items[], meta }.
+// http.ts bóc `data` → các hàm list dưới đây nhận về MẢNG trực tiếp (meta hiện chưa dùng ở UI).
+
+export type Plan = {
+  id: string;
+  code: string;
+  name: string;
+  tier: string;
+  description?: string | null;
+  isPublic: boolean;
+  prices?: { billingCycle: string; currency: string; amount: number }[];
+  features?: { featureKey: string; enabled: boolean }[];
+  limits?: { metric: string; limitValue: number | null; enforcement: string }[];
+};
+
+export type Tenant = {
+  id: string;
+  slug: string;
+  legalName: string;
+  status: string;
+  planTier: string;
+  tenancyMode?: string;
+  currentPeriodEnd?: string | null;
+  createdAt: string;
+  settings?: { displayName?: string | null; primaryColor?: string | null } | null;
+  subscription?: {
+    status?: string;
+    billingCycle?: string;
+    currentPeriodEnd?: string | null;
+    plan?: Plan;
+    invoices?: PlatformInvoice[];
+  } | null;
+  schools?: { id: string }[];
+  _count?: { schools?: number };
+};
+
+export type Subscription = {
+  id: string;
+  tenantId: string;
+  status: string;
+  billingCycle?: string;
+  currentPeriodStart?: string | null;
+  currentPeriodEnd?: string | null;
+  autoRenew?: boolean;
+  plan?: Plan;
+};
+
+export type PlatformInvoice = {
+  id: string;
+  invoiceNumber?: string;
+  tenantId: string;
+  period?: string;
+  total?: number;
+  amountDue?: number;
+  status: string;
+  dueDate?: string | null;
+  lines?: { label: string; amount: number }[];
+};
+
+export type Coupon = {
+  id: string;
+  code: string;
+  kind: string;
+  amount: number;
+  duration: string;
+  maxRedemptions?: number | null;
+  redemptions?: number;
+  validFrom?: string | null;
+  validUntil?: string | null;
+  isActive: boolean;
+};
+
+export type Overview = {
+  tenants: number;
+  activeTenants: number;
+  users: number;
+  dau: number;
+  wau: number;
+  mau: number;
+  topEvents: { type: string; count: number }[];
+};
+
+export type CreateTenantInput = {
+  schoolName: string;
+  slug: string;
+  adminEmail: string;
+  adminPassword: string;
+  adminFullName: string;
+  phone?: string;
+};
+
+export type CreatePlanInput = {
+  code: string;
+  name: string;
+  tier: string;
+  description?: string;
+  isPublic?: boolean;
+  trialDays?: number;
+  prices?: { billingCycle: string; currency?: string; amount: number }[];
+  features?: { featureKey: string; enabled?: boolean }[];
+  limits?: { metric: string; limitValue: number | null; enforcement?: string }[];
+};
+
+export type CreateCouponInput = {
+  code: string;
+  kind: string;
+  amount: number;
+  duration?: string;
+  maxRedemptions?: number;
+  validFrom?: string;
+  validUntil?: string;
+  isActive?: boolean;
+};
+
+export type EntitlementInput = {
+  featureKey?: string;
+  enabled?: boolean;
+  metric?: string;
+  limitValue?: number | null;
+  reason?: string;
+};
+
+// ─── theo đúng luồng cURL đã test (ledger Platform Tenant) ───
+export const platform = {
+  overview: () => api.get<Overview>("/platform/usage/overview"),
+
+  listTenants: (page = 1, status?: string) =>
+    api.get<Tenant[]>("/platform/tenants", { query: { page, status } }),
+  getTenant: (id: string) => api.get<Tenant>(`/platform/tenants/${id}`),
+  createTenant: (body: CreateTenantInput) =>
+    api.post<{ tenant: Tenant }>("/platform/tenants", body),
+  suspend: (id: string) => api.post(`/platform/tenants/${id}/suspend`),
+  reactivate: (id: string) => api.post(`/platform/tenants/${id}/reactivate`),
+  impersonate: (id: string) =>
+    api.post<{ accessToken: string; tenant: Tenant }>(`/platform/tenants/${id}/impersonate`),
+  setEntitlement: (id: string, body: EntitlementInput) =>
+    api.post(`/platform/tenants/${id}/entitlements`, body),
+
+  listSubscriptions: (page = 1, status?: string) =>
+    api.get<Subscription[]>("/platform/subscriptions", { query: { page, status } }),
+
+  listInvoices: (page = 1, tenantId?: string, status?: string) =>
+    api.get<PlatformInvoice[]>("/platform/invoices", { query: { page, tenantId, status } }),
+  createInvoice: (tenantId: string) =>
+    api.post<PlatformInvoice>("/platform/invoices", { tenantId }),
+  markPaid: (id: string, amount?: number) =>
+    api.post<PlatformInvoice>(`/platform/invoices/${id}/mark-paid`, { amount }),
+
+  listPlans: () => api.get<Plan[]>("/platform/plans"),
+  createPlan: (body: CreatePlanInput) => api.post<Plan>("/platform/plans", body),
+
+  listCoupons: (page = 1, isActive?: boolean) =>
+    api.get<Coupon[]>("/platform/coupons", { query: { page, isActive } }),
+  createCoupon: (body: CreateCouponInput) => api.post<Coupon>("/platform/coupons", body),
+};

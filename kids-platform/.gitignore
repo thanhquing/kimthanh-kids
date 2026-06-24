@@ -1,0 +1,18 @@
+node_modules
+dist
+dist-ssr
+*.local
+
+# build cache
+*.tsbuildinfo
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
