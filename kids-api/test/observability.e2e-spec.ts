@@ -207,9 +207,9 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     expect(typeof d.kpis.overdueInvoices).toBe("number");
     expect(typeof d.kpis.suspendedTenants).toBe("number");
     expect(typeof d.kpis.mrr).toBe("number");
-    // Chuỗi MRR đúng 12 điểm + % tăng trưởng (number hoặc null khi không có mốc tháng trước).
+    // Chuỗi MRR đúng 12 điểm + % tăng trưởng (luôn là number, có thể 0).
     expect(d.mrrSeries).toHaveLength(12);
-    expect(d.mrrGrowthPct === null || typeof d.mrrGrowthPct === "number").toBe(true);
+    expect(typeof d.mrrGrowthPct).toBe("number");
     // Các list là mảng.
     expect(Array.isArray(d.planDistribution)).toBe(true);
     expect(Array.isArray(d.recentTenants)).toBe(true);

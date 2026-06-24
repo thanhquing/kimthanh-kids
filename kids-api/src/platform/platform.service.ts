@@ -127,11 +127,13 @@ export class PlatformService {
       mrrSeries.push({ month: `T${monthEnd.getMonth() + 1}`, value: Math.round(value) });
     }
 
-    // % tăng trưởng MRR tháng gần nhất so tháng trước đó (null nếu tháng trước = 0 → không tính được %).
-    const lastMrr = mrrSeries[mrrSeries.length - 1]?.value ?? 0;
-    const prevMrr = mrrSeries[mrrSeries.length - 2]?.value ?? 0;
-    const mrrGrowthPct =
-      prevMrr > 0 ? Math.round(((lastMrr - prevMrr) / prevMrr) * 1000) / 10 : null;
+    // % tăng trưởng MRR (luôn hiện): so tháng gần nhất với tháng liền trước; nếu tháng liền trước = 0
+    // thì lấy mốc là tháng ĐẦU TIÊN có MRR trong cửa sổ 12 tháng; chưa từng có MRR → 0%.
+    const seriesVals = mrrSeries.map((s) => s.value);
+    const lastMrr = seriesVals[seriesVals.length - 1] ?? 0;
+    const prevMrr = seriesVals[seriesVals.length - 2] ?? 0;
+    const baseMrr = prevMrr > 0 ? prevMrr : (seriesVals.find((v) => v > 0) ?? 0);
+    const mrrGrowthPct = baseMrr > 0 ? Math.round(((lastMrr - baseMrr) / baseMrr) * 1000) / 10 : 0;
 
     // Trường mới đăng ký (5 gần nhất).
     const recentTenantsRaw = await this.prisma.system.tenant.findMany({
