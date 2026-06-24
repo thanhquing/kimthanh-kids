@@ -1,10 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Gauge, Info, LogIn, Power, Repeat } from "lucide-react";
+import { ArrowLeft, Gauge, Info, Lock, LogIn, MapPin, Palette, Power, Receipt, Repeat, School } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "@/api/http";
 import { platform, type EntitlementInput } from "@/api/platform";
-import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import {
@@ -20,8 +19,20 @@ import { cn, formatVnd } from "@/lib/utils";
 
 const METRICS = ["STUDENTS", "TEACHERS", "CLASSROOMS", "SCHOOLS", "STORAGE_MB", "ADMIN_USERS"];
 
+// TĨNH — chờ BE getTenant mở rộng (số HS, MRR, billingMode, autoRenew, quota usage, logo).
+// Dựng layout khớp mock trước; nối số thật ở bước BE.
+const QUOTA_TODO = [
+  { label: "Học sinh", cur: 180, max: 500, color: "#F26B5E" },
+  { label: "Giáo viên", cur: 22, max: 80, color: "#F89A5B" },
+  { label: "Lớp học", cur: 9, max: 40, color: "#7BC796" },
+  { label: "Lưu trữ", cur: 3.1, max: 20, unit: " GB", color: "#60a5fa" },
+];
+const STUDENTS_TODO = 180;
+const MRR_TODO = 1_200_000;
+
 export function TenantDetailPage() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [ovOpen, setOvOpen] = useState(false);
@@ -71,28 +82,38 @@ export function TenantDetailPage() {
     onError: onErr,
   });
 
-  if (isLoading) return (<><PageHeader title="Chi tiết trường" /><main className="p-6 text-muted">Đang tải…</main></>);
-  if (error || !t) return (<><PageHeader title="Chi tiết trường" /><main className="p-6 text-red-600">Không tải được trường.</main></>);
+  if (isLoading || error || !t) {
+    return (
+      <>
+        <Topbar />
+        <main className="p-6 text-muted">
+          {isLoading ? "Đang tải…" : <span className="text-red-600">Không tải được trường.</span>}
+        </main>
+      </>
+    );
+  }
 
   const st = badgeFor(TENANT_STATUS, t.status);
   const sub = t.subscription;
   const subSt = badgeFor(SUB_STATUS, sub?.status);
   const isSuspended = t.status === "SUSPENDED";
+  const schools = t.schools ?? [];
+  const customDomain = t.domains?.find((d) => !d.isPrimary);
 
   return (
     <>
-      <PageHeader title="Chi tiết trường">
+      <Topbar onBack={() => navigate("/tenants")}>
         <button
           className="btn-soft inline-flex items-center gap-2 text-sm"
           disabled={impersonate.isPending}
           onClick={() => impersonate.mutate()}
         >
           <LogIn className="w-4 h-4" />
-          Impersonate
+          Đăng nhập hộ
         </button>
         {isSuspended ? (
           <button
-            className="btn-primary inline-flex items-center gap-2 text-sm"
+            className="btn-soft inline-flex items-center gap-2 text-sm !text-emerald-700"
             disabled={reactivate.isPending}
             onClick={() => reactivate.mutate()}
           >
@@ -101,34 +122,48 @@ export function TenantDetailPage() {
           </button>
         ) : (
           <button
-            className="btn-soft inline-flex items-center gap-2 text-sm !text-red-600"
+            className="btn-soft inline-flex items-center gap-2 text-sm !text-amber-700"
             disabled={suspend.isPending}
             onClick={() => suspend.mutate()}
           >
-            <Power className="w-4 h-4" />
+            <Lock className="w-4 h-4" />
             Tạm khóa
           </button>
         )}
-      </PageHeader>
+        <button
+          className="btn-primary inline-flex items-center gap-2 text-sm"
+          disabled={createInvoice.isPending}
+          onClick={() => createInvoice.mutate()}
+        >
+          <Receipt className="w-4 h-4" />
+          Tạo hóa đơn
+        </button>
+      </Topbar>
 
       <main className="p-6 space-y-5">
+        {/* Header trường */}
         <div className="card p-5 flex items-center gap-4">
           <div className="avatar !w-14 !h-14 text-lg">
-            {(t.legalName ?? t.slug).slice(0, 2).toUpperCase()}
+            {(t.settings?.displayName ?? t.legalName ?? t.slug).slice(0, 2).toUpperCase()}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold">{t.legalName ?? t.slug}</h1>
+              <h1 className="text-xl font-bold">{t.settings?.displayName ?? t.legalName ?? t.slug}</h1>
               <span className={cn("badge", st.badge)}>{st.label}</span>
               <span className="badge b-blue">{TIER_LABEL[t.planTier] ?? t.planTier}</span>
             </div>
             <div className="text-sm text-slate-400 mt-0.5">
-              {t.slug}.kimthanhkids.vn · {t.schools?.length ?? t._count?.schools ?? 0} cơ sở
+              {t.slug}.kimthanhkids.vn · {schools.length} cơ sở · {STUDENTS_TODO} học sinh
             </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-slate-400">MRR</div>
+            <div className="text-xl font-bold">{formatVnd(MRR_TODO)}</div>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
+          {/* Thông tin */}
           <div className="card p-5">
             <div className="font-bold mb-3 flex items-center gap-2">
               <Info className="w-4 h-4 text-slate-400" />Thông tin
@@ -138,76 +173,189 @@ export function TenantDetailPage() {
               <Row k="Slug" v={t.slug} />
               <Row k="Tenant ID" v={<span className="font-mono text-xs">{t.id}</span>} />
               <Row k="Ngày tạo" v={formatDate(t.createdAt)} />
+              <Row k="Múi giờ" v={t.settings?.timezone ?? "Asia/Ho_Chi_Minh"} />
               <Row k="Chế độ" v={<span className="badge b-slate">{t.tenancyMode ?? "POOL"}</span>} />
             </dl>
           </div>
 
+          {/* Thuê bao */}
           <div className="card p-5">
-            <div className="font-bold mb-3 flex items-center gap-2">
-              <Repeat className="w-4 h-4 text-slate-400" />Thuê bao
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold flex items-center gap-2">
+                <Repeat className="w-4 h-4 text-slate-400" />Thuê bao
+              </div>
             </div>
             <dl className="text-sm space-y-2.5">
               <Row k="Gói" v={sub?.plan ? (TIER_LABEL[sub.plan.tier] ?? sub.plan.name) : "—"} />
               <Row k="Chu kỳ" v={sub?.billingCycle ? (CYCLE_LABEL[sub.billingCycle] ?? sub.billingCycle) : "—"} />
               <Row k="Trạng thái" v={<span className={cn("badge", subSt.badge)}>{subSt.label}</span>} />
-              <Row k="Hết hạn kỳ" v={formatDate(sub?.currentPeriodEnd)} />
+              <Row
+                k="Kỳ hiện tại"
+                v={
+                  sub?.currentPeriodStart || sub?.currentPeriodEnd
+                    ? `${formatDate(sub?.currentPeriodStart)} – ${formatDate(sub?.currentPeriodEnd)}`
+                    : "—"
+                }
+              />
+              <Row k="Thanh toán" v={<span className="badge b-peach">{sub?.billingMode ?? "GATEWAY"}</span>} />
+              <Row
+                k="Tự gia hạn"
+                v={
+                  <span className={sub?.cancelAtPeriodEnd ? "text-slate-500" : "text-emerald-600 font-medium"}>
+                    {sub?.cancelAtPeriodEnd ? "Tắt" : "Bật"}
+                  </span>
+                }
+              />
             </dl>
           </div>
 
+          {/* White-label */}
+          <div className="card p-5">
+            <div className="font-bold mb-3 flex items-center gap-2">
+              <Palette className="w-4 h-4 text-slate-400" />White-label
+            </div>
+            <dl className="text-sm space-y-2.5">
+              <Row k="Tên hiển thị" v={t.settings?.displayName ?? t.legalName} />
+              <div className="flex items-center justify-between">
+                <dt className="text-slate-400">Màu chủ đạo</dt>
+                <dd className="flex items-center gap-2">
+                  <span
+                    className="w-5 h-5 rounded-md border border-slate-200"
+                    style={{ background: t.settings?.primaryColor ?? "#f26b5e" }}
+                  />
+                  <span className="font-mono text-xs">{t.settings?.primaryColor ?? "—"}</span>
+                </dd>
+              </div>
+              <Row
+                k="Logo"
+                v={
+                  t.settings?.logoUrl ? (
+                    <span className="text-emerald-600 font-medium">Đã tải lên</span>
+                  ) : (
+                    <span className="text-slate-400">Chưa có</span>
+                  )
+                }
+              />
+              <div className="flex justify-between items-center">
+                <dt className="text-slate-400">Custom domain</dt>
+                <dd>
+                  {customDomain ? (
+                    <span className={cn("badge", customDomain.verifiedAt ? "b-green" : "b-amber")}>
+                      {customDomain.verifiedAt ? "Đã xác minh" : "Chờ xác minh"}
+                    </span>
+                  ) : (
+                    <span className="badge b-slate">Chưa cấu hình</span>
+                  )}
+                </dd>
+              </div>
+              {customDomain && (
+                <div className="text-xs text-slate-400 pt-1">
+                  {customDomain.domain}
+                  {customDomain.verifiedAt ? "" : " — thêm bản ghi TXT để xác minh."}
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-5">
+          {/* Quota */}
           <div className="card p-5">
             <div className="font-bold mb-3 flex items-center gap-2">
               <Gauge className="w-4 h-4 text-slate-400" />Hạn mức (quota)
             </div>
-            <p className="text-sm text-slate-500">
-              Override hạn mức/feature riêng cho trường này (vd nâng giới hạn HS, bật tính năng).
-            </p>
+            <div className="space-y-3 text-sm">
+              {QUOTA_TODO.map((m) => (
+                <div key={m.label}>
+                  <div className="flex justify-between mb-1">
+                    <span>{m.label}</span>
+                    <b>
+                      {m.cur} / {m.max}
+                      {m.unit ?? ""}
+                    </b>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{ width: `${Math.min(100, (m.cur / m.max) * 100)}%`, background: m.color }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
             <button className="btn-soft w-full mt-4 text-sm" onClick={() => setOvOpen(true)}>
               Override hạn mức
             </button>
           </div>
-        </div>
 
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-bold flex items-center gap-2">Hóa đơn gần đây</div>
-            <button
-              className="btn-soft !py-1 !px-3 text-xs"
-              disabled={createInvoice.isPending}
-              onClick={() => createInvoice.mutate()}
-            >
-              Tạo hóa đơn kỳ
-            </button>
+          {/* Cơ sở */}
+          <div className="card p-5">
+            <div className="font-bold mb-3 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-slate-400" />Cơ sở ({schools.length})
+            </div>
+            <div className="divide-y divide-slate-100 text-sm">
+              {schools.length === 0 && <div className="py-2.5 text-muted">Chưa có cơ sở.</div>}
+              {schools.map((s) => (
+                <div key={s.id} className="py-2.5 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#fff3ec] text-[color:var(--primary)] grid place-items-center">
+                    <School className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold">{s.name ?? "Cơ sở"}</div>
+                    <div className="text-xs text-slate-400">{s.code ?? "—"}</div>
+                  </div>
+                  <span className={cn("badge", s.status === "CLOSED" ? "b-slate" : "b-green")}>
+                    {s.status === "CLOSED" ? "Đã đóng" : "Đang mở"}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="text-xs text-slate-400 mt-3">
+              Gói Hệ thống mới được thêm nhiều cơ sở (chuỗi).
+            </div>
           </div>
-          <div className="divide-y divide-slate-100 text-sm">
-            {(sub?.invoices ?? []).length === 0 && (
-              <div className="py-2.5 text-muted">Chưa có hóa đơn.</div>
-            )}
-            {(sub?.invoices ?? []).map((inv) => {
-              const ist = badgeFor(INVOICE_STATUS, inv.status);
-              const payable = inv.status !== "PAID" && inv.status !== "VOID";
-              return (
-                <div key={inv.id} className="py-2.5 flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">{inv.invoiceNumber ?? inv.id.slice(0, 8)}</div>
-                    <div className="text-xs text-slate-400">
-                      {inv.period ?? "—"} · {inv.total != null ? formatVnd(inv.total) : "—"}
+
+          {/* Hóa đơn gần đây */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-bold flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-slate-400" />Hóa đơn gần đây
+              </div>
+              <Link to="/invoices" className="text-xs text-[color:var(--primary)] font-semibold">
+                Tất cả
+              </Link>
+            </div>
+            <div className="divide-y divide-slate-100 text-sm">
+              {(sub?.invoices ?? []).length === 0 && (
+                <div className="py-2.5 text-muted">Chưa có hóa đơn.</div>
+              )}
+              {(sub?.invoices ?? []).map((inv) => {
+                const ist = badgeFor(INVOICE_STATUS, inv.status);
+                const payable = inv.status !== "PAID" && inv.status !== "VOID";
+                return (
+                  <div key={inv.id} className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">{inv.invoiceNumber ?? inv.id.slice(0, 8)}</div>
+                      <div className="text-xs text-slate-400">
+                        {inv.period ?? "—"} · {inv.total != null ? formatVnd(inv.total) : "—"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("badge", ist.badge)}>{ist.label}</span>
+                      {payable && (
+                        <button
+                          className="btn-soft !py-1 !px-2 text-xs"
+                          disabled={markPaid.isPending}
+                          onClick={() => markPaid.mutate(inv.id)}
+                        >
+                          Thu
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={cn("badge", ist.badge)}>{ist.label}</span>
-                    {payable && (
-                      <button
-                        className="btn-soft !py-1 !px-2 text-xs"
-                        disabled={markPaid.isPending}
-                        onClick={() => markPaid.mutate(inv.id)}
-                      >
-                        Thu
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </main>
@@ -255,6 +403,23 @@ export function TenantDetailPage() {
         </Field>
       </Modal>
     </>
+  );
+}
+
+/** Topbar riêng cho trang chi tiết: back-link thay tiêu đề, không có avatar (khớp mock). */
+function Topbar({ onBack, children }: { onBack?: () => void; children?: ReactNode }) {
+  return (
+    <header className="topbar">
+      <button
+        onClick={onBack}
+        className="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-sm"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Trường thuê
+      </button>
+      <div className="flex-1" />
+      {children}
+    </header>
   );
 }
 

@@ -26,15 +26,24 @@ export type Tenant = {
   currentPeriodEnd?: string | null;
   trialEndsAt?: string | null;
   createdAt: string;
-  settings?: { displayName?: string | null; primaryColor?: string | null } | null;
+  settings?: {
+    displayName?: string | null;
+    primaryColor?: string | null;
+    timezone?: string | null;
+    logoUrl?: string | null;
+  } | null;
   subscription?: {
     status?: string;
     billingCycle?: string;
+    billingMode?: string;
+    currentPeriodStart?: string | null;
     currentPeriodEnd?: string | null;
+    cancelAtPeriodEnd?: boolean;
     plan?: Plan;
     invoices?: PlatformInvoice[];
   } | null;
-  schools?: { id: string }[];
+  domains?: { domain: string; isPrimary?: boolean; verifiedAt?: string | null }[];
+  schools?: { id: string; name?: string; code?: string; status?: string }[];
   _count?: { schools?: number };
   // Bổ sung ở GET /platform/tenants (list) cho bảng Tenants:
   billingCycle?: string | null;
