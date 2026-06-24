@@ -72,12 +72,25 @@ export type TenantStats = {
 export type Subscription = {
   id: string;
   tenantId: string;
+  tenantName?: string | null;
+  tenantSlug?: string | null;
   status: string;
   billingCycle?: string;
   currentPeriodStart?: string | null;
   currentPeriodEnd?: string | null;
   autoRenew?: boolean;
+  mrr?: number;
   plan?: Plan;
+};
+
+export type SubscriptionStats = {
+  total: number;
+  TRIALING: number;
+  ACTIVE: number;
+  PAST_DUE: number;
+  SUSPENDED: number;
+  CANCELED: number;
+  EXPIRED: number;
 };
 
 export type PlatformInvoice = {
@@ -207,7 +220,8 @@ export const platform = {
     api.post(`/platform/tenants/${id}/entitlements`, body),
 
   listSubscriptions: (page = 1, status?: string) =>
-    api.get<Subscription[]>("/platform/subscriptions", { query: { page, status } }),
+    api.getPage<Subscription>("/platform/subscriptions", { query: { page, status } }),
+  subscriptionStats: () => api.get<SubscriptionStats>("/platform/subscriptions/stats"),
 
   listInvoices: (page = 1, tenantId?: string, status?: string) =>
     api.get<PlatformInvoice[]>("/platform/invoices", { query: { page, tenantId, status } }),

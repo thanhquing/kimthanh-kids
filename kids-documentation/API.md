@@ -212,7 +212,8 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `POST` | `/platform/tenants/:id/reactivate` | - | `{ ok: true }` |
 | `POST` | `/platform/tenants/:id/entitlements` | `EntitlementOverrideInput` | `TenantEntitlement` |
 | `POST` | `/platform/tenants/:id/impersonate` | - | tenant admin access token, no refresh token |
-| `GET` | `/platform/subscriptions?page=&status=` | `page?: number`, `status?: SubscriptionStatus` | paginated subscriptions |
+| `GET` | `/platform/subscriptions?page=&status=` | `page?: number`, `status?: SubscriptionStatus` | paginated subscriptions — mỗi dòng kèm `tenantName`, `tenantSlug`, `billingCycle`, `autoRenew` (=`!cancelAtPeriodEnd`), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
+| `GET` | `/platform/subscriptions/stats` | - | đếm thuê bao theo trạng thái: `{ total, TRIALING, ACTIVE, PAST_DUE, SUSPENDED, CANCELED, EXPIRED }` |
 | `GET` | `/platform/invoices?page=&tenantId=&status=` | filters | paginated platform invoices |
 | `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice |
 | `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | invoice after payment |

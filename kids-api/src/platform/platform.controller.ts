@@ -88,6 +88,11 @@ export class PlatformController {
     return this.platform.impersonateTenantAdmin(id, user.id);
   }
 
+  @Get("subscriptions/stats")
+  subscriptionStats() {
+    return this.platform.subscriptionStats();
+  }
+
   @Get("subscriptions")
   listSubscriptions(@Query("page") page?: string, @Query("status") status?: string) {
     return this.platform.listSubscriptions(Number(page) || 1, 20, status);

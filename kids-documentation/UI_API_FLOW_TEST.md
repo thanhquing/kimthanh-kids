@@ -72,6 +72,10 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | E04 | Edge: tenant admin xem doanh thu | `GET /platform/revenue` | `403` | `403` | PASS | `FORBIDDEN` |
 | E05 | Edge: tenant admin backfill | `POST /platform/mrr/backfill` | `403` | `403` | PASS | `FORBIDDEN` (chi SUPER_ADMIN) |
 | E06 | Edge: tenant admin xem stats | `GET /platform/tenants/stats` | `403` | `403` | PASS | `FORBIDDEN` |
+| P25 | KPI thue bao theo trang thai | `GET /platform/subscriptions/stats` | `200` | `200` | PASS | `{total,TRIALING,ACTIVE,PAST_DUE,SUSPENDED,CANCELED,EXPIRED}` |
+| P26 | List thue bao giau truong | `GET /platform/subscriptions?page=1` | `200` | `200` | PASS | moi dong kem `tenantName,billingCycle,autoRenew,mrr`; demo Hoa Sen PRO/MONTHLY mrr 1.200.000 |
+| P27 | Loc thue bao theo trang thai | `GET /platform/subscriptions?status=ACTIVE` | `200` | `200` | PASS | chi tra ACTIVE |
+| E07 | Edge: tenant admin xem stats thue bao | `GET /platform/subscriptions/stats` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |

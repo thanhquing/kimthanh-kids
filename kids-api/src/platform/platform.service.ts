@@ -395,17 +395,44 @@ export class PlatformService {
     });
   }
 
-  listSubscriptions(page = 1, pageSize = 20, status?: string) {
+  async listSubscriptions(page = 1, pageSize = 20, status?: string) {
     const where = status ? { status: status as never } : {};
-    return this.prisma.system.subscription
-      .findMany({
+    const [items, total] = await Promise.all([
+      this.prisma.system.subscription.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { plan: true },
+        include: { tenant: { include: { settings: true } }, plan: { include: { prices: true } } },
         orderBy: { createdAt: "desc" },
-      })
-      .then((items) => paginated(items, { page, pageSize }));
+      }),
+      this.prisma.system.subscription.count({ where }),
+    ]);
+    const rows = items.map((s) => ({
+      ...s,
+      tenantName: s.tenant?.settings?.displayName ?? s.tenant?.legalName ?? s.tenant?.slug ?? null,
+      tenantSlug: s.tenant?.slug ?? null,
+      autoRenew: !s.cancelAtPeriodEnd, // tự gia hạn = KHÔNG hủy cuối kỳ
+      mrr: Math.round(this.mrr.subMrr(s)),
+    }));
+    return paginated(rows, { page, pageSize, total });
+  }
+
+  /** Đếm thuê bao theo trạng thái (cho KPI + chip lọc trang Thuê bao). */
+  async subscriptionStats() {
+    const grouped = await this.prisma.system.subscription.groupBy({
+      by: ["status"],
+      _count: { _all: true },
+    });
+    const by = (s: SubscriptionStatus) => grouped.find((g) => g.status === s)?._count._all ?? 0;
+    return {
+      total: grouped.reduce((sum, g) => sum + g._count._all, 0),
+      TRIALING: by(SubscriptionStatus.TRIALING),
+      ACTIVE: by(SubscriptionStatus.ACTIVE),
+      PAST_DUE: by(SubscriptionStatus.PAST_DUE),
+      SUSPENDED: by(SubscriptionStatus.SUSPENDED),
+      CANCELED: by(SubscriptionStatus.CANCELED),
+      EXPIRED: by(SubscriptionStatus.EXPIRED),
+    };
   }
 
   listInvoices(page = 1, pageSize = 20, tenantId?: string, status?: string) {

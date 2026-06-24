@@ -294,4 +294,32 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const t = await createTenant(app);
     await api().get("/api/platform/tenants/stats").set(auth(t)).expect(403);
   });
+
+  // ── Trang Thuê bao: stats theo trạng thái + list giàu trường (tên trường/MRR/tự gia hạn) ──
+  it("platform subscriptions: stats + list giàu trường + lọc trạng thái + 403", async () => {
+    await createTenant(app); // tạo 1 subscription FREE ACTIVE
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+
+    const stats = await api().get("/api/platform/subscriptions/stats").set(phead).expect(200);
+    expect(stats.body.data.total).toBeGreaterThanOrEqual(1);
+    for (const k of ["TRIALING", "ACTIVE", "PAST_DUE", "SUSPENDED", "CANCELED", "EXPIRED"]) {
+      expect(typeof stats.body.data[k]).toBe("number");
+    }
+
+    const list = await api().get("/api/platform/subscriptions?page=1").set(phead).expect(200);
+    expect(list.body.meta.total).toBeGreaterThanOrEqual(1);
+    const row = list.body.data[0];
+    for (const f of ["tenantName", "mrr", "autoRenew", "billingCycle"]) {
+      expect(row).toHaveProperty(f);
+    }
+
+    // Lọc theo trạng thái ACTIVE → chỉ trả ACTIVE.
+    const act = await api().get("/api/platform/subscriptions?status=ACTIVE").set(phead).expect(200);
+    expect(act.body.data.every((s: { status: string }) => s.status === "ACTIVE")).toBe(true);
+
+    // Tenant thường không xem stats thuê bao.
+    const t = await createTenant(app);
+    await api().get("/api/platform/subscriptions/stats").set(auth(t)).expect(403);
+  });
 });
