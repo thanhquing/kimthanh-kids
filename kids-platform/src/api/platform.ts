@@ -84,6 +84,7 @@ export type DashboardOverview = {
     mrr: number;
   };
   mrrSeries: { month: string; value: number }[];
+  mrrGrowthPct: number | null;
   planDistribution: { tier: string; count: number }[];
   recentTenants: {
     id: string;

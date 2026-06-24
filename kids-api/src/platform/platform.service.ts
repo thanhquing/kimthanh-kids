@@ -127,6 +127,12 @@ export class PlatformService {
       mrrSeries.push({ month: `T${monthEnd.getMonth() + 1}`, value: Math.round(value) });
     }
 
+    // % tăng trưởng MRR tháng gần nhất so tháng trước đó (null nếu tháng trước = 0 → không tính được %).
+    const lastMrr = mrrSeries[mrrSeries.length - 1]?.value ?? 0;
+    const prevMrr = mrrSeries[mrrSeries.length - 2]?.value ?? 0;
+    const mrrGrowthPct =
+      prevMrr > 0 ? Math.round(((lastMrr - prevMrr) / prevMrr) * 1000) / 10 : null;
+
     // Trường mới đăng ký (5 gần nhất).
     const recentTenantsRaw = await this.prisma.system.tenant.findMany({
       where: { deletedAt: null },
@@ -179,6 +185,7 @@ export class PlatformService {
         mrr,
       },
       mrrSeries,
+      mrrGrowthPct,
       planDistribution,
       recentTenants,
       recentOverdue,

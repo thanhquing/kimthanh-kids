@@ -106,6 +106,12 @@ export function DashboardPage() {
           <div className="card p-5 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <div className="font-bold">Doanh thu định kỳ (MRR · 12 tháng)</div>
+              {data?.mrrGrowthPct != null && (
+                <span className={`badge ${data.mrrGrowthPct >= 0 ? "b-green" : "b-red"}`}>
+                  {data.mrrGrowthPct >= 0 ? "+" : ""}
+                  {data.mrrGrowthPct}%
+                </span>
+              )}
             </div>
             <svg viewBox="0 0 600 200" className="w-full h-48" preserveAspectRatio="none">
               <defs>
