@@ -244,6 +244,56 @@ export type AuditEntry = {
   ip?: string | null;
 };
 
+export type Worklist = {
+  trial: {
+    active: number;
+    expiringSoon: number;
+    endedTotal: number;
+    converted: number;
+    conversionRate: number;
+    items: {
+      tenantId: string;
+      tenantName?: string | null;
+      planName?: string | null;
+      trialEndsAt?: string | null;
+      daysLeft?: number | null;
+    }[];
+  };
+  dunning: {
+    overdueCount: number;
+    overdueAmount: number;
+    atRiskSuspend: number;
+    suspended: number;
+    items: {
+      invoiceId: string;
+      invoiceNumber: string;
+      tenantId: string;
+      tenantName?: string | null;
+      amountDue: number;
+      dueAt?: string | null;
+      daysLate?: number | null;
+      subStatus?: string | null;
+    }[];
+  };
+};
+
+export type PlatformSettings = {
+  id: string;
+  bankBin?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountName?: string | null;
+  pastDueGraceDays: number;
+  suspendedGraceDays: number;
+};
+
+export type UpdatePlatformSettingsInput = {
+  bankBin?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountName?: string | null;
+  pastDueGraceDays?: number;
+  suspendedGraceDays?: number;
+};
+
 export type EntitlementInput = {
   featureKey?: string;
   enabled?: boolean;
@@ -294,6 +344,10 @@ export const platform = {
     api.get<Coupon[]>("/platform/coupons", { query: { page, isActive } }),
   createCoupon: (body: CreateCouponInput) => api.post<Coupon>("/platform/coupons", body),
 
+  worklist: () => api.get<Worklist>("/platform/worklist"),
+  getSettings: () => api.get<PlatformSettings>("/platform/settings"),
+  updateSettings: (body: UpdatePlatformSettingsInput) =>
+    api.patch<PlatformSettings>("/platform/settings", body),
   usageOverview: () => api.get<UsageOverview>("/platform/usage/overview"),
   listAudit: (page = 1, action?: string, tenantId?: string) =>
     api.getPage<AuditEntry>("/platform/audit", {

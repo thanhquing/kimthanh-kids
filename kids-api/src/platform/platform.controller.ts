@@ -4,6 +4,7 @@ import { PlatformRole } from "@prisma/client";
 import { BillingService } from "../billing/billing.service";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { PlatformRoles } from "../common/decorators/roles.decorator";
+import { UpdatePlatformConfigInput } from "../platform-config/platform-config.service";
 import { MrrSnapshotService } from "./mrr-snapshot.service";
 import {
   CreateCouponInput,
@@ -142,6 +143,22 @@ export class PlatformController {
   @Get("coupons")
   listCoupons(@Query("page") page?: string, @Query("isActive") isActive?: string) {
     return this.platform.listCoupons(Number(page) || 1, 20, isActive);
+  }
+
+  @Get("worklist")
+  worklist() {
+    return this.platform.worklist();
+  }
+
+  @Get("settings")
+  getSettings() {
+    return this.platform.getSettings();
+  }
+
+  @PlatformRoles(PlatformRole.PLATFORM_SUPER_ADMIN)
+  @Patch("settings")
+  updateSettings(@Body() body: UpdatePlatformConfigInput) {
+    return this.platform.updateSettings(body);
   }
 
   @Get("audit")

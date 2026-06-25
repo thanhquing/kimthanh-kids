@@ -75,6 +75,23 @@
 - **Phụ thuộc phase tenant:** `dau/wau/mau` hiện chỉ đếm event `login` từ BE; app trường (CRM/mobile) chưa build nên chưa phát event tương tác. Khi build app tenant: gọi `UsageService.track(...)` ở các hành động chính để metric phản ánh tương tác thật.
 - **Impersonate nâng cấp (P2):** hiện chỉ login-as **chủ trường**; muốn "thấy đúng UI của GV/PH gặp lỗi" cần cho chọn user/role cụ thể — chỉ hữu ích sau khi có UI tenant.
 
+## 8. Worklist — Cần hành động (bảo vệ doanh thu)  ✅ MỚI (`GET /platform/worklist`)
+
+- **Trang mới `/worklist`** (nav nhóm "Doanh thu" → "Cần hành động"). Gộp 2 nguồn rò rỉ doanh thu để operator **chủ động xử lý**.
+- **Phễu dùng thử:** TRIALING đang chạy + sắp hết hạn (≤7 ngày) + tỷ lệ chuyển đổi (`converted/endedTotal`, converted = trial kết thúc KHÔNG thành EXPIRED). **Lưu ý mô hình:** signup mặc định FREE/ACTIVE (freemium, `trialEndsAt=null`) → trial chỉ phát sinh khi nâng gói trả phí có `trialDays`; demo trống là đúng.
+- **Công nợ:** hóa đơn `OPEN/OVERDUE` quá hạn (dueAt < now, còn nợ) — query theo **ngày + còn nợ**, KHÔNG phụ thuộc cron `markOverdueInvoices` đã chạy hay chưa → thấy ngay. Resolve `tenantName` (PlatformInvoice không có quan hệ tenant) + `subStatus` (batch). Nút "Đã thu" dùng lại `markPaid`.
+- **KHÔNG trùng** với dashboard (`overview` chỉ đếm `overdueInvoices` theo status OVERDUE — đã chạy cron) — worklist rộng hơn (gồm OPEN-quá-hạn) + có item list để hành động. Giữ cả 2.
+- **Engine đã có sẵn** (`billing-jobs`: expireTrials/markOverdueInvoices/dunningSuspend/dunningCancel trên cron) — trang này chỉ là **lớp hiển thị**, không lặp logic.
+- **P2 (cần kênh email):** nhắc tự động tới chủ trường ở các mốc dunning (chỉ thêm 1 `mail.send` mỗi job). Hiện chưa có email service → nhắc thủ công qua trang này.
+
+## 9. Settings — Cài đặt nền tảng + VietQR  ✅ MỚI (`GET/PATCH /platform/settings`)
+
+- **Model mới `PlatformConfig`** (singleton id="singleton") — KHÁC `TenantSettings` (mỗi trường). Lưu **TK ngân hàng nền tảng** (VietQR tenant→platform) + **grace dunning**. Module riêng `platform-config/` để cả `platform` lẫn `billing` dùng chung, **tránh circular** (billing đã được platform import).
+- **VietQR = MIỄN PHÍ** qua `img.vietqr.io/image/{BIN}-{STK}-compact2.png?amount=&addInfo={số HĐ}` (chỉ là URL ảnh, không key/hợp đồng). `addInfo = số hóa đơn` → đối soát **thủ công** (xem biến động NH → bấm markPaid). **Đối soát tự động = P2** (SePay/Casso webhook → tự markPaid); đã chuẩn hóa addInfo nên lên auto nhẹ.
+- **Grace dunning chuyển ENV → DB:** `billing-jobs` (dunningSuspend/dunningCancel) giờ đọc `PlatformConfigService.graceDays()`; ENV `PAST_DUE_GRACE_DAYS`/`SUSPENDED_GRACE_DAYS` chỉ là **giá trị khởi tạo** khi tạo singleton. Test cũ vẫn xanh (default 7/14 không đổi). `expireTrials` không dùng grace.
+- **PATCH chỉ `PLATFORM_SUPER_ADMIN`** (TK ngân hàng + grace là cấu hình nhạy cảm); GET cho cả SUPER_ADMIN/BILLING.
+- **P2:** chọn VietQR template (compact/qr-only), nhiều TK ngân hàng, thương hiệu nền tảng (logo/email), webhook SePay.
+
 ## Ghi chú hạ tầng test (quan trọng)
 
 - **e2e đang chạy trên CÙNG DB dev** (`kids_api`), KHÔNG reset giữa các lần chạy → mỗi `pnpm test:e2e` tạo thêm nhiều tenant `t-*` rác, làm bẩn data demo. **Việc cần làm:** tách `DATABASE_URL` riêng cho e2e (vd `kids_api_test`) + reset trước mỗi run. Tạm thời: sau khi chạy e2e/cURL, reset+seed lại (`docker compose down -v && up` → `prisma:deploy` → `prisma:seed` + `:seed:demo`).

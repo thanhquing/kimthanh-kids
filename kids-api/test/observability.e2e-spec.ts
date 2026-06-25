@@ -493,4 +493,94 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const t = await createTenant(app);
     await api().get("/api/platform/audit").set(auth(t)).expect(403);
   });
+
+  // ── Trang Cần hành động: phễu trial (sắp hết hạn + conversion) + công nợ quá hạn + 403 ──
+  it("platform worklist: phễu trial + công nợ + 403", async () => {
+    const t = await createTenant(app);
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+    const tid = (await api().get(`/api/platform/tenants?q=${t.slug}`).set(phead)).body.data[0].id;
+
+    // Signup mặc định FREE/ACTIVE → ép thành TRIALING sắp hết hạn (3 ngày) để vào phễu.
+    await prisma.system.subscription.update({
+      where: { tenantId: tid },
+      data: { status: "TRIALING", trialEndsAt: new Date(Date.now() + 3 * 86_400_000) },
+    });
+
+    // Tạo hóa đơn rồi đẩy hạn về quá khứ → công nợ quá hạn.
+    const inv = await api()
+      .post("/api/platform/invoices")
+      .set(phead)
+      .send({ tenantId: tid })
+      .expect(201);
+    await prisma.system.platformInvoice.update({
+      where: { id: inv.body.data.id },
+      data: {
+        status: "OPEN",
+        dueAt: new Date(Date.now() - 5 * 86_400_000),
+        total: 1_200_000,
+        amountPaid: 0,
+      },
+    });
+
+    const wl = (await api().get("/api/platform/worklist").set(phead).expect(200)).body.data;
+
+    // Phễu trial
+    expect(wl.trial.active).toBeGreaterThanOrEqual(1);
+    expect(wl.trial.expiringSoon).toBeGreaterThanOrEqual(1);
+    expect(typeof wl.trial.conversionRate).toBe("number");
+    const trialRow = wl.trial.items.find((x: { tenantId: string }) => x.tenantId === tid);
+    expect(trialRow).toBeDefined();
+    expect(trialRow.tenantName).toBeTruthy();
+    expect(trialRow.daysLeft).toBeLessThanOrEqual(3);
+
+    // Công nợ
+    expect(wl.dunning.overdueCount).toBeGreaterThanOrEqual(1);
+    const dueRow = wl.dunning.items.find((x: { tenantId: string }) => x.tenantId === tid);
+    expect(dueRow).toBeDefined();
+    expect(dueRow.daysLate).toBeGreaterThanOrEqual(4);
+    expect(dueRow.amountDue).toBeGreaterThan(0);
+
+    // Tenant thường không xem worklist nền tảng.
+    await api().get("/api/platform/worklist").set(auth(t)).expect(403);
+  });
+
+  // ── Trang Cài đặt: get default + patch ngân hàng/grace + 403 (PATCH chỉ SUPER_ADMIN) ──
+  it("platform settings: get default + patch bank/grace + 403", async () => {
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+
+    const got = await api().get("/api/platform/settings").set(phead).expect(200);
+    expect(typeof got.body.data.pastDueGraceDays).toBe("number");
+    expect(typeof got.body.data.suspendedGraceDays).toBe("number");
+
+    const upd = await api()
+      .patch("/api/platform/settings")
+      .set(phead)
+      .send({
+        bankBin: "970436",
+        bankAccountNumber: "0123456789",
+        bankAccountName: "CONG TY KIMTHANH KIDS",
+        pastDueGraceDays: 10,
+        suspendedGraceDays: 20,
+      })
+      .expect(200);
+    expect(upd.body.data.bankBin).toBe("970436");
+    expect(upd.body.data.pastDueGraceDays).toBe(10);
+
+    const got2 = await api().get("/api/platform/settings").set(phead).expect(200);
+    expect(got2.body.data.bankAccountNumber).toBe("0123456789");
+    expect(got2.body.data.suspendedGraceDays).toBe(20);
+
+    // Tenant thường không sửa cài đặt nền tảng.
+    const t = await createTenant(app);
+    await api().patch("/api/platform/settings").set(auth(t)).send({ pastDueGraceDays: 1 }).expect(403);
+
+    // Khôi phục mặc định (singleton dùng chung DB).
+    await api()
+      .patch("/api/platform/settings")
+      .set(phead)
+      .send({ pastDueGraceDays: 7, suspendedGraceDays: 14 })
+      .expect(200);
+  });
 });

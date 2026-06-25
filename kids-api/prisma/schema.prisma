@@ -552,6 +552,22 @@ enum MrrSnapshotSource {
   BACKFILL
 }
 
+/// Cấu hình NỀN TẢNG (1 hàng duy nhất, id="singleton"). Khác TenantSettings (cấu hình mỗi trường).
+/// - Thông tin ngân hàng nền tảng → sinh VietQR cho tenant chuyển khoản (addInfo = số hóa đơn).
+/// - Số ngày ân hạn dunning (đưa ENV ra UI để chỉnh): quá hạn → tạm khóa (pastDue) → hủy (suspended).
+model PlatformConfig {
+  id                 String   @id @default("singleton")
+  bankBin            String? // mã ngân hàng NAPAS (VietQR)
+  bankAccountNumber  String?
+  bankAccountName    String?
+  pastDueGraceDays   Int      @default(7)
+  suspendedGraceDays Int      @default(14)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("platform_config")
+}
+
 // ──────────────── NHÓM 5: ENTITLEMENT / USAGE / COUPON / CREDIT ────────────────
 
 model TenantEntitlement {

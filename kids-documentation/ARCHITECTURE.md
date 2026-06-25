@@ -29,8 +29,9 @@ kids-api/src/
 ├── auth/                    # login/refresh/logout/me + TokenService + UserContextService
 ├── entitlement/             # EntitlementService (resolve features/limits + quota)
 ├── provisioning/            # POST /public/signup + branding + availability
-├── billing/                 # plan/subscription/invoice/payment/webhook/cron/lifecycle
-├── platform/                # platform-admin (tenants/subscriptions/invoices/plans) + dashboard overview + MRR snapshot/cron
+├── billing/                 # plan/subscription/invoice/payment/webhook/cron/lifecycle (grace dunning ← PlatformConfig)
+├── platform-config/         # PlatformConfigService — config nền tảng singleton (NH VietQR + grace dunning); dùng chung billing + platform (tránh cycle)
+├── platform/                # platform-admin (tenants/subs/invoices/plans/coupons/audit/worklist/settings) + dashboard overview + MRR snapshot/cron
 ├── tenant/                  # self-service (settings/white-label/schools/members/domains)
 │   ── Phase 1 (domain nghiệp vụ A→G) ──
 ├── students/ classrooms/    # B  hồ sơ học sinh + lớp + guardian

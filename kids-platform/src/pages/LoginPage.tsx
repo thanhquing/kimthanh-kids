@@ -1,4 +1,4 @@
-import { Lock, Mail, ShieldCheck } from "lucide-react";
+import { Lock, Mail } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
@@ -70,11 +70,6 @@ export function LoginPage() {
         <button type="submit" className="btn-primary w-full mt-4" disabled={loading}>
           {loading ? "Đang đăng nhập…" : "Đăng nhập"}
         </button>
-
-        <div className="mt-5 flex items-center gap-2 text-xs text-slate-400 bg-[#fff8f3] rounded-xl p-3">
-          <ShieldCheck className="w-4 h-4 text-emerald-500" />
-          Truy cập được ghi log &amp; yêu cầu 2FA ở môi trường production.
-        </div>
       </form>
     </div>
   );

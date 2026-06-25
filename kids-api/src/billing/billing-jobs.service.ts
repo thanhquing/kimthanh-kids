@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { SubscriptionStatus } from "@prisma/client";
-import { EnvService } from "../config/env.service";
+import { PlatformConfigService } from "../platform-config/platform-config.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { LifecycleService } from "./lifecycle.service";
 
@@ -15,7 +15,7 @@ export class BillingJobsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly lifecycle: LifecycleService,
-    private readonly env: EnvService,
+    private readonly config: PlatformConfigService,
   ) {}
 
   /** Trial hết hạn & chưa thanh toán → EXPIRED. */
@@ -57,7 +57,7 @@ export class BillingJobsService {
 
   /** PAST_DUE quá grace → SUSPENDED. */
   async dunningSuspend(now = new Date()): Promise<number> {
-    const graceMs = this.env.get("PAST_DUE_GRACE_DAYS") * 86_400_000;
+    const graceMs = (await this.config.graceDays()).pastDue * 86_400_000;
     const subs = await this.prisma.system.subscription.findMany({
       where: {
         status: SubscriptionStatus.PAST_DUE,
@@ -76,7 +76,7 @@ export class BillingJobsService {
 
   /** SUSPENDED quá grace cuối → CANCELED. */
   async dunningCancel(now = new Date()): Promise<number> {
-    const graceMs = this.env.get("SUSPENDED_GRACE_DAYS") * 86_400_000;
+    const graceMs = (await this.config.graceDays()).suspended * 86_400_000;
     const subs = await this.prisma.system.subscription.findMany({
       where: {
         status: SubscriptionStatus.SUSPENDED,

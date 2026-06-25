@@ -20,6 +20,10 @@ import { paginated } from "../common/http/api-response";
 import { LifecycleService } from "../billing/lifecycle.service";
 import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
+import {
+  PlatformConfigService,
+  UpdatePlatformConfigInput,
+} from "../platform-config/platform-config.service";
 import { ProvisioningService, SignupInput } from "../provisioning/provisioning.service";
 import { MrrSnapshotService } from "./mrr-snapshot.service";
 
@@ -72,7 +76,17 @@ export class PlatformService {
     private readonly tokens: TokenService,
     private readonly mrr: MrrSnapshotService,
     private readonly entitlements: EntitlementService,
+    private readonly config: PlatformConfigService,
   ) {}
+
+  /** Cấu hình nền tảng (ngân hàng VietQR + grace dunning). */
+  getSettings() {
+    return this.config.get();
+  }
+
+  updateSettings(input: UpdatePlatformConfigInput) {
+    return this.config.update(input);
+  }
 
   /** Chuỗi doanh thu MRR theo tháng (cho biểu đồ 12/24 tháng). Giới hạn 1..24. */
   async revenue(months = 12) {
@@ -729,6 +743,110 @@ export class PlatformService {
       ip: r.ip,
     }));
     return paginated(items, { page, pageSize, total });
+  }
+
+  /**
+   * Worklist "Cần hành động" cho operator — gộp 2 nguồn rò rỉ doanh thu:
+   *  • Phễu dùng thử: trial đang chạy + sắp hết hạn + tỷ lệ chuyển đổi (trial kết thúc mà KHÔNG thành EXPIRED).
+   *  • Công nợ: hóa đơn CHƯA trả & quá hạn (OPEN/OVERDUE, còn nợ) — không phụ thuộc cron đã chạy hay chưa.
+   * Tận dụng engine dunning sẵn có (billing-jobs) — đây chỉ là lớp HIỂN THỊ để chủ động xử lý.
+   */
+  async worklist() {
+    const now = new Date();
+    const soon = new Date(now.getTime() + 7 * 86_400_000);
+
+    // ── Phễu dùng thử ──
+    const [trialSubs, endedTotal, expiredEnded, atRiskSuspend, suspendedCount] = await Promise.all([
+      this.prisma.system.subscription.findMany({
+        where: { status: SubscriptionStatus.TRIALING, trialEndsAt: { not: null } },
+        orderBy: { trialEndsAt: "asc" },
+        take: 50,
+        include: { plan: { select: { name: true } } },
+      }),
+      this.prisma.system.subscription.count({ where: { trialEndsAt: { not: null, lte: now } } }),
+      this.prisma.system.subscription.count({
+        where: { trialEndsAt: { not: null, lte: now }, status: SubscriptionStatus.EXPIRED },
+      }),
+      this.prisma.system.subscription.count({ where: { status: SubscriptionStatus.PAST_DUE } }),
+      this.prisma.system.subscription.count({ where: { status: SubscriptionStatus.SUSPENDED } }),
+    ]);
+    const converted = endedTotal - expiredEnded;
+    const conversionRate = endedTotal ? Math.round((converted / endedTotal) * 100) : 0;
+    const expiringSoon = trialSubs.filter((s) => s.trialEndsAt && s.trialEndsAt <= soon).length;
+
+    // ── Công nợ: hóa đơn chưa trả & quá hạn ──
+    const rawInvoices = await this.prisma.system.platformInvoice.findMany({
+      where: {
+        status: { in: [PlatformInvoiceStatus.OPEN, PlatformInvoiceStatus.OVERDUE] },
+        dueAt: { lt: now },
+        deletedAt: null,
+      },
+      orderBy: { dueAt: "asc" },
+      take: 50,
+    });
+    const dueInvoices = rawInvoices.filter((inv) => Number(inv.total) - Number(inv.amountPaid) > 0);
+
+    // Resolve tên trường (cho cả 2 phần) + trạng thái sub (cho công nợ) — batch, không N+1.
+    const tenantIds = [
+      ...new Set([...trialSubs.map((s) => s.tenantId), ...dueInvoices.map((i) => i.tenantId)]),
+    ];
+    const dunningTenantIds = [...new Set(dueInvoices.map((i) => i.tenantId))];
+    const [tenants, dunningSubs] = await Promise.all([
+      tenantIds.length
+        ? this.prisma.system.tenant.findMany({
+            where: { id: { in: tenantIds } },
+            include: { settings: true },
+          })
+        : Promise.resolve([]),
+      dunningTenantIds.length
+        ? this.prisma.system.subscription.findMany({
+            where: { tenantId: { in: dunningTenantIds } },
+            select: { tenantId: true, status: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const tenantName = new Map(tenants.map((t) => [t.id, t.settings?.displayName ?? t.legalName]));
+    const subStatus = new Map(dunningSubs.map((s) => [s.tenantId, s.status]));
+
+    const trialItems = trialSubs.map((s) => ({
+      tenantId: s.tenantId,
+      tenantName: tenantName.get(s.tenantId) ?? null,
+      planName: s.plan?.name ?? null,
+      trialEndsAt: s.trialEndsAt,
+      daysLeft: s.trialEndsAt
+        ? Math.ceil((s.trialEndsAt.getTime() - now.getTime()) / 86_400_000)
+        : null,
+    }));
+
+    const dunningItems = dueInvoices.map((inv) => ({
+      invoiceId: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      tenantId: inv.tenantId,
+      tenantName: tenantName.get(inv.tenantId) ?? null,
+      amountDue: Number(inv.total) - Number(inv.amountPaid),
+      dueAt: inv.dueAt,
+      daysLate: inv.dueAt ? Math.floor((now.getTime() - inv.dueAt.getTime()) / 86_400_000) : null,
+      subStatus: subStatus.get(inv.tenantId) ?? null,
+    }));
+    const overdueAmount = dunningItems.reduce((sum, i) => sum + i.amountDue, 0);
+
+    return {
+      trial: {
+        active: trialSubs.length,
+        expiringSoon,
+        endedTotal,
+        converted,
+        conversionRate,
+        items: trialItems,
+      },
+      dunning: {
+        overdueCount: dunningItems.length,
+        overdueAmount,
+        atRiskSuspend,
+        suspended: suspendedCount,
+        items: dunningItems,
+      },
+    };
   }
 
   /** Override entitlement cho tenant (vd dedicated nâng riêng limit/feature). */

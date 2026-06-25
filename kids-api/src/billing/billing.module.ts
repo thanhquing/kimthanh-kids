@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { PlatformConfigModule } from "../platform-config/platform-config.module";
 import { BillingController } from "./billing.controller";
 import { BillingCron } from "./billing.cron";
 import { BillingJobsService } from "./billing-jobs.service";
@@ -8,6 +9,7 @@ import { PaymentService } from "./payment.service";
 import { WebhookController } from "./webhook.controller";
 
 @Module({
+  imports: [PlatformConfigModule],
   controllers: [BillingController, WebhookController],
   providers: [BillingService, PaymentService, LifecycleService, BillingJobsService, BillingCron],
   exports: [BillingService, LifecycleService, BillingJobsService, PaymentService],

@@ -203,6 +203,14 @@ erDiagram
     json byTier "MRR theo tier"
     enum source "CRON số thực | BACKFILL suy ngược"
   }
+  PlatformConfig {
+    string id PK "='singleton' (1 hàng)"
+    string bankBin "NAPAS BIN — VietQR"
+    string bankAccountNumber
+    string bankAccountName
+    int pastDueGraceDays "quá hạn→tạm khóa (mặc định ENV 7)"
+    int suspendedGraceDays "tạm khóa→hủy (mặc định ENV 14)"
+  }
   TenantEntitlement {
     uuid id PK
     uuid tenantId

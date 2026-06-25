@@ -84,15 +84,24 @@ export function eventLabel(type: string): string {
 }
 
 const ACTION_LABEL: Record<string, string> = {
+  // Nền tảng
+  "platform.tenant.create": "Tạo trường (nền tảng)",
   "platform.tenant.impersonate": "Đăng nhập thay (impersonate)",
-  "tenant.suspend": "Tạm khóa trường",
-  "tenant.reactivate": "Mở lại trường",
-  "invoice.void": "Hủy hóa đơn",
-  "invoice.cancel": "Hủy hóa đơn",
-  "invoice.create": "Tạo hóa đơn",
-  "member.create": "Thêm thành viên",
-  "subscription.upgrade": "Nâng gói",
+  "platform.tenant.suspend": "Tạm khóa trường",
+  "platform.tenant.reactivate": "Mở lại trường",
+  // Vòng đời trường / thuê bao
+  "tenant.signup": "Đăng ký trường mới",
+  "tenant.settings.update": "Cập nhật cài đặt trường",
+  // Thành viên
+  "member.invite": "Mời thành viên",
+  "member.create": "Tạo thành viên",
+  "member.activate": "Kích hoạt thành viên",
+  "member.deactivate": "Ngừng thành viên",
+  // Nghiệp vụ
+  "classroom.create": "Tạo lớp học",
   "student.delete": "Xóa học sinh",
+  "invoice.payment": "Thanh toán hóa đơn",
+  "invoice.cancel": "Hủy hóa đơn",
 };
 export function actionLabel(action: string): string {
   return ACTION_LABEL[action] ?? action;
