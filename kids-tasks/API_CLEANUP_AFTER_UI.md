@@ -3,6 +3,17 @@
 > File tạm — gom các điểm API **dư thừa / chồng chéo** lộ ra khi nối UI mới (match mock-ui 100%) với backend.
 > KHÔNG xử lý ngay; rà & dọn 1 lượt ở cuối khi UI các trang đã ổn định, tránh xoá nhầm thứ còn dùng.
 
+## ✅ KẾT LUẬN AUDIT (2026-06-25 — sau khi 7 trang platform đã xong)
+
+Đã đối chiếu **từng endpoint platform ↔ caller FE ↔ e2e**. **Không có code dead/dư để xoá an toàn:**
+
+- **21/21 route platform** đều có ≥1 caller FE + test (kể cả suspend/reactivate/impersonate/setEntitlement → wired ở tenant-detail; `mrr/backfill` là ops endpoint super-admin, có e2e).
+- **21/21 method `platform.X`** ở FE đều có caller; mọi `export type` là contract sống (dùng làm generic `api.get<T>`).
+- Các "chồng chéo" bên dưới đều là **giữ riêng có chủ đích** (ngữ nghĩa/đối tượng khác nhau) — gộp lại là refactor tối ưu, KHÔNG phải dọn rác → **không làm** (rủi ro > lợi).
+- Orphan duy nhất: `kids-platform/src/api/generated/api.d.ts` (93KB, không ai import) — **không track git** + regenerable qua `pnpm gen:api` → để nguyên.
+
+→ "Cleanup" thực chất = đóng sổ tracker này. Các mục dưới giữ làm **nhật ký quyết định**.
+
 ## 1. Dashboard  ✅ đã tích hợp (endpoint `GET /platform/overview`)
 
 ### 1.1. `GET /platform/usage/overview` (UsageService.overview) — trùng một phần với `/platform/overview` mới
@@ -10,15 +21,13 @@
 - **Hiện trạng:** Trả `tenants, activeTenants, users, dau, wau, mau, topEvents`.
 - **Sau tích hợp:** Dashboard mới dùng `GET /platform/overview` (KPI trial/overdue/suspended/MRR + phân bổ gói + 2 list). FE **không còn dùng** `dau/wau/mau/users/topEvents`.
 - **Chồng chéo:** cả 2 endpoint đều `count` `tenants` + `activeTenants`.
-- **Quyết định cần chốt cuối:**
-  - [ ] `usage/overview` vẫn cần cho mục **Observability** (DAU/WAU/MAU) hay gộp luôn vào `/platform/overview`?
-  - Ràng buộc: `test/observability.e2e-spec.ts` đang test `usage/overview` (tồn tại + 403 cho non-platform) → nếu bỏ phải sửa test.
-  - Hiện **giữ nguyên** `usage/overview` (chưa có UI Observability), chỉ ghi nhận trùng lặp.
+- **Quyết định (CHỐT):**
+  - [x] **GIỮ `usage/overview`** — là nguồn DAU/WAU/MAU/topEvents **duy nhất** (`overview` không có); `UsageService` còn dùng để ghi event login (auth.service). Nền cho trang Observability sau. Không gộp.
+  - Trùng nhẹ phần `count tenants/activeTenants` là chấp nhận được (2 query rẻ, ngữ cảnh khác).
 
-### 1.2. FE type `Overview` cũ (kids-platform/src/api/platform.ts) — field thừa
+### 1.2. FE type `Overview` cũ (kids-platform/src/api/platform.ts) — field thừa  ✅ ĐÃ XONG
 
-- Sau khi repoint `platform.overview()` sang `/platform/overview`, các field `users/dau/wau/mau/topEvents` trong type cũ **không còn nơi dùng**.
-- **Việc cuối:** xoá type `Overview` cũ nếu không endpoint nào khác trả shape đó.
+- Type `Overview` cũ (`users/dau/wau/mau/topEvents`) **đã bị xoá**; `platform.ts` chỉ còn `DashboardOverview` (shape của `/platform/overview`). Grep toàn `kids-platform/src` không còn `dau/wau/mau/topEvents/Overview` (ngoài `DashboardOverview`).
 
 ## 2. Tenants  ✅ đã tích hợp
 
@@ -29,7 +38,7 @@
 
 - `listSubscriptions` đổi trả về: thêm `tenantName/tenantSlug/mrr/autoRenew` mỗi dòng + **meta phân trang** (trước chỉ `{page,pageSize}`, thiếu `total`). FE chuyển `api.get`→`api.getPage`.
 - **`autoRenew` là field DẪN XUẤT** (`!cancelAtPeriodEnd`), KHÔNG có cột thật trong DB — nếu sau này cần "tắt auto-renew" thì set `Subscription.cancelAtPeriodEnd=true` (đã có cột). FE type `Subscription.autoRenew` cũ từng dùng nhưng BE chưa trả → nay BE trả đúng.
-- `GET /platform/subscriptions/stats` (đếm theo trạng thái) — **chồng chéo nhẹ** với `tenants/stats` (cùng ý nghĩa active/trial/pastdue/suspended vì 1 tenant = 1 subscription). Giữ riêng vì ngữ nghĩa khác (thuê bao vs trường) + có thêm CANCELED/EXPIRED. **Quyết định cuối:** cân nhắc gộp 1 endpoint `platform/stats` trả cả 2 nhóm nếu trùng nhiều.
+- `GET /platform/subscriptions/stats` (đếm theo trạng thái) — **chồng chéo nhẹ** với `tenants/stats` (cùng ý nghĩa active/trial/pastdue/suspended vì 1 tenant = 1 subscription). Giữ riêng vì ngữ nghĩa khác (thuê bao vs trường) + có thêm CANCELED/EXPIRED. **Quyết định (CHỐT 2026-06-25): GIỮ RIÊNG** — gộp `/platform/stats` là tối ưu nhỏ nhưng phải sửa 2 trang + test, lợi không bõ. Mở lại nếu sau cần 1 màn hình tổng hợp.
 - KPI "Đã hủy/hết hạn" = `CANCELED + EXPIRED` (gộp ở FE).
 
 ## 4. Invoices  ✅ đã tích hợp (`GET /platform/invoices` + `/invoices/stats`)
