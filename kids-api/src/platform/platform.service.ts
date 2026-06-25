@@ -103,22 +103,18 @@ export class PlatformService {
   async dashboard() {
     const now = new Date();
 
-    const [tenants, activeTenants, trialTenants, suspendedTenants, overdueInvoiceCount] =
-      await Promise.all([
-        this.prisma.system.tenant.count({ where: { deletedAt: null } }),
-        this.prisma.system.tenant.count({
-          where: { deletedAt: null, status: TenantStatus.ACTIVE },
-        }),
-        this.prisma.system.tenant.count({
-          where: { deletedAt: null, status: TenantStatus.TRIAL },
-        }),
-        this.prisma.system.tenant.count({
-          where: { deletedAt: null, status: TenantStatus.SUSPENDED },
-        }),
-        this.prisma.system.platformInvoice.count({
-          where: { status: PlatformInvoiceStatus.OVERDUE, deletedAt: null },
-        }),
-      ]);
+    const [tenants, activeTenants, trialTenants, suspendedTenants] = await Promise.all([
+      this.prisma.system.tenant.count({ where: { deletedAt: null } }),
+      this.prisma.system.tenant.count({
+        where: { deletedAt: null, status: TenantStatus.ACTIVE },
+      }),
+      this.prisma.system.tenant.count({
+        where: { deletedAt: null, status: TenantStatus.TRIAL },
+      }),
+      this.prisma.system.tenant.count({
+        where: { deletedAt: null, status: TenantStatus.SUSPENDED },
+      }),
+    ]);
 
     // Thuê bao đang chạy → nguồn để tính MRR + phân bổ gói.
     const subs = await this.prisma.system.subscription.findMany({
@@ -159,13 +155,19 @@ export class PlatformService {
       trialEndsAt: t.trialEndsAt,
     }));
 
-    // Hóa đơn quá hạn (5 gần hạn nhất) — PlatformInvoice không có quan hệ `tenant`,
-    // nên tra tên trường riêng theo tenantId.
-    const overdueRaw = await this.prisma.system.platformInvoice.findMany({
-      where: { status: PlatformInvoiceStatus.OVERDUE, deletedAt: null },
+    // Hóa đơn quá hạn = CHƯA trả & quá hạn THEO NGÀY (OPEN/OVERDUE, dueAt<now, còn nợ) —
+    // KHỚP với trang "Cần hành động" (worklist), KHÔNG phụ thuộc cron markOverdue đã chạy hay chưa.
+    const overdueAll = await this.prisma.system.platformInvoice.findMany({
+      where: {
+        status: { in: [PlatformInvoiceStatus.OPEN, PlatformInvoiceStatus.OVERDUE] },
+        dueAt: { lt: now },
+        deletedAt: null,
+      },
       orderBy: { dueAt: "asc" },
-      take: 5,
     });
+    const overdueUnpaid = overdueAll.filter((i) => Number(i.total) - Number(i.amountPaid) > 0);
+    const overdueInvoiceCount = overdueUnpaid.length;
+    const overdueRaw = overdueUnpaid.slice(0, 5);
     const tenantNames = new Map<string, string>();
     if (overdueRaw.length) {
       const rows = await this.prisma.system.tenant.findMany({
@@ -512,10 +514,22 @@ export class PlatformService {
 
   async listInvoices(page = 1, pageSize = 20, tenantId?: string, status?: string, q?: string) {
     const term = q?.trim();
-    const where = {
+    const now = new Date();
+    const UNPAID = [PlatformInvoiceStatus.OPEN, PlatformInvoiceStatus.OVERDUE];
+    // "Chờ thu" = mọi HĐ chưa trả (OPEN/OVERDUE); "Quá hạn" = chưa trả + quá hạn theo NGÀY
+    // (không phụ thuộc cron markOverdue) → khớp Worklist/Tổng quan. PAID/VOID lọc đúng status.
+    const statusFilter: Prisma.PlatformInvoiceWhereInput =
+      status === "OPEN"
+        ? { status: { in: UNPAID } }
+        : status === "OVERDUE"
+          ? { status: { in: UNPAID }, dueAt: { lt: now } }
+          : status
+            ? { status: status as never }
+            : {};
+    const where: Prisma.PlatformInvoiceWhereInput = {
       deletedAt: null,
       ...(tenantId ? { tenantId } : {}),
-      ...(status ? { status: status as never } : {}),
+      ...statusFilter,
       ...(term ? { invoiceNumber: { contains: term, mode: "insensitive" as const } } : {}),
     };
     const [items, total] = await Promise.all([
@@ -558,18 +572,21 @@ export class PlatformService {
     const outstanding = (a: {
       _sum: { total: Prisma.Decimal | null; amountPaid: Prisma.Decimal | null };
     }) => Number(a._sum.total ?? 0) - Number(a._sum.amountPaid ?? 0);
+    const UNPAID = [PlatformInvoiceStatus.OPEN, PlatformInvoiceStatus.OVERDUE];
     const [paid, open, overdue, total] = await Promise.all([
       this.prisma.system.platformInvoice.aggregate({
         _sum: { total: true },
         where: { status: PlatformInvoiceStatus.PAID, paidAt: { gte: monthStart }, deletedAt: null },
       }),
+      // Chờ thu = tổng còn nợ của mọi HĐ chưa trả (OPEN/OVERDUE).
       this.prisma.system.platformInvoice.aggregate({
         _sum: { total: true, amountPaid: true },
-        where: { status: PlatformInvoiceStatus.OPEN, deletedAt: null },
+        where: { status: { in: UNPAID }, deletedAt: null },
       }),
+      // Quá hạn = phần còn nợ đã quá hạn theo ngày (subset của Chờ thu) — khớp Worklist.
       this.prisma.system.platformInvoice.aggregate({
         _sum: { total: true, amountPaid: true },
-        where: { status: PlatformInvoiceStatus.OVERDUE, deletedAt: null },
+        where: { status: { in: UNPAID }, dueAt: { lt: now }, deletedAt: null },
       }),
       this.prisma.system.platformInvoice.count({ where: { deletedAt: null } }),
     ]);

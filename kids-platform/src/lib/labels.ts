@@ -107,6 +107,13 @@ export function actionLabel(action: string): string {
   return ACTION_LABEL[action] ?? action;
 }
 
+/** Trạng thái HIỂN THỊ của hóa đơn: HĐ chưa trả mà đã quá hạn theo ngày → "Quá hạn"
+ *  (dù status DB còn OPEN vì cron chưa chạy) — khớp filter/worklist/tổng quan. */
+export function invoiceDisplayStatus(status: string, dueDate?: string | null): string {
+  if (status === "OPEN" && dueDate && new Date(dueDate).getTime() < Date.now()) return "OVERDUE";
+  return status;
+}
+
 export function badgeFor(map: Record<string, { label: string; badge: string }>, key?: string) {
   return (key && map[key]) || { label: key ?? "—", badge: "b-slate" };
 }

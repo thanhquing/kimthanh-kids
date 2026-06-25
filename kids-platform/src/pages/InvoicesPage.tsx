@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { invalidatePlatformData } from "@/lib/queries";
-import { badgeFor, formatDate, INVOICE_STATUS } from "@/lib/labels";
+import { badgeFor, formatDate, INVOICE_STATUS, invoiceDisplayStatus } from "@/lib/labels";
 import { cn, formatVnd } from "@/lib/utils";
 
 const STATUSES = ["", "OPEN", "PAID", "OVERDUE", "VOID"];
@@ -155,7 +155,7 @@ export function InvoicesPage() {
                 <tr><td colSpan={7} className="!text-center text-muted">Chưa có hóa đơn.</td></tr>
               )}
               {items.map((inv) => {
-                const st = badgeFor(INVOICE_STATUS, inv.status);
+                const st = badgeFor(INVOICE_STATUS, invoiceDisplayStatus(inv.status, inv.dueDate));
                 const payable = inv.status === "OPEN" || inv.status === "OVERDUE";
                 return (
                   <tr key={inv.id} className="hover:bg-[#fff8f3]">

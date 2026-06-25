@@ -348,8 +348,16 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     }
 
     // Lọc theo trạng thái OPEN → chỉ trả OPEN.
+    // "Chờ thu" = mọi HĐ chưa trả (OPEN/OVERDUE), không chỉ status OPEN.
     const open = await api().get("/api/platform/invoices?status=OPEN").set(phead).expect(200);
-    expect(open.body.data.every((i: { status: string }) => i.status === "OPEN")).toBe(true);
+    expect(
+      open.body.data.every((i: { status: string }) => ["OPEN", "OVERDUE"].includes(i.status)),
+    ).toBe(true);
+    // "Quá hạn" = chưa trả + quá hạn theo ngày → mọi dòng có dueDate < hiện tại.
+    const od = await api().get("/api/platform/invoices?status=OVERDUE").set(phead).expect(200);
+    expect(
+      od.body.data.every((i: { dueDate: string }) => new Date(i.dueDate).getTime() < Date.now()),
+    ).toBe(true);
 
     // Tenant thường không xem stats hóa đơn nền tảng.
     await api().get("/api/platform/invoices/stats").set(auth(t)).expect(403);

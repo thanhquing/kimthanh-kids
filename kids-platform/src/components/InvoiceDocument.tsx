@@ -1,5 +1,5 @@
 import type { InvoiceDoc } from "@/api/platform";
-import { badgeFor, formatDate, INVOICE_STATUS } from "@/lib/labels";
+import { badgeFor, formatDate, INVOICE_STATUS, invoiceDisplayStatus } from "@/lib/labels";
 import { readVnd } from "@/lib/numToWords";
 import { cn, formatVnd } from "@/lib/utils";
 import { bankName, vietQrUrl } from "@/lib/vietqr";
@@ -8,7 +8,7 @@ const CYCLE: Record<string, string> = { MONTHLY: "tháng", QUARTERLY: "quý", AN
 
 /** Tờ hóa đơn nền tảng dạng in (A4) — dùng cho trang chi tiết admin & link công khai. */
 export function InvoiceDocument({ doc }: { doc: InvoiceDoc }) {
-  const st = badgeFor(INVOICE_STATUS, doc.status);
+  const st = badgeFor(INVOICE_STATUS, invoiceDisplayStatus(doc.status, doc.dueAt));
   const paid = doc.status === "PAID";
   const qr = paid
     ? null

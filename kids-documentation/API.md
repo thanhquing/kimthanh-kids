@@ -202,7 +202,7 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 
 | Method | Path | Body / Query | Data trả về |
 |---|---|---|---|
-| `GET` | `/platform/overview` | - | dashboard console: `{ kpis{tenants,activeTenants,trialTenants,overdueInvoices,suspendedTenants,mrr}, mrrSeries[12], mrrGrowthPct, planDistribution[], recentTenants[], recentOverdue[] }` |
+| `GET` | `/platform/overview` | - | dashboard console: `{ kpis{tenants,activeTenants,trialTenants,overdueInvoices,suspendedTenants,mrr}, mrrSeries[12], mrrGrowthPct, planDistribution[], recentTenants[], recentOverdue[] }`. `overdueInvoices`/`recentOverdue` = HĐ **chưa trả & quá hạn theo ngày** (OPEN/OVERDUE, dueAt<now, còn nợ) — **khớp worklist**, không chờ cron |
 | `GET` | `/platform/revenue?months=` | `months?: 1..24` (mặc định 12, kẹp ≤24) | `{ months, series:[{period,month,value,source}], growthPct }` — chuỗi MRR theo tháng (`source`: `CRON` số thực \| `BACKFILL` \| `DERIVED` suy ngược) |
 | `POST` | `/platform/mrr/backfill?months=` | `months?: number` (mặc định 24); **chỉ `PLATFORM_SUPER_ADMIN`** | `{ ok, written }` — backfill snapshot các tháng còn thiếu (không đè số thực) |
 | `GET` | `/platform/tenants?page=&status=&q=&planTier=` | `page?`, `status?: TenantStatus`, `q?` (slug/legalName/displayName), `planTier?: PlanTier` (lọc theo gói qua subscription.plan.tier) | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
@@ -216,8 +216,8 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `POST` | `/platform/tenants/:id/impersonate` | - | tenant admin access token, no refresh token |
 | `GET` | `/platform/subscriptions?page=&status=` | `page?: number`, `status?: SubscriptionStatus` | paginated subscriptions — mỗi dòng kèm `tenantName`, `tenantSlug`, `billingCycle`, `autoRenew` (=`!cancelAtPeriodEnd`), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
 | `GET` | `/platform/subscriptions/stats` | - | đếm thuê bao theo trạng thái: `{ total, TRIALING, ACTIVE, PAST_DUE, SUSPENDED, CANCELED, EXPIRED }` |
-| `GET` | `/platform/invoices?page=&tenantId=&status=&q=` | filters; `q?: string` (tìm theo `invoiceNumber`) | paginated platform invoices — mỗi dòng kèm `tenantName`, `period` (MM/YYYY), `dueDate` (=`dueAt`), `amountDue` (=`total-amountPaid`); `meta{page,pageSize,total}` |
-| `GET` | `/platform/invoices/stats` | - | KPI tiền: `{ paidThisMonth, openAmount, overdueAmount, total }` (VND) |
+| `GET` | `/platform/invoices?page=&tenantId=&status=&q=` | `status`: **`OPEN`=mọi HĐ chưa trả (OPEN/OVERDUE)**, **`OVERDUE`=chưa trả + quá hạn theo NGÀY** (dueAt<now, không chờ cron), `PAID`/`VOID`=đúng status; `q` tìm `invoiceNumber` | paginated — mỗi dòng kèm `tenantName`, `period`, `dueDate`, `amountDue` |
+| `GET` | `/platform/invoices/stats` | - | KPI tiền: `{ paidThisMonth, openAmount (mọi HĐ chưa trả), overdueAmount (chưa trả + quá hạn theo ngày, subset), total }` — khớp Worklist/Tổng quan |
 | `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice — `invoiceNumber` định dạng **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`): slug trường + mã gói + ngày lập, để đối soát chuyển khoản (addInfo VietQR = số HĐ) |
 | `GET` | `/platform/invoices/:id` | - | chi tiết 1 hóa đơn (trang chi tiết/in): `{ invoiceNumber, status, lines[], subtotal/discount/tax/total/amountPaid/amountDue, buyer{name,taxCode,address}, seller{name}, bank{bin,accountNumber,accountName}, publicToken }` |
 | `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | đánh dấu đã thu — **không truyền `amount` = trả đủ** (`amountPaid=total`); reactivate subscription + đẩy kỳ |
