@@ -2,20 +2,35 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { ApiError } from "@/api/http";
-import { platform, type CreateCouponInput } from "@/api/platform";
+import { platform, type Coupon, type CreateCouponInput } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/labels";
 import { cn, formatVnd } from "@/lib/utils";
 
-const KIND_LABEL: Record<string, string> = { PERCENT: "Phần trăm", FIXED_AMOUNT: "Số tiền" };
-const DURATION_LABEL: Record<string, string> = {
-  ONCE: "1 kỳ",
-  REPEATING: "Lặp lại",
-  FOREVER: "Vĩnh viễn",
-};
+const KIND_LABEL: Record<string, string> = { PERCENT: "Phần trăm", FIXED_AMOUNT: "Cố định" };
 const EMPTY: CreateCouponInput = { code: "", kind: "PERCENT", amount: 0, duration: "ONCE", isActive: true };
+
+/** "Áp dụng": ONCE→"1 kỳ", REPEATING→"N kỳ đầu" (theo durationCount), FOREVER→"Mọi kỳ". */
+function durationText(c: Coupon): string {
+  if (c.duration === "FOREVER") return "Mọi kỳ";
+  if (c.duration === "REPEATING") return c.durationCount ? `${c.durationCount} kỳ đầu` : "Lặp lại";
+  return "1 kỳ";
+}
+
+/** "Hiệu lực": hết lượt → "đã hết lượt"; có hạn → "đến DATE"; còn lại → "không giới hạn". */
+function validityText(c: Coupon): string {
+  const used = c.redeemedCount ?? 0;
+  if (c.maxRedemptions != null && used >= c.maxRedemptions) return "đã hết lượt";
+  if (c.validUntil) return `đến ${formatDate(c.validUntil)}`;
+  return "không giới hạn";
+}
+
+function valueText(c: Coupon): string {
+  const amount = Number(c.amount);
+  return c.kind === "PERCENT" ? `-${amount}%` : `-${formatVnd(amount)}`;
+}
 
 export function CouponsPage() {
   const qc = useQueryClient();
@@ -43,7 +58,7 @@ export function CouponsPage() {
 
   return (
     <>
-      <PageHeader title="Mã giảm giá">
+      <PageHeader title="Mã giảm giá" section="Doanh thu">
         <button className="btn-primary inline-flex items-center gap-2 text-sm" onClick={() => setOpen(true)}>
           <Plus className="w-4 h-4" />
           Tạo mã
@@ -68,22 +83,25 @@ export function CouponsPage() {
               {isLoading && <tr><td colSpan={7} className="!text-center text-muted">Đang tải…</td></tr>}
               {error && <tr><td colSpan={7} className="!text-center text-red-600">Không tải được.</td></tr>}
               {!isLoading && !error && items.length === 0 && (
-                <tr><td colSpan={7} className="!text-center text-muted">Chưa có mã.</td></tr>
+                <tr><td colSpan={7} className="!text-center text-muted">Chưa có mã giảm giá.</td></tr>
               )}
               {items.map((c) => (
-                <tr key={c.id}>
-                  <td className="font-semibold">{c.code}</td>
-                  <td>{KIND_LABEL[c.kind] ?? c.kind}</td>
-                  <td>{c.kind === "PERCENT" ? `${c.amount}%` : formatVnd(c.amount)}</td>
-                  <td>{DURATION_LABEL[c.duration] ?? c.duration}</td>
+                <tr key={c.id} className="hover:bg-[#fff8f3]">
                   <td>
-                    {c.redemptions ?? 0}
-                    {c.maxRedemptions ? ` / ${c.maxRedemptions}` : ""}
+                    <span className="font-mono font-semibold bg-[#fff3ec] text-[color:var(--primary)] px-2 py-0.5 rounded">
+                      {c.code}
+                    </span>
                   </td>
-                  <td>{formatDate(c.validUntil)}</td>
+                  <td>{KIND_LABEL[c.kind] ?? c.kind}</td>
+                  <td className="font-semibold">{valueText(c)}</td>
+                  <td>{durationText(c)}</td>
+                  <td>
+                    {c.redeemedCount ?? 0} / {c.maxRedemptions ?? "∞"}
+                  </td>
+                  <td>{validityText(c)}</td>
                   <td>
                     <span className={cn("badge", c.isActive ? "b-green" : "b-slate")}>
-                      {c.isActive ? "Hiệu lực" : "Tắt"}
+                      {c.isActive ? "Đang chạy" : "Ngừng"}
                     </span>
                   </td>
                 </tr>
@@ -111,13 +129,13 @@ export function CouponsPage() {
         }
       >
         <Field label="Mã (code)">
-          <input className="field" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+          <input className="field" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} />
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Loại">
             <select className="field" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })}>
               <option value="PERCENT">Phần trăm (%)</option>
-              <option value="FIXED_AMOUNT">Số tiền (đ)</option>
+              <option value="FIXED_AMOUNT">Cố định (đ)</option>
             </select>
           </Field>
           <Field label={form.kind === "PERCENT" ? "Giá trị (%)" : "Giá trị (đ)"}>
@@ -133,19 +151,40 @@ export function CouponsPage() {
           <Field label="Áp dụng">
             <select className="field" value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })}>
               <option value="ONCE">1 kỳ</option>
-              <option value="REPEATING">Lặp lại</option>
-              <option value="FOREVER">Vĩnh viễn</option>
+              <option value="REPEATING">Lặp lại (N kỳ đầu)</option>
+              <option value="FOREVER">Mọi kỳ</option>
             </select>
           </Field>
-          <Field label="Hết hạn (tùy chọn)">
-            <input
-              className="field"
-              type="date"
-              value={form.validUntil ?? ""}
-              onChange={(e) => setForm({ ...form, validUntil: e.target.value || undefined })}
-            />
-          </Field>
+          {form.duration === "REPEATING" ? (
+            <Field label="Số kỳ áp dụng">
+              <input
+                className="field"
+                type="number"
+                value={form.durationCount ?? ""}
+                onChange={(e) => setForm({ ...form, durationCount: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="vd: 3"
+              />
+            </Field>
+          ) : (
+            <Field label="Giới hạn lượt (tùy chọn)">
+              <input
+                className="field"
+                type="number"
+                value={form.maxRedemptions ?? ""}
+                onChange={(e) => setForm({ ...form, maxRedemptions: e.target.value ? Number(e.target.value) : undefined })}
+                placeholder="vd: 100"
+              />
+            </Field>
+          )}
         </div>
+        <Field label="Hết hạn (tùy chọn)">
+          <input
+            className="field"
+            type="date"
+            value={form.validUntil ?? ""}
+            onChange={(e) => setForm({ ...form, validUntil: e.target.value || undefined })}
+          />
+        </Field>
         <label className="flex items-center gap-2 text-sm text-slate-600">
           <input
             type="checkbox"

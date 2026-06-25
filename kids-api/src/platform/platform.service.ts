@@ -617,17 +617,19 @@ export class PlatformService {
     });
   }
 
-  listCoupons(page = 1, pageSize = 20, isActive?: string) {
+  async listCoupons(page = 1, pageSize = 20, isActive?: string) {
     const where =
       isActive === undefined ? {} : { isActive: ["true", "1", "yes"].includes(isActive) };
-    return this.prisma.system.coupon
-      .findMany({
+    const [items, total] = await Promise.all([
+      this.prisma.system.coupon.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
         orderBy: { createdAt: "desc" },
-      })
-      .then((items) => paginated(items, { page, pageSize }));
+      }),
+      this.prisma.system.coupon.count({ where }),
+    ]);
+    return paginated(items, { page, pageSize, total });
   }
 
   createCoupon(input: CreateCouponInput) {

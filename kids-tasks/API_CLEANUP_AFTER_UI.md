@@ -48,6 +48,15 @@
 - **Chồng chéo nhẹ:** `GET /billing/plans` (public, inactive-OK) cũng trả plans+prices/features/limits cho trang signup. Khác đối tượng (tenant công khai vs platform console) → giữ riêng. **Quyết định cuối:** không gộp.
 - Chưa có **xóa gói** (soft-delete `deletedAt`) qua API — mock không có nút xóa; để sau nếu cần (cần chặn xóa gói còn `tenantCount>0`).
 
+## 6. Coupons (Mã giảm giá)  ✅ đã tích hợp (`GET /platform/coupons` + `POST /platform/coupons`)
+
+- `listCoupons` thêm `total` vào `meta` (count cùng `where`) — nhất quán với tenants/subscriptions/invoices. UI không phân trang (bảng đơn) nên FE vẫn dùng `api.get<Coupon[]>` (lấy `data`, bỏ `meta`); có sẵn `total` cho sau này nếu thêm pager.
+- **FE type cũ sai field:** `Coupon.redemptions` → đúng phải là **`redeemedCount`** (tên cột Prisma) → trước đây cột "Lượt dùng" luôn hiện 0. Đã sửa + bổ sung `durationCount/currency`. `amount` để `number | string` (Decimal serialize linh hoạt; FE `Number()` khi format).
+- Hiển thị **suy ở FE** (không cần BE format): "Áp dụng" (ONCE/REPEATING+durationCount/FOREVER), "Lượt dùng" (`redeemedCount / maxRedemptions|∞`), "Hiệu lực" (hết lượt → "đã hết lượt"; có `validUntil` → "đến DATE"; còn lại → "không giới hạn").
+- **Chưa có** sửa/tắt/xóa coupon qua API (mock chỉ có bảng + nút Tạo). Nếu cần "ngừng" coupon → thêm `PATCH /platform/coupons/:id { isActive }` (mirror plan). Để sau.
+- **Chưa nối coupon vào luồng tính tiền** thực tế (apply mã khi tạo subscription/invoice) — `Subscription.couponId` đã có quan hệ nhưng UI/luồng redeem là P2 (xem BILLING.md). `redeemedCount` hiện luôn 0 vì chưa có điểm tăng.
+- Seed **không** tạo coupon → trang trống sau reseed (đúng, có empty-state "Chưa có mã giảm giá"). cURL ledger P35 tạo 4 mã demo để xác minh UI.
+
 ## Ghi chú hạ tầng test (quan trọng)
 
 - **e2e đang chạy trên CÙNG DB dev** (`kids_api`), KHÔNG reset giữa các lần chạy → mỗi `pnpm test:e2e` tạo thêm nhiều tenant `t-*` rác, làm bẩn data demo. **Việc cần làm:** tách `DATABASE_URL` riêng cho e2e (vd `kids_api_test`) + reset trước mỗi run. Tạm thời: sau khi chạy e2e/cURL, reset+seed lại (`docker compose down -v && up` → `prisma:deploy` → `prisma:seed` + `:seed:demo`).

@@ -121,10 +121,12 @@ export type Coupon = {
   id: string;
   code: string;
   kind: string;
-  amount: number;
+  amount: number | string; // Decimal → string khi serialize
+  currency?: string | null;
   duration: string;
+  durationCount?: number | null;
   maxRedemptions?: number | null;
-  redemptions?: number;
+  redeemedCount?: number;
   validFrom?: string | null;
   validUntil?: string | null;
   isActive: boolean;
@@ -210,6 +212,7 @@ export type CreateCouponInput = {
   kind: string;
   amount: number;
   duration?: string;
+  durationCount?: number;
   maxRedemptions?: number;
   validFrom?: string;
   validUntil?: string;

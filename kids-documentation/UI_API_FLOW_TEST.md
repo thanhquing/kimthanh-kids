@@ -85,6 +85,11 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P33 | Sua goi (desc/trialDays/upsert gia) | `PATCH /platform/plans/:id` | `200` | `200` | PASS | trialDays=14, MONTHLY 1.300.000 → khoi phuc 1.200.000 |
 | P34 | Sua goi khong ton tai | `PATCH /platform/plans/<uuid-0>` | `404` | `404` | PASS | `PLAN_NOT_FOUND` |
 | E09 | Edge: tenant admin sua goi | `PATCH /platform/plans/:id` | `403` | `403` | PASS | `FORBIDDEN` |
+| P35 | Tao 4 ma giam gia (giong mock) | `POST /platform/coupons` x4 | `201` | `201` | PASS | KHAIGIANG25(%25 REPEATING/3 max100), BANBE50(%50 ONCE max50), TET2026(-500k inactive), CHUOI10(%10 FOREVER) |
+| P36 | List ma + meta.total + field UI | `GET /platform/coupons?page=1` | `200` | `200` | PASS | meta.total=4; moi dong kem `durationCount,maxRedemptions,redeemedCount,validUntil` |
+| P37 | Loc ma con hieu luc | `GET /platform/coupons?isActive=true` | `200` | `200` | PASS | 3 ma active (loai TET2026) |
+| P38 | Validation: % > 100 | `POST /platform/coupons` | `400` | `400` | PASS | `VALIDATION_FAILED` |
+| E10 | Edge: tenant admin list coupon | `GET /platform/coupons` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |

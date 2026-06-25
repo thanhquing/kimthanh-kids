@@ -399,4 +399,54 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const t = await createTenant(app);
     await api().patch(`/api/platform/plans/${plan.id}`).set(auth(t)).send({ name: "x" }).expect(403);
   });
+
+  // ── Trang Mã giảm giá: tạo (REPEATING + maxRedemptions) + list giàu trường + meta.total + 400/403 ──
+  it("platform coupons: tạo + list field UI + meta.total + validation + 403", async () => {
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+    const code = `KG${Date.now().toString(36).toUpperCase()}`;
+
+    // Tạo coupon % lặp 3 kỳ đầu, giới hạn 100 lượt, có hạn dùng.
+    const created = await api()
+      .post("/api/platform/coupons")
+      .set(phead)
+      .send({
+        code,
+        kind: "PERCENT",
+        amount: 25,
+        duration: "REPEATING",
+        durationCount: 3,
+        maxRedemptions: 100,
+        validUntil: "2026-08-31",
+      })
+      .expect(201);
+    expect(created.body.data.code).toBe(code);
+
+    // List: có meta.total + mỗi dòng đủ field UI cần (durationCount/maxRedemptions/redeemedCount/validUntil).
+    const list = await api().get("/api/platform/coupons?page=1").set(phead).expect(200);
+    expect(list.body.meta.total).toBeGreaterThanOrEqual(1);
+    const row = list.body.data.find((c: { code: string }) => c.code === code);
+    expect(row).toBeDefined();
+    for (const f of ["kind", "amount", "duration", "durationCount", "maxRedemptions", "redeemedCount", "validUntil", "isActive"]) {
+      expect(row).toHaveProperty(f);
+    }
+    expect(row.durationCount).toBe(3);
+    expect(row.maxRedemptions).toBe(100);
+    expect(row.redeemedCount).toBe(0);
+
+    // Lọc isActive=true → mọi dòng isActive.
+    const act = await api().get("/api/platform/coupons?isActive=true").set(phead).expect(200);
+    expect(act.body.data.every((c: { isActive: boolean }) => c.isActive)).toBe(true);
+
+    // Validation: coupon % > 100 → 400.
+    await api()
+      .post("/api/platform/coupons")
+      .set(phead)
+      .send({ code: `BAD${Date.now().toString(36)}`, kind: "PERCENT", amount: 150 })
+      .expect(400);
+
+    // Tenant thường không tạo/list coupon nền tảng.
+    const t = await createTenant(app);
+    await api().get("/api/platform/coupons").set(auth(t)).expect(403);
+  });
 });
