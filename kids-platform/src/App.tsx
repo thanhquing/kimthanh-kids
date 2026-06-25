@@ -7,6 +7,7 @@ import { CouponsPage } from "./pages/CouponsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ObservabilityPage } from "./pages/ObservabilityPage";
 import { PlansPage } from "./pages/PlansPage";
 import { SubscriptionsPage } from "./pages/SubscriptionsPage";
 import { TenantDetailPage } from "./pages/TenantDetailPage";
@@ -41,6 +42,7 @@ export function App() {
         <Route path="/invoices" element={<InvoicesPage />} />
         <Route path="/plans" element={<PlansPage />} />
         <Route path="/coupons" element={<CouponsPage />} />
+        <Route path="/observability" element={<ObservabilityPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

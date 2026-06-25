@@ -22,7 +22,7 @@
 - **Sau tích hợp:** Dashboard mới dùng `GET /platform/overview` (KPI trial/overdue/suspended/MRR + phân bổ gói + 2 list). FE **không còn dùng** `dau/wau/mau/users/topEvents`.
 - **Chồng chéo:** cả 2 endpoint đều `count` `tenants` + `activeTenants`.
 - **Quyết định (CHỐT):**
-  - [x] **GIỮ `usage/overview`** — là nguồn DAU/WAU/MAU/topEvents **duy nhất** (`overview` không có); `UsageService` còn dùng để ghi event login (auth.service). Nền cho trang Observability sau. Không gộp.
+  - [x] **GIỮ `usage/overview`** — là nguồn DAU/WAU/MAU/topEvents **duy nhất** (`overview` không có); `UsageService` còn dùng để ghi event login (auth.service). **Đã có UI tiêu thụ: trang Theo dõi vận hành (`/observability`)** — không còn là endpoint mồ côi. Không gộp.
   - Trùng nhẹ phần `count tenants/activeTenants` là chấp nhận được (2 query rẻ, ngữ cảnh khác).
 
 ### 1.2. FE type `Overview` cũ (kids-platform/src/api/platform.ts) — field thừa  ✅ ĐÃ XONG
@@ -65,6 +65,15 @@
 - **Chưa có** sửa/tắt/xóa coupon qua API (mock chỉ có bảng + nút Tạo). Nếu cần "ngừng" coupon → thêm `PATCH /platform/coupons/:id { isActive }` (mirror plan). Để sau.
 - **Chưa nối coupon vào luồng tính tiền** thực tế (apply mã khi tạo subscription/invoice) — `Subscription.couponId` đã có quan hệ nhưng UI/luồng redeem là P2 (xem BILLING.md). `redeemedCount` hiện luôn 0 vì chưa có điểm tăng.
 - Seed **không** tạo coupon → trang trống sau reseed (đúng, có empty-state "Chưa có mã giảm giá"). cURL ledger P35 tạo 4 mã demo để xác minh UI.
+
+## 7. Observability — Theo dõi vận hành  ✅ MỚI (`GET /platform/usage/overview` + `GET /platform/audit`)
+
+- **Trang mới `/observability`** (không có trong mock-ui — tự thiết kế theo design-system: `kpi`/`card`/`table`/`badge`). Nav thêm nhóm "Vận hành" → "Theo dõi".
+- `usage/overview` (đã có sẵn) giờ được FE dùng: 6 KPI DAU/WAU/MAU/users/tenants/active + "Top sự kiện 30 ngày" (bar).
+- **`GET /platform/audit`** (mới): nhật ký hành động nhạy cảm xuyên tenant, resolve `tenantName` + `actorName/actorEmail` (batch query theo id, không N+1), lọc `action` (contains) + `tenantId`, phân trang. Cho việc **xử lý sự cố / truy vết "ai làm gì"**.
+- **2 loại "log" cần phân biệt** (xem note product): (a) **audit** = ai-làm-gì → ĐÃ có (trang này); (b) **error/runtime log** = app văng chỗ nào → **CHƯA có**, hiện chỉ `Logger` ra stdout. Để "biết PH bấm nút X thì lỗi" cần tích hợp **Sentry** — P2, nên làm cùng phase build CRM/mobile.
+- **Phụ thuộc phase tenant:** `dau/wau/mau` hiện chỉ đếm event `login` từ BE; app trường (CRM/mobile) chưa build nên chưa phát event tương tác. Khi build app tenant: gọi `UsageService.track(...)` ở các hành động chính để metric phản ánh tương tác thật.
+- **Impersonate nâng cấp (P2):** hiện chỉ login-as **chủ trường**; muốn "thấy đúng UI của GV/PH gặp lỗi" cần cho chọn user/role cụ thể — chỉ hữu ích sau khi có UI tenant.
 
 ## Ghi chú hạ tầng test (quan trọng)
 

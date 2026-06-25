@@ -90,6 +90,10 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P37 | Loc ma con hieu luc | `GET /platform/coupons?isActive=true` | `200` | `200` | PASS | 3 ma active (loai TET2026) |
 | P38 | Validation: % > 100 | `POST /platform/coupons` | `400` | `400` | PASS | `VALIDATION_FAILED` |
 | E10 | Edge: tenant admin list coupon | `GET /platform/coupons` | `403` | `403` | PASS | `FORBIDDEN` |
+| P39 | KPI hoat dong nguoi dung | `GET /platform/usage/overview` | `200` | `200` | PASS | DAU/WAU/MAU + users + topEvents; demo DAU=3 users=19 |
+| P40 | Nhat ky he thong (resolve ten) | `GET /platform/audit?page=1` | `200` | `200` | PASS | meta.total; moi dong co tenantName + actorName/email (impersonate, settings.update, member.invite, classroom.create) |
+| P41 | Loc nhat ky theo action | `GET /platform/audit?action=impersonate` | `200` | `200` | PASS | moi dong chua "impersonate" |
+| E11 | Edge: tenant admin xem audit | `GET /platform/audit` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |

@@ -144,6 +144,15 @@ export class PlatformController {
     return this.platform.listCoupons(Number(page) || 1, 20, isActive);
   }
 
+  @Get("audit")
+  listAudit(
+    @Query("page") page?: string,
+    @Query("tenantId") tenantId?: string,
+    @Query("action") action?: string,
+  ) {
+    return this.platform.listAudit(Number(page) || 1, 30, tenantId, action);
+  }
+
   @Post("coupons")
   createCoupon(@Body() body: CreateCouponInput) {
     return this.platform.createCoupon(body);

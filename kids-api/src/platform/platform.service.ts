@@ -675,6 +675,62 @@ export class PlatformService {
     });
   }
 
+  /**
+   * Nhật ký hành động nhạy cảm xuyên tenant (cho trang Theo dõi vận hành / xử lý sự cố).
+   * Resolve `tenantName` + `actorName/actorEmail` để bảng đọc được ngay (không phải tra ID).
+   * `action` lọc kiểu contains (vd "invoice" khớp invoice.void/invoice.create...).
+   */
+  async listAudit(page = 1, pageSize = 30, tenantId?: string, action?: string) {
+    const where = {
+      ...(tenantId ? { tenantId } : {}),
+      ...(action ? { action: { contains: action.trim(), mode: "insensitive" as const } } : {}),
+    };
+    const [rows, total] = await Promise.all([
+      this.prisma.system.auditLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.prisma.system.auditLog.count({ where }),
+    ]);
+
+    const tenantIds = [...new Set(rows.map((r) => r.tenantId).filter(Boolean))] as string[];
+    const actorIds = [...new Set(rows.map((r) => r.actorId).filter(Boolean))] as string[];
+    const [tenants, actors] = await Promise.all([
+      tenantIds.length
+        ? this.prisma.system.tenant.findMany({
+            where: { id: { in: tenantIds } },
+            include: { settings: true },
+          })
+        : Promise.resolve([]),
+      actorIds.length
+        ? this.prisma.system.user.findMany({
+            where: { id: { in: actorIds } },
+            select: { id: true, fullName: true, email: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const tenantName = new Map(tenants.map((t) => [t.id, t.settings?.displayName ?? t.legalName]));
+    const actorMap = new Map(actors.map((u) => [u.id, u]));
+
+    const items = rows.map((r) => ({
+      id: r.id,
+      createdAt: r.createdAt,
+      action: r.action,
+      actorType: r.actorType,
+      actorId: r.actorId,
+      actorName: r.actorId ? (actorMap.get(r.actorId)?.fullName ?? null) : null,
+      actorEmail: r.actorId ? (actorMap.get(r.actorId)?.email ?? null) : null,
+      tenantId: r.tenantId,
+      tenantName: r.tenantId ? (tenantName.get(r.tenantId) ?? null) : null,
+      targetType: r.targetType,
+      targetId: r.targetId,
+      ip: r.ip,
+    }));
+    return paginated(items, { page, pageSize, total });
+  }
+
   /** Override entitlement cho tenant (vd dedicated nâng riêng limit/feature). */
   async setEntitlementOverride(
     tenantId: string,

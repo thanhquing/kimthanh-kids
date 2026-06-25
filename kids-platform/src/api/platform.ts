@@ -219,6 +219,31 @@ export type CreateCouponInput = {
   isActive?: boolean;
 };
 
+export type UsageOverview = {
+  tenants: number;
+  activeTenants: number;
+  users: number;
+  dau: number;
+  wau: number;
+  mau: number;
+  topEvents: { type: string; count: number }[];
+};
+
+export type AuditEntry = {
+  id: string;
+  createdAt: string;
+  action: string;
+  actorType?: string | null;
+  actorId?: string | null;
+  actorName?: string | null;
+  actorEmail?: string | null;
+  tenantId?: string | null;
+  tenantName?: string | null;
+  targetType?: string | null;
+  targetId?: string | null;
+  ip?: string | null;
+};
+
 export type EntitlementInput = {
   featureKey?: string;
   enabled?: boolean;
@@ -268,4 +293,10 @@ export const platform = {
   listCoupons: (page = 1, isActive?: boolean) =>
     api.get<Coupon[]>("/platform/coupons", { query: { page, isActive } }),
   createCoupon: (body: CreateCouponInput) => api.post<Coupon>("/platform/coupons", body),
+
+  usageOverview: () => api.get<UsageOverview>("/platform/usage/overview"),
+  listAudit: (page = 1, action?: string, tenantId?: string) =>
+    api.getPage<AuditEntry>("/platform/audit", {
+      query: { page, action: action || undefined, tenantId: tenantId || undefined },
+    }),
 };

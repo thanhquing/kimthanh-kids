@@ -223,7 +223,8 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `PATCH` | `/platform/plans/:id` | `UpdatePlanInput` (name/description/isPublic/isActive/trialDays/sortOrder + upsert prices/features/limits theo unique key) | plan sau cập nhật; **không** đổi `code`/`tier`; thuê bao đang chạy giữ giá tới kỳ kế; 404 `PLAN_NOT_FOUND` nếu không thấy |
 | `GET` | `/platform/coupons?page=&isActive=` | `page?`, `isActive?: bool` | paginated coupons — mỗi dòng đủ field UI (`kind/amount/duration/durationCount/maxRedemptions/redeemedCount/validUntil/isActive`); `meta{page,pageSize,total}` |
 | `POST` | `/platform/coupons` | `CreateCouponInput` (`code` upper, `kind`, `amount`, `duration?`, `durationCount?`, `maxRedemptions?`, `validFrom?/validUntil?`, `isActive?`) | created coupon; 400 `VALIDATION_FAILED` (thiếu code / amount ≤ 0 / % > 100 / hạn sai) |
-| `GET` | `/platform/usage/overview` | - | `{ tenants, activeTenants, users, dau, wau, mau, topEvents }` |
+| `GET` | `/platform/usage/overview` | - | `{ tenants, activeTenants, users, dau, wau, mau, topEvents }` — KPI hoạt động cho trang **Theo dõi vận hành**; `dau/wau/mau` = user riêng biệt có `login` trong 1/7/30 ngày |
+| `GET` | `/platform/audit?page=&tenantId=&action=` | `page?`, `tenantId?`, `action?` (contains, insensitive) | paginated AuditLog — mỗi dòng resolve `tenantName` + `actorName/actorEmail`, kèm `actorType/action/targetType/targetId/ip/createdAt`; `meta{page,pageSize,total}` |
 
 `PlatformCreateTenantInput` dùng cùng schema với `SignupInput` nhưng chỉ dành cho platform console:
 

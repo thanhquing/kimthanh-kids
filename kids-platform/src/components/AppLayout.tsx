@@ -1,4 +1,5 @@
 import {
+  Activity,
   Building2,
   LayoutDashboard,
   LogOut,
@@ -28,6 +29,10 @@ const NAV = [
     ],
   },
   { group: "Cấu hình", items: [{ to: "/plans", label: "Gói dịch vụ", icon: Package }] },
+  {
+    group: "Vận hành",
+    items: [{ to: "/observability", label: "Theo dõi", icon: Activity }],
+  },
 ];
 
 export function AppLayout() {

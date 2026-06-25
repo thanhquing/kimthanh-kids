@@ -6,6 +6,7 @@ import {
   TenantFixture,
   bootstrap,
   createTenant,
+  genTaxCode,
   loginPlatform,
   rnd,
 } from "./helpers";
@@ -448,5 +449,48 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     // Tenant thường không tạo/list coupon nền tảng.
     const t = await createTenant(app);
     await api().get("/api/platform/coupons").set(auth(t)).expect(403);
+  });
+
+  // ── Trang Theo dõi vận hành: usage overview (DAU/WAU/MAU) + audit log giàu trường + lọc + 403 ──
+  it("platform audit: list giàu trường (tenantName/actor) + lọc action + 403", async () => {
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+
+    // Sinh 1 bản ghi audit nền tảng: tạo tenant rồi impersonate (ghi action platform.tenant.impersonate).
+    const slug = `aud-${Date.now().toString(36)}`;
+    const created = await api()
+      .post("/api/platform/tenants")
+      .set(phead)
+      .send({
+        schoolName: `Audit ${slug}`,
+        slug,
+        taxCode: genTaxCode(),
+        adminEmail: `admin@${slug}.vn`,
+        adminPassword: "Password123",
+        adminFullName: "Audit Owner",
+      })
+      .expect(201);
+    const tid = created.body.data.tenant.id;
+    await api().post(`/api/platform/tenants/${tid}/impersonate`).set(phead).expect(201);
+
+    // List audit: có meta.total + mỗi dòng resolve tenantName/actor + đủ field UI.
+    const list = await api().get("/api/platform/audit?page=1").set(phead).expect(200);
+    expect(list.body.meta.total).toBeGreaterThanOrEqual(1);
+    const row = list.body.data[0];
+    for (const f of ["createdAt", "action", "actorType", "tenantName", "actorName", "targetType", "ip"]) {
+      expect(row).toHaveProperty(f);
+    }
+
+    // Lọc theo action "impersonate" → mọi dòng chứa "impersonate".
+    const imp = await api().get("/api/platform/audit?action=impersonate").set(phead).expect(200);
+    expect(imp.body.data.length).toBeGreaterThanOrEqual(1);
+    expect(imp.body.data.every((r: { action: string }) => r.action.includes("impersonate"))).toBe(true);
+    const impRow = imp.body.data.find((r: { tenantId: string }) => r.tenantId === tid);
+    expect(impRow.tenantName).toContain(slug);
+    expect(impRow.actorType).toBe("PLATFORM");
+
+    // Tenant thường không xem nhật ký nền tảng.
+    const t = await createTenant(app);
+    await api().get("/api/platform/audit").set(auth(t)).expect(403);
   });
 });
