@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { PlatformRole } from "@prisma/client";
 import { BillingService } from "../billing/billing.service";
@@ -10,6 +10,7 @@ import {
   CreatePlanInput,
   PlatformCreateTenantInput,
   PlatformService,
+  UpdatePlanInput,
 } from "./platform.service";
 
 @ApiTags("platform-admin")
@@ -131,6 +132,11 @@ export class PlatformController {
   @Post("plans")
   createPlan(@Body() body: CreatePlanInput) {
     return this.platform.createPlan(body);
+  }
+
+  @Patch("plans/:id")
+  updatePlan(@Param("id") id: string, @Body() body: UpdatePlanInput) {
+    return this.platform.updatePlan(id, body);
   }
 
   @Get("coupons")

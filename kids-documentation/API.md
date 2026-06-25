@@ -218,8 +218,9 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `GET` | `/platform/invoices/stats` | - | KPI tiền: `{ paidThisMonth, openAmount, overdueAmount, total }` (VND) |
 | `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice |
 | `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | invoice after payment |
-| `GET` | `/platform/plans` | - | all plans |
+| `GET` | `/platform/plans` | - | all plans (kèm `prices/features/limits/trialDays`) — mỗi gói **bổ sung** `tenantCount` (số thuê bao đang chạy: status TRIALING/ACTIVE/PAST_DUE) |
 | `POST` | `/platform/plans` | `CreatePlanInput` | created plan + nested config |
+| `PATCH` | `/platform/plans/:id` | `UpdatePlanInput` (name/description/isPublic/isActive/trialDays/sortOrder + upsert prices/features/limits theo unique key) | plan sau cập nhật; **không** đổi `code`/`tier`; thuê bao đang chạy giữ giá tới kỳ kế; 404 `PLAN_NOT_FOUND` nếu không thấy |
 | `GET` | `/platform/coupons?page=&isActive=` | filters | paginated coupons |
 | `POST` | `/platform/coupons` | `CreateCouponInput` | created coupon |
 | `GET` | `/platform/usage/overview` | - | `{ tenants, activeTenants, users, dau, wau, mau, topEvents }` |

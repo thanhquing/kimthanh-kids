@@ -36,6 +36,15 @@ export const TIER_LABEL: Record<string, string> = {
   CUSTOM: "Triển khai riêng",
 };
 
+// Màu badge theo bậc gói — khớp mock plans.html.
+export const TIER_BADGE: Record<string, string> = {
+  FREE: "b-slate",
+  STARTER: "b-peach",
+  PRO: "b-blue",
+  ENTERPRISE: "b-green",
+  CUSTOM: "b-slate",
+};
+
 export const CYCLE_LABEL: Record<string, string> = {
   MONTHLY: "Hàng tháng",
   QUARTERLY: "Hàng quý",

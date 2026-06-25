@@ -11,6 +11,10 @@ export type Plan = {
   tier: string;
   description?: string | null;
   isPublic: boolean;
+  isActive?: boolean;
+  trialDays?: number;
+  sortOrder?: number;
+  tenantCount?: number;
   prices?: { billingCycle: string; currency: string; amount: number }[];
   features?: { featureKey: string; enabled: boolean }[];
   limits?: { metric: string; limitValue: number | null; enforcement: string }[];
@@ -189,6 +193,18 @@ export type CreatePlanInput = {
   limits?: { metric: string; limitValue: number | null; enforcement?: string }[];
 };
 
+export type UpdatePlanInput = {
+  name?: string;
+  description?: string;
+  isPublic?: boolean;
+  isActive?: boolean;
+  trialDays?: number;
+  sortOrder?: number;
+  prices?: { billingCycle: string; currency?: string; amount: number }[];
+  features?: { featureKey: string; enabled?: boolean }[];
+  limits?: { metric: string; limitValue: number | null; enforcement?: string }[];
+};
+
 export type CreateCouponInput = {
   code: string;
   kind: string;
@@ -243,6 +259,8 @@ export const platform = {
 
   listPlans: () => api.get<Plan[]>("/platform/plans"),
   createPlan: (body: CreatePlanInput) => api.post<Plan>("/platform/plans", body),
+  updatePlan: (id: string, body: UpdatePlanInput) =>
+    api.patch<Plan>(`/platform/plans/${id}`, body),
 
   listCoupons: (page = 1, isActive?: boolean) =>
     api.get<Coupon[]>("/platform/coupons", { query: { page, isActive } }),

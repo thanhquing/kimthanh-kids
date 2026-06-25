@@ -353,4 +353,50 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     // Tenant thường không xem stats hóa đơn nền tảng.
     await api().get("/api/platform/invoices/stats").set(auth(t)).expect(403);
   });
+
+  // ── Trang Gói dịch vụ: list giàu trường (tenantCount/giá/limit) + sửa gói + 403 ──
+  it("platform plans: list có tenantCount + sửa gói + 403", async () => {
+    await createTenant(app); // tạo 1 subscription FREE ACTIVE → tenantCount gói free ≥ 1
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+
+    const list = await api().get("/api/platform/plans").set(phead).expect(200);
+    expect(Array.isArray(list.body.data)).toBe(true);
+    const plan = list.body.data.find((p: { code: string }) => p.code === "pro");
+    expect(plan).toBeDefined();
+    for (const f of ["tenantCount", "prices", "features", "limits", "trialDays"]) {
+      expect(plan).toHaveProperty(f);
+    }
+    expect(typeof plan.tenantCount).toBe("number");
+    const free = list.body.data.find((p: { code: string }) => p.code === "free");
+    expect(free.tenantCount).toBeGreaterThanOrEqual(1);
+
+    // Sửa gói: đổi mô tả + nâng số ngày dùng thử + upsert giá tháng.
+    const upd = await api()
+      .patch(`/api/platform/plans/${plan.id}`)
+      .set(phead)
+      .send({ description: "Gói chuyên nghiệp (đã sửa)", trialDays: 14, prices: [{ billingCycle: "MONTHLY", amount: 1_300_000 }] })
+      .expect(200);
+    expect(upd.body.data.trialDays).toBe(14);
+    const monthly = upd.body.data.prices.find((x: { billingCycle: string }) => x.billingCycle === "MONTHLY");
+    expect(Number(monthly.amount)).toBe(1_300_000);
+
+    // Khôi phục giá để không lệch các test khác chạy chung DB.
+    await api()
+      .patch(`/api/platform/plans/${plan.id}`)
+      .set(phead)
+      .send({ trialDays: 0, prices: [{ billingCycle: "MONTHLY", amount: 1_200_000 }] })
+      .expect(200);
+
+    // Sửa gói không tồn tại → 404.
+    await api()
+      .patch("/api/platform/plans/00000000-0000-0000-0000-000000000000")
+      .set(phead)
+      .send({ name: "x" })
+      .expect(404);
+
+    // Tenant thường không sửa được gói.
+    const t = await createTenant(app);
+    await api().patch(`/api/platform/plans/${plan.id}`).set(auth(t)).send({ name: "x" }).expect(403);
+  });
 });

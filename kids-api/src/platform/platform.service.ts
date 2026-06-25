@@ -36,6 +36,18 @@ export interface CreatePlanInput {
   limits?: { metric: LimitMetric; limitValue: number | null; enforcement?: LimitEnforcement }[];
 }
 
+export interface UpdatePlanInput {
+  name?: string;
+  description?: string;
+  isPublic?: boolean;
+  isActive?: boolean;
+  trialDays?: number;
+  sortOrder?: number;
+  prices?: { billingCycle: BillingCycle; currency?: BillingCurrency; amount: number }[];
+  features?: { featureKey: string; enabled?: boolean }[];
+  limits?: { metric: LimitMetric; limitValue: number | null; enforcement?: LimitEnforcement }[];
+}
+
 export type PlatformCreateTenantInput = SignupInput;
 
 export interface CreateCouponInput {
@@ -508,12 +520,24 @@ export class PlatformService {
   }
 
   // ─── Plan admin ───
-  listPlans() {
-    return this.prisma.system.plan.findMany({
+  /** Số tenant ĐANG dùng mỗi gói (subscription chưa hủy/hết hạn) — cho thẻ "X trường đang dùng". */
+  async listPlans() {
+    const plans = await this.prisma.system.plan.findMany({
       where: { deletedAt: null },
       include: { prices: true, features: true, limits: true },
       orderBy: { sortOrder: "asc" },
     });
+    const counts = await this.prisma.system.subscription.groupBy({
+      by: ["planId"],
+      where: {
+        status: {
+          in: [SubscriptionStatus.TRIALING, SubscriptionStatus.ACTIVE, SubscriptionStatus.PAST_DUE],
+        },
+      },
+      _count: { _all: true },
+    });
+    const countMap = new Map(counts.map((c) => [c.planId, c._count._all]));
+    return plans.map((p) => ({ ...p, tenantCount: countMap.get(p.id) ?? 0 }));
   }
 
   createPlan(input: CreatePlanInput) {
@@ -530,6 +554,65 @@ export class PlatformService {
         features: input.features ? { create: input.features.map((f) => ({ ...f })) } : undefined,
         limits: input.limits ? { create: input.limits.map((l) => ({ ...l })) } : undefined,
       },
+      include: { prices: true, features: true, limits: true },
+    });
+  }
+
+  /**
+   * Sửa gói: cập nhật field vô hướng + upsert giá/feature/limit (theo unique key).
+   * KHÔNG đổi tier/code (định danh gói — đổi sẽ lệch entitlement của thuê bao đang chạy).
+   * Thuê bao đang chạy giữ nguyên tới kỳ kế (giá khóa ở subscription).
+   */
+  async updatePlan(id: string, input: UpdatePlanInput) {
+    const plan = await this.prisma.system.plan.findFirst({ where: { id, deletedAt: null } });
+    if (!plan) {
+      throw new NotFoundException({
+        code: "PLAN_NOT_FOUND",
+        message: "Không tìm thấy gói dịch vụ",
+      });
+    }
+    await this.prisma.system.plan.update({
+      where: { id },
+      data: {
+        name: input.name ?? undefined,
+        description: input.description ?? undefined,
+        isPublic: input.isPublic ?? undefined,
+        isActive: input.isActive ?? undefined,
+        trialDays: input.trialDays ?? undefined,
+        sortOrder: input.sortOrder ?? undefined,
+      },
+    });
+    for (const p of input.prices ?? []) {
+      const currency = p.currency ?? BillingCurrency.VND;
+      await this.prisma.system.planPrice.upsert({
+        where: {
+          planId_billingCycle_currency: { planId: id, billingCycle: p.billingCycle, currency },
+        },
+        update: { amount: p.amount },
+        create: { planId: id, billingCycle: p.billingCycle, currency, amount: p.amount },
+      });
+    }
+    for (const f of input.features ?? []) {
+      await this.prisma.system.planFeature.upsert({
+        where: { planId_featureKey: { planId: id, featureKey: f.featureKey } },
+        update: { enabled: f.enabled ?? true },
+        create: { planId: id, featureKey: f.featureKey, enabled: f.enabled ?? true },
+      });
+    }
+    for (const l of input.limits ?? []) {
+      await this.prisma.system.planLimit.upsert({
+        where: { planId_metric: { planId: id, metric: l.metric } },
+        update: { limitValue: l.limitValue, enforcement: l.enforcement ?? undefined },
+        create: {
+          planId: id,
+          metric: l.metric,
+          limitValue: l.limitValue,
+          enforcement: l.enforcement ?? LimitEnforcement.HARD,
+        },
+      });
+    }
+    return this.prisma.system.plan.findFirst({
+      where: { id },
       include: { prices: true, features: true, limits: true },
     });
   }

@@ -40,9 +40,13 @@
 - **Tìm theo tên trường** hiện chỉ lọc `invoiceNumber` ở server (mock placeholder "Tìm số HĐ / trường"). Muốn tìm cả tên trường cần join/subquery theo tenant → **để sau** nếu cần.
 - Seed demo CHƯA tạo PlatformInvoice → trang trống sau reseed (đúng, có empty-state). Cân nhắc seed 1-2 HĐ nền tảng cho demo để trang có data.
 
-## 5. (thêm khi rà tiếp: plans / coupons)
+## 5. Plans (Gói dịch vụ)  ✅ đã tích hợp (`GET /platform/plans` + `PATCH /platform/plans/:id`)
 
-<!-- ghi tiếp khi tích hợp từng trang -->
+- `listPlans` thêm `tenantCount` mỗi gói = số subscription **đang chạy** (status TRIALING/ACTIVE/PAST_DUE), tính bằng `groupBy(planId)` 1 query rồi map (không N+1). Cho thẻ "X trường đang dùng".
+- **`PATCH /platform/plans/:id`** (mới): sửa field vô hướng (name/description/isPublic/isActive/trialDays/sortOrder) + **upsert** prices/features/limits theo unique key (`planId_billingCycle_currency` / `planId_featureKey` / `planId_metric`). **KHÔNG** đổi `code`/`tier` (định danh gói — đổi sẽ lệch entitlement thuê bao đang chạy → FE khóa 2 field này khi sửa).
+- Giá/sub-line/limit hiển thị **suy ra ở FE** từ `prices`+`tier`+`trialDays` (priceInfo/formatLimits trong PlansPage) — BE chỉ trả dữ liệu thô, không format. "Phổ biến" = tier PRO (suy ở FE, **không** có cột DB) — nếu sau muốn data-driven thì thêm `Plan.isFeatured`.
+- **Chồng chéo nhẹ:** `GET /billing/plans` (public, inactive-OK) cũng trả plans+prices/features/limits cho trang signup. Khác đối tượng (tenant công khai vs platform console) → giữ riêng. **Quyết định cuối:** không gộp.
+- Chưa có **xóa gói** (soft-delete `deletedAt`) qua API — mock không có nút xóa; để sau nếu cần (cần chặn xóa gói còn `tenantCount>0`).
 
 ## Ghi chú hạ tầng test (quan trọng)
 

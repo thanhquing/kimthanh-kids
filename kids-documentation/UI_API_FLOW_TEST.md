@@ -81,6 +81,10 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P30 | Loc hoa don theo trang thai | `GET /platform/invoices?status=OPEN` | `200` | `200` | PASS | chi tra OPEN |
 | P31 | Tim hoa don theo so HD | `GET /platform/invoices?q=PINV` | `200` | `200` | PASS | loc theo invoiceNumber |
 | E08 | Edge: tenant admin xem stats hoa don | `GET /platform/invoices/stats` | `403` | `403` | PASS | `FORBIDDEN` |
+| P32 | List goi + tenantCount/gia/limit | `GET /platform/plans` | `200` | `200` | PASS | moi goi kem `tenantCount,prices,features,limits,trialDays`; demo PRO tenantCount=1 |
+| P33 | Sua goi (desc/trialDays/upsert gia) | `PATCH /platform/plans/:id` | `200` | `200` | PASS | trialDays=14, MONTHLY 1.300.000 → khoi phuc 1.200.000 |
+| P34 | Sua goi khong ton tai | `PATCH /platform/plans/<uuid-0>` | `404` | `404` | PASS | `PLAN_NOT_FOUND` |
+| E09 | Edge: tenant admin sua goi | `PATCH /platform/plans/:id` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |
