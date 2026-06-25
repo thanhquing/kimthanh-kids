@@ -5,8 +5,10 @@ import { setOnUnauthorized } from "./api/http";
 import { AppLayout } from "./components/AppLayout";
 import { CouponsPage } from "./pages/CouponsPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { InvoiceDetailPage } from "./pages/InvoiceDetailPage";
 import { InvoicesPage } from "./pages/InvoicesPage";
 import { LoginPage } from "./pages/LoginPage";
+import { PublicInvoicePage } from "./pages/PublicInvoicePage";
 import { ObservabilityPage } from "./pages/ObservabilityPage";
 import { PlansPage } from "./pages/PlansPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -30,6 +32,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/hoa-don/:token" element={<PublicInvoicePage />} />
       <Route
         element={
           <RequireAuth>
@@ -42,6 +45,7 @@ export function App() {
         <Route path="/tenants/:id" element={<TenantDetailPage />} />
         <Route path="/subscriptions" element={<SubscriptionsPage />} />
         <Route path="/invoices" element={<InvoicesPage />} />
+        <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
         <Route path="/plans" element={<PlansPage />} />
         <Route path="/coupons" element={<CouponsPage />} />
         <Route path="/worklist" element={<WorklistPage />} />

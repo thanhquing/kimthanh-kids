@@ -438,7 +438,8 @@ model SubscriptionChange {
 
 model PlatformInvoice {
   id             String                @id @default(uuid())
-  invoiceNumber  String                @unique // PINV-YYYY-NNNNNN
+  invoiceNumber  String                @unique // {SLUG}-{GÓI}-{YYYYMMDD}-{NN}
+  publicToken    String                @unique @default(uuid()) // link công khai /hoa-don/:token (không cần login)
   tenantId       String
   subscriptionId String?
   subscription   Subscription?         @relation(fields: [subscriptionId], references: [id])

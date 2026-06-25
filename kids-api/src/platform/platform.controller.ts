@@ -121,6 +121,12 @@ export class PlatformController {
     return this.billing.createPeriodInvoice(body.tenantId);
   }
 
+  // Sau "invoices/stats" + "invoices" để route tĩnh không bị param ":id" nuốt.
+  @Get("invoices/:id")
+  getInvoice(@Param("id") id: string) {
+    return this.platform.getInvoiceDetail(id);
+  }
+
   @Post("invoices/:id/mark-paid")
   markPaid(@Param("id") id: string, @Body() body: { amount?: number }) {
     return this.billing.markInvoicePaid(id, body.amount ?? 0);

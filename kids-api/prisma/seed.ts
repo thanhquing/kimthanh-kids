@@ -183,8 +183,20 @@ async function main() {
     });
   }
 
+  // ─── Cấu hình nền tảng (singleton) — TK ngân hàng nhận thanh toán (cho VietQR hóa đơn) ───
+  await prisma.platformConfig.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: {
+      id: "singleton",
+      bankBin: "970436", // Vietcombank
+      bankAccountNumber: "1027123456",
+      bankAccountName: "CONG TY TNHH KIMTHANH KIDS",
+    },
+  });
+
   // eslint-disable-next-line no-console
-  console.log("Seed xong: 5 plan (free/starter/pro/enterprise/dedicated) + platform super-admin");
+  console.log("Seed xong: 5 plan (free/starter/pro/enterprise/dedicated) + platform super-admin + cấu hình NH");
 }
 
 main()

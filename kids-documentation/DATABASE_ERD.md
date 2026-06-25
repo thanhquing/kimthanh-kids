@@ -164,6 +164,7 @@ erDiagram
     datetime effectiveAt
   }
   PlatformInvoice {
+    string publicToken "UK — uuid; link công khai /hoa-don/:token"
     uuid id PK
     string invoiceNumber UK "PINV-YYYY-NNNNNN"
     uuid tenantId

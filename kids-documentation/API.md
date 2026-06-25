@@ -79,6 +79,7 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 | `POST` | `/public/signup` | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | `{ tenant, school, admin, subscription, host }`. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400) |
 | `GET` | `/public/availability?slug=` | Query `slug: string` | `{ available: boolean }` |
 | `GET` | `/public/branding?host=` | Query `host: string` | branding/settings theo host |
+| `GET` | `/public/platform-invoices/:token` | `token` = `PlatformInvoice.publicToken` (uuid khó đoán) | hóa đơn để xem + thanh toán VietQR **không cần đăng nhập** (link chia sẻ cho trường). Trả như `/platform/invoices/:id` nhưng **bỏ `id`/`publicToken`**; 404 nếu token sai |
 
 `SignupInput`:
 
@@ -218,7 +219,8 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `GET` | `/platform/invoices?page=&tenantId=&status=&q=` | filters; `q?: string` (tìm theo `invoiceNumber`) | paginated platform invoices — mỗi dòng kèm `tenantName`, `period` (MM/YYYY), `dueDate` (=`dueAt`), `amountDue` (=`total-amountPaid`); `meta{page,pageSize,total}` |
 | `GET` | `/platform/invoices/stats` | - | KPI tiền: `{ paidThisMonth, openAmount, overdueAmount, total }` (VND) |
 | `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice — `invoiceNumber` định dạng **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`): slug trường + mã gói + ngày lập, để đối soát chuyển khoản (addInfo VietQR = số HĐ) |
-| `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | invoice after payment |
+| `GET` | `/platform/invoices/:id` | - | chi tiết 1 hóa đơn (trang chi tiết/in): `{ invoiceNumber, status, lines[], subtotal/discount/tax/total/amountPaid/amountDue, buyer{name,taxCode,address}, seller{name}, bank{bin,accountNumber,accountName}, publicToken }` |
+| `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | đánh dấu đã thu — **không truyền `amount` = trả đủ** (`amountPaid=total`); reactivate subscription + đẩy kỳ |
 | `GET` | `/platform/plans` | - | all plans (kèm `prices/features/limits/trialDays`) — mỗi gói **bổ sung** `tenantCount` (số thuê bao đang chạy: status TRIALING/ACTIVE/PAST_DUE) |
 | `POST` | `/platform/plans` | `CreatePlanInput` | created plan + nested config |
 | `PATCH` | `/platform/plans/:id` | `UpdatePlanInput` (name/description/isPublic/isActive/trialDays/sortOrder + upsert prices/features/limits theo unique key) | plan sau cập nhật; **không** đổi `code`/`tier`; thuê bao đang chạy giữ giá tới kỳ kế; 404 `PLAN_NOT_FOUND` nếu không thấy |

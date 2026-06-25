@@ -581,6 +581,96 @@ export class PlatformService {
     };
   }
 
+  /** Chi tiết 1 hóa đơn nền tảng (cho trang chi tiết admin) — kèm dòng + bên bán + ngân hàng. */
+  async getInvoiceDetail(id: string) {
+    const inv = await this.prisma.system.platformInvoice.findFirst({
+      where: { id, deletedAt: null },
+      include: {
+        lines: { orderBy: { createdAt: "asc" } },
+        subscription: { include: { plan: true } },
+      },
+    });
+    if (!inv) {
+      throw new NotFoundException({ code: "INVOICE_NOT_FOUND", message: "Không tìm thấy hóa đơn" });
+    }
+    return this.shapeInvoiceDoc(inv);
+  }
+
+  /** Hóa đơn qua link CÔNG KHAI (không cần đăng nhập) — token uuid khó đoán. Bỏ id/token nội bộ. */
+  async getPublicInvoice(token: string) {
+    const inv = await this.prisma.system.platformInvoice.findFirst({
+      where: { publicToken: token, deletedAt: null },
+      include: {
+        lines: { orderBy: { createdAt: "asc" } },
+        subscription: { include: { plan: true } },
+      },
+    });
+    if (!inv) {
+      throw new NotFoundException({ code: "INVOICE_NOT_FOUND", message: "Không tìm thấy hóa đơn" });
+    }
+    const doc = await this.shapeInvoiceDoc(inv);
+    const { id: _id, publicToken: _t, ...pub } = doc;
+    void _id;
+    void _t;
+    return pub;
+  }
+
+  /** Định hình hóa đơn cho trang in/chi tiết: bên bán (nền tảng) + bên mua (trường) + dòng + ngân hàng. */
+  private async shapeInvoiceDoc(
+    inv: Prisma.PlatformInvoiceGetPayload<{
+      include: { lines: true; subscription: { include: { plan: true } } };
+    }>,
+  ) {
+    const [tenant, cfg] = await Promise.all([
+      this.prisma.system.tenant.findFirst({
+        where: { id: inv.tenantId },
+        include: { settings: true },
+      }),
+      this.config.get(),
+    ]);
+    const total = Number(inv.total);
+    return {
+      id: inv.id,
+      publicToken: inv.publicToken,
+      invoiceNumber: inv.invoiceNumber,
+      status: inv.status,
+      currency: inv.currency,
+      issuedAt: inv.issuedAt,
+      dueAt: inv.dueAt,
+      paidAt: inv.paidAt,
+      periodStart: inv.periodStart,
+      periodEnd: inv.periodEnd,
+      subtotal: Number(inv.subtotal),
+      discount: Number(inv.discount),
+      tax: Number(inv.tax),
+      total,
+      amountPaid: Number(inv.amountPaid),
+      amountDue: total - Number(inv.amountPaid),
+      planName: inv.subscription?.plan?.name ?? null,
+      billingCycle: inv.subscription?.billingCycle ?? null,
+      lines: inv.lines.map((l) => ({
+        label: l.label,
+        quantity: l.quantity,
+        unitPrice: Number(l.unitPrice),
+        amount: Number(l.amount),
+      })),
+      // Bên mua = trường thuê
+      buyer: {
+        name: tenant?.settings?.displayName ?? tenant?.legalName ?? "—",
+        taxCode: tenant?.settings?.taxCode ?? tenant?.taxCode ?? null,
+        address: tenant?.settings?.invoiceAddress ?? null,
+        slug: tenant?.slug ?? null,
+      },
+      // Bên bán = nền tảng (cố định) + tài khoản nhận tiền (cấu hình)
+      seller: { name: "KimThanh Kids", note: "Phần mềm quản lý trường mầm non" },
+      bank: {
+        bin: cfg.bankBin,
+        accountNumber: cfg.bankAccountNumber,
+        accountName: cfg.bankAccountName,
+      },
+    };
+  }
+
   // ─── Plan admin ───
   /** Số tenant ĐANG dùng mỗi gói (subscription chưa hủy/hết hạn) — cho thẻ "X trường đang dùng". */
   async listPlans() {

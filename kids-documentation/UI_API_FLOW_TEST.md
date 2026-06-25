@@ -103,6 +103,10 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P46 | Tim nhanh (truong) | `GET /platform/search?q=hoa` | `200` | `200` | PASS | tenants: Mam non Hoa Sen |
 | P47 | Tim nhanh (hoa don) | `GET /platform/search?q=DEMO-PRO` | `200` | `200` | PASS | 2 HD: DEMO-PRO-20260615-01 (OPEN) + 20260521-01 (PAID) |
 | E14 | Edge: tenant admin tim nhanh | `GET /platform/search` | `403` | `403` | PASS | `FORBIDDEN` |
+| P48 | Chi tiet hoa don (admin) | `GET /platform/invoices/:id` | `200` | `200` | PASS | buyer/seller/bank/lines/total/amountDue + publicToken; DEMO-PRO-20260615-01 |
+| P49 | Link cong khai (khong auth) | `GET /public/platform-invoices/:token` | `200` | `200` | PASS | tra du lieu, BO id/publicToken; QR VietQR theo bank cau hinh |
+| E15 | Edge: token sai | `GET /public/platform-invoices/khong-co` | `404` | `404` | PASS | `INVOICE_NOT_FOUND` |
+| E16 | Edge: tenant admin xem chi tiet | `GET /platform/invoices/:id` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |

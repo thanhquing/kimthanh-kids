@@ -97,6 +97,14 @@
 - **Cache chéo trang (react-query):** mutation ảnh hưởng nhiều trang trước đây chỉ invalidate cục bộ (markPaid ở Hóa đơn chỉ `["invoices"]`, ở Cần hành động chỉ `["worklist"]`) → trang khác hiển thị số CŨ tới khi tự refetch. Thêm helper **`invalidatePlatformData(qc)`** (`src/lib/queries.ts`) invalidate cả nhóm `platform-overview/revenue · tenants · subscriptions · invoices · worklist · quick-search`. Gọi sau: markPaid (Hóa đơn + Cần hành động + Tenant-detail), suspend/reactivate/createInvoice/override (Tenant-detail), createTenant, **create/updatePlan** (đổi giá gói → MRR đổi khắp nơi). Đã verify: bấm "Đã thu" ở Cần hành động → sang Hóa đơn thấy PAID ngay (không reload).
 - **Fix `markInvoicePaid`:** "Đánh dấu đã thu" thủ công không truyền số tiền → trước đây set `amountPaid=0` ⇒ hóa đơn PAID nhưng `amountDue` vẫn = total (mâu thuẫn). Sửa: không truyền amount = **trả đủ** (`amountPaid = total`). Có truyền amount thì dùng đúng số (hỗ trợ trả 1 phần sau).
 
+## 12. Trang chi tiết hóa đơn + link công khai + in + VietQR  ✅ MỚI
+
+- **QR rời khỏi Cài đặt:** Settings chỉ lưu **tài khoản ngân hàng** (bin/số TK/tên TK). VietQR sinh ở **ngữ cảnh hóa đơn** (mới có số HĐ + số tiền thật) — không preview ở Settings nữa.
+- **Schema:** `PlatformInvoice.publicToken` (uuid `@unique @default(uuid())`) — migration backfill hàng cũ bằng `gen_random_uuid()`. seed.ts set sẵn TK ngân hàng demo (VCB) cho PlatformConfig để QR hiện; seed-demo có 2 HĐ → có token.
+- **BE:** `GET /platform/invoices/:id` (admin, đặt sau route tĩnh) + `GET /public/platform-invoices/:token` (`@Public`, controller riêng `PublicInvoiceController`, **bỏ id/publicToken** khi trả). Shaping chung `shapeInvoiceDoc` (bên bán nền tảng cố định + bên mua=trường + ngân hàng từ config).
+- **FE:** component `InvoiceDocument` (layout in A4 theo mẫu phiếu) + `lib/vietqr.ts` (BANKS + `vietQrUrl`) + `lib/numToWords.ts` (đọc số ra chữ "Bằng chữ"). Trang `/invoices/:id` (admin: In `window.print()` + Chia sẻ copy link + QR) & `/hoa-don/:token` (công khai, ngoài RequireAuth, không sidebar). Print qua `@media print` (chỉ in `.print-area`, ẩn `.no-print`). Số HĐ ở list → link sang chi tiết; QuickSearch dashboard click HĐ → chi tiết.
+- **P2:** thu hồi/đổi token (revoke link), tải PDF server (puppeteer), nhúng QR offline (không phụ thuộc img.vietqr.io khi in mất mạng), logo/thông tin bên bán đưa vào config thay vì hardcode.
+
 ## 9. Settings — Cài đặt nền tảng + VietQR  ✅ MỚI (`GET/PATCH /platform/settings`)
 
 - **Model mới `PlatformConfig`** (singleton id="singleton") — KHÁC `TenantSettings` (mỗi trường). Lưu **TK ngân hàng nền tảng** (VietQR tenant→platform) + **grace dunning**. Module riêng `platform-config/` để cả `platform` lẫn `billing` dùng chung, **tránh circular** (billing đã được platform import).

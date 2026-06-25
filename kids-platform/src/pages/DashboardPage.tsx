@@ -103,7 +103,7 @@ function QuickSearch() {
           {invoices.map((i) => (
             <button
               key={i.id}
-              onClick={() => go(`/invoices?q=${encodeURIComponent(i.invoiceNumber)}`)}
+              onClick={() => go(`/invoices/${i.id}`)}
               className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-[#fff8f3]"
             >
               <Receipt className="w-4 h-4 text-slate-400" />

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ApiError } from "@/api/http";
 import { platform, type PlatformInvoice } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
@@ -159,7 +159,11 @@ export function InvoicesPage() {
                 const payable = inv.status === "OPEN" || inv.status === "OVERDUE";
                 return (
                   <tr key={inv.id} className="hover:bg-[#fff8f3]">
-                    <td className="font-mono text-xs font-semibold">{inv.invoiceNumber ?? inv.id.slice(0, 8)}</td>
+                    <td className="font-mono text-xs font-semibold">
+                      <Link to={`/invoices/${inv.id}`} className="text-[color:var(--primary)] hover:underline">
+                        {inv.invoiceNumber ?? inv.id.slice(0, 8)}
+                      </Link>
+                    </td>
                     <td>{inv.tenantName ?? inv.tenantId.slice(0, 8)}</td>
                     <td>{inv.period ?? "—"}</td>
                     <td className="font-semibold">{inv.total != null ? formatVnd(inv.total) : "—"}</td>

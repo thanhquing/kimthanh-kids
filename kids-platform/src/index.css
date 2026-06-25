@@ -257,3 +257,23 @@
     font-size: 0.8rem;
   }
 }
+
+/* In hóa đơn: chỉ in vùng .print-area, ẩn phần còn lại (sidebar, nút...). */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

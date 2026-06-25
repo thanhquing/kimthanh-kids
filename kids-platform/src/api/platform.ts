@@ -289,6 +289,33 @@ export type SearchResult = {
   }[];
 };
 
+export type InvoiceLine = { label: string; quantity: number; unitPrice: number; amount: number };
+
+export type InvoiceDoc = {
+  id?: string;
+  publicToken?: string;
+  invoiceNumber: string;
+  status: string;
+  currency: string;
+  issuedAt?: string | null;
+  dueAt?: string | null;
+  paidAt?: string | null;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  amountPaid: number;
+  amountDue: number;
+  planName?: string | null;
+  billingCycle?: string | null;
+  lines: InvoiceLine[];
+  buyer: { name: string; taxCode?: string | null; address?: string | null; slug?: string | null };
+  seller: { name: string; note?: string };
+  bank: { bin?: string | null; accountNumber?: string | null; accountName?: string | null };
+};
+
 export type PlatformSettings = {
   id: string;
   bankBin?: string | null;
@@ -346,6 +373,9 @@ export const platform = {
   invoiceStats: () => api.get<InvoiceStats>("/platform/invoices/stats"),
   createInvoice: (tenantId: string) =>
     api.post<PlatformInvoice>("/platform/invoices", { tenantId }),
+  getInvoice: (id: string) => api.get<InvoiceDoc>(`/platform/invoices/${id}`),
+  getPublicInvoice: (token: string) =>
+    api.get<InvoiceDoc>(`/public/platform-invoices/${token}`, { auth: false }),
   markPaid: (id: string, amount?: number) =>
     api.post<PlatformInvoice>(`/platform/invoices/${id}/mark-paid`, { amount }),
 

@@ -603,4 +603,35 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     // Tenant thường không tìm nhanh nền tảng.
     await api().get("/api/platform/search?q=demo").set(auth(t)).expect(403);
   });
+
+  // ── Chi tiết hóa đơn (admin) + link công khai (token, không auth) + 404 + 403 ──
+  it("platform invoice detail + public link token + 404/403", async () => {
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+    const t = await createTenant(app);
+    const tid = (await api().get(`/api/platform/tenants?q=${t.slug}`).set(phead)).body.data[0].id;
+    const inv = await api().post("/api/platform/invoices").set(phead).send({ tenantId: tid }).expect(201);
+    const invId = inv.body.data.id;
+
+    // Admin: chi tiết đủ trường (bên bán/mua/ngân hàng/dòng) + publicToken.
+    const detail = await api().get(`/api/platform/invoices/${invId}`).set(phead).expect(200);
+    for (const f of ["invoiceNumber", "publicToken", "buyer", "seller", "bank", "lines", "total", "amountDue"]) {
+      expect(detail.body.data).toHaveProperty(f);
+    }
+    const token = detail.body.data.publicToken;
+    expect(token).toBeTruthy();
+
+    // Công khai (KHÔNG auth): trả đúng số HĐ, KHÔNG lộ id/publicToken nội bộ.
+    const pub = await api().get(`/api/public/platform-invoices/${token}`).expect(200);
+    expect(pub.body.data.invoiceNumber).toBe(detail.body.data.invoiceNumber);
+    expect(pub.body.data.id).toBeUndefined();
+    expect(pub.body.data.publicToken).toBeUndefined();
+    expect(pub.body.data.buyer).toHaveProperty("name");
+
+    // Token sai → 404.
+    await api().get("/api/public/platform-invoices/khong-co-token").expect(404);
+
+    // Tenant thường không xem chi tiết hóa đơn nền tảng (route admin).
+    await api().get(`/api/platform/invoices/${invId}`).set(auth(t)).expect(403);
+  });
 });
