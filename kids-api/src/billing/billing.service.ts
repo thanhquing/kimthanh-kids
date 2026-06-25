@@ -107,7 +107,7 @@ export class BillingService {
   async createPeriodInvoice(tenantId: string) {
     const sub = await this.prisma.system.subscription.findUnique({
       where: { tenantId },
-      include: { plan: true },
+      include: { plan: true, tenant: true },
     });
     if (!sub) throw new NotFoundException({ code: "NO_SUBSCRIPTION", message: "Chưa có thuê bao" });
 
@@ -127,7 +127,8 @@ export class BillingService {
       });
 
     const amount = price.amount;
-    const invoiceNumber = await this.nextInvoiceNumber();
+    const issuedAt = new Date();
+    const invoiceNumber = await this.nextInvoiceNumber(sub.tenant.slug, sub.plan.code, issuedAt);
     return this.prisma.system.platformInvoice.create({
       data: {
         invoiceNumber,
@@ -139,8 +140,8 @@ export class BillingService {
         periodEnd: sub.currentPeriodEnd,
         subtotal: amount,
         total: amount,
-        issuedAt: new Date(),
-        dueAt: new Date(Date.now() + 7 * 86_400_000),
+        issuedAt,
+        dueAt: new Date(issuedAt.getTime() + 7 * 86_400_000),
         lines: {
           create: {
             kind: "SUBSCRIPTION",
@@ -164,9 +165,12 @@ export class BillingService {
       throw new NotFoundException({ code: "NO_INVOICE", message: "Không tìm thấy hóa đơn" });
     if (invoice.status === "PAID") return invoice;
 
+    // "Đánh dấu đã thu" thủ công (không truyền số tiền) = trả ĐỦ → amountPaid = total
+    // (tránh trạng thái PAID nhưng amountDue vẫn > 0). Có truyền amount thì dùng đúng số đó.
+    const paid = Number(paidAmount) > 0 ? paidAmount : invoice.total;
     await this.prisma.system.platformInvoice.update({
       where: { id: invoiceId },
-      data: { status: PlatformInvoiceStatus.PAID, amountPaid: paidAmount, paidAt: new Date() },
+      data: { status: PlatformInvoiceStatus.PAID, amountPaid: paid, paidAt: new Date() },
     });
 
     // Reactivate subscription + đẩy kỳ mới.
@@ -187,11 +191,19 @@ export class BillingService {
     return this.prisma.system.platformInvoice.findUnique({ where: { id: invoiceId } });
   }
 
-  private async nextInvoiceNumber(): Promise<string> {
-    const year = new Date().getFullYear();
+  /**
+   * Số hóa đơn nền tảng: `{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}` (vd HOASEN-PRO-20260625-01).
+   * Gồm slug trường + mã gói + ngày lập → dễ đối soát chuyển khoản (addInfo VietQR = số HĐ).
+   * Seq = số HĐ cùng prefix (trường+gói+ngày) + 1.
+   */
+  private async nextInvoiceNumber(slug: string, planCode: string, issuedAt: Date): Promise<string> {
+    const y = issuedAt.getFullYear();
+    const m = String(issuedAt.getMonth() + 1).padStart(2, "0");
+    const d = String(issuedAt.getDate()).padStart(2, "0");
+    const base = `${slug}-${planCode}-${y}${m}${d}`.toUpperCase();
     const count = await this.prisma.system.platformInvoice.count({
-      where: { invoiceNumber: { startsWith: `PINV-${year}-` } },
+      where: { invoiceNumber: { startsWith: base } },
     });
-    return `PINV-${year}-${String(count + 1).padStart(6, "0")}`;
+    return `${base}-${String(count + 1).padStart(2, "0")}`;
   }
 }

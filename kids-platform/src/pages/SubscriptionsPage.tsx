@@ -66,6 +66,7 @@ export function SubscriptionsPage() {
         </div>
 
         <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
@@ -122,6 +123,7 @@ export function SubscriptionsPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </main>
     </>

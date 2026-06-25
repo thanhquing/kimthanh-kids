@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { TIER_BADGE, TIER_LABEL } from "@/lib/labels";
+import { invalidatePlatformData } from "@/lib/queries";
 import { cn, formatVnd } from "@/lib/utils";
 
 const FEAT_LABEL: Record<string, string> = {
@@ -108,6 +109,7 @@ export function PlansPage() {
       toast(editing ? "Đã cập nhật gói dịch vụ" : "Đã tạo gói dịch vụ");
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["plans"] });
+      invalidatePlatformData(qc); // đổi giá gói → MRR đổi ở Tổng quan/Trường/Thuê bao
     },
     onError: (e) => toast(e instanceof ApiError ? e.message : "Lưu gói thất bại", "error"),
   });

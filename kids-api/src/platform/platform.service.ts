@@ -202,11 +202,12 @@ export class PlatformService {
     };
   }
 
-  async listTenants(page = 1, pageSize = 20, status?: string, q?: string) {
+  async listTenants(page = 1, pageSize = 20, status?: string, q?: string, planTier?: string) {
     const term = q?.trim();
     const where = {
       ...(status ? { status: status as never } : {}),
       deletedAt: null,
+      ...(planTier ? { subscription: { is: { plan: { is: { tier: planTier as never } } } } } : {}),
       ...(term
         ? {
             OR: [
@@ -253,6 +254,53 @@ export class PlatformService {
       mrr: t.subscription ? Math.round(this.mrr.subMrr(t.subscription)) : 0,
     }));
     return paginated(rows, { page, pageSize, total });
+  }
+
+  /** Tìm nhanh (ô search dashboard): trường + hóa đơn nền tảng theo từ khóa. Top 5 mỗi loại. */
+  async search(q?: string) {
+    const term = q?.trim();
+    if (!term || term.length < 1) return { tenants: [], invoices: [] };
+    const ci = { contains: term, mode: "insensitive" as const };
+    const [tenants, invoices] = await Promise.all([
+      this.prisma.system.tenant.findMany({
+        where: {
+          deletedAt: null,
+          OR: [{ slug: ci }, { legalName: ci }, { settings: { is: { displayName: ci } } }],
+        },
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: { settings: true },
+      }),
+      this.prisma.system.platformInvoice.findMany({
+        where: { deletedAt: null, invoiceNumber: ci },
+        take: 5,
+        orderBy: { issuedAt: "desc" },
+      }),
+    ]);
+    const invTenantIds = [...new Set(invoices.map((i) => i.tenantId))];
+    const tRows = invTenantIds.length
+      ? await this.prisma.system.tenant.findMany({
+          where: { id: { in: invTenantIds } },
+          include: { settings: true },
+        })
+      : [];
+    const tName = new Map(tRows.map((t) => [t.id, t.settings?.displayName ?? t.legalName]));
+    return {
+      tenants: tenants.map((t) => ({
+        id: t.id,
+        slug: t.slug,
+        name: t.settings?.displayName ?? t.legalName,
+        status: t.status,
+      })),
+      invoices: invoices.map((i) => ({
+        id: i.id,
+        invoiceNumber: i.invoiceNumber,
+        tenantId: i.tenantId,
+        tenantName: tName.get(i.tenantId) ?? null,
+        status: i.status,
+        total: Number(i.total),
+      })),
+    };
   }
 
   /** Đếm tenant theo trạng thái (cho chip lọc) — xuyên trang, không phụ thuộc phân trang. */

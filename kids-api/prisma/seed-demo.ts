@@ -22,6 +22,7 @@ import {
   MedicineStatus,
   Mood,
   NotificationType,
+  PlatformInvoiceStatus,
   PrismaClient,
   Shift,
   SubscriptionStatus,
@@ -83,6 +84,7 @@ async function wipeExistingDemo(tenantId: string): Promise<void> {
   await prisma.classroom.deleteMany({ where: { tenantId } });
   await prisma.media.deleteMany({ where: { tenantId } });
   await prisma.membership.deleteMany({ where: { tenantId } });
+  await prisma.platformInvoice.deleteMany({ where: { tenantId } }); // trước subscription (FK)
   await prisma.subscription.deleteMany({ where: { tenantId } });
   await prisma.tenantDomain.deleteMany({ where: { tenantId } });
   await prisma.tenantSettings.deleteMany({ where: { tenantId } });
@@ -143,7 +145,7 @@ async function main() {
   });
   const tenantId = tenant.id;
 
-  await prisma.subscription.create({
+  const subscription = await prisma.subscription.create({
     data: {
       tenantId,
       planId: proPlan.id,
@@ -152,6 +154,58 @@ async function main() {
       status: SubscriptionStatus.ACTIVE,
       currentPeriodStart: now,
       currentPeriodEnd: periodEnd,
+    },
+  });
+
+  // ─── Hóa đơn nền tảng (platform → trường) — số HĐ: SLUG-GÓI-YYYYMMDD-NN ───
+  const proMonthly = await prisma.planPrice.findFirst({
+    where: { planId: proPlan.id, billingCycle: BillingCycle.MONTHLY },
+  });
+  const platAmount = proMonthly?.amount ?? 1_200_000;
+  const platInvNo = (issued: Date, seq: number) => {
+    const y = issued.getFullYear();
+    const m = String(issued.getMonth() + 1).padStart(2, "0");
+    const d = String(issued.getDate()).padStart(2, "0");
+    return `${SLUG}-${proPlan.code}-${y}${m}${d}-${String(seq).padStart(2, "0")}`.toUpperCase();
+  };
+  const prevIssued = addDays(now, -35);
+  const curIssued = addDays(now, -10);
+  // HĐ tháng trước — đã thu
+  await prisma.platformInvoice.create({
+    data: {
+      invoiceNumber: platInvNo(prevIssued, 1),
+      tenantId,
+      subscriptionId: subscription.id,
+      status: PlatformInvoiceStatus.PAID,
+      periodStart: addDays(prevIssued, -30),
+      periodEnd: prevIssued,
+      subtotal: platAmount,
+      total: platAmount,
+      amountPaid: platAmount,
+      issuedAt: prevIssued,
+      dueAt: addDays(prevIssued, 7),
+      paidAt: addDays(prevIssued, 3),
+      lines: {
+        create: { kind: "SUBSCRIPTION", label: "Chuyên nghiệp — MONTHLY", quantity: 1, unitPrice: platAmount, amount: platAmount },
+      },
+    },
+  });
+  // HĐ kỳ này — chờ thu & đã quá hạn (cho trang Cần hành động)
+  await prisma.platformInvoice.create({
+    data: {
+      invoiceNumber: platInvNo(curIssued, 1),
+      tenantId,
+      subscriptionId: subscription.id,
+      status: PlatformInvoiceStatus.OPEN,
+      periodStart: curIssued,
+      periodEnd: addDays(curIssued, 30),
+      subtotal: platAmount,
+      total: platAmount,
+      issuedAt: curIssued,
+      dueAt: addDays(now, -3),
+      lines: {
+        create: { kind: "SUBSCRIPTION", label: "Chuyên nghiệp — MONTHLY", quantity: 1, unitPrice: platAmount, amount: platAmount },
+      },
     },
   });
 

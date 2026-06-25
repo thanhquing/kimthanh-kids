@@ -583,4 +583,24 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
       .send({ pastDueGraceDays: 7, suspendedGraceDays: 14 })
       .expect(200);
   });
+
+  // ── Trường thuê lọc theo Gói + tìm nhanh (search) + 403 ──
+  it("platform tenants lọc theo gói + search nhanh trường/hóa đơn + 403", async () => {
+    const t = await createTenant(app); // signup mặc định gói FREE
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+
+    // Lọc planTier=FREE → mọi dòng đều FREE (tenant tạo qua signup là FREE; demo PRO bị loại).
+    const free = await api().get("/api/platform/tenants?planTier=FREE").set(phead).expect(200);
+    expect(free.body.data.length).toBeGreaterThanOrEqual(1);
+    expect(free.body.data.every((x: { planTier: string }) => x.planTier === "FREE")).toBe(true);
+
+    // Tìm nhanh theo slug → có trường vừa tạo; payload có cả nhánh invoices.
+    const r = await api().get(`/api/platform/search?q=${t.slug}`).set(phead).expect(200);
+    expect(r.body.data.tenants.some((x: { slug: string }) => x.slug === t.slug)).toBe(true);
+    expect(r.body.data).toHaveProperty("invoices");
+
+    // Tenant thường không tìm nhanh nền tảng.
+    await api().get("/api/platform/search?q=demo").set(auth(t)).expect(403);
+  });
 });

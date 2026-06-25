@@ -46,8 +46,9 @@ export class PlatformController {
     @Query("page") page?: string,
     @Query("status") status?: string,
     @Query("q") q?: string,
+    @Query("planTier") planTier?: string,
   ) {
-    return this.platform.listTenants(Number(page) || 1, 20, status, q);
+    return this.platform.listTenants(Number(page) || 1, 20, status, q, planTier);
   }
 
   // Đặt TRƯỚC "tenants/:id" để route tĩnh không bị param ":id" nuốt.
@@ -148,6 +149,11 @@ export class PlatformController {
   @Get("worklist")
   worklist() {
     return this.platform.worklist();
+  }
+
+  @Get("search")
+  search(@Query("q") q?: string) {
+    return this.platform.search(q);
   }
 
   @Get("settings")

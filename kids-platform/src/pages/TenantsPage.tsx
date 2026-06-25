@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { badgeFor, formatDate, TENANT_STATUS, TIER_LABEL } from "@/lib/labels";
+import { invalidatePlatformData } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
@@ -65,6 +66,7 @@ export function TenantsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [status, setStatus] = useState("");
+  const [plan, setPlan] = useState("");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
@@ -81,8 +83,9 @@ export function TenantsPage() {
   }, [search]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["tenants", "list", status, page, debouncedQ],
-    queryFn: () => platform.listTenants(page, status || undefined, debouncedQ || undefined),
+    queryKey: ["tenants", "list", status, plan, page, debouncedQ],
+    queryFn: () =>
+      platform.listTenants(page, status || undefined, debouncedQ || undefined, plan || undefined),
   });
   const { data: stats } = useQuery({
     queryKey: ["tenants", "stats"],
@@ -106,7 +109,7 @@ export function TenantsPage() {
       toast("Đã tạo trường mới");
       setOpen(false);
       setForm(EMPTY);
-      qc.invalidateQueries({ queryKey: ["tenants"] });
+      invalidatePlatformData(qc);
     },
     onError: (e) => toast(e instanceof ApiError ? e.message : "Tạo trường thất bại", "error"),
   });
@@ -174,7 +177,22 @@ export function TenantsPage() {
               {c.count != null ? ` · ${c.count}` : ""}
             </button>
           ))}
-          <div className="relative ml-auto w-64">
+          <select
+            className="field !py-1.5 !w-auto ml-auto"
+            value={plan}
+            onChange={(e) => {
+              setPlan(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">Tất cả gói</option>
+            {["FREE", "STARTER", "PRO", "ENTERPRISE", "CUSTOM"].map((t) => (
+              <option key={t} value={t}>
+                {TIER_LABEL[t] ?? t}
+              </option>
+            ))}
+          </select>
+          <div className="relative w-64">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               className="field !pl-9 !py-1.5"
@@ -186,6 +204,7 @@ export function TenantsPage() {
         </div>
 
         <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
@@ -254,6 +273,7 @@ export function TenantsPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
 
         <div className="flex items-center justify-between mt-4 text-sm text-slate-500">

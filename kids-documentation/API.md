@@ -204,7 +204,8 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `GET` | `/platform/overview` | - | dashboard console: `{ kpis{tenants,activeTenants,trialTenants,overdueInvoices,suspendedTenants,mrr}, mrrSeries[12], mrrGrowthPct, planDistribution[], recentTenants[], recentOverdue[] }` |
 | `GET` | `/platform/revenue?months=` | `months?: 1..24` (mặc định 12, kẹp ≤24) | `{ months, series:[{period,month,value,source}], growthPct }` — chuỗi MRR theo tháng (`source`: `CRON` số thực \| `BACKFILL` \| `DERIVED` suy ngược) |
 | `POST` | `/platform/mrr/backfill?months=` | `months?: number` (mặc định 24); **chỉ `PLATFORM_SUPER_ADMIN`** | `{ ok, written }` — backfill snapshot các tháng còn thiếu (không đè số thực) |
-| `GET` | `/platform/tenants?page=&status=&q=` | `page?: number`, `status?: TenantStatus`, `q?: string` (tìm theo slug/legalName/displayName, server-side) | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
+| `GET` | `/platform/tenants?page=&status=&q=&planTier=` | `page?`, `status?: TenantStatus`, `q?` (slug/legalName/displayName), `planTier?: PlanTier` (lọc theo gói qua subscription.plan.tier) | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
+| `GET` | `/platform/search?q=` | `q?: string` | tìm nhanh (ô search Tổng quan): `{ tenants:[{id,slug,name,status}], invoices:[{id,invoiceNumber,tenantId,tenantName,status,total}] }` — top 5 mỗi loại |
 | `GET` | `/platform/tenants/stats` | - | đếm tenant theo trạng thái: `{ total, ACTIVE, TRIAL, PAST_DUE, SUSPENDED }` (cho chip lọc) |
 | `POST` | `/platform/tenants` | `PlatformCreateTenantInput` | `{ tenant, school, admin, subscription }` |
 | `GET` | `/platform/tenants/:id` | - | tenant detail + settings/domains/subscription/invoices; **bổ sung**: `mrr`, `studentCount`, `quota[{metric,used,limit,enforcement}]` (STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB), `schools[]` kèm `_count{students,classrooms}` |
@@ -216,7 +217,7 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `GET` | `/platform/subscriptions/stats` | - | đếm thuê bao theo trạng thái: `{ total, TRIALING, ACTIVE, PAST_DUE, SUSPENDED, CANCELED, EXPIRED }` |
 | `GET` | `/platform/invoices?page=&tenantId=&status=&q=` | filters; `q?: string` (tìm theo `invoiceNumber`) | paginated platform invoices — mỗi dòng kèm `tenantName`, `period` (MM/YYYY), `dueDate` (=`dueAt`), `amountDue` (=`total-amountPaid`); `meta{page,pageSize,total}` |
 | `GET` | `/platform/invoices/stats` | - | KPI tiền: `{ paidThisMonth, openAmount, overdueAmount, total }` (VND) |
-| `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice |
+| `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice — `invoiceNumber` định dạng **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`): slug trường + mã gói + ngày lập, để đối soát chuyển khoản (addInfo VietQR = số HĐ) |
 | `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | invoice after payment |
 | `GET` | `/platform/plans` | - | all plans (kèm `prices/features/limits/trialDays`) — mỗi gói **bổ sung** `tenantCount` (số thuê bao đang chạy: status TRIALING/ACTIVE/PAST_DUE) |
 | `POST` | `/platform/plans` | `CreatePlanInput` | created plan + nested config |

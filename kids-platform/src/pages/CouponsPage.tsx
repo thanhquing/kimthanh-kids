@@ -67,6 +67,7 @@ export function CouponsPage() {
 
       <main className="p-6">
         <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
@@ -108,6 +109,7 @@ export function CouponsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </main>
 

@@ -7,6 +7,7 @@ import { platform } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ui/Toast";
 import { badgeFor, formatDate, SUB_STATUS } from "@/lib/labels";
+import { invalidatePlatformData } from "@/lib/queries";
 import { formatVnd } from "@/lib/utils";
 
 function Stat({
@@ -40,7 +41,7 @@ export function WorklistPage() {
     mutationFn: (id: string) => platform.markPaid(id),
     onSuccess: () => {
       toast("Đã đánh dấu hóa đơn đã thu");
-      qc.invalidateQueries({ queryKey: ["worklist"] });
+      invalidatePlatformData(qc);
     },
     onError: (e) => toast(e instanceof ApiError ? e.message : "Thao tác thất bại", "error"),
   });

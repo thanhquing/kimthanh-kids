@@ -84,6 +84,19 @@
 - **Engine đã có sẵn** (`billing-jobs`: expireTrials/markOverdueInvoices/dunningSuspend/dunningCancel trên cron) — trang này chỉ là **lớp hiển thị**, không lặp logic.
 - **P2 (cần kênh email):** nhắc tự động tới chủ trường ở các mốc dunning (chỉ thêm 1 `mail.send` mỗi job). Hiện chưa có email service → nhắc thủ công qua trang này.
 
+## 10. Polish đợt sau (số HĐ / filter / search / confirm / mobile)  ✅
+
+- **Số HĐ nền tảng đổi định dạng:** `PINV-{year}-{seq}` → **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`). Sinh ở `billing.service.nextInvoiceNumber(slug, planCode, issuedAt)`; createPeriodInvoice include thêm `tenant`. Không test nào assert format cũ → an toàn. **seed-demo** giờ tạo 2 HĐ nền tảng demo (1 PAID, 1 OPEN quá hạn) — trang Hóa đơn/Cần hành động có data sau reseed. Cleanup demo idempotent: xóa `platformInvoice` trước `subscription` (FK).
+- **Trường thuê — lọc theo Gói:** `listTenants` thêm `planTier?` (filter qua `subscription.plan.tier`); FE dropdown "Tất cả gói" cạnh search.
+- **Tổng quan — tìm nhanh:** `GET /platform/search?q=` (top 5 trường + 5 HĐ, resolve tenantName). FE QuickSearch (debounce 300ms, dropdown) → click trường `/tenants/:id`, click HĐ `/invoices?q=` (InvoicesPage đọc `q` từ URL).
+- **Hóa đơn — confirm "đã thu":** thêm Modal xác nhận trước `markPaid` (số HĐ + trường + tiền + hệ quả). (Worklist vẫn markPaid trực tiếp — cân nhắc thêm confirm tương tự nếu cần.)
+- **Mobile:** bọc bảng `overflow-x-auto` cho Tenants/Subscriptions/Invoices/Coupons (Worklist/Observability đã có) → bảng cuộn ngang trong khung, không đẩy rộng trang.
+
+## 11. Đồng bộ chéo trang + fix markPaid  ✅
+
+- **Cache chéo trang (react-query):** mutation ảnh hưởng nhiều trang trước đây chỉ invalidate cục bộ (markPaid ở Hóa đơn chỉ `["invoices"]`, ở Cần hành động chỉ `["worklist"]`) → trang khác hiển thị số CŨ tới khi tự refetch. Thêm helper **`invalidatePlatformData(qc)`** (`src/lib/queries.ts`) invalidate cả nhóm `platform-overview/revenue · tenants · subscriptions · invoices · worklist · quick-search`. Gọi sau: markPaid (Hóa đơn + Cần hành động + Tenant-detail), suspend/reactivate/createInvoice/override (Tenant-detail), createTenant, **create/updatePlan** (đổi giá gói → MRR đổi khắp nơi). Đã verify: bấm "Đã thu" ở Cần hành động → sang Hóa đơn thấy PAID ngay (không reload).
+- **Fix `markInvoicePaid`:** "Đánh dấu đã thu" thủ công không truyền số tiền → trước đây set `amountPaid=0` ⇒ hóa đơn PAID nhưng `amountDue` vẫn = total (mâu thuẫn). Sửa: không truyền amount = **trả đủ** (`amountPaid = total`). Có truyền amount thì dùng đúng số (hỗ trợ trả 1 phần sau).
+
 ## 9. Settings — Cài đặt nền tảng + VietQR  ✅ MỚI (`GET/PATCH /platform/settings`)
 
 - **Model mới `PlatformConfig`** (singleton id="singleton") — KHÁC `TenantSettings` (mỗi trường). Lưu **TK ngân hàng nền tảng** (VietQR tenant→platform) + **grace dunning**. Module riêng `platform-config/` để cả `platform` lẫn `billing` dùng chung, **tránh circular** (billing đã được platform import).

@@ -277,6 +277,18 @@ export type Worklist = {
   };
 };
 
+export type SearchResult = {
+  tenants: { id: string; slug: string; name: string; status: string }[];
+  invoices: {
+    id: string;
+    invoiceNumber: string;
+    tenantId: string;
+    tenantName?: string | null;
+    status: string;
+    total: number;
+  }[];
+};
+
 export type PlatformSettings = {
   id: string;
   bankBin?: string | null;
@@ -308,8 +320,10 @@ export const platform = {
   revenue: (months: number) =>
     api.get<RevenueSeries>("/platform/revenue", { query: { months } }),
 
-  listTenants: (page = 1, status?: string, q?: string) =>
-    api.getPage<Tenant>("/platform/tenants", { query: { page, status, q: q || undefined } }),
+  listTenants: (page = 1, status?: string, q?: string, planTier?: string) =>
+    api.getPage<Tenant>("/platform/tenants", {
+      query: { page, status, q: q || undefined, planTier: planTier || undefined },
+    }),
   tenantStats: () => api.get<TenantStats>("/platform/tenants/stats"),
   getTenant: (id: string) => api.get<Tenant>(`/platform/tenants/${id}`),
   createTenant: (body: CreateTenantInput) =>
@@ -345,6 +359,7 @@ export const platform = {
   createCoupon: (body: CreateCouponInput) => api.post<Coupon>("/platform/coupons", body),
 
   worklist: () => api.get<Worklist>("/platform/worklist"),
+  search: (q: string) => api.get<SearchResult>("/platform/search", { query: { q } }),
   getSettings: () => api.get<PlatformSettings>("/platform/settings"),
   updateSettings: (body: UpdatePlatformSettingsInput) =>
     api.patch<PlatformSettings>("/platform/settings", body),

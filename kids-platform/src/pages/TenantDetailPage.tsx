@@ -18,6 +18,7 @@ import {
   TENANT_STATUS,
   TIER_LABEL,
 } from "@/lib/labels";
+import { invalidatePlatformData } from "@/lib/queries";
 import { cn, formatVnd } from "@/lib/utils";
 
 const METRICS = ["STUDENTS", "TEACHERS", "CLASSROOMS", "SCHOOLS", "STORAGE_MB", "ADMIN_USERS"];
@@ -56,7 +57,7 @@ export function TenantDetailPage() {
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["tenant", id] });
-    qc.invalidateQueries({ queryKey: ["tenants"] });
+    invalidatePlatformData(qc); // gồm cả ["tenants"]
   };
   const onErr = (e: unknown) =>
     toast(e instanceof ApiError ? e.message : "Thao tác thất bại", "error");

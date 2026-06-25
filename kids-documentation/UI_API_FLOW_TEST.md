@@ -99,6 +99,10 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P43 | Cai dat: get default (tu ENV) | `GET /platform/settings` | `200` | `200` | PASS | grace pastDue=7 suspended=14, bank=null |
 | P44 | Cai dat: luu NH + grace | `PATCH /platform/settings` | `200` | `200` | PASS | VCB 970436 / 1027123456 / grace 10/21; VietQR img.vietqr.io tra 200 |
 | E13 | Edge: tenant admin sua cai dat | `PATCH /platform/settings` | `403` | `403` | PASS | `FORBIDDEN` (PATCH chi SUPER_ADMIN) |
+| P45 | Loc truong theo goi | `GET /platform/tenants?planTier=PRO` | `200` | `200` | PASS | demo PRO; moi dong planTier=PRO |
+| P46 | Tim nhanh (truong) | `GET /platform/search?q=hoa` | `200` | `200` | PASS | tenants: Mam non Hoa Sen |
+| P47 | Tim nhanh (hoa don) | `GET /platform/search?q=DEMO-PRO` | `200` | `200` | PASS | 2 HD: DEMO-PRO-20260615-01 (OPEN) + 20260521-01 (PAID) |
+| E14 | Edge: tenant admin tim nhanh | `GET /platform/search` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |

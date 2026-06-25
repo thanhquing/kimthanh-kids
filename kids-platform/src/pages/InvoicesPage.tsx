@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ApiError } from "@/api/http";
-import { platform } from "@/api/platform";
+import { platform, type PlatformInvoice } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
+import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { invalidatePlatformData } from "@/lib/queries";
 import { badgeFor, formatDate, INVOICE_STATUS } from "@/lib/labels";
 import { cn, formatVnd } from "@/lib/utils";
 
@@ -19,9 +22,12 @@ function trShort(v?: number): string {
 export function InvoicesPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("");
-  const [search, setSearch] = useState("");
-  const [debouncedQ, setDebouncedQ] = useState("");
+  // Khởi tạo từ ?q= (vd điều hướng từ ô tìm nhanh ở Tổng quan).
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [debouncedQ, setDebouncedQ] = useState(() => searchParams.get("q")?.trim() ?? "");
+  const [confirmInv, setConfirmInv] = useState<PlatformInvoice | null>(null);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedQ(search.trim()), 350);
@@ -41,7 +47,8 @@ export function InvoicesPage() {
     mutationFn: (id: string) => platform.markPaid(id),
     onSuccess: () => {
       toast("Đã đánh dấu thu");
-      qc.invalidateQueries({ queryKey: ["invoices"] });
+      setConfirmInv(null);
+      invalidatePlatformData(qc);
     },
     onError: (e) => toast(e instanceof ApiError ? e.message : "Thao tác thất bại", "error"),
   });
@@ -124,6 +131,7 @@ export function InvoicesPage() {
         </div>
 
         <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
@@ -161,8 +169,7 @@ export function InvoicesPage() {
                       {payable && (
                         <button
                           className="btn-soft !py-1 !px-3 text-xs"
-                          disabled={markPaid.isPending}
-                          onClick={() => markPaid.mutate(inv.id)}
+                          onClick={() => setConfirmInv(inv)}
                         >
                           Đánh dấu đã thu
                         </button>
@@ -173,8 +180,49 @@ export function InvoicesPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </main>
+
+      <Modal
+        open={!!confirmInv}
+        onClose={() => setConfirmInv(null)}
+        title="Xác nhận đã thu"
+        footer={
+          <>
+            <button className="btn-soft text-sm" onClick={() => setConfirmInv(null)}>
+              Hủy
+            </button>
+            <button
+              className="btn-primary text-sm"
+              disabled={markPaid.isPending}
+              onClick={() => confirmInv && markPaid.mutate(confirmInv.id)}
+            >
+              {markPaid.isPending ? "Đang xử lý…" : "Xác nhận đã thu"}
+            </button>
+          </>
+        }
+      >
+        {confirmInv && (
+          <p className="text-sm text-slate-600">
+            Xác nhận hóa đơn{" "}
+            <b className="font-mono">{confirmInv.invoiceNumber ?? confirmInv.id.slice(0, 8)}</b>
+            {confirmInv.tenantName ? (
+              <>
+                {" "}
+                của <b>{confirmInv.tenantName}</b>
+              </>
+            ) : null}
+            {confirmInv.total != null ? (
+              <>
+                {" "}
+                — <b>{formatVnd(confirmInv.total)}</b>
+              </>
+            ) : null}{" "}
+            đã được thanh toán? Thuê bao sẽ được kích hoạt lại và đẩy sang kỳ kế.
+          </p>
+        )}
+      </Modal>
     </>
   );
 }

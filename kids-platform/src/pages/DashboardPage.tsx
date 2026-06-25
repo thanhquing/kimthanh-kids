@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Building2, CircleCheck, Lock, Receipt, Search, Sparkles, TrendingUp } from "lucide-react";
-import { useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { platform, type RevenuePoint } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { badgeFor, TENANT_STATUS, TIER_LABEL } from "@/lib/labels";
@@ -34,6 +34,87 @@ function Kpi({
 /** VND → "168.4" (đơn vị "tr" render riêng để giữ style mock). */
 function mrrMillions(v: number): string {
   return (v / 1_000_000).toFixed(1);
+}
+
+/** Ô tìm nhanh: trường + hóa đơn (debounce 300ms) → bấm item điều hướng đúng trang. */
+function QuickSearch() {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  const { data } = useQuery({
+    queryKey: ["quick-search", debounced],
+    queryFn: () => platform.search(debounced),
+    enabled: debounced.length >= 1,
+  });
+
+  const go = (path: string) => {
+    setOpen(false);
+    setQ("");
+    navigate(path);
+  };
+  const tenants = data?.tenants ?? [];
+  const invoices = data?.invoices ?? [];
+  const empty = debounced.length >= 1 && tenants.length + invoices.length === 0;
+
+  return (
+    <div ref={boxRef} className="relative w-72">
+      <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+      <input
+        className="field !pl-9 !py-1.5"
+        placeholder="Tìm trường, hóa đơn..."
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+      {open && debounced.length >= 1 && (
+        <div className="absolute right-0 z-30 mt-1 w-80 max-h-96 overflow-y-auto rounded-xl border border-slate-100 bg-white py-1 shadow-lg">
+          {empty && <div className="px-3 py-3 text-sm text-muted">Không tìm thấy.</div>}
+          {tenants.length > 0 && <div className="nav-group !mt-1">Trường</div>}
+          {tenants.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => go(`/tenants/${t.id}`)}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-[#fff8f3]"
+            >
+              <Building2 className="w-4 h-4 text-slate-400" />
+              <span className="flex-1 truncate text-sm font-medium">{t.name}</span>
+              <span className="text-xs text-slate-400">{t.slug}</span>
+            </button>
+          ))}
+          {invoices.length > 0 && <div className="nav-group">Hóa đơn</div>}
+          {invoices.map((i) => (
+            <button
+              key={i.id}
+              onClick={() => go(`/invoices?q=${encodeURIComponent(i.invoiceNumber)}`)}
+              className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-[#fff8f3]"
+            >
+              <Receipt className="w-4 h-4 text-slate-400" />
+              <span className="flex-1 truncate font-mono text-xs">{i.invoiceNumber}</span>
+              <span className="truncate text-xs text-slate-400">{i.tenantName ?? ""}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Chuỗi MRR → toạ độ polyline trong viewBox 0 0 600 200. */
@@ -80,10 +161,7 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader title="Tổng quan">
-        <div className="relative w-72">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-          <input className="field !pl-9 !py-1.5" placeholder="Tìm trường, hóa đơn..." />
-        </div>
+        <QuickSearch />
       </PageHeader>
 
       <main className="p-6">
