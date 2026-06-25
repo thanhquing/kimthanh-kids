@@ -97,12 +97,20 @@ export type PlatformInvoice = {
   id: string;
   invoiceNumber?: string;
   tenantId: string;
+  tenantName?: string | null;
   period?: string;
   total?: number;
   amountDue?: number;
   status: string;
   dueDate?: string | null;
   lines?: { label: string; amount: number }[];
+};
+
+export type InvoiceStats = {
+  paidThisMonth: number;
+  openAmount: number;
+  overdueAmount: number;
+  total: number;
 };
 
 export type Coupon = {
@@ -223,8 +231,11 @@ export const platform = {
     api.getPage<Subscription>("/platform/subscriptions", { query: { page, status } }),
   subscriptionStats: () => api.get<SubscriptionStats>("/platform/subscriptions/stats"),
 
-  listInvoices: (page = 1, tenantId?: string, status?: string) =>
-    api.get<PlatformInvoice[]>("/platform/invoices", { query: { page, tenantId, status } }),
+  listInvoices: (page = 1, status?: string, q?: string) =>
+    api.getPage<PlatformInvoice>("/platform/invoices", {
+      query: { page, status, q: q || undefined },
+    }),
+  invoiceStats: () => api.get<InvoiceStats>("/platform/invoices/stats"),
   createInvoice: (tenantId: string) =>
     api.post<PlatformInvoice>("/platform/invoices", { tenantId }),
   markPaid: (id: string, amount?: number) =>

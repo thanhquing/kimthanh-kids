@@ -32,7 +32,15 @@
 - `GET /platform/subscriptions/stats` (đếm theo trạng thái) — **chồng chéo nhẹ** với `tenants/stats` (cùng ý nghĩa active/trial/pastdue/suspended vì 1 tenant = 1 subscription). Giữ riêng vì ngữ nghĩa khác (thuê bao vs trường) + có thêm CANCELED/EXPIRED. **Quyết định cuối:** cân nhắc gộp 1 endpoint `platform/stats` trả cả 2 nhóm nếu trùng nhiều.
 - KPI "Đã hủy/hết hạn" = `CANCELED + EXPIRED` (gộp ở FE).
 
-## 4. (thêm khi rà tiếp: invoices / plans / coupons)
+## 4. Invoices  ✅ đã tích hợp (`GET /platform/invoices` + `/invoices/stats`)
+
+- `listInvoices` thêm `q` (tìm theo `invoiceNumber`) + map mỗi dòng: `tenantName` (tra theo tenantId — PlatformInvoice KHÔNG có quan hệ `tenant`), `period` (MM/YYYY từ `periodStart`), `dueDate` (alias `dueAt`), `amountDue` (`total-amountPaid`) + meta phân trang. FE chuyển sang `api.getPage`.
+- `GET /platform/invoices/stats`: `paidThisMonth` (Σ total PAID trong tháng), `openAmount`/`overdueAmount` (Σ còn nợ), `total`.
+- **UI list KHÔNG còn nút "Tạo hóa đơn"** (khớp mock — tạo HĐ từ tenant-detail). FE InvoicesPage bỏ modal tạo; dùng Xuất CSV + markPaid.
+- **Tìm theo tên trường** hiện chỉ lọc `invoiceNumber` ở server (mock placeholder "Tìm số HĐ / trường"). Muốn tìm cả tên trường cần join/subquery theo tenant → **để sau** nếu cần.
+- Seed demo CHƯA tạo PlatformInvoice → trang trống sau reseed (đúng, có empty-state). Cân nhắc seed 1-2 HĐ nền tảng cho demo để trang có data.
+
+## 5. (thêm khi rà tiếp: plans / coupons)
 
 <!-- ghi tiếp khi tích hợp từng trang -->
 

@@ -1,35 +1,40 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { Download, Search } from "lucide-react";
+import { useEffect, useState } from "react";
 import { ApiError } from "@/api/http";
 import { platform } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
-import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { badgeFor, formatDate, INVOICE_STATUS } from "@/lib/labels";
 import { cn, formatVnd } from "@/lib/utils";
 
+const STATUSES = ["", "OPEN", "PAID", "OVERDUE", "VOID"];
+
+/** VND → "156.2tr" / "0đ" cho KPI. */
+function trShort(v?: number): string {
+  if (!v) return "0đ";
+  return `${parseFloat((v / 1_000_000).toFixed(1))}tr`;
+}
+
 export function InvoicesPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
-  const [tenantId, setTenantId] = useState("");
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedQ(search.trim()), 350);
+    return () => clearTimeout(id);
+  }, [search]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["invoices"],
-    queryFn: () => platform.listInvoices(1),
+    queryKey: ["invoices", status, debouncedQ],
+    queryFn: () => platform.listInvoices(1, status || undefined, debouncedQ || undefined),
   });
-  const tenants = useQuery({ queryKey: ["tenants", "picker"], queryFn: () => platform.listTenants(1) });
-
-  const create = useMutation({
-    mutationFn: () => platform.createInvoice(tenantId),
-    onSuccess: () => {
-      toast("Đã tạo hóa đơn kỳ mới");
-      setOpen(false);
-      setTenantId("");
-      qc.invalidateQueries({ queryKey: ["invoices"] });
-    },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Tạo hóa đơn thất bại", "error"),
+  const { data: stats } = useQuery({
+    queryKey: ["invoices", "stats"],
+    queryFn: () => platform.invoiceStats(),
   });
 
   const markPaid = useMutation({
@@ -41,24 +46,89 @@ export function InvoicesPage() {
     onError: (e) => toast(e instanceof ApiError ? e.message : "Thao tác thất bại", "error"),
   });
 
-  const items = data ?? [];
+  const items = data?.items ?? [];
+
+  function exportCsv() {
+    const head = ["Số hóa đơn", "Trường", "Kỳ", "Tổng", "Trạng thái", "Hạn"];
+    const lines = items.map((inv) =>
+      [
+        inv.invoiceNumber ?? inv.id,
+        inv.tenantName ?? inv.tenantId,
+        inv.period ?? "",
+        inv.total ?? 0,
+        badgeFor(INVOICE_STATUS, inv.status).label,
+        formatDate(inv.dueDate),
+      ]
+        .map((c) => `"${String(c).replace(/"/g, '""')}"`)
+        .join(","),
+    );
+    const blob = new Blob(["﻿" + [head.join(","), ...lines].join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "hoa-don-nen-tang.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <>
-      <PageHeader title="Hóa đơn nền tảng">
-        <button className="btn-primary inline-flex items-center gap-2 text-sm" onClick={() => setOpen(true)}>
-          <Plus className="w-4 h-4" />
-          Tạo hóa đơn kỳ
+      <PageHeader section="Doanh thu" title="Hóa đơn nền tảng">
+        <button className="btn-soft inline-flex items-center gap-2 text-sm" onClick={exportCsv}>
+          <Download className="w-4 h-4" />
+          Xuất CSV
         </button>
       </PageHeader>
 
       <main className="p-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+          <div className="kpi">
+            <div className="num text-emerald-600">{stats ? trShort(stats.paidThisMonth) : "—"}</div>
+            <div className="lbl">Đã thu (tháng này)</div>
+          </div>
+          <div className="kpi">
+            <div className="num text-amber-600">{stats ? trShort(stats.openAmount) : "—"}</div>
+            <div className="lbl">Chờ thu</div>
+          </div>
+          <div className="kpi">
+            <div className="num text-red-600">{stats ? trShort(stats.overdueAmount) : "—"}</div>
+            <div className="lbl">Quá hạn</div>
+          </div>
+          <div className="kpi">
+            <div className="num">{stats?.total ?? "—"}</div>
+            <div className="lbl">Tổng hóa đơn</div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {STATUSES.map((s) => (
+            <button
+              key={s}
+              className={cn("chip", status === s && "active")}
+              onClick={() => setStatus(s)}
+            >
+              {s === "" ? "Tất cả" : (INVOICE_STATUS[s]?.label ?? s)}
+            </button>
+          ))}
+          <div className="relative ml-auto w-64">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+            <input
+              className="field !pl-9 !py-1.5"
+              placeholder="Tìm số HĐ / trường..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className="card overflow-hidden">
           <table className="table">
             <thead>
               <tr>
                 <th>Số hóa đơn</th>
-                <th>Trường (ID)</th>
+                <th>Trường</th>
                 <th>Kỳ</th>
                 <th>Tổng</th>
                 <th>Trạng thái</th>
@@ -78,11 +148,11 @@ export function InvoicesPage() {
               )}
               {items.map((inv) => {
                 const st = badgeFor(INVOICE_STATUS, inv.status);
-                const payable = inv.status !== "PAID" && inv.status !== "VOID";
+                const payable = inv.status === "OPEN" || inv.status === "OVERDUE";
                 return (
-                  <tr key={inv.id}>
-                    <td className="font-medium">{inv.invoiceNumber ?? inv.id.slice(0, 8)}</td>
-                    <td className="font-mono text-xs">{inv.tenantId.slice(0, 8)}…</td>
+                  <tr key={inv.id} className="hover:bg-[#fff8f3]">
+                    <td className="font-mono text-xs font-semibold">{inv.invoiceNumber ?? inv.id.slice(0, 8)}</td>
+                    <td>{inv.tenantName ?? inv.tenantId.slice(0, 8)}</td>
                     <td>{inv.period ?? "—"}</td>
                     <td className="font-semibold">{inv.total != null ? formatVnd(inv.total) : "—"}</td>
                     <td><span className={cn("badge", st.badge)}>{st.label}</span></td>
@@ -94,7 +164,7 @@ export function InvoicesPage() {
                           disabled={markPaid.isPending}
                           onClick={() => markPaid.mutate(inv.id)}
                         >
-                          Đánh dấu thu
+                          Đánh dấu đã thu
                         </button>
                       )}
                     </td>
@@ -105,38 +175,6 @@ export function InvoicesPage() {
           </table>
         </div>
       </main>
-
-      <Modal
-        open={open}
-        onClose={() => setOpen(false)}
-        title="Tạo hóa đơn kỳ mới"
-        footer={
-          <>
-            <button className="btn-soft text-sm" onClick={() => setOpen(false)}>Hủy</button>
-            <button
-              className="btn-primary text-sm"
-              disabled={!tenantId || create.isPending}
-              onClick={() => create.mutate()}
-            >
-              {create.isPending ? "Đang tạo…" : "Tạo hóa đơn"}
-            </button>
-          </>
-        }
-      >
-        <Field label="Chọn trường">
-          <select className="field" value={tenantId} onChange={(e) => setTenantId(e.target.value)}>
-            <option value="">— Chọn trường —</option>
-            {(tenants.data?.items ?? []).map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.legalName ?? t.slug} ({t.slug})
-              </option>
-            ))}
-          </select>
-        </Field>
-        <p className="text-xs text-slate-400">
-          Tạo hóa đơn cho kỳ hiện tại của thuê bao trường đã chọn.
-        </p>
-      </Modal>
     </>
   );
 }

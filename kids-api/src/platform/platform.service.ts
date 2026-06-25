@@ -8,6 +8,7 @@ import {
   LimitMetric,
   PlanTier,
   PlatformInvoiceStatus,
+  Prisma,
   StudentStatus,
   SubscriptionStatus,
   TenantRole,
@@ -435,20 +436,75 @@ export class PlatformService {
     };
   }
 
-  listInvoices(page = 1, pageSize = 20, tenantId?: string, status?: string) {
+  async listInvoices(page = 1, pageSize = 20, tenantId?: string, status?: string, q?: string) {
+    const term = q?.trim();
     const where = {
+      deletedAt: null,
       ...(tenantId ? { tenantId } : {}),
       ...(status ? { status: status as never } : {}),
+      ...(term ? { invoiceNumber: { contains: term, mode: "insensitive" as const } } : {}),
     };
-    return this.prisma.system.platformInvoice
-      .findMany({
+    const [items, total] = await Promise.all([
+      this.prisma.system.platformInvoice.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: { lines: true },
         orderBy: { createdAt: "desc" },
-      })
-      .then((items) => paginated(items, { page, pageSize }));
+      }),
+      this.prisma.system.platformInvoice.count({ where }),
+    ]);
+
+    // PlatformInvoice không có quan hệ `tenant` → tra tên trường theo tenantId (1 query).
+    const tenantNames = new Map<string, string>();
+    if (items.length) {
+      const rows = await this.prisma.system.tenant.findMany({
+        where: { id: { in: [...new Set(items.map((i) => i.tenantId))] } },
+        include: { settings: true },
+      });
+      for (const r of rows) tenantNames.set(r.id, r.settings?.displayName ?? r.legalName);
+    }
+
+    const fmtPeriod = (d: Date) =>
+      `${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+    const rows = items.map((inv) => ({
+      ...inv,
+      tenantName: tenantNames.get(inv.tenantId) ?? null,
+      period: fmtPeriod(inv.periodStart),
+      dueDate: inv.dueAt, // alias cho FE
+      amountDue: Number(inv.total) - Number(inv.amountPaid),
+    }));
+    return paginated(rows, { page, pageSize, total });
+  }
+
+  /** KPI hóa đơn nền tảng: đã thu tháng này, chờ thu, quá hạn (số tiền) + tổng số hóa đơn. */
+  async invoiceStats() {
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const outstanding = (a: {
+      _sum: { total: Prisma.Decimal | null; amountPaid: Prisma.Decimal | null };
+    }) => Number(a._sum.total ?? 0) - Number(a._sum.amountPaid ?? 0);
+    const [paid, open, overdue, total] = await Promise.all([
+      this.prisma.system.platformInvoice.aggregate({
+        _sum: { total: true },
+        where: { status: PlatformInvoiceStatus.PAID, paidAt: { gte: monthStart }, deletedAt: null },
+      }),
+      this.prisma.system.platformInvoice.aggregate({
+        _sum: { total: true, amountPaid: true },
+        where: { status: PlatformInvoiceStatus.OPEN, deletedAt: null },
+      }),
+      this.prisma.system.platformInvoice.aggregate({
+        _sum: { total: true, amountPaid: true },
+        where: { status: PlatformInvoiceStatus.OVERDUE, deletedAt: null },
+      }),
+      this.prisma.system.platformInvoice.count({ where: { deletedAt: null } }),
+    ]);
+    return {
+      paidThisMonth: Number(paid._sum.total ?? 0),
+      openAmount: outstanding(open),
+      overdueAmount: outstanding(overdue),
+      total,
+    };
   }
 
   // ─── Plan admin ───

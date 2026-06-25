@@ -76,6 +76,11 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P26 | List thue bao giau truong | `GET /platform/subscriptions?page=1` | `200` | `200` | PASS | moi dong kem `tenantName,billingCycle,autoRenew,mrr`; demo Hoa Sen PRO/MONTHLY mrr 1.200.000 |
 | P27 | Loc thue bao theo trang thai | `GET /platform/subscriptions?status=ACTIVE` | `200` | `200` | PASS | chi tra ACTIVE |
 | E07 | Edge: tenant admin xem stats thue bao | `GET /platform/subscriptions/stats` | `403` | `403` | PASS | `FORBIDDEN` |
+| P28 | KPI tien hoa don nen tang | `GET /platform/invoices/stats` | `200` | `200` | PASS | `{paidThisMonth,openAmount,overdueAmount,total}`; demo chờ thu 1.200.000 |
+| P29 | List hoa don giau truong | `GET /platform/invoices?page=1` | `200` | `200` | PASS | moi dong kem `tenantName,period,dueDate,amountDue`; demo PINV-2026-000001 |
+| P30 | Loc hoa don theo trang thai | `GET /platform/invoices?status=OPEN` | `200` | `200` | PASS | chi tra OPEN |
+| P31 | Tim hoa don theo so HD | `GET /platform/invoices?q=PINV` | `200` | `200` | PASS | loc theo invoiceNumber |
+| E08 | Edge: tenant admin xem stats hoa don | `GET /platform/invoices/stats` | `403` | `403` | PASS | `FORBIDDEN` |
 | E01 | Edge: thieu token | `GET /platform/tenants` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | E02A | Fixture: tenant admin login | `POST /auth/login` | `201` | `201` | PASS | token issued |
 | E02 | Edge: tenant admin goi platform route | `GET /platform/tenants` | `403` | `403` | PASS | `FORBIDDEN` |

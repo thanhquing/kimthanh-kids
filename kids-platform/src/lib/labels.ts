@@ -23,7 +23,9 @@ export const INVOICE_STATUS: Record<string, { label: string; badge: string }> = 
   OPEN: { label: "Chờ thu", badge: "b-amber" },
   PAID: { label: "Đã thu", badge: "b-green" },
   PAST_DUE: { label: "Quá hạn", badge: "b-red" },
+  OVERDUE: { label: "Quá hạn", badge: "b-red" },
   VOID: { label: "Đã hủy", badge: "b-slate" },
+  UNCOLLECTIBLE: { label: "Khó đòi", badge: "b-slate" },
 };
 
 export const TIER_LABEL: Record<string, string> = {

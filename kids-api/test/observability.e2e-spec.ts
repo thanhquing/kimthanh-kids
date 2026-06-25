@@ -322,4 +322,35 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const t = await createTenant(app);
     await api().get("/api/platform/subscriptions/stats").set(auth(t)).expect(403);
   });
+
+  // ── Trang Hóa đơn nền tảng: KPI tiền + list giàu trường (tên trường/kỳ/hạn) + lọc + 403 ──
+  it("platform invoices: stats tiền + list giàu trường + lọc + 403", async () => {
+    const t = await createTenant(app);
+    const ptoken = await loginPlatform(app);
+    const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
+    const tid = (await api().get(`/api/platform/tenants?q=${t.slug}`).set(phead)).body.data[0].id;
+
+    // Tạo 1 hóa đơn nền tảng cho tenant.
+    await api().post("/api/platform/invoices").set(phead).send({ tenantId: tid }).expect(201);
+
+    const stats = await api().get("/api/platform/invoices/stats").set(phead).expect(200);
+    expect(stats.body.data.total).toBeGreaterThanOrEqual(1);
+    for (const k of ["paidThisMonth", "openAmount", "overdueAmount"]) {
+      expect(typeof stats.body.data[k]).toBe("number");
+    }
+
+    const list = await api().get("/api/platform/invoices?page=1").set(phead).expect(200);
+    expect(list.body.meta.total).toBeGreaterThanOrEqual(1);
+    const row = list.body.data[0];
+    for (const f of ["tenantName", "period", "dueDate", "amountDue"]) {
+      expect(row).toHaveProperty(f);
+    }
+
+    // Lọc theo trạng thái OPEN → chỉ trả OPEN.
+    const open = await api().get("/api/platform/invoices?status=OPEN").set(phead).expect(200);
+    expect(open.body.data.every((i: { status: string }) => i.status === "OPEN")).toBe(true);
+
+    // Tenant thường không xem stats hóa đơn nền tảng.
+    await api().get("/api/platform/invoices/stats").set(auth(t)).expect(403);
+  });
 });

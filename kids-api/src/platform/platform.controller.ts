@@ -98,13 +98,19 @@ export class PlatformController {
     return this.platform.listSubscriptions(Number(page) || 1, 20, status);
   }
 
+  @Get("invoices/stats")
+  invoiceStats() {
+    return this.platform.invoiceStats();
+  }
+
   @Get("invoices")
   listInvoices(
     @Query("page") page?: string,
     @Query("tenantId") tenantId?: string,
     @Query("status") status?: string,
+    @Query("q") q?: string,
   ) {
-    return this.platform.listInvoices(Number(page) || 1, 20, tenantId, status);
+    return this.platform.listInvoices(Number(page) || 1, 20, tenantId, status, q);
   }
 
   @Post("invoices")
