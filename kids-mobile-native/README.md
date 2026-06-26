@@ -6,7 +6,7 @@ App di động native (iOS/Android) cho phụ huynh & giáo viên KimThanh Kids.
 
 ## Dự kiến
 - React Native / Expo (hoặc Flutter)
-- Tính năng: theo dõi con, điểm danh, nhật ký bé, chat, thông báo, học phí
+- Tính năng: theo dõi con, điểm danh, nhật ký bé, thông báo, học phí
 
 ## Bắt đầu
 Khi khởi tạo project, nhớ thêm `.gitignore` để loại `node_modules`, build, `.expo`, `.env`.

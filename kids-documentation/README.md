@@ -20,6 +20,7 @@ Tài liệu tham chiếu cho hệ thống SaaS quản lý mầm non **KimThanh K
 ```
 kimthanh-kids/
 ├── kids-api/             # Backend NestJS + Prisma + PostgreSQL (XONG Phase 0 Tầng A + Phase 1 A→G)
+├── kids-platform/        # Platform Console (React + Vite) — đã scaffold/tích hợp UI nền tảng
 ├── kids-crm/             # Web quản trị cho trường (phase UI — chưa khởi tạo)
 ├── kids-mobile-native/   # App native phụ huynh/giáo viên (phase UI — chưa khởi tạo)
 ├── kids-mobile-web/      # Mobile web (phase UI — chưa khởi tạo)
@@ -31,7 +32,7 @@ kimthanh-kids/
 
 - **Phase 0 — Tầng A (Platform/SaaS) — ĐÃ XONG:** đa-tenant, tenant/school, white-label, gói cước, subscription, billing nền tảng, feature-gating, quota, RBAC 2 cấp, auth.
 - **Phase 1 — Tầng B (Domain nghiệp vụ) — ĐÃ XONG (A→G):** B hồ sơ/lớp/nhân sự · C điểm danh/báo cáo · D sức khỏe (health/medicine/incident/allergy/leave) · E học phí (VietQR/tiền mặt/VNPay + chứng từ) · F giao tiếp (announcement/menu/lesson-plan/album) · G observability (notification/dashboard/audit/usage). Mọi bảng domain có `tenantId` + `schoolId`. **Chat realtime đã loại khỏi kế hoạch.**
-- **Phase UI (sau cùng):** kids-crm, kids-mobile-native, kids-mobile-web + push FCM — tiêu thụ lại API đã ổn định.
+- **Phase UI:** `kids-platform` đã scaffold/tích hợp console nền tảng; `kids-crm`, `kids-mobile-native`, `kids-mobile-web` + push FCM là các bước tiếp theo, tiêu thụ lại API đã ổn định.
 
 ## Chạy nhanh `kids-api`
 
@@ -44,7 +45,7 @@ pnpm prisma:migrate        # tạo schema
 pnpm prisma:seed           # 5 gói (free/starter/pro/enterprise/dedicated) + platform super-admin
 pnpm prisma:seed:demo      # 1 trường demo đầy đủ (gói PRO, slug "demo")
 pnpm start:dev             # http://localhost:3000/api  · Swagger: /docs
-pnpm test:e2e              # 99 e2e / 13 suite
+pnpm test:e2e              # 114 e2e / 13 suite
 ```
 
 > Yêu cầu Node ≥ 20 (khuyến nghị 22). Tài khoản platform seed: `admin@kimthanhkids.vn` / `Admin@12345`.

@@ -5,7 +5,7 @@
 ## Dự án là gì
 
 **KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant, truy cập qua subdomain riêng). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
-**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (99 e2e / 13 suite). UI (web CRM + mobile) là **phase sau**.
+**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (114 e2e / 13 suite). `kids-platform` đã scaffold/tích hợp UI nền tảng; CRM + mobile là phase sau.
 
 ## Bản đồ repo
 
@@ -16,7 +16,8 @@
 | `kids-business-docs/`                                  | Tài liệu **nghiệp vụ/đào tạo/sale** (CEO/PO/Sale)                                                     |
 | `kids-tasks/PHASE_DOMAIN_API_TASKS.md`                 | Kế hoạch & tiến độ (checklist task)                                                                   |
 | `kids-landing/public/mock-ui/`                         | Mockup UI tham chiếu                                                                                  |
-| `kids-crm/`, `kids-mobile-native/`, `kids-mobile-web/` | Phase UI — **chưa khởi tạo**                                                                          |
+| `kids-platform/`                                       | Platform Console (React + Vite) — đã scaffold, tích hợp các trang vận hành nền tảng                   |
+| `kids-crm/`, `kids-mobile-native/`, `kids-mobile-web/` | Phase UI tenant/mobile — **chưa khởi tạo source**                                                     |
 
 ## Đọc trước khi làm task (theo loại việc)
 
@@ -66,7 +67,7 @@ pnpm prisma:deploy         # áp migration
 pnpm prisma:seed           # 5 gói + platform super-admin
 pnpm prisma:seed:demo      # 1 trường demo đầy đủ (gói PRO, slug "demo")
 pnpm start:dev             # /api · Swagger /docs
-pnpm test:e2e              # 99 e2e / 13 suite
+pnpm test:e2e              # 114 e2e / 13 suite
 ```
 
 Demo login (host `demo.<ROOT_DOMAIN>`, mật khẩu `Password123`): `admin@hoasen.edu.vn` (admin) … `ph01@gmail.com` (PH). Platform: `admin@kimthanhkids.vn` / `Admin@12345`.

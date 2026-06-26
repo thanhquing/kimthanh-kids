@@ -1,6 +1,6 @@
 # Phase UI — kids-platform + kids-crm + mobile (integrate `kids-api`)
 
-> **Tiền đề:** API Phase 0+1 (A→G) đã đóng, 100 e2e xanh, và **127 flow cURL theo mock UI đã PASS** (xem [`../kids-documentation/UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md)). API coi như hợp đồng ổn định để FE tiêu thụ.
+> **Tiền đề:** API Phase 0+1 (A→G) đã đóng, 114 e2e / 13 suite ở test inventory hiện tại, và **127 flow cURL theo mock UI đã PASS** (xem [`../kids-documentation/UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md)). API coi như hợp đồng ổn định để FE tiêu thụ.
 >
 > **Chiến lược FE:** API-first → FE chỉ tiêu thụ. **Type-safety end-to-end**: sinh type + client từ **OpenAPI** của `kids-api`, không gõ type tay. Mỗi màn FE bám đúng thứ tự call API đã chốt trong ledger.
 >
@@ -17,8 +17,8 @@
 | D3 | Thư viện UI CRM | **Mantine** (hoặc Ant Design) | CRM nhiều bảng/form → cần DataTable/Form sẵn; Mantine free, hooks tốt; AntD nếu thích table mạnh | ◻️ |
 | D4 | Stack mobile | **Expo (React Native + react-native-web)** — 1 codebase → iOS + Android + Web | Memory: mobile luôn làm cả 3 nền tảng. Expo build được cả 3 từ 1 nguồn | ◻️ |
 | D5 | Vai trò `kids-mobile-native` vs `kids-mobile-web` | **Hợp nhất 1 codebase Expo** ở `kids-mobile-native`; `kids-mobile-web` = bản **web export** (PWA) của chính nó | Tránh maintain 2 codebase trùng. Nếu sau muốn tách PWA riêng thì nâng cấp `kids-mobile-web` thành codebase độc lập | ✅ **chốt: hợp nhất Expo** |
-| D6 | Server-state | **TanStack Query (React Query)** cho cả platform/CRM/mobile | Hợp REST + cache + retry 401→refresh; codegen sinh sẵn hook | ◻️ |
-| D7 | Codegen từ OpenAPI | **orval** (hoặc `@hey-api/openapi-ts`) → sinh type + **React Query hooks** + zod | Khớp D6; orval cho phép **custom mutator** để bóc envelope `{success,data}` tại 1 chỗ | ◻️ |
+| D6 | Server-state | **TanStack Query (React Query)** cho cả platform/CRM/mobile | Hợp REST + cache + retry 401→refresh; `kids-platform` đã dùng React Query | 🟡 platform xong |
+| D7 | Codegen từ OpenAPI | **openapi-typescript spec mỏng** từ `kids-api/openapi.json` + type body/response khai tay theo ledger | Đúng pipeline hiện tại: root `gen:api` sinh `api.d.ts` rồi copy vào app; tránh đổi backend đã ổn định | ✅ **chốt & đã dựng** |
 | D8 | Form + validate | **react-hook-form + zod** (tái dùng shape Zod backend) | Đồng bộ rule với DTO backend (date `YYYY-MM-DD`, phone, v.v.) | ◻️ |
 | D9 | Platform Console: gộp vào CRM hay tách app | **Tách app riêng `kids-platform/`** | Khác **realm quyền** (platform role vs tenant role), khác **host** (`admin.*` vs `<slug>.*`), khác đối tượng & deploy. Vẫn dùng chung `kids-api/openapi.json` để sinh client nên chi phí tách thấp. Impersonate = handoff sang kids-crm kèm token | ✅ **chốt: tách riêng** |
 
@@ -33,7 +33,7 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 1. **Base URL** `/<prefix>` mặc định `http://localhost:3000/api`. Swagger ở `/docs` (chỉ non-prod).
 2. **Response envelope**: thành công `{ success:true, data, meta? }`; lỗi `{ success:false, error:{ code, message } }`.
    → Client phải **bóc `data`** trước khi trả cho UI, và **ném theo `error.code`** (map sang thông báo tiếng Việt). Làm tại **1 mutator chung**, không rải rác.
-3. **Multi-tenant theo `Host`**: API phân giải tenant qua subdomain (`<slug>.kimthanhkids.vn`); platform console dùng `admin.kimthanhkids.vn`. Trình duyệt gửi `Host` thật → **dev cần subdomain trỏ localhost** (xem §2).
+3. **Multi-tenant theo `Host`**: API phân giải tenant qua subdomain (`<slug>.kimthanhkids.vn`); platform console dùng `admin.kimthanhkids.vn`. `kids-platform` dev dùng Vite proxy set `Host: admin.kimthanhkids.vn`; CRM/mobile dev cần host/subdomain tương ứng (xem §2).
 4. **Auth**: `POST /auth/login {identifier|email, password}` → `{ accessToken, refreshToken, userId }`. Gắn `Authorization: Bearer`. `401` → thử `POST /auth/refresh {refreshToken}` 1 lần rồi logout nếu vẫn hỏng. Token impersonate (platform) **không có refresh**.
 5. **Hai realm quyền tách biệt** (quyết định màn/nút + app nào dùng được):
    - **Platform** (`PLATFORM_SUPER_ADMIN`, `PLATFORM_BILLING`, `tenantId=null`) → chỉ `kids-platform`, host `admin.*`, route `/platform/*`.
@@ -48,7 +48,8 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 ## 2. Môi trường dev (làm 1 lần)
 
-- [ ] **Subdomain → localhost**: thêm `/etc/hosts` (`demo.kimthanhkids.vn`, `admin.kimthanhkids.vn`, `app.kimthanhkids.vn` → `127.0.0.1`) **hoặc** dùng `*.localhost`/proxy (Vite proxy giữ Host). Chốt 1 cách và ghi vào README mỗi app.
+- [x] **Platform dev proxy:** `kids-platform` gọi `/api/*` qua Vite proxy sang `:3000` và set `Host: admin.kimthanhkids.vn` (xem `kids-platform/README.md`).
+- [ ] **CRM/mobile subdomain → localhost:** thêm `/etc/hosts` (`demo.kimthanhkids.vn`, `app.kimthanhkids.vn` → `127.0.0.1`) **hoặc** dùng proxy giữ Host. Chốt 1 cách và ghi vào README mỗi app khi scaffold.
 - [ ] **CORS**: thêm origin dev của CRM/mobile vào `API_CORS_ORIGINS` (hiện có `:5173,:3000`). Bổ sung subdomain khi truy cập qua host thật.
 - [ ] **Seed demo**: `pnpm prisma:seed:demo` cho tenant `demo` (gói PRO, đủ data) để dev UI không phải tự tạo.
 - [ ] **`.gitignore`** mỗi app FE (`node_modules`, `dist`, `.expo`, `.env`).
@@ -63,10 +64,11 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 - [x] `kids-api` script `openapi:json` → `kids-api/openapi.json` (commit làm nguồn chung).
 - [x] Root `gen:api` (openapi-typescript) sinh `api-client/generated/api.d.ts` → copy vào từng app (bỏ qua app chưa scaffold).
 
-**Quyết định về độ giàu spec (đã chốt):** **dùng spec mỏng hiện tại** — type có sẵn **path + param + operationId**; **body/response gõ type tay** theo ledger + Swagger khi dựng từng màn. KHÔNG đụng backend đã đóng băng (tránh rủi ro đổi error envelope `{code,message}` mà 127 cURL + 100 e2e đang dựa vào). Nếu sau này gõ tay quá nhiều → làm giàu spec bằng `@asteasolutions/zod-to-openapi` (additive, không đổi runtime) → pipeline tự tốt lên, không phải sửa plumbing.
+**Quyết định về độ giàu spec (đã chốt):** **dùng spec mỏng hiện tại** — type có sẵn **path + param + operationId**; **body/response gõ type tay** theo ledger + Swagger khi dựng từng màn. KHÔNG đụng backend đã đóng băng (tránh rủi ro đổi error envelope `{code,message}` mà 127 cURL + 114 e2e đang dựa vào). Nếu sau này gõ tay quá nhiều → làm giàu spec bằng `@asteasolutions/zod-to-openapi` (additive, không đổi runtime) → pipeline tự tốt lên, không phải sửa plumbing.
 
 **Mỗi app cần (P0, khi scaffold):**
-- [ ] **Lớp `http.ts` (~1 file/app)** — mỗi app giữ bản riêng (lặp nhẹ, khỏi workspace):
+- [x] **`kids-platform/src/api/http.ts`** — đã có lớp HTTP mẫu (bóc envelope, auth, refresh 401, `getPage` giữ meta).
+- [ ] **Lớp `http.ts` cho CRM/mobile (~1 file/app)** — mỗi app giữ bản riêng (lặp nhẹ, khỏi workspace):
   - [ ] gắn base URL + `Host` (theo tenant/host của app) + `Authorization`;
   - [ ] **bóc `data`** khi `success:true`, **ném `ApiError(code,message)`** khi `success:false`;
   - [ ] interceptor `401 → refresh → retry once → logout`;
@@ -79,19 +81,19 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 ## 4. kids-platform (Console chủ Kim Thanh) — app tách riêng
 
-> Đối tượng: nhân viên Kim Thanh (chủ SaaS). Host `admin.kimthanhkids.vn`, realm **platform role**. Tiêu thụ flow **Platform Tenant** (23 case đã PASS). Map 1-1 với `mock-ui/platform/`. Stack giống CRM (React+Vite), dùng lại `@kids/api-client` + component lib.
+> Đối tượng: nhân viên Kim Thanh (chủ SaaS). Host `admin.kimthanhkids.vn`, realm **platform role**. Tiêu thụ flow **Platform Tenant** trong ledger. Stack hiện tại: React + Vite + TypeScript + Tailwind + TanStack Query; `src/api/http.ts` là mẫu để copy sang CRM/mobile.
 
 **P0 (đủ để vận hành bán hàng + cấp tenant):**
-- [ ] App shell: login platform (`/auth/login` @ host `admin.*`), guard theo platform role, **không** gắn tenant-host vào request.
-- [ ] Dashboard nền tảng (`GET /platform/usage/overview` — DAU/WAU/MAU, KPI).
-- [ ] Tenants: list/detail (`/platform/tenants`), **tạo trường** (`POST /platform/tenants`), suspend/reactivate.
-- [ ] **Gói dịch vụ (bán hàng)**: list + tạo gói (`GET/POST /platform/plans`) — giá/limit/feature.
-- [ ] **Coupon**: list + tạo (`GET/POST /platform/coupons`).
-- [ ] Subscriptions các trường (`GET /platform/subscriptions`).
-- [ ] Hóa đơn nền tảng: list, tạo kỳ, mark-paid (`/platform/invoices`).
+- [x] App shell: login platform (`/auth/login`), auth guard, sidebar/bottom-nav responsive.
+- [x] Dashboard nền tảng (`GET /platform/overview`, revenue series, quick search).
+- [x] Tenants: list/detail (`/platform/tenants`), **tạo trường**, suspend/reactivate.
+- [x] **Gói dịch vụ:** list + tạo + sửa gói (`GET/POST/PATCH /platform/plans`) — giá/limit/feature.
+- [x] **Coupon:** list + tạo (`GET/POST /platform/coupons`).
+- [x] Subscriptions các trường (`GET /platform/subscriptions`, stats).
+- [x] Hóa đơn nền tảng: list, detail/public link, tạo kỳ, mark-paid (`/platform/invoices`).
 
-**P1:** entitlement override (nâng/giảm hạn mức 1 trường), **impersonate** → mở `kids-crm` ở host `<slug>` kèm token (token không refresh).
-**P2:** dunning/nhắc nợ UI, báo cáo doanh thu nền tảng, dashboard nâng cao.
+**P1 đã có:** entitlement override (nâng/giảm hạn mức 1 trường), **impersonate** → handoff sang tenant token (token không refresh), observability (`usage/overview` + `platform/audit`), worklist công nợ/trial, platform settings (bank + grace dunning).
+**P2 còn lại:** email dunning tự động, coupon redeem thực tế, revoke/rotate public invoice token, PDF server-side, impersonate chọn role/user cụ thể khi CRM/mobile có UI.
 
 ---
 
@@ -139,7 +141,7 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 - [ ] Mỗi màn map đúng flow trong ledger; lỗi hiển thị theo `error.code`.
 - [ ] Type FE sinh từ OpenAPI, `tsc` sạch ở mọi app; đổi API → regen → bắt lỗi compile.
-- [ ] Platform: Kim Thanh tạo được tenant + cấu hình/bán gói + coupon + hóa đơn nền tảng.
+- [x] Platform: Kim Thanh tạo được tenant + cấu hình/bán gói + coupon + hóa đơn nền tảng.
 - [ ] CRM: 1 chủ trường vận hành trọn vẹn 1 ngày (điểm danh → báo cáo → hóa đơn → thông báo).
 - [ ] Mobile chạy iOS + Android + Web từ 1 codebase Expo.
 - [ ] Không quảng bá tính năng chưa có (chat realtime đã loại; push FCM = phase mobile/P2).
@@ -150,7 +152,7 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 1. ✅ Chốt kiến trúc **D1 (app độc lập, không monorepo) · D5 (Expo hợp nhất) · D9 (tách kids-platform)**.
 2. Ở `kids-api`: thêm script `openapi:json` + commit `openapi.json` (§3) — **nguồn type chung**.
-3. **kids-platform P0** (§4) — cửa tạo tenant + bán gói; cần có trước để onboard trường thật. Dựng lớp `http` + `gen:api` ở app này trước làm mẫu để copy sang các app sau.
+3. ✅ **kids-platform P0/P1 chính** (§4) — đã dựng lớp `http` + `gen:api` mẫu và các trang vận hành nền tảng.
 4. **kids-crm P0** (§5) — chốt pattern auth/tenant/query/form/error cho realm tenant (tái dùng cho mobile).
 5. **mobile P0** (§6) — GV + PH, tái dùng pattern + client từ bước 4.
 6. P1 → P2 mỗi app theo nhu cầu vận hành thật.

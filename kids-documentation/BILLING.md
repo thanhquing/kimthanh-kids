@@ -51,13 +51,13 @@ stateDiagram-v2
 
 ## Feature-gating & Quota
 
-- **Feature-gating:** `@RequireFeature('messaging')` trên route → `SubscriptionGuard` chặn nếu gói không bật.
+- **Feature-gating:** `@RequireFeature('lesson_plan')`, `@RequireFeature('media_gallery')`... trên route → `SubscriptionGuard` chặn nếu gói không bật. Cờ `messaging` còn tồn tại trong seed cũ nhưng Chat đã loại khỏi kế hoạch, không dùng/quảng bá.
 - **Quota:** `EntitlementService.consumeQuota(tenantId, metric)` tăng nguyên tử `UsageCounter` (UPDATE … WHERE value ≤ limit-delta). HARD vượt → `403 QUOTA_EXCEEDED`; SOFT cho vượt + ghi overage. `releaseQuota` khi xóa thực thể. Phase 1 gọi trong transaction tạo Student/Classroom...
 - **Entitlements** = `Plan.features/limits` + override `TenantEntitlement` (cho dedicated nâng riêng). Cache ở `Subscription.entitlementsCache`.
 
 ## Hóa đơn & Thanh toán
 
-- `BillingService.createPeriodInvoice(tenantId)` → `PlatformInvoice` OPEN từ `PlanPrice` (số `PINV-YYYY-NNNNNN`).
+- `BillingService.createPeriodInvoice(tenantId)` → `PlatformInvoice` OPEN từ `PlanPrice`; số hóa đơn dạng **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`) để dùng làm `addInfo` VietQR và đối soát thủ công.
 - Thanh toán: `PaymentService.createPayment` → `PlatformPayment` PENDING + `redirectUrl` (VNPay). Webhook `POST /platform/webhooks/:provider` → verify chữ ký (HMAC-SHA512), **dedupe** theo `(provider,eventId)`, **idempotent** theo `(provider,gatewayRef)` → invoice PAID → reactivate + đẩy kỳ.
 - `billingMode`: `GATEWAY` (tự trả) · `MANUAL` (đối soát chuyển khoản) · `DEDICATED_FREE` (không thu qua gateway).
 

@@ -11,7 +11,7 @@
 | **2**   | Tích hợp & hạ tầng        | ◻️ Chưa         | Phase 1     | _(tạo khi tới)_                                          |
 | **3**   | AI & nâng cao             | ◻️ Chưa         | Phase 1–2   | _(tạo khi tới)_                                          |
 | **0.5** | Hoàn thiện billing        | ◻️ Chèn khi cần | Phase 0     | _(tạo khi tới)_                                          |
-| **UI**  | kids-crm + mobile         | 🟡 Đang lập KH  | Toàn bộ API | [PHASE_UI_TASKS.md](./PHASE_UI_TASKS.md)                 |
+| **UI**  | kids-platform + kids-crm + mobile | 🟡 Platform đang tích hợp; CRM/mobile chưa | Toàn bộ API | [PHASE_UI_TASKS.md](./PHASE_UI_TASKS.md)                 |
 
 ---
 
@@ -51,11 +51,13 @@ API/dịch vụ nền không thuộc 1 màn mock cụ thể, cần cho productio
 
 ## Phase 0.5 — Hoàn thiện billing ◻️ (chèn khi cần)
 
-Các phần đã **defer có chủ đích** ở Phase 0: **proration** đổi gói giữa kỳ, coupon admin API, email **dunning** (nhắc nợ T-3/T0/T+3/T+7), **impersonation** (platform hỗ trợ tenant, có audit), API xem `AuditLog`.
+Đã bổ sung sau Phase 0: coupon admin API, impersonation platform → tenant (có audit), API xem `AuditLog`, cấu hình `PlatformConfig`, chi tiết/link công khai hóa đơn nền tảng.
 
-## Phase UI/UX — Sau cùng ◻️
+Các phần còn **defer có chủ đích**: **proration** đổi gói giữa kỳ, email **dunning** (nhắc nợ T-3/T0/T+3/T+7), áp mã giảm giá vào luồng tính tiền thực tế, thu hồi/đổi public token hóa đơn.
 
-Chỉ bắt đầu khi **toàn bộ API ổn định**: **kids-crm** (web quản trị), **kids-mobile-native**, **kids-mobile-web** — tiêu thụ API Tầng A+B, áp white-label (logo/màu từ `/public/branding`).
+## Phase UI/UX ◻️
+
+API đã ổn định để UI tiêu thụ. **kids-platform** đã scaffold/tích hợp console nền tảng; tiếp theo là **kids-crm** (web quản trị trường), **kids-mobile-native**, **kids-mobile-web** — tiêu thụ API Tầng A+B, áp white-label (logo/màu từ `/public/branding`).
 
 ---
 

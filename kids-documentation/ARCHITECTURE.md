@@ -113,7 +113,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — **99 e2e / 13 suite pass** (gồm isolation đa-tenant 8/8).
+- `pnpm test:e2e` — **114 e2e / 13 suite** (gồm isolation đa-tenant 8/8 ở mốc API đóng).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.
 - Cron billing chạy tự động (`@nestjs/schedule`); logic tách ở `BillingJobsService` để test gọi trực tiếp.

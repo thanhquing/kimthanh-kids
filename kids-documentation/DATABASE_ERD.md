@@ -166,7 +166,7 @@ erDiagram
   PlatformInvoice {
     string publicToken "UK — uuid; link công khai /hoa-don/:token"
     uuid id PK
-    string invoiceNumber UK "PINV-YYYY-NNNNNN"
+    string invoiceNumber UK "{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}"
     uuid tenantId
     uuid subscriptionId FK
     enum status "DRAFT|OPEN|PAID|OVERDUE|VOID|UNCOLLECTIBLE"
