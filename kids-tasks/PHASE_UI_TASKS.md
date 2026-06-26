@@ -99,6 +99,8 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 ## 5. kids-crm (Web chủ trường/nhân sự) — làm sau platform, chốt pattern tenant
 
+> Tracker chi tiết cho CRM: [`PHASE_CRM_TASKS.md`](./PHASE_CRM_TASKS.md). Khi làm CRM, ưu tiên file này làm checklist vận hành: mock HTML -> BE/API cURL -> UI -> integrate -> seed/self-test.
+
 > Tiêu thụ flow **CRM chủ trường** (49 case). Host `<slug>.kimthanhkids.vn`, realm **tenant role**. Map 1-1 với `mock-ui/web/`.
 
 **P0 (MVP một trường chạy thật):**

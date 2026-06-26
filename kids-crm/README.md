@@ -8,5 +8,9 @@ Web quản trị (CRM/dashboard) cho nhà trường & nhân viên KimThanh Kids.
 - Giao diện quản lý: học sinh, lớp học, điểm danh, hóa đơn/học phí, thông báo, báo cáo
 - Kết nối tới `kids-api`
 
+## Roadmap
+
+Theo dõi checklist triển khai ở [`../kids-tasks/PHASE_CRM_TASKS.md`](../kids-tasks/PHASE_CRM_TASKS.md).
+
 ## Bắt đầu
 Khi khởi tạo project, nhớ thêm `.gitignore` để loại `node_modules`, `dist`, `.env`.
