@@ -6,23 +6,26 @@ import { platform, type CreatePlanInput, type Plan } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { TIER_BADGE, TIER_LABEL } from "@/lib/labels";
+import { t as tr, useT, type TKey } from "@/i18n";
+import { TIER_BADGE, tierLabel } from "@/lib/labels";
 import { invalidatePlatformData } from "@/lib/queries";
 import { cn, formatVnd } from "@/lib/utils";
 
-const FEAT_LABEL: Record<string, string> = {
-  messaging: "Nhắn tin GV↔PH",
-  media_gallery: "Album ảnh lớp",
-  lesson_plan: "Giáo án",
-  analytics: "Phân tích nâng cao",
-  api_access: "API truy cập",
+const FEAT_KEYS = ["messaging", "media_gallery", "lesson_plan", "analytics", "api_access"];
+const FEAT_LABEL_KEY: Record<string, TKey> = {
+  messaging: "pl.feat.messaging",
+  media_gallery: "pl.feat.media_gallery",
+  lesson_plan: "pl.feat.lesson_plan",
+  analytics: "pl.feat.analytics",
+  api_access: "pl.feat.api_access",
 };
 const TIERS = ["FREE", "STARTER", "PRO", "ENTERPRISE", "CUSTOM"];
 const EMPTY: CreatePlanInput = { code: "", name: "", tier: "STARTER", isPublic: true };
 
-/** Rút gọn tiền theo triệu: 3.240.000 → "3.24tr". */
+/** Rút gọn tiền theo triệu: 3.240.000 → "3.24tr" (vi) / "3.24M" (en). */
 function short(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toLocaleString("vi-VN")}tr`;
+  if (n >= 1_000_000)
+    return `${(n / 1_000_000).toLocaleString(tr("dash.monthsShort") === "M" ? "en-US" : "vi-VN")}${tr("dash.millionsUnit")}`;
   return formatVnd(n);
 }
 
@@ -34,25 +37,29 @@ function priceInfo(p: Plan): { big: string; sub: string } {
 
   let big: string;
   if (monthly > 0) big = formatVnd(monthly);
-  else if (p.tier === "FREE") big = "Miễn phí";
-  else if (p.tier === "CUSTOM") big = "Hợp đồng";
-  else big = "Liên hệ";
+  else if (p.tier === "FREE") big = tr("pl.priceFree");
+  else if (p.tier === "CUSTOM") big = tr("pl.priceContract");
+  else big = tr("pl.priceContact");
 
   const parts: string[] = [];
-  if (monthly > 0) parts.push("/tháng");
-  if (quarterly > 0) parts.push(`quý ${short(quarterly)}`);
-  if (annual > 0) parts.push(`năm ${short(annual)}`);
+  if (monthly > 0) parts.push(tr("pl.perMonth"));
+  if (quarterly > 0) parts.push(tr("pl.perQuarter", { amount: short(quarterly) }));
+  if (annual > 0) parts.push(tr("pl.perYear", { amount: short(annual) }));
   let sub: string;
   if (parts.length) sub = parts.join(" · ");
-  else if (p.tier === "FREE") sub = "Dùng mãi · không hết hạn";
-  else if (p.tier === "CUSTOM") sub = "Deploy riêng (SILO) · white-label";
-  else sub = "Giá thỏa thuận";
-  if (p.trialDays && p.trialDays > 0) sub = `Dùng thử ${p.trialDays} ngày · ${sub}`;
+  else if (p.tier === "FREE") sub = tr("pl.subFree");
+  else if (p.tier === "CUSTOM") sub = tr("pl.subCustom");
+  else sub = tr("pl.subNegotiable");
+  if (p.trialDays && p.trialDays > 0) sub = tr("pl.trialPrefix", { days: p.trialDays, sub });
   return { big, sub };
 }
 
 const LIMIT_ORDER = ["STUDENTS", "TEACHERS", "CLASSROOMS", "STORAGE_MB"] as const;
-const LIMIT_UNIT: Record<string, string> = { STUDENTS: "HS", TEACHERS: "GV", CLASSROOMS: "lớp" };
+const LIMIT_UNIT_KEY: Record<string, TKey> = {
+  STUDENTS: "pl.limitStudents",
+  TEACHERS: "pl.limitTeachers",
+  CLASSROOMS: "pl.limitClassrooms",
+};
 
 /** "300 HS · 25 GV · 20 lớp · 20GB" — null = bỏ qua; rỗng = "Không giới hạn". */
 function formatLimits(limits: Plan["limits"]): string {
@@ -62,13 +69,14 @@ function formatLimits(limits: Plan["limits"]): string {
     const v = byMetric.get(m);
     if (v == null) continue;
     if (m === "STORAGE_MB") parts.push(`${Math.round(v / 1024)}GB`);
-    else parts.push(`${v} ${LIMIT_UNIT[m]}`);
+    else parts.push(`${v} ${tr(LIMIT_UNIT_KEY[m])}`);
   }
-  return parts.length ? parts.join(" · ") : "Không giới hạn";
+  return parts.length ? parts.join(" · ") : tr("pl.unlimited");
 }
 
 export function PlansPage() {
   const qc = useQueryClient();
+  const { t } = useT();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
@@ -106,25 +114,25 @@ export function PlansPage() {
       return platform.createPlan({ ...form, prices });
     },
     onSuccess: () => {
-      toast(editing ? "Đã cập nhật gói dịch vụ" : "Đã tạo gói dịch vụ");
+      toast(editing ? t("pl.toastUpdated") : t("pl.toastCreated"));
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["plans"] });
       invalidatePlatformData(qc); // đổi giá gói → MRR đổi ở Tổng quan/Trường/Thuê bao
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Lưu gói thất bại", "error"),
+    onError: (e) => toast(e instanceof ApiError ? e.message : t("pl.toastErr"), "error"),
   });
 
   return (
     <>
-      <PageHeader title="Gói dịch vụ" section="Cấu hình">
+      <PageHeader title={t("nav.plans")} section={t("navGroups.config")}>
         <button className="btn-primary inline-flex items-center gap-2 text-sm" onClick={openCreate}>
           <Plus className="w-4 h-4" />
-          Thêm gói
+          {t("pl.add")}
         </button>
       </PageHeader>
 
       <main className="p-6">
-        {isLoading && <div className="text-muted">Đang tải…</div>}
+        {isLoading && <div className="text-muted">{t("common.loading")}</div>}
         <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-5">
           {(plans ?? []).map((p) => {
             const enabledFeats = new Set(
@@ -143,20 +151,20 @@ export function PlansPage() {
                 <div className="flex items-center justify-between">
                   <span className={cn("badge", TIER_BADGE[p.tier] ?? "b-slate")}>{p.tier}</span>
                   {popular ? (
-                    <span className="badge b-green">Phổ biến</span>
+                    <span className="badge b-green">{t("pl.popular")}</span>
                   ) : !p.isPublic ? (
-                    <span className="badge b-slate">Ẩn</span>
+                    <span className="badge b-slate">{t("pl.hidden")}</span>
                   ) : null}
                 </div>
                 <div className="font-bold text-lg mt-3">{p.name}</div>
                 <div className="text-2xl font-bold mt-1">{big}</div>
                 <div className="text-xs text-slate-400">{sub}</div>
                 <div className="text-xs text-slate-400 mt-2">
-                  {p.tenantCount ?? 0} trường đang dùng
+                  {t("pl.tenantsUsing", { n: p.tenantCount ?? 0 })}
                 </div>
                 <div className="border-t border-slate-100 my-3" />
                 <div className="text-sm space-y-1.5 flex-1">
-                  {Object.keys(FEAT_LABEL).map((k) => {
+                  {FEAT_KEYS.map((k) => {
                     const on = enabledFeats.has(k);
                     return (
                       <div key={k} className={cn("flex items-center gap-2", !on && "text-slate-300")}>
@@ -165,45 +173,42 @@ export function PlansPage() {
                         ) : (
                           <X className="w-4 h-4 text-slate-300" />
                         )}
-                        {FEAT_LABEL[k]}
+                        {t(FEAT_LABEL_KEY[k])}
                       </div>
                     );
                   })}
                 </div>
                 <div className="text-xs text-slate-500 bg-[#fff8f3] rounded-lg p-2.5 mt-3">
-                  <b>Hạn mức:</b> {formatLimits(p.limits)}
+                  <b>{t("pl.limitsLabel")}</b> {formatLimits(p.limits)}
                 </div>
                 <button className="btn-soft w-full mt-3 text-sm" onClick={() => openEdit(p)}>
-                  Sửa gói
+                  {t("pl.editPlan")}
                 </button>
               </div>
             );
           })}
         </div>
-        <p className="text-xs text-slate-400 mt-5">
-          Mỗi gói gồm: giá theo chu kỳ (tháng/quý/năm), feature flag bật/tắt tính năng, và hạn mức
-          (quota) theo metric. Sửa gói không ảnh hưởng thuê bao đang chạy cho tới kỳ kế.
-        </p>
+        <p className="text-xs text-slate-400 mt-5">{t("pl.pageHint")}</p>
       </main>
 
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title={editing ? `Sửa gói — ${editing.name}` : "Tạo gói dịch vụ"}
+        title={editing ? t("pl.modalEdit", { name: editing.name }) : t("pl.modalCreate")}
         footer={
           <>
-            <button className="btn-soft text-sm" onClick={() => setOpen(false)}>Hủy</button>
+            <button className="btn-soft text-sm" onClick={() => setOpen(false)}>{t("common.cancel")}</button>
             <button
               className="btn-primary text-sm"
               disabled={save.isPending || !form.code || !form.name}
               onClick={() => save.mutate()}
             >
-              {save.isPending ? "Đang lưu…" : editing ? "Lưu thay đổi" : "Tạo gói"}
+              {save.isPending ? t("common.saving") : editing ? t("td.saveChanges") : t("pl.createSubmit")}
             </button>
           </>
         }
       >
-        <Field label="Mã gói (code)">
+        <Field label={t("pl.fCode")}>
           <input
             className="field"
             value={form.code}
@@ -211,39 +216,39 @@ export function PlansPage() {
             onChange={(e) => setForm({ ...form, code: e.target.value })}
           />
         </Field>
-        <Field label="Tên gói">
+        <Field label={t("pl.fName")}>
           <input className="field" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </Field>
-        <Field label="Bậc (tier)">
+        <Field label={t("pl.fTier")}>
           <select
             className="field"
             value={form.tier}
             disabled={!!editing}
             onChange={(e) => setForm({ ...form, tier: e.target.value })}
           >
-            {TIERS.map((t) => (
-              <option key={t} value={t}>
-                {t} — {TIER_LABEL[t]}
+            {TIERS.map((tier) => (
+              <option key={tier} value={tier}>
+                {tier} — {tierLabel(tier)}
               </option>
             ))}
           </select>
         </Field>
-        <Field label="Giá / tháng (đ) — tùy chọn">
+        <Field label={t("pl.fMonthly")}>
           <input
             className="field"
             type="number"
             value={monthly}
             onChange={(e) => setMonthly(e.target.value)}
-            placeholder="vd: 1200000"
+            placeholder={t("pl.fMonthlyPh")}
           />
         </Field>
-        <Field label="Số ngày dùng thử — tùy chọn">
+        <Field label={t("pl.fTrialDays")}>
           <input
             className="field"
             type="number"
             value={form.trialDays ?? ""}
             onChange={(e) => setForm({ ...form, trialDays: e.target.value ? Number(e.target.value) : undefined })}
-            placeholder="vd: 30"
+            placeholder={t("pl.fTrialDaysPh")}
           />
         </Field>
         <label className="flex items-center gap-2 text-sm text-slate-600">
@@ -252,7 +257,7 @@ export function PlansPage() {
             checked={form.isPublic ?? true}
             onChange={(e) => setForm({ ...form, isPublic: e.target.checked })}
           />
-          Hiển thị công khai (bán)
+          {t("pl.fPublic")}
         </label>
       </Modal>
     </>

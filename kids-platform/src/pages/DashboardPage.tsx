@@ -4,7 +4,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { platform, type RevenuePoint } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
-import { badgeFor, TENANT_STATUS, TIER_LABEL } from "@/lib/labels";
+import { useT } from "@/i18n";
+import { badgeFor, INVOICE_STATUS, TENANT_STATUS, tierLabel } from "@/lib/labels";
 
 // Màu lát donut "Phân bổ theo gói" (theo thứ tự count giảm dần) — palette khớp mock-ui.
 const SLICE_COLORS = ["#F89A5B", "#F26B5E", "#7BC796", "#FFD27A", "#8b6f68"];
@@ -39,6 +40,7 @@ function mrrMillions(v: number): string {
 /** Ô tìm nhanh: trường + hóa đơn (debounce 300ms) → bấm item điều hướng đúng trang. */
 function QuickSearch() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const [open, setOpen] = useState(false);
@@ -76,7 +78,7 @@ function QuickSearch() {
       <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
       <input
         className="field !pl-9 !py-1.5"
-        placeholder="Tìm trường, hóa đơn..."
+        placeholder={t("dash.searchPlaceholder")}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -86,8 +88,8 @@ function QuickSearch() {
       />
       {open && debounced.length >= 1 && (
         <div className="absolute right-0 z-30 mt-1 w-80 max-h-96 overflow-y-auto rounded-xl border border-slate-100 bg-white py-1 shadow-lg">
-          {empty && <div className="px-3 py-3 text-sm text-muted">Không tìm thấy.</div>}
-          {tenants.length > 0 && <div className="nav-group !mt-1">Trường</div>}
+          {empty && <div className="px-3 py-3 text-sm text-muted">{t("dash.searchEmpty")}</div>}
+          {tenants.length > 0 && <div className="nav-group !mt-1">{t("dash.searchTenants")}</div>}
           {tenants.map((t) => (
             <button
               key={t.id}
@@ -99,7 +101,7 @@ function QuickSearch() {
               <span className="text-xs text-slate-400">{t.slug}</span>
             </button>
           ))}
-          {invoices.length > 0 && <div className="nav-group">Hóa đơn</div>}
+          {invoices.length > 0 && <div className="nav-group">{t("dash.searchInvoices")}</div>}
           {invoices.map((i) => (
             <button
               key={i.id}
@@ -132,6 +134,7 @@ function linePoints(values: number[]): string {
 }
 
 export function DashboardPage() {
+  const { t, lang } = useT();
   const { data, isLoading } = useQuery({
     queryKey: ["platform-overview"],
     queryFn: () => platform.overview(),
@@ -160,18 +163,18 @@ export function DashboardPage() {
 
   return (
     <>
-      <PageHeader title="Tổng quan">
+      <PageHeader title={t("dash.title")}>
         <QuickSearch />
       </PageHeader>
 
       <main className="p-6">
         {/* KPI */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <Kpi icon={Building2} tint="bg-blue-50 text-blue-600" num={n(k?.tenants)} label="Tổng số trường" />
-          <Kpi icon={CircleCheck} tint="bg-emerald-50 text-emerald-600" num={n(k?.activeTenants)} label="Đang hoạt động" />
-          <Kpi icon={Sparkles} tint="bg-amber-50 text-amber-600" num={n(k?.trialTenants)} label="Đang dùng thử" />
-          <Kpi icon={AlertCircle} tint="bg-red-50 text-red-600" num={n(k?.overdueInvoices)} label="Quá hạn" />
-          <Kpi icon={Lock} tint="bg-slate-100 text-slate-500" num={n(k?.suspendedTenants)} label="Tạm khóa" />
+          <Kpi icon={Building2} tint="bg-blue-50 text-blue-600" num={n(k?.tenants)} label={t("dash.kpiTenants")} />
+          <Kpi icon={CircleCheck} tint="bg-emerald-50 text-emerald-600" num={n(k?.activeTenants)} label={t("dash.kpiActive")} />
+          <Kpi icon={Sparkles} tint="bg-amber-50 text-amber-600" num={n(k?.trialTenants)} label={t("dash.kpiTrial")} />
+          <Kpi icon={AlertCircle} tint="bg-red-50 text-red-600" num={n(k?.overdueInvoices)} label={t("dash.kpiOverdue")} />
+          <Kpi icon={Lock} tint="bg-slate-100 text-slate-500" num={n(k?.suspendedTenants)} label={t("dash.kpiSuspended")} />
           <Kpi
             icon={TrendingUp}
             tint="bg-pink-50 text-pink-600"
@@ -181,11 +184,11 @@ export function DashboardPage() {
               ) : (
                 <>
                   {mrrMillions(k?.mrr ?? 0)}
-                  <span className="text-base font-semibold">tr</span>
+                  <span className="text-base font-semibold">{t("dash.millionsUnit")}</span>
                 </>
               )
             }
-            label="MRR (đ/tháng)"
+            label={t("dash.kpiMrr")}
           />
         </div>
 
@@ -193,7 +196,7 @@ export function DashboardPage() {
         <div className="grid lg:grid-cols-3 gap-5">
           <div className="card p-5 lg:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <div className="font-bold">Doanh thu định kỳ (MRR · {range} tháng)</div>
+              <div className="font-bold">{t("dash.mrrTitle", { range })}</div>
               <div className="flex items-center gap-2">
                 <div className="flex rounded-lg border border-[#f1e3dc] overflow-hidden text-xs font-medium">
                   {([12, 24] as const).map((r) => (
@@ -206,7 +209,8 @@ export function DashboardPage() {
                           : "px-2.5 py-1 text-slate-500 hover:bg-[#fff3ec]"
                       }
                     >
-                      {r}T
+                      {r}
+                      {t("dash.monthsShort")}
                     </button>
                   ))}
                 </div>
@@ -237,7 +241,7 @@ export function DashboardPage() {
           </div>
 
           <div className="card p-5">
-            <div className="font-bold mb-3">Phân bổ theo gói</div>
+            <div className="font-bold mb-3">{t("dash.planDist")}</div>
             <div className="flex justify-center my-2">
               <div className="relative w-32 h-32">
                 <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
@@ -265,14 +269,14 @@ export function DashboardPage() {
                 <div className="absolute inset-0 grid place-items-center">
                   <div className="text-center">
                     <div className="text-2xl font-bold">{distTotal}</div>
-                    <div className="text-xs text-slate-400">Trường</div>
+                    <div className="text-xs text-slate-400">{t("dash.tenantsUnit")}</div>
                   </div>
                 </div>
               </div>
             </div>
             <div className="text-xs space-y-1 mt-3">
               {dist.length === 0 && !isLoading && (
-                <div className="text-muted py-2">Chưa có thuê bao.</div>
+                <div className="text-muted py-2">{t("dash.noSubs")}</div>
               )}
               {dist.map((d, i) => (
                 <div key={d.tier} className="flex items-center justify-between">
@@ -281,7 +285,7 @@ export function DashboardPage() {
                       className="status-dot"
                       style={{ background: SLICE_COLORS[i % SLICE_COLORS.length] }}
                     />
-                    {TIER_LABEL[d.tier] ?? d.tier}
+                    {tierLabel(d.tier)}
                   </span>
                   <b>{d.count}</b>
                 </div>
@@ -293,24 +297,24 @@ export function DashboardPage() {
         <div className="grid lg:grid-cols-2 gap-5 mt-5">
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold">Trường mới đăng ký</div>
+              <div className="font-bold">{t("dash.recentTenants")}</div>
               <Link to="/tenants" className="text-xs text-[color:var(--primary)] font-semibold">
-                Xem tất cả
+                {t("common.viewAll")}
               </Link>
             </div>
             <div className="divide-y divide-slate-100">
-              {(data?.recentTenants ?? []).map((t) => {
-                const b = badgeFor(TENANT_STATUS, t.status);
+              {(data?.recentTenants ?? []).map((rt) => {
+                const b = badgeFor(TENANT_STATUS, rt.status);
                 return (
-                  <div key={t.id} className="py-2.5 flex items-center gap-3">
+                  <div key={rt.id} className="py-2.5 flex items-center gap-3">
                     <div className="avatar !w-8 !h-8 text-xs">
-                      {t.displayName.slice(0, 2).toUpperCase()}
+                      {rt.displayName.slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-semibold">{t.displayName}</div>
+                      <div className="text-sm font-semibold">{rt.displayName}</div>
                       <div className="text-xs text-slate-400">
-                        {t.slug}
-                        {t.planName ? ` · gói ${t.planName}` : ""}
+                        {rt.slug}
+                        {rt.planName ? t("dash.planSuffix", { name: rt.planName }) : ""}
                       </div>
                     </div>
                     <span className={`badge ${b.badge}`}>{b.label}</span>
@@ -318,16 +322,16 @@ export function DashboardPage() {
                 );
               })}
               {!isLoading && (data?.recentTenants ?? []).length === 0 && (
-                <div className="py-2 text-muted text-sm">Chưa có trường nào.</div>
+                <div className="py-2 text-muted text-sm">{t("dash.noTenants")}</div>
               )}
             </div>
           </div>
 
           <div className="card p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="font-bold">Cần chú ý — hóa đơn quá hạn</div>
+              <div className="font-bold">{t("dash.overdueTitle")}</div>
               <Link to="/invoices" className="text-xs text-[color:var(--primary)] font-semibold">
-                Xem tất cả
+                {t("common.viewAll")}
               </Link>
             </div>
             <div className="divide-y divide-slate-100">
@@ -340,14 +344,17 @@ export function DashboardPage() {
                       {inv.tenantName ? ` · ${inv.tenantName}` : ""}
                     </div>
                     <div className="text-xs text-slate-400">
-                      {inv.amountDue.toLocaleString("vi-VN")}đ · trễ {inv.daysLate ?? 0} ngày
+                      {t("dash.overdueMeta", {
+                        amount: inv.amountDue.toLocaleString(lang === "en" ? "en-US" : "vi-VN"),
+                        days: inv.daysLate ?? 0,
+                      })}
                     </div>
                   </div>
-                  <span className="badge b-red">Quá hạn</span>
+                  <span className="badge b-red">{badgeFor(INVOICE_STATUS, "OVERDUE").label}</span>
                 </div>
               ))}
               {!isLoading && (data?.recentOverdue ?? []).length === 0 && (
-                <div className="py-2 text-muted text-sm">Không có hóa đơn quá hạn.</div>
+                <div className="py-2 text-muted text-sm">{t("dash.noOverdue")}</div>
               )}
             </div>
           </div>

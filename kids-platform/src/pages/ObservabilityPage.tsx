@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { platform } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
+import { useT } from "@/i18n";
 import { actionLabel, eventLabel, formatDateTime } from "@/lib/labels";
 
 function Kpi({
@@ -29,6 +30,7 @@ function Kpi({
 }
 
 export function ObservabilityPage() {
+  const { t } = useT();
   const { data: usage, isLoading } = useQuery({
     queryKey: ["usage-overview"],
     queryFn: () => platform.usageOverview(),
@@ -60,29 +62,29 @@ export function ObservabilityPage() {
 
   return (
     <>
-      <PageHeader title="Theo dõi vận hành" section="Vận hành" />
+      <PageHeader title={t("obs.title")} section={t("navGroups.operations")} />
 
       <main className="p-6">
         {/* KPI hoạt động người dùng */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <Kpi icon={Activity} tint="bg-pink-50 text-pink-600" num={n(usage?.dau)} label="DAU (24 giờ)" />
-          <Kpi icon={Activity} tint="bg-amber-50 text-amber-600" num={n(usage?.wau)} label="WAU (7 ngày)" />
-          <Kpi icon={Activity} tint="bg-blue-50 text-blue-600" num={n(usage?.mau)} label="MAU (30 ngày)" />
-          <Kpi icon={Users} tint="bg-violet-50 text-violet-600" num={n(usage?.users)} label="Tổng người dùng" />
-          <Kpi icon={Building2} tint="bg-slate-100 text-slate-500" num={n(usage?.tenants)} label="Tổng số trường" />
-          <Kpi icon={CircleCheck} tint="bg-emerald-50 text-emerald-600" num={n(usage?.activeTenants)} label="Trường hoạt động" />
+          <Kpi icon={Activity} tint="bg-pink-50 text-pink-600" num={n(usage?.dau)} label={t("obs.kpiDau")} />
+          <Kpi icon={Activity} tint="bg-amber-50 text-amber-600" num={n(usage?.wau)} label={t("obs.kpiWau")} />
+          <Kpi icon={Activity} tint="bg-blue-50 text-blue-600" num={n(usage?.mau)} label={t("obs.kpiMau")} />
+          <Kpi icon={Users} tint="bg-violet-50 text-violet-600" num={n(usage?.users)} label={t("obs.kpiUsers")} />
+          <Kpi icon={Building2} tint="bg-slate-100 text-slate-500" num={n(usage?.tenants)} label={t("obs.kpiTenants")} />
+          <Kpi icon={CircleCheck} tint="bg-emerald-50 text-emerald-600" num={n(usage?.activeTenants)} label={t("obs.kpiActiveTenants")} />
         </div>
 
         <div className="grid lg:grid-cols-3 gap-5">
           {/* Nhật ký hệ thống */}
           <div className="card overflow-hidden lg:col-span-2">
             <div className="flex items-center justify-between gap-3 p-4 border-b border-slate-100">
-              <div className="font-bold">Nhật ký hệ thống</div>
+              <div className="font-bold">{t("obs.auditTitle")}</div>
               <div className="relative w-64 max-w-full">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   className="field !pl-9 !py-1.5"
-                  placeholder="Lọc theo hành động (vd: invoice)"
+                  placeholder={t("obs.auditFilterPh")}
                   value={actionInput}
                   onChange={(e) => setActionInput(e.target.value)}
                 />
@@ -92,23 +94,23 @@ export function ObservabilityPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Thời gian</th>
-                  <th>Trường</th>
-                  <th>Người thực hiện</th>
-                  <th>Hành động</th>
-                  <th>Đối tượng</th>
-                  <th>IP</th>
+                  <th>{t("obs.colTime")}</th>
+                  <th>{t("obs.colTenant")}</th>
+                  <th>{t("obs.colActor")}</th>
+                  <th>{t("obs.colAction")}</th>
+                  <th>{t("obs.colTarget")}</th>
+                  <th>{t("obs.colIp")}</th>
                 </tr>
               </thead>
               <tbody>
-                {auditLoading && <tr><td colSpan={6} className="!text-center text-muted">Đang tải…</td></tr>}
+                {auditLoading && <tr><td colSpan={6} className="!text-center text-muted">{t("common.loading")}</td></tr>}
                 {!auditLoading && rows.length === 0 && (
-                  <tr><td colSpan={6} className="!text-center text-muted">Chưa có nhật ký.</td></tr>
+                  <tr><td colSpan={6} className="!text-center text-muted">{t("obs.auditEmpty")}</td></tr>
                 )}
                 {rows.map((r) => (
                   <tr key={r.id} className="hover:bg-[#fff8f3]">
                     <td className="whitespace-nowrap text-slate-500">{formatDateTime(r.createdAt)}</td>
-                    <td>{r.tenantName ?? <span className="text-slate-400">Nền tảng</span>}</td>
+                    <td>{r.tenantName ?? <span className="text-slate-400">{t("obs.platformActor")}</span>}</td>
                     <td>
                       <div className="font-medium">{r.actorName ?? "—"}</div>
                       {r.actorEmail && <div className="text-xs text-slate-400">{r.actorEmail}</div>}
@@ -133,7 +135,7 @@ export function ObservabilityPage() {
             {total > pageSize && (
               <div className="flex items-center justify-between p-3 border-t border-slate-100 text-sm">
                 <span className="text-slate-400">
-                  {total} bản ghi · trang {page}/{maxPage}
+                  {t("obs.records", { total, page, max: maxPage })}
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -141,14 +143,14 @@ export function ObservabilityPage() {
                     disabled={page <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
-                    Trước
+                    {t("tenants.prev")}
                   </button>
                   <button
                     className="btn-soft text-sm"
                     disabled={page >= maxPage}
                     onClick={() => setPage((p) => Math.min(maxPage, p + 1))}
                   >
-                    Sau
+                    {t("tenants.next")}
                   </button>
                 </div>
               </div>
@@ -159,7 +161,7 @@ export function ObservabilityPage() {
           <div className="card p-5">
             <div className="flex items-center gap-2 font-bold mb-4">
               <Zap className="w-4 h-4 text-[color:var(--primary)]" />
-              Top sự kiện (30 ngày)
+              {t("obs.topEvents")}
             </div>
             <div className="space-y-3">
               {(usage?.topEvents ?? []).map((e) => (
@@ -177,14 +179,13 @@ export function ObservabilityPage() {
                 </div>
               ))}
               {!isLoading && (usage?.topEvents ?? []).length === 0 && (
-                <div className="text-muted text-sm py-2">Chưa có sự kiện nào.</div>
+                <div className="text-muted text-sm py-2">{t("obs.noEvents")}</div>
               )}
             </div>
             <p className="text-xs text-slate-400 mt-4">
-              "Active" = số người dùng riêng biệt có đăng nhập trong khoảng. Sự kiện được ghi từ
-              backend (login/signup…); app trường sẽ bổ sung event khi build.{" "}
+              {t("obs.eventsHint")}
               <Link to="/tenants" className="text-[color:var(--primary)] font-semibold">
-                Xem trường
+                {t("obs.viewTenants")}
               </Link>
             </p>
           </div>

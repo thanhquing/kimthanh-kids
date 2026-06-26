@@ -6,6 +6,7 @@ import { ApiError } from "@/api/http";
 import { platform } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/i18n";
 import { badgeFor, formatDate, SUB_STATUS } from "@/lib/labels";
 import { invalidatePlatformData } from "@/lib/queries";
 import { formatVnd } from "@/lib/utils";
@@ -45,41 +46,42 @@ function Stat({
 export function WorklistPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useT();
   const { data, isLoading } = useQuery({ queryKey: ["worklist"], queryFn: () => platform.worklist() });
 
   const markPaid = useMutation({
     mutationFn: (id: string) => platform.markPaid(id),
     onSuccess: () => {
-      toast("Đã đánh dấu hóa đơn đã thu");
+      toast(t("wl.toastPaid"));
       invalidatePlatformData(qc);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Thao tác thất bại", "error"),
+    onError: (e) => toast(e instanceof ApiError ? e.message : t("td.toastErr"), "error"),
   });
 
-  const t = data?.trial;
+  const trial = data?.trial;
   const q = data?.quota;
   const d = data?.dunning;
   const n = (v?: number): ReactNode => (isLoading ? "…" : (v ?? 0));
 
   return (
     <>
-      <PageHeader title="Cần hành động" section="Vận hành" />
+      <PageHeader title={t("nav.worklist")} section={t("navGroups.operations")} />
 
       <main className="p-6 space-y-6">
         {/* ── Phễu dùng thử ── */}
         <section>
           <div className="flex items-center gap-2 font-bold text-slate-700 mb-3">
             <Sparkles className="w-4 h-4 text-[color:var(--primary)]" />
-            Phễu dùng thử
+            {t("wl.trialFunnel")}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-            <Stat icon={Sparkles} tint="bg-amber-50 text-amber-600" num={n(t?.active)} label="Đang dùng thử" />
-            <Stat icon={Clock} tint="bg-red-50 text-red-600" num={n(t?.expiringSoon)} label="Sắp hết hạn (≤7 ngày)" />
+            <Stat icon={Sparkles} tint="bg-amber-50 text-amber-600" num={n(trial?.active)} label={t("wl.trialActive")} />
+            <Stat icon={Clock} tint="bg-red-50 text-red-600" num={n(trial?.expiringSoon)} label={t("wl.expiringSoon")} />
             <Stat
               icon={TrendingUp}
               tint="bg-emerald-50 text-emerald-600"
-              num={isLoading ? "…" : `${t?.conversionRate ?? 0}%`}
-              label={`Tỷ lệ chuyển đổi (${t?.converted ?? 0}/${t?.endedTotal ?? 0})`}
+              num={isLoading ? "…" : `${trial?.conversionRate ?? 0}%`}
+              label={t("wl.conversionRate", { converted: trial?.converted ?? 0, ended: trial?.endedTotal ?? 0 })}
             />
           </div>
           <div className="card overflow-hidden">
@@ -87,18 +89,18 @@ export function WorklistPage() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Trường</th>
-                    <th>Gói</th>
-                    <th>Hết hạn</th>
-                    <th>Còn lại</th>
+                    <th>{t("wl.colTenant")}</th>
+                    <th>{t("wl.colPlan")}</th>
+                    <th>{t("wl.colExpiry")}</th>
+                    <th>{t("wl.colRemaining")}</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {!isLoading && (t?.items.length ?? 0) === 0 && (
-                    <tr><td colSpan={5} className="!text-center text-muted">Không có trường nào đang dùng thử.</td></tr>
+                  {!isLoading && (trial?.items.length ?? 0) === 0 && (
+                    <tr><td colSpan={5} className="!text-center text-muted">{t("wl.noTrials")}</td></tr>
                   )}
-                  {(t?.items ?? []).map((it) => (
+                  {(trial?.items ?? []).map((it) => (
                     <tr key={it.tenantId} className="hover:bg-[#fff8f3]">
                       <td className="font-semibold">{it.tenantName ?? it.tenantId.slice(0, 8)}</td>
                       <td>{it.planName ?? "—"}</td>
@@ -107,7 +109,7 @@ export function WorklistPage() {
                         <span
                           className={`badge ${it.daysLeft != null && it.daysLeft <= 3 ? "b-red" : "b-amber"}`}
                         >
-                          {it.daysLeft != null ? `${it.daysLeft} ngày` : "—"}
+                          {it.daysLeft != null ? t("wl.days", { n: it.daysLeft }) : "—"}
                         </span>
                       </td>
                       <td className="text-right">
@@ -115,7 +117,7 @@ export function WorklistPage() {
                           to={`/tenants/${it.tenantId}`}
                           className="text-xs text-[color:var(--primary)] font-semibold"
                         >
-                          Xem
+                          {t("wl.view")}
                         </Link>
                       </td>
                     </tr>
@@ -130,64 +132,61 @@ export function WorklistPage() {
         <section>
           <div className="flex items-center gap-2 font-bold text-slate-700 mb-3">
             <Gauge className="w-4 h-4 text-[color:var(--primary)]" />
-            Sắp chạm hạn mức
+            {t("wl.quotaSection")}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Stat
               icon={TrendingUp}
               tint="bg-emerald-50 text-emerald-600"
               num={n(q?.tenants)}
-              label="Trường nên tư vấn nâng gói"
+              label={t("wl.quotaTenants")}
               to="/tenants?quota=at-risk"
             />
             <Stat
               icon={Gauge}
               tint="bg-orange-50 text-orange-600"
               num={n(q?.atRisk)}
-              label={`Dòng quota ≥${q?.thresholdPct ?? 80}%`}
+              label={t("wl.quotaRows", { pct: q?.thresholdPct ?? 80 })}
               to="/tenants?quota=at-risk"
             />
           </div>
-          <p className="text-xs text-slate-400 mt-3">
-            Số liệu dùng usage thật của từng trường. Bấm một chỉ số để mở danh sách trường tương ứng
-            (đã lọc sẵn) và chủ động tư vấn nâng gói trước khi họ bị chặn tạo thêm học sinh/lớp/giáo viên.
-          </p>
+          <p className="text-xs text-slate-400 mt-3">{t("wl.quotaHint")}</p>
         </section>
 
         {/* ── Công nợ cần thu ── */}
         <section>
           <div className="flex items-center gap-2 font-bold text-slate-700 mb-3">
             <Receipt className="w-4 h-4 text-[color:var(--primary)]" />
-            Công nợ cần thu
+            {t("wl.dunningSection")}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <Stat icon={AlertCircle} tint="bg-red-50 text-red-600" num={n(d?.overdueCount)} label="Hóa đơn quá hạn" />
+            <Stat icon={AlertCircle} tint="bg-red-50 text-red-600" num={n(d?.overdueCount)} label={t("wl.overdueCount")} />
             <Stat
               icon={Receipt}
               tint="bg-pink-50 text-pink-600"
-              num={isLoading ? "…" : `${((d?.overdueAmount ?? 0) / 1_000_000).toFixed(1)}tr`}
-              label="Tổng tiền cần thu"
+              num={isLoading ? "…" : `${((d?.overdueAmount ?? 0) / 1_000_000).toFixed(1)}${t("dash.millionsUnit")}`}
+              label={t("wl.overdueAmount")}
             />
-            <Stat icon={Clock} tint="bg-amber-50 text-amber-600" num={n(d?.atRiskSuspend)} label="Quá hạn (sắp khóa)" />
-            <Stat icon={Lock} tint="bg-slate-100 text-slate-500" num={n(d?.suspended)} label="Đang tạm khóa" />
+            <Stat icon={Clock} tint="bg-amber-50 text-amber-600" num={n(d?.atRiskSuspend)} label={t("wl.atRiskSuspend")} />
+            <Stat icon={Lock} tint="bg-slate-100 text-slate-500" num={n(d?.suspended)} label={t("wl.suspended")} />
           </div>
           <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Số HĐ</th>
-                    <th>Trường</th>
-                    <th>Cần thu</th>
-                    <th>Hạn</th>
-                    <th>Trễ</th>
-                    <th>Trạng thái</th>
+                    <th>{t("wl.colInvoice")}</th>
+                    <th>{t("wl.colTenant")}</th>
+                    <th>{t("wl.colDue")}</th>
+                    <th>{t("wl.colDeadline")}</th>
+                    <th>{t("wl.colLate")}</th>
+                    <th>{t("common.status")}</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {!isLoading && (d?.items.length ?? 0) === 0 && (
-                    <tr><td colSpan={7} className="!text-center text-muted">Không có công nợ quá hạn. 🎉</td></tr>
+                    <tr><td colSpan={7} className="!text-center text-muted">{t("wl.noDunning")}</td></tr>
                   )}
                   {(d?.items ?? []).map((it) => {
                     const b = badgeFor(SUB_STATUS, it.subStatus ?? undefined);
@@ -198,7 +197,7 @@ export function WorklistPage() {
                         <td className="font-semibold">{formatVnd(it.amountDue)}</td>
                         <td className="text-slate-500">{formatDate(it.dueAt)}</td>
                         <td>
-                          <span className="badge b-red">{it.daysLate ?? 0} ngày</span>
+                          <span className="badge b-red">{t("wl.days", { n: it.daysLate ?? 0 })}</span>
                         </td>
                         <td>
                           <span className={`badge ${b.badge}`}>{b.label}</span>
@@ -210,7 +209,7 @@ export function WorklistPage() {
                             onClick={() => markPaid.mutate(it.invoiceId)}
                           >
                             <CircleCheck className="w-3.5 h-3.5 inline -mt-0.5 mr-1" />
-                            Đã thu
+                            {t("wl.markPaid")}
                           </button>
                         </td>
                       </tr>
@@ -221,9 +220,9 @@ export function WorklistPage() {
             </div>
           </div>
           <p className="text-xs text-slate-400 mt-3">
-            Hệ thống tự chuyển trạng thái theo lịch (quá hạn → tạm khóa → hủy). Trang này để{" "}
-            <b>chủ động liên hệ thu tiền trước khi khóa</b>. Nhắc tự động qua email sẽ thêm khi dựng
-            kênh email.
+            {t("wl.dunningHintPre")}
+            <b>{t("wl.dunningHintBold")}</b>
+            {t("wl.dunningHintPost")}
           </p>
         </section>
       </main>

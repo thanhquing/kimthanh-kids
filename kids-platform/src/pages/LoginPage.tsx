@@ -3,9 +3,11 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
 import { ApiError } from "@/api/http";
+import { useT } from "@/i18n";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [email, setEmail] = useState("admin@kimthanhkids.vn");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export function LoginPage() {
       await login({ identifier: email, password });
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? "Email hoặc mật khẩu không đúng." : "Không kết nối được máy chủ.");
+      setError(err instanceof ApiError ? t("login.errInvalid") : t("login.errNetwork"));
     } finally {
       setLoading(false);
     }
@@ -33,14 +35,14 @@ export function LoginPage() {
             K
           </div>
           <div>
-            <div className="font-bold text-lg leading-tight">KimThanh Kids</div>
-            <div className="text-xs text-slate-400">Platform Console · Nội bộ</div>
+            <div className="font-bold text-lg leading-tight">{t("brand.name")}</div>
+            <div className="text-xs text-slate-400">{t("login.consoleInternal")}</div>
           </div>
         </div>
-        <h1 className="text-xl font-bold mt-5">Đăng nhập quản trị nền tảng</h1>
-        <p className="text-sm text-slate-500 mb-5">Dành riêng cho đội ngũ KimThanh Kids.</p>
+        <h1 className="text-xl font-bold mt-5">{t("login.title")}</h1>
+        <p className="text-sm text-slate-500 mb-5">{t("login.subtitle")}</p>
 
-        <label className="label">Email</label>
+        <label className="label">{t("login.emailLabel")}</label>
         <div className="relative mb-3">
           <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
@@ -50,7 +52,7 @@ export function LoginPage() {
             autoComplete="username"
           />
         </div>
-        <label className="label">Mật khẩu</label>
+        <label className="label">{t("login.passwordLabel")}</label>
         <div className="relative mb-2">
           <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
@@ -68,7 +70,7 @@ export function LoginPage() {
         )}
 
         <button type="submit" className="btn-primary w-full mt-4" disabled={loading}>
-          {loading ? "Đang đăng nhập…" : "Đăng nhập"}
+          {loading ? t("login.submitting") : t("login.submit")}
         </button>
       </form>
     </div>

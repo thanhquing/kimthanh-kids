@@ -6,10 +6,12 @@ import { platform, type UpdatePlatformSettingsInput } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Field } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/i18n";
 import { BANKS } from "@/lib/vietqr";
 
 export function SettingsPage() {
   const qc = useQueryClient();
+  const { t } = useT();
   const { toast } = useToast();
   const { data, isLoading } = useQuery({ queryKey: ["settings"], queryFn: () => platform.getSettings() });
 
@@ -27,9 +29,9 @@ export function SettingsPage() {
   }, [data]);
 
   // Mỗi section lưu độc lập — gửi đúng phần dữ liệu của mình (PATCH nhận partial).
-  const onErr = (e: unknown) => toast(e instanceof ApiError ? e.message : "Lưu thất bại", "error");
+  const onErr = (e: unknown) => toast(e instanceof ApiError ? e.message : t("set.toastErr"), "error");
   const onOk = (label: string) => {
-    toast(`Đã lưu ${label}`);
+    toast(t("set.savedPrefix", { label }));
     qc.invalidateQueries({ queryKey: ["settings"] });
   };
 
@@ -40,7 +42,7 @@ export function SettingsPage() {
         bankAccountNumber: form.bankAccountNumber,
         bankAccountName: form.bankAccountName,
       }),
-    onSuccess: () => onOk("tài khoản ngân hàng"),
+    onSuccess: () => onOk(t("set.labelBank")),
     onError: onErr,
   });
   const saveDunning = useMutation({
@@ -49,7 +51,7 @@ export function SettingsPage() {
         pastDueGraceDays: form.pastDueGraceDays,
         suspendedGraceDays: form.suspendedGraceDays,
       }),
-    onSuccess: () => onOk("quy tắc nhắc nợ"),
+    onSuccess: () => onOk(t("set.labelDunning")),
     onError: onErr,
   });
 
@@ -57,29 +59,28 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Cài đặt" section="Cấu hình" />
+      <PageHeader title={t("nav.settings")} section={t("navGroups.config")} />
 
       <main className="p-6 max-w-4xl space-y-6">
-        {isLoading && <div className="text-muted">Đang tải…</div>}
+        {isLoading && <div className="text-muted">{t("common.loading")}</div>}
 
         {/* Tài khoản nhận thanh toán */}
         <div className="card p-5">
           <div className="flex items-center gap-2 font-bold mb-1">
             <Landmark className="w-4 h-4 text-[color:var(--primary)]" />
-            Tài khoản nhận thanh toán
+            {t("set.bankTitle")}
           </div>
           <p className="text-xs text-slate-400 mb-4">
-            Dùng để sinh <b>mã VietQR trên từng hóa đơn</b> (nội dung CK = số hóa đơn) cho trường
-            thanh toán. Mã QR được tạo ở trang chi tiết hóa đơn, không phải ở đây.
+            {t("set.bankHintPre")}<b>{t("set.bankHintBold")}</b>{t("set.bankHintPost")}
           </p>
           <div className="grid md:grid-cols-3 gap-4">
-            <Field label="Ngân hàng">
+            <Field label={t("set.fBank")}>
               <select
                 className="field"
                 value={form.bankBin ?? ""}
                 onChange={(e) => set({ bankBin: e.target.value })}
               >
-                <option value="">— Chọn ngân hàng —</option>
+                <option value="">{t("set.bankSelect")}</option>
                 {BANKS.map((b) => (
                   <option key={b.bin} value={b.bin}>
                     {b.name}
@@ -87,20 +88,20 @@ export function SettingsPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Số tài khoản">
+            <Field label={t("set.fAccountNumber")}>
               <input
                 className="field"
                 value={form.bankAccountNumber ?? ""}
                 onChange={(e) => set({ bankAccountNumber: e.target.value.replace(/\D/g, "") })}
-                placeholder="vd: 0123456789"
+                placeholder={t("set.fAccountNumberPh")}
               />
             </Field>
-            <Field label="Tên chủ tài khoản">
+            <Field label={t("set.fAccountName")}>
               <input
                 className="field"
                 value={form.bankAccountName ?? ""}
                 onChange={(e) => set({ bankAccountName: e.target.value.toUpperCase() })}
-                placeholder="CONG TY KIMTHANH KIDS"
+                placeholder={t("set.fAccountNamePh")}
               />
             </Field>
           </div>
@@ -110,7 +111,7 @@ export function SettingsPage() {
               disabled={saveBank.isPending || isLoading}
               onClick={() => saveBank.mutate()}
             >
-              {saveBank.isPending ? "Đang lưu…" : "Lưu tài khoản"}
+              {saveBank.isPending ? t("common.saving") : t("set.saveBank")}
             </button>
           </div>
         </div>
@@ -119,14 +120,14 @@ export function SettingsPage() {
         <div className="card p-5">
           <div className="flex items-center gap-2 font-bold mb-1">
             <ShieldAlert className="w-4 h-4 text-[color:var(--primary)]" />
-            Quy tắc nhắc nợ (dunning)
+            {t("set.dunningTitle")}
           </div>
           <p className="text-xs text-slate-400 mb-4">
-            Hệ thống tự chạy theo lịch: hóa đơn quá hạn → <b>tạm khóa</b> trường sau N ngày → <b>hủy</b>{" "}
-            thuê bao sau M ngày kể từ lúc tạm khóa.
+            {t("set.dunningHintPre")}<b>{t("set.dunningHintBold1")}</b>{t("set.dunningHintMid")}
+            <b>{t("set.dunningHintBold2")}</b>{t("set.dunningHintPost")}
           </p>
           <div className="grid md:grid-cols-2 gap-5 max-w-xl">
-            <Field label="Quá hạn → tạm khóa sau (ngày)">
+            <Field label={t("set.fPastDue")}>
               <input
                 className="field"
                 type="number"
@@ -135,7 +136,7 @@ export function SettingsPage() {
                 onChange={(e) => set({ pastDueGraceDays: Number(e.target.value) })}
               />
             </Field>
-            <Field label="Tạm khóa → hủy sau (ngày)">
+            <Field label={t("set.fSuspended")}>
               <input
                 className="field"
                 type="number"
@@ -151,7 +152,7 @@ export function SettingsPage() {
               disabled={saveDunning.isPending || isLoading}
               onClick={() => saveDunning.mutate()}
             >
-              {saveDunning.isPending ? "Đang lưu…" : "Lưu quy tắc"}
+              {saveDunning.isPending ? t("common.saving") : t("set.saveDunning")}
             </button>
           </div>
         </div>

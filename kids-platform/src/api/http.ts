@@ -10,6 +10,7 @@
 const BASE = "/api";
 const ACCESS_KEY = "kk_access";
 const REFRESH_KEY = "kk_refresh";
+const LANGUAGE_KEY = "kk_platform_lang";
 
 export const tokenStore = {
   get access() {
@@ -62,7 +63,9 @@ function buildUrl(path: string, query?: Options["query"]): string {
 }
 
 async function raw(method: string, path: string, opts: Options, token: string | null) {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    "x-language": localStorage.getItem(LANGUAGE_KEY) === "en" ? "en" : "vi",
+  };
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
   if (opts.auth !== false && token) headers["Authorization"] = `Bearer ${token}`;
   return fetch(buildUrl(path, opts.query), {

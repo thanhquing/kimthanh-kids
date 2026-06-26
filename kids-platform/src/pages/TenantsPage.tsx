@@ -7,24 +7,31 @@ import { platform, type CreateTenantInput, type Tenant } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
-import { badgeFor, formatDate, TENANT_STATUS, TIER_LABEL } from "@/lib/labels";
+import { t as tr, useT, type TKey } from "@/i18n";
+import { badgeFor, formatDate, TENANT_STATUS, tierLabel } from "@/lib/labels";
 import { invalidatePlatformData } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 
-const CYCLE_SHORT: Record<string, string> = {
-  MONTHLY: "Tháng",
-  QUARTERLY: "Quý",
-  ANNUAL: "Năm",
+const CYCLE_SHORT_KEY: Record<string, TKey> = {
+  MONTHLY: "tenants.cycleShort.MONTHLY",
+  QUARTERLY: "tenants.cycleShort.QUARTERLY",
+  ANNUAL: "tenants.cycleShort.ANNUAL",
 };
+function cycleShort(c?: string | null): string {
+  return (c && CYCLE_SHORT_KEY[c] && tr(CYCLE_SHORT_KEY[c])) || "—";
+}
 
-const QUOTA_SHORT: Record<string, string> = {
-  STUDENTS: "HS",
-  TEACHERS: "GV",
-  CLASSROOMS: "Lớp",
-  STORAGE_MB: "Lưu trữ",
+const QUOTA_SHORT_KEY: Record<string, TKey> = {
+  STUDENTS: "tenants.quotaShort.STUDENTS",
+  TEACHERS: "tenants.quotaShort.TEACHERS",
+  CLASSROOMS: "tenants.quotaShort.CLASSROOMS",
+  STORAGE_MB: "tenants.quotaShort.STORAGE_MB",
 };
+function quotaShort(m: string): string {
+  return QUOTA_SHORT_KEY[m] ? tr(QUOTA_SHORT_KEY[m]) : m;
+}
 
 /** Giá trị hạn mức gọn: lưu trữ quy GB, còn lại giữ nguyên số. */
 function quotaValue(metric: string, v: number): string {
@@ -48,19 +55,24 @@ const days = (iso?: string | null) =>
 function endLabel(t: Tenant): string {
   if (t.status === "TRIAL") {
     const d = days(t.trialEndsAt);
-    return t.trialEndsAt ? (d >= 0 ? `Còn ${d} ngày` : "Hết hạn dùng thử") : "—";
+    return t.trialEndsAt
+      ? d >= 0
+        ? tr("tenants.remainingDays", { n: d })
+        : tr("tenants.trialEnded")
+      : "—";
   }
   if (t.status === "PAST_DUE") {
     const d = days(t.currentPeriodEnd);
-    return t.currentPeriodEnd ? `Trễ ${Math.abs(d)} ngày` : "—";
+    return t.currentPeriodEnd ? tr("tenants.lateDays", { n: Math.abs(d) }) : "—";
   }
   return formatDate(t.currentPeriodEnd);
 }
 
-/** VND → "1.2tr" / "0đ". */
+/** VND → "1.2tr" / "0đ" (vi) hoặc "1.2M" / "0₫" (en). */
 function mrrShort(v?: number): string {
-  if (!v) return "0đ";
-  return `${parseFloat((v / 1_000_000).toFixed(2))}tr`;
+  const unit = tr("dash.millionsUnit");
+  if (!v) return `0${tr("common.currency")}`;
+  return `${parseFloat((v / 1_000_000).toFixed(2))}${unit}`;
 }
 
 const name = (t: Tenant) => t.settings?.displayName || t.legalName || t.slug;
@@ -76,6 +88,7 @@ const initials = (t: Tenant) =>
 
 export function TenantsPage() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -125,22 +138,22 @@ export function TenantsPage() {
   const rows = data?.items ?? []; // lọc ở server (param q)
 
   const CHIPS = [
-    { key: "", label: "Tất cả", count: stats?.total },
-    { key: "ACTIVE", label: "Hoạt động", count: stats?.ACTIVE },
-    { key: "TRIAL", label: "Dùng thử", count: stats?.TRIAL },
-    { key: "PAST_DUE", label: "Quá hạn", count: stats?.PAST_DUE },
-    { key: "SUSPENDED", label: "Tạm khóa", count: stats?.SUSPENDED },
+    { key: "", label: t("common.all"), count: stats?.total },
+    { key: "ACTIVE", label: badgeFor(TENANT_STATUS, "ACTIVE").label, count: stats?.ACTIVE },
+    { key: "TRIAL", label: badgeFor(TENANT_STATUS, "TRIAL").label, count: stats?.TRIAL },
+    { key: "PAST_DUE", label: badgeFor(TENANT_STATUS, "PAST_DUE").label, count: stats?.PAST_DUE },
+    { key: "SUSPENDED", label: badgeFor(TENANT_STATUS, "SUSPENDED").label, count: stats?.SUSPENDED },
   ];
 
   const create = useMutation({
     mutationFn: () => platform.createTenant(form),
     onSuccess: () => {
-      toast("Đã tạo trường mới");
+      toast(t("tenants.createdToast"));
       setOpen(false);
       setForm(EMPTY);
       invalidatePlatformData(qc);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Tạo trường thất bại", "error"),
+    onError: (e) => toast(e instanceof ApiError ? e.message : t("tenants.createError"), "error"),
   });
 
   function pick(key: string) {
@@ -163,17 +176,26 @@ export function TenantsPage() {
   }
 
   function exportCsv() {
-    const head = ["Trường", "Slug", "Gói", "Trạng thái", "Học sinh", "Chu kỳ", "Hết hạn kỳ", "MRR"];
-    const lines = rows.map((t) =>
+    const head = [
+      t("tenants.csv.tenant"),
+      t("tenants.csv.slug"),
+      t("tenants.csv.plan"),
+      t("tenants.csv.status"),
+      t("tenants.csv.students"),
+      t("tenants.csv.cycle"),
+      t("tenants.csv.end"),
+      t("tenants.csv.mrr"),
+    ];
+    const lines = rows.map((row) =>
       [
-        name(t),
-        t.slug,
-        TIER_LABEL[t.planTier] ?? t.planTier ?? "—",
-        badgeFor(TENANT_STATUS, t.status).label,
-        t.studentCount ?? 0,
-        (t.billingCycle && CYCLE_SHORT[t.billingCycle]) || "—",
-        endLabel(t),
-        mrrShort(t.mrr),
+        name(row),
+        row.slug,
+        tierLabel(row.planTier),
+        badgeFor(TENANT_STATUS, row.status).label,
+        row.studentCount ?? 0,
+        cycleShort(row.billingCycle),
+        endLabel(row),
+        mrrShort(row.mrr),
       ]
         .map((c) => `"${String(c).replace(/"/g, '""')}"`)
         .join(","),
@@ -184,7 +206,7 @@ export function TenantsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "truong-thue.csv";
+    a.download = t("tenants.csvFilename");
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -194,17 +216,17 @@ export function TenantsPage() {
 
   return (
     <>
-      <PageHeader section="Khách hàng" title="Trường thuê dịch vụ">
+      <PageHeader section={t("navGroups.customers")} title={t("tenants.title")}>
         <button className="btn-soft inline-flex items-center gap-2 text-sm" onClick={exportCsv}>
           <Download className="w-4 h-4" />
-          Xuất CSV
+          {t("tenants.exportCsv")}
         </button>
         <button
           className="btn-primary inline-flex items-center gap-2 text-sm"
           onClick={() => setOpen(true)}
         >
           <Plus className="w-4 h-4" />
-          Thêm trường
+          {t("tenants.add")}
         </button>
       </PageHeader>
 
@@ -225,8 +247,8 @@ export function TenantsPage() {
             value={quota}
             onChange={(e) => pickQuota(e.target.value)}
           >
-            <option value="">Tất cả hạn mức</option>
-            <option value="at-risk">Sắp chạm hạn (≥80%)</option>
+            <option value="">{t("tenants.quotaAll")}</option>
+            <option value="at-risk">{t("tenants.quotaAtRisk")}</option>
           </select>
           <select
             className="field !py-1.5 !w-auto"
@@ -236,10 +258,10 @@ export function TenantsPage() {
               setPage(1);
             }}
           >
-            <option value="">Tất cả gói</option>
-            {["FREE", "STARTER", "PRO", "ENTERPRISE", "CUSTOM"].map((t) => (
-              <option key={t} value={t}>
-                {TIER_LABEL[t] ?? t}
+            <option value="">{t("tenants.planAll")}</option>
+            {["FREE", "STARTER", "PRO", "ENTERPRISE", "CUSTOM"].map((tier) => (
+              <option key={tier} value={tier}>
+                {tierLabel(tier)}
               </option>
             ))}
           </select>
@@ -247,7 +269,7 @@ export function TenantsPage() {
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               className="field !pl-9 !py-1.5"
-              placeholder="Tìm theo tên / slug..."
+              placeholder={t("tenants.searchPh")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -259,13 +281,13 @@ export function TenantsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Trường</th>
-                <th>Gói</th>
-                <th>Trạng thái</th>
-                <th>Hạn mức</th>
-                <th>Chu kỳ</th>
-                <th>Hết hạn kỳ</th>
-                <th>MRR</th>
+                <th>{t("tenants.colTenant")}</th>
+                <th>{t("tenants.colPlan")}</th>
+                <th>{t("tenants.colStatus")}</th>
+                <th>{t("tenants.colQuota")}</th>
+                <th>{t("tenants.colCycle")}</th>
+                <th>{t("tenants.colEnd")}</th>
+                <th>{t("tenants.colMrr")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -273,54 +295,54 @@ export function TenantsPage() {
               {isLoading && (
                 <tr>
                   <td colSpan={8} className="!text-center text-muted">
-                    Đang tải…
+                    {t("common.loading")}
                   </td>
                 </tr>
               )}
               {error && (
                 <tr>
                   <td colSpan={8} className="!text-center text-red-600">
-                    Không tải được danh sách.
+                    {t("tenants.loadError")}
                   </td>
                 </tr>
               )}
               {!isLoading && !error && rows.length === 0 && (
                 <tr>
                   <td colSpan={8} className="!text-center text-muted">
-                    Không có trường nào.
+                    {t("tenants.empty")}
                   </td>
                 </tr>
               )}
-              {rows.map((t) => {
-                const st = badgeFor(TENANT_STATUS, t.status);
+              {rows.map((row) => {
+                const st = badgeFor(TENANT_STATUS, row.status);
                 return (
                   <tr
-                    key={t.id}
+                    key={row.id}
                     className="hover:bg-[#fff8f3] cursor-pointer"
-                    onClick={() => navigate(`/tenants/${t.id}`)}
+                    onClick={() => navigate(`/tenants/${row.id}`)}
                   >
                     <td>
                       <div className="flex items-center gap-3">
-                        <div className="avatar !w-8 !h-8 text-xs">{initials(t)}</div>
+                        <div className="avatar !w-8 !h-8 text-xs">{initials(row)}</div>
                         <div>
-                          <div className="font-semibold">{name(t)}</div>
-                          <div className="text-xs text-slate-400">{t.slug}.kimthanhkids.vn</div>
+                          <div className="font-semibold">{name(row)}</div>
+                          <div className="text-xs text-slate-400">{row.slug}.kimthanhkids.vn</div>
                         </div>
                       </div>
                     </td>
-                    <td>{TIER_LABEL[t.planTier] ?? t.planTier ?? "—"}</td>
+                    <td>{tierLabel(row.planTier)}</td>
                     <td>
                       <span className={cn("badge", st.badge)}>{st.label}</span>
                     </td>
                     <td>
-                      {t.quota?.length ? (
+                      {row.quota?.length ? (
                         <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs min-w-[10rem]">
-                          {t.quota.map((qm) => {
+                          {row.quota.map((qm) => {
                             const full = qm.limit != null && qm.used >= qm.limit;
                             const near = qm.limit != null && qm.used / qm.limit >= 0.8;
                             return (
                               <div key={qm.metric} className="flex justify-between gap-2">
-                                <span className="text-slate-400">{QUOTA_SHORT[qm.metric] ?? qm.metric}</span>
+                                <span className="text-slate-400">{quotaShort(qm.metric)}</span>
                                 <span
                                   className={cn(
                                     "tabular-nums",
@@ -342,9 +364,9 @@ export function TenantsPage() {
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td>{(t.billingCycle && CYCLE_SHORT[t.billingCycle]) || "—"}</td>
-                    <td>{endLabel(t)}</td>
-                    <td className="font-semibold">{mrrShort(t.mrr)}</td>
+                    <td>{cycleShort(row.billingCycle)}</td>
+                    <td>{endLabel(row)}</td>
+                    <td className="font-semibold">{mrrShort(row.mrr)}</td>
                     <td className="text-right">
                       <ChevronRight className="w-4 h-4 text-slate-400 inline" />
                     </td>
@@ -357,23 +379,21 @@ export function TenantsPage() {
         </div>
 
         <div className="flex items-center justify-between mt-4 text-sm text-slate-500">
-          <div>
-            Hiển thị {from}–{to} trên {total} trường
-          </div>
+          <div>{t("tenants.showing", { from, to, total })}</div>
           <div className="flex gap-1">
             <button
               className="btn-soft !py-1 !px-3 disabled:opacity-40"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
-              Trước
+              {t("tenants.prev")}
             </button>
             <button
               className="btn-soft !py-1 !px-3 disabled:opacity-40"
               disabled={page * PAGE_SIZE >= total}
               onClick={() => setPage((p) => p + 1)}
             >
-              Sau
+              {t("tenants.next")}
             </button>
           </div>
         </div>
@@ -382,60 +402,60 @@ export function TenantsPage() {
       <Modal
         open={open}
         onClose={() => setOpen(false)}
-        title="Thêm trường mới"
+        title={t("tenants.createTitle")}
         footer={
           <>
             <button className="btn-soft text-sm" onClick={() => setOpen(false)}>
-              Hủy
+              {t("common.cancel")}
             </button>
             <button
               className="btn-primary text-sm"
               disabled={create.isPending}
               onClick={() => create.mutate()}
             >
-              {create.isPending ? "Đang tạo…" : "Tạo trường"}
+              {create.isPending ? t("tenants.creating") : t("tenants.createSubmit")}
             </button>
           </>
         }
       >
-        <Field label="Tên trường">
+        <Field label={t("tenants.fSchoolName")}>
           <input
             className="field"
             value={form.schoolName}
             onChange={(e) => setForm({ ...form, schoolName: e.target.value })}
           />
         </Field>
-        <Field label="Slug (subdomain)">
+        <Field label={t("tenants.fSlug")}>
           <input
             className="field"
-            placeholder="vd: hoasen"
+            placeholder={t("tenants.fSlugPh")}
             value={form.slug}
             onChange={(e) => setForm({ ...form, slug: e.target.value })}
           />
         </Field>
-        <Field label="Mã số thuế (MST)">
+        <Field label={t("tenants.fTaxCode")}>
           <input
             className="field"
-            placeholder="10 hoặc 13 chữ số"
+            placeholder={t("tenants.fTaxCodePh")}
             value={form.taxCode}
             onChange={(e) => setForm({ ...form, taxCode: e.target.value })}
           />
         </Field>
-        <Field label="Họ tên quản trị">
+        <Field label={t("tenants.fAdminName")}>
           <input
             className="field"
             value={form.adminFullName}
             onChange={(e) => setForm({ ...form, adminFullName: e.target.value })}
           />
         </Field>
-        <Field label="Email quản trị">
+        <Field label={t("tenants.fAdminEmail")}>
           <input
             className="field"
             value={form.adminEmail}
             onChange={(e) => setForm({ ...form, adminEmail: e.target.value })}
           />
         </Field>
-        <Field label="Mật khẩu (≥ 8 ký tự)">
+        <Field label={t("tenants.fAdminPassword")}>
           <input
             type="password"
             className="field"

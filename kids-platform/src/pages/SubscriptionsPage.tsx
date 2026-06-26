@@ -3,19 +3,21 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { platform } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
-import { badgeFor, CYCLE_LABEL, formatDate, SUB_STATUS, TIER_LABEL } from "@/lib/labels";
+import { t as tr, useT } from "@/i18n";
+import { badgeFor, cycleLabel, formatDate, SUB_STATUS, tierLabel } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
 const STATUSES = ["", "TRIALING", "ACTIVE", "PAST_DUE", "SUSPENDED", "CANCELED"];
 
-/** VND → "1.2tr" / "0đ". */
+/** VND → "1.2tr" / "0đ" (vi) hoặc "1.2M" / "0₫" (en). */
 function mrrShort(v?: number): string {
-  if (!v) return "0đ";
-  return `${parseFloat((v / 1_000_000).toFixed(2))}tr`;
+  if (!v) return `0${tr("common.currency")}`;
+  return `${parseFloat((v / 1_000_000).toFixed(2))}${tr("dash.millionsUnit")}`;
 }
 
 export function SubscriptionsPage() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [status, setStatus] = useState("");
 
   const { data, isLoading, error } = useQuery({
@@ -32,24 +34,24 @@ export function SubscriptionsPage() {
 
   return (
     <>
-      <PageHeader section="Khách hàng" title="Thuê bao" />
+      <PageHeader section={t("navGroups.customers")} title={t("subs.title")} />
       <main className="p-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
           <div className="kpi">
             <div className="num text-emerald-600">{stats?.ACTIVE ?? "—"}</div>
-            <div className="lbl">Đang hoạt động</div>
+            <div className="lbl">{t("subs.kpiActive")}</div>
           </div>
           <div className="kpi">
             <div className="num text-amber-600">{stats?.TRIALING ?? "—"}</div>
-            <div className="lbl">Dùng thử</div>
+            <div className="lbl">{t("subs.kpiTrial")}</div>
           </div>
           <div className="kpi">
             <div className="num text-red-600">{stats?.PAST_DUE ?? "—"}</div>
-            <div className="lbl">Quá hạn</div>
+            <div className="lbl">{t("subs.kpiPastDue")}</div>
           </div>
           <div className="kpi">
             <div className="num text-slate-500">{stats ? canceledExpired : "—"}</div>
-            <div className="lbl">Đã hủy/hết hạn</div>
+            <div className="lbl">{t("subs.kpiCanceled")}</div>
           </div>
         </div>
 
@@ -60,7 +62,7 @@ export function SubscriptionsPage() {
               className={cn("chip", status === s && "active")}
               onClick={() => setStatus(s)}
             >
-              {s === "" ? "Tất cả" : (SUB_STATUS[s]?.label ?? s)}
+              {s === "" ? t("common.all") : badgeFor(SUB_STATUS, s).label}
             </button>
           ))}
         </div>
@@ -70,29 +72,29 @@ export function SubscriptionsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Trường</th>
-                <th>Gói</th>
-                <th>Chu kỳ</th>
-                <th>Trạng thái</th>
-                <th>Kỳ hiện tại</th>
-                <th>Tự gia hạn</th>
-                <th>MRR</th>
+                <th>{t("subs.colTenant")}</th>
+                <th>{t("subs.colPlan")}</th>
+                <th>{t("subs.colCycle")}</th>
+                <th>{t("common.status")}</th>
+                <th>{t("subs.colPeriod")}</th>
+                <th>{t("subs.colAutoRenew")}</th>
+                <th>{t("subs.colMrr")}</th>
               </tr>
             </thead>
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={7} className="!text-center text-muted">Đang tải…</td>
+                  <td colSpan={7} className="!text-center text-muted">{t("common.loading")}</td>
                 </tr>
               )}
               {error && (
                 <tr>
-                  <td colSpan={7} className="!text-center text-red-600">Không tải được.</td>
+                  <td colSpan={7} className="!text-center text-red-600">{t("subs.loadError")}</td>
                 </tr>
               )}
               {!isLoading && !error && items.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="!text-center text-muted">Chưa có thuê bao.</td>
+                  <td colSpan={7} className="!text-center text-muted">{t("dash.noSubs")}</td>
                 </tr>
               )}
               {items.map((s) => {
@@ -104,8 +106,8 @@ export function SubscriptionsPage() {
                     onClick={() => navigate(`/tenants/${s.tenantId}`)}
                   >
                     <td className="font-semibold">{s.tenantName ?? s.tenantSlug ?? s.tenantId.slice(0, 8)}</td>
-                    <td>{s.plan ? (TIER_LABEL[s.plan.tier] ?? s.plan.name) : "—"}</td>
-                    <td>{s.billingCycle ? (CYCLE_LABEL[s.billingCycle] ?? s.billingCycle) : "—"}</td>
+                    <td>{s.plan ? (tierLabel(s.plan.tier) ?? s.plan.name) : "—"}</td>
+                    <td>{s.billingCycle ? cycleLabel(s.billingCycle) : "—"}</td>
                     <td>
                       <span className={cn("badge", st.badge)}>{st.label}</span>
                     </td>
@@ -115,7 +117,7 @@ export function SubscriptionsPage() {
                         : "—"}
                     </td>
                     <td className={s.autoRenew ? "text-emerald-600 font-medium" : "text-slate-400"}>
-                      {s.autoRenew ? "Bật" : "Tắt"}
+                      {s.autoRenew ? t("td.on") : t("td.off")}
                     </td>
                     <td className="font-semibold">{mrrShort(s.mrr)}</td>
                   </tr>
