@@ -130,6 +130,11 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     expect(r.body.data.outstandingInvoices).toBe(1);
     expect(r.body.data.outstandingAmount).toBe(1_000_000);
     expect(r.body.data.attendanceToday).toHaveProperty("PRESENT");
+    expect(r.body.data).toHaveProperty("overdueInvoices");
+    expect(r.body.data.attendanceTrend30d).toHaveLength(30);
+    expect(r.body.data.medicineThisMonth).toHaveProperty("PENDING");
+    expect(r.body.data.revenueLast6Months).toHaveLength(6);
+    expect(Array.isArray(r.body.data.recentAnnouncements)).toBe(true);
 
     // PH không được xem dashboard quản trị.
     await api().get("/api/dashboard/summary").set(auth(t, p.token)).expect(403);

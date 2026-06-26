@@ -8,6 +8,7 @@ Header auth chuẩn:
 ```http
 Authorization: Bearer <accessToken>
 Host: demo.kimthanhkids.vn
+X-Language: vi
 ```
 
 ## Quy ước chung
@@ -32,6 +33,10 @@ Error:
   "error": { "code": "VALIDATION_FAILED", "message": "...", "details": {} }
 }
 ```
+
+Ngôn ngữ lỗi: client gửi `x-language: vi|en` trong mọi request. API chọn `error.message`
+theo header này cho các mã lỗi phổ biến; `error.code` luôn ổn định để FE xử lý logic.
+Nếu thiếu header, mặc định `vi`.
 
 Ngoại lệ trả raw response: `GET /media/:id/file` trả stream file, `GET /tuition/invoices/:id/print` trả HTML, `GET /tuition/invoices/export` trả CSV.
 
@@ -729,8 +734,20 @@ Lỗi thường gặp: `FEATURE_NOT_AVAILABLE`, `NO_MENU`, `NO_PLAN`, `NO_ALBUM`
   pendingMedicine: number;
   pendingLeave: number;
   outstandingInvoices: number;
+  overdueInvoices: number;
   outstandingAmount: number;
   revenueThisMonth: number;
+  attendanceTrend30d: Array<{ date: string; present: number }>;
+  medicineThisMonth: Record<MedicineStatus, number>;
+  medicineTotalThisMonth: number;
+  revenueLast6Months: Array<{ period: string; month: string; amount: number }>;
+  recentAnnouncements: Array<{
+    id: string;
+    title: string;
+    audience: AnnouncementAudience;
+    classroomName: string | null;
+    publishedAt: string | Date | null;
+  }>;
 }
 ```
 

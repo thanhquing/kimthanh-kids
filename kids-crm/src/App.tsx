@@ -7,7 +7,6 @@ import {
   CalendarCheck,
   ClipboardList,
   HeartPulse,
-  LayoutDashboard,
   Megaphone,
   Receipt,
   Settings,
@@ -16,6 +15,7 @@ import {
 import { isAuthed } from "./api/auth";
 import { setOnUnauthorized } from "./api/http";
 import { AppLayout } from "./components/AppLayout";
+import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 
@@ -40,26 +40,15 @@ export function App() {
           </RequireAuth>
         }
       >
-        <Route
-          path="/"
-          element={
-            <PlaceholderPage
-              title="Tổng quan"
-              section="CRM nhà trường"
-              icon={LayoutDashboard}
-              description="Màn P0: KPI vận hành (học sinh, lớp, nhân sự, điểm danh hôm nay, công nợ, doanh thu tháng)."
-              endpoints={["GET /dashboard/summary"]}
-            />
-          }
-        />
+        <Route path="/" element={<DashboardPage />} />
         <Route
           path="/classrooms"
           element={
             <PlaceholderPage
-              title="Lớp học"
-              section="Hồ sơ"
+              titleKey="nav.classrooms"
+              sectionKey="sections.profile"
               icon={BookOpen}
-              description="Màn P0 tiếp theo: danh sách lớp, tạo/sửa lớp, sĩ số và GVCN."
+              descKey="routes.classrooms"
               endpoints={["GET /classrooms", "POST /classrooms", "PATCH /classrooms/:id"]}
             />
           }
@@ -68,10 +57,10 @@ export function App() {
           path="/students"
           element={
             <PlaceholderPage
-              title="Học sinh"
-              section="Hồ sơ"
+              titleKey="nav.students"
+              sectionKey="sections.profile"
               icon={Users}
-              description="Màn P0: hồ sơ học sinh, lọc theo lớp, chi tiết và gán phụ huynh."
+              descKey="routes.students"
               endpoints={["GET /students", "POST /students", "POST /students/:id/guardians"]}
             />
           }
@@ -80,10 +69,10 @@ export function App() {
           path="/members"
           element={
             <PlaceholderPage
-              title="Nhân sự"
-              section="Hồ sơ"
+              titleKey="nav.members"
+              sectionKey="sections.profile"
               icon={ClipboardList}
-              description="Màn P0: tạo tài khoản GV/y tá/kế toán/phụ huynh và bật/tắt trạng thái."
+              descKey="routes.members"
               endpoints={["GET /tenant/members", "POST /tenant/members", "PATCH /tenant/members/:id/status"]}
             />
           }
@@ -92,10 +81,10 @@ export function App() {
           path="/attendance"
           element={
             <PlaceholderPage
-              title="Điểm danh"
-              section="Vận hành"
+              titleKey="nav.attendance"
+              sectionKey="sections.operations"
               icon={CalendarCheck}
-              description="Màn P0: chọn lớp/ngày, điểm danh hàng loạt và xem bảng điểm danh."
+              descKey="routes.attendance"
               endpoints={["POST /attendance/mark", "GET /attendance?classroomId=&date="]}
             />
           }
@@ -104,10 +93,10 @@ export function App() {
           path="/reports"
           element={
             <PlaceholderPage
-              title="Sổ liên lạc"
-              section="Vận hành"
+              titleKey="nav.reports"
+              sectionKey="sections.operations"
               icon={Bell}
-              description="Màn P1: soạn báo cáo ngày và xem feed theo lớp/ngày."
+              descKey="routes.reports"
               endpoints={["POST /daily-reports", "GET /daily-reports"]}
             />
           }
@@ -116,10 +105,10 @@ export function App() {
           path="/health"
           element={
             <PlaceholderPage
-              title="Sức khỏe"
-              section="Vận hành"
+              titleKey="nav.health"
+              sectionKey="sections.operations"
               icon={HeartPulse}
-              description="Màn P1: sức khỏe, dị ứng, thuốc và sự cố."
+              descKey="routes.health"
               endpoints={["/health", "/allergies", "/medicine", "/incidents"]}
             />
           }
@@ -128,10 +117,10 @@ export function App() {
           path="/tuition"
           element={
             <PlaceholderPage
-              title="Học phí"
-              section="Tài chính"
+              titleKey="nav.tuition"
+              sectionKey="sections.finance"
               icon={Receipt}
-              description="Màn P0: hóa đơn học phí, VietQR, thu tiền mặt, in HTML và export CSV."
+              descKey="routes.tuition"
               endpoints={["GET /tuition/invoices", "POST /tuition/invoices", "GET /tuition/invoices/:id/vietqr"]}
             />
           }
@@ -140,10 +129,10 @@ export function App() {
           path="/announcements"
           element={
             <PlaceholderPage
-              title="Thông báo"
-              section="Nội dung"
+              titleKey="nav.announcements"
+              sectionKey="sections.content"
               icon={Megaphone}
-              description="Màn P0: soạn nháp, publish và xem feed thông báo."
+              descKey="routes.announcements"
               endpoints={["POST /announcements", "POST /announcements/:id/publish", "GET /announcements/feed"]}
             />
           }
@@ -152,10 +141,10 @@ export function App() {
           path="/audit-logs"
           element={
             <PlaceholderPage
-              title="Nhật ký"
-              section="Vận hành"
+              titleKey="nav.auditLogs"
+              sectionKey="sections.operations"
               icon={Activity}
-              description="Màn P0: xem nhật ký hành động nhạy cảm trong tenant."
+              descKey="routes.auditLogs"
               endpoints={["GET /audit-logs"]}
             />
           }
@@ -164,10 +153,10 @@ export function App() {
           path="/settings"
           element={
             <PlaceholderPage
-              title="Cài đặt trường"
-              section="Cấu hình"
+              titleKey="nav.settings"
+              sectionKey="sections.config"
               icon={Settings}
-              description="Màn P0: thông tin/branding trường, MST & địa chỉ chứng từ, tài khoản ngân hàng để sinh VietQR."
+              descKey="routes.settings"
               endpoints={["GET /tenant/settings", "PATCH /tenant/settings"]}
             />
           }
@@ -177,4 +166,3 @@ export function App() {
     </Routes>
   );
 }
-

@@ -69,7 +69,8 @@ Nguồn hiện có: `kids-landing/public/mock-ui/web/`.
 > Không thêm API nếu API hiện có đã đủ. Chỉ bổ sung endpoint khi mock/flow thật không thể làm bằng contract hiện tại.
 
 - [x] CRM owner flow PASS 49/49 trong [`UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md).
-- [ ] Khi thêm mock mới, viết flow cURL trước khi code UI:
+- [x] Khi thêm mock mới, viết flow cURL trước khi code UI:
+  - [x] Login + Dashboard: `/auth/login`, `/auth/me`, `/dashboard/summary` (run `1782461537`, PASS).
   - [ ] Notifications: `/notifications`, unread/read, preferences.
   - [ ] Leave requests: `/leave`, `/leave/mine`, `/:id/decide`.
   - [ ] Weekly menu: `/menus`, `/menus/:id/allergy-warnings`.
@@ -98,7 +99,7 @@ Nguồn hiện có: `kids-landing/public/mock-ui/web/`.
   - [x] `src/App.tsx`: route CRM thay route platform.
   - [x] `src/components/AppLayout.tsx`: nav theo tenant roles, không còn platform nav.
   - [x] `src/pages/LoginPage.tsx`: text/branding CRM, login tenant realm.
-  - [x] `src/api/platform.ts` -> đổi thành `src/api/crm.ts` với endpoint tenant/domain. _(đã gỡ tạm `crm.ts` để baseline không tích hợp business API; tạo lại khi wiring từng màn)_
+  - [x] `src/api/platform.ts` -> đổi thành `src/api/crm.ts` với endpoint tenant/domain.
 - [x] Không copy page platform không liên quan: tenants, plans, coupons, subscriptions, worklist, observability platform.
 - [x] Chốt UI library cho CRM bảng/form:
   - Đề xuất: **Mantine** nếu cần form/table/modal nhanh.
@@ -111,6 +112,7 @@ Nguồn hiện có: `kids-landing/public/mock-ui/web/`.
 - [x] `src/api/http.ts`:
   - [x] `baseUrl` mặc định `/api`.
   - [x] gắn `Authorization: Bearer`.
+  - [x] gắn `x-language` theo lựa chọn VI/EN trong CRM.
   - [x] dev proxy giữ `Host: demo.kimthanhkids.vn` hoặc host tenant hiện tại.
   - [x] bóc `{ success:true, data, meta? }`.
   - [x] throw `ApiError(code,message,status)` khi `{ success:false }`.
@@ -121,7 +123,10 @@ Nguồn hiện có: `kids-landing/public/mock-ui/web/`.
   - [x] sidebar desktop, bottom/nav compact mobile.
   - [x] menu theo role.
   - [x] route guard tenant realm, chặn platform token nếu dùng sai app.
-- [ ] Error mapping tiếng Việt theo `error.code`: `FORBIDDEN`, `VALIDATION_FAILED`, quota, feature gate, `NO_BANK_CONFIG`, `NOT_FOUND`.
+  - [x] `AccountPanel` ở **top sidebar** (dưới brand): account card (avatar/tên/role + nút đăng xuất), toggle VI/EN dạng segmented + chuông thông báo. Dùng chung cho cả mobile "Thêm" sheet → toggle ngôn ngữ là global mọi màn (PageHeader giờ chỉ còn breadcrumb + search).
+- [x] Header VI/EN đổi ngôn ngữ CRM và request header `x-language`; API trả `error.message` theo ngôn ngữ cho lỗi phổ biến.
+- [x] i18n FE app: dictionary `src/i18n/vi.json` + `en.json` (parity 90 key), translator nhẹ `src/i18n/index.ts` (`useT()` reactive qua `languageStore` + `t()` non-reactive, hỗ trợ `{n}` interpolation). Đã localize toàn bộ text màn hiện có: Login, Dashboard, AppLayout (nav/group/account), PageHeader, PlaceholderPage. **Quy ước: màn mới phải dùng `t()/useT()` và thêm key vào CẢ HAI dict — không hardcode chuỗi.**
+- [ ] Error mapping fallback theo `error.code` cho case chưa localize: quota, feature gate, `NO_BANK_CONFIG`, `NOT_FOUND`.
 
 ### Bước E — UI theo mock HTML
 
@@ -129,12 +134,14 @@ Làm từng cụm, mỗi cụm có mock -> component -> API integration -> self-
 
 - [x] Auth/Login:
   - [x] Login page.
+  - [x] "Quên mật khẩu?" mở modal hướng dẫn theo tổ chức tenant (không gọi email/reset API ở P0).
   - [x] Logout.
   - [x] Refresh token.
   - [x] `/auth/me`.
-- [ ] Dashboard: _(route placeholder; wiring `GET /dashboard/summary` đã gỡ, làm lại theo quy trình)_
-  - [ ] KPI tổng quan.
-  - [ ] điểm danh hôm nay, thuốc/nghỉ chờ duyệt, công nợ, doanh thu tháng.
+- [x] Dashboard:
+  - [x] KPI tổng quan theo mock `dashboard.html`.
+  - [x] trend điểm danh 30 ngày, thuốc tháng này, doanh thu 6 tháng, thông báo gần đây.
+  - [x] tích hợp `GET /dashboard/summary` + cURL PASS.
 - [ ] Settings: _(route placeholder; wiring `GET/PATCH /tenant/settings` đã gỡ — nhớ omit field rỗng vì zod `.optional()` từ chối `""`)_
   - [ ] xem/sửa thông tin trường.
   - [ ] branding cơ bản.

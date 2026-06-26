@@ -1,14 +1,18 @@
-import { Lock, Mail } from "lucide-react";
+import { Building2, Headphones, Lock, Mail, Sun, UserCog } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
 import { ApiError } from "@/api/http";
+import { Modal } from "@/components/ui/Modal";
+import { useT } from "@/i18n";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [identifier, setIdentifier] = useState("admin@hoasen.edu.vn");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: FormEvent) {
@@ -20,11 +24,11 @@ export function LoginPage() {
       navigate("/", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.code === "UNAUTHORIZED" ? "Tài khoản hoặc mật khẩu không đúng." : err.message);
+        setError(err.code === "UNAUTHORIZED" ? t("login.errInvalid") : err.message);
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Không kết nối được máy chủ.");
+        setError(t("login.errNetwork"));
       }
     } finally {
       setLoading(false);
@@ -32,54 +36,125 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid place-items-center brand-grad p-4">
-      <form onSubmit={onSubmit} className="card w-full max-w-md p-8">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl brand-grad grid place-items-center text-white font-bold">
-            K
+    <main className="min-h-screen grid place-items-center bg-[#fff8f3] p-6">
+      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl shadow-[#b94a3f]/15 ring-1 ring-white/70 md:grid-cols-2">
+        <div className="brand-grad text-white p-10 hidden md:flex flex-col justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-white/20 grid place-items-center">
+              <Sun className="w-5 h-5" />
+            </div>
+            <span className="font-bold">{t("brand.name")}</span>
           </div>
           <div>
-            <div className="font-bold text-lg leading-tight">KimThanh Kids</div>
-            <div className="text-xs text-slate-400">School CRM</div>
+            <div className="text-3xl font-bold mb-2">
+              {t("login.brandWelcome")}
+              <br />
+              {t("login.adminConsole")}
+            </div>
+            <p className="opacity-80 text-sm">{t("login.tagline")}</p>
+          </div>
+          <div className="text-xs opacity-70">{t("login.copyright")}</div>
+        </div>
+
+        <form onSubmit={onSubmit} className="relative z-10 bg-white p-10 md:border-l md:border-[#f4e7e0]">
+          <h1 className="text-2xl font-bold mb-1">{t("login.title")}</h1>
+          <p className="text-sm text-slate-500 mb-6">{t("login.subtitle")}</p>
+
+          <div className="space-y-4">
+            <div>
+              <label className="label">{t("login.identifierLabel")}</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  className="field !pl-9"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="label">{t("login.passwordLabel")}</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="password"
+                  className="field !pl-9"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  placeholder="••••••••••"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" defaultChecked />
+                {t("login.rememberMe")}
+              </label>
+              <button
+                type="button"
+                className="text-[color:var(--primary)] font-medium"
+                onClick={() => setForgotOpen(true)}
+              >
+                {t("login.forgot")}
+              </button>
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</div>
+            )}
+
+            <button type="submit" className="btn-primary w-full" disabled={loading}>
+              {loading ? t("login.submitting") : t("login.submit")}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <Modal
+        open={forgotOpen}
+        onClose={() => setForgotOpen(false)}
+        title={t("login.forgotTitle")}
+        footer={
+          <button className="btn-primary text-sm" onClick={() => setForgotOpen(false)}>
+            {t("login.forgotUnderstood")}
+          </button>
+        }
+      >
+        <div className="space-y-3">
+          <div className="rounded-xl border border-[#f1e3dc] bg-[#fff8f3] p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 rounded-lg bg-white p-2 text-[color:var(--primary)]">
+                <UserCog className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="font-semibold">{t("login.forgotStaffTitle")}</div>
+                <p className="mt-1 text-sm text-slate-500">{t("login.forgotStaffDesc")}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[#f1e3dc] bg-white p-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 rounded-lg bg-[#fff8f3] p-2 text-[color:var(--primary)]">
+                <Building2 className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="font-semibold">{t("login.forgotOwnerTitle")}</div>
+                <p className="mt-1 text-sm text-slate-500">{t("login.forgotOwnerDesc")}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-500">
+            <Headphones className="h-4 w-4 text-slate-400" />
+            <span>{t("login.forgotEmailNote")}</span>
           </div>
         </div>
-        <h1 className="text-xl font-bold mt-5">Đăng nhập quản trị trường</h1>
-        <p className="text-sm text-slate-500 mb-5">
-          Dành cho chủ trường, hiệu trưởng và nhân sự được phân quyền.
-        </p>
-
-        <label className="label">Email hoặc số điện thoại</label>
-        <div className="relative mb-3">
-          <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-          <input
-            className="field !pl-9"
-            value={identifier}
-            onChange={(e) => setIdentifier(e.target.value)}
-            autoComplete="username"
-          />
-        </div>
-        <label className="label">Mật khẩu</label>
-        <div className="relative mb-2">
-          <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-          <input
-            type="password"
-            className="field !pl-9"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            placeholder="••••••••••"
-          />
-        </div>
-
-        {error && (
-          <div className="mb-3 text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</div>
-        )}
-
-        <button type="submit" className="btn-primary w-full mt-4" disabled={loading}>
-          {loading ? "Đang đăng nhập…" : "Đăng nhập"}
-        </button>
-      </form>
-    </div>
+      </Modal>
+    </main>
   );
 }
-

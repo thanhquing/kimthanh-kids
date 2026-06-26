@@ -26,6 +26,26 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
       expect(res.body.error.code).toBe("INVALID_CREDENTIALS");
     });
 
+    it("localize lỗi theo x-language", async () => {
+      const t = await createTenant(app);
+      const en = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .set("x-language", "en")
+        .send({ email: t.email, password: "wrong-pass" })
+        .expect(401);
+      expect(en.body.error.code).toBe("INVALID_CREDENTIALS");
+      expect(en.body.error.message).toBe("Email/phone number or password is incorrect");
+
+      const vi = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .set("x-language", "vi")
+        .send({ email: t.email, password: "wrong-pass" })
+        .expect(401);
+      expect(vi.body.error.message).toBe("Email/số điện thoại hoặc mật khẩu không đúng");
+    });
+
     it("đăng nhập không có tenant context → 401 TENANT_REQUIRED", async () => {
       const res = await api()
         .post("/api/auth/login")

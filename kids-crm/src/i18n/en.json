@@ -1,0 +1,114 @@
+{
+  "brand": {
+    "name": "KimThanh Kids",
+    "crm": "School CRM"
+  },
+  "nav": {
+    "dashboard": "Overview",
+    "classrooms": "Classrooms",
+    "classroomsShort": "Class",
+    "students": "Students",
+    "members": "Staff",
+    "attendance": "Attendance",
+    "reports": "Daily log",
+    "health": "Health",
+    "tuition": "Tuition",
+    "announcements": "Announcements",
+    "auditLogs": "Audit log",
+    "settings": "School settings",
+    "logout": "Sign out",
+    "more": "More",
+    "navigation": "Navigation"
+  },
+  "navGroups": {
+    "profile": "Records",
+    "operations": "Operations",
+    "financeContent": "Finance & content",
+    "config": "Configuration"
+  },
+  "sections": {
+    "home": "Home",
+    "profile": "Records",
+    "operations": "Operations",
+    "finance": "Finance",
+    "content": "Content",
+    "config": "Configuration"
+  },
+  "topbar": {
+    "adminName": "School admin",
+    "adminRole": "Tenant CRM",
+    "notifications": "Notifications",
+    "language": "Language"
+  },
+  "login": {
+    "brandWelcome": "Welcome to",
+    "adminConsole": "Admin Console",
+    "tagline": "Manage every preschool operation on a single platform.",
+    "copyright": "© 2026 KimThanh Kids",
+    "title": "Sign in",
+    "subtitle": "Use the account issued by your school",
+    "identifierLabel": "Email or phone number",
+    "passwordLabel": "Password",
+    "rememberMe": "Remember me",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "errInvalid": "Incorrect account or password.",
+    "errNetwork": "Could not reach the server.",
+    "forgotTitle": "Account recovery",
+    "forgotUnderstood": "Got it",
+    "forgotStaffTitle": "School staff",
+    "forgotStaffDesc": "Contact your school's administrator or principal to have your password reset.",
+    "forgotOwnerTitle": "School owner or top-level administrator",
+    "forgotOwnerDesc": "Please contact KimThanh Kids to verify the school and restore access.",
+    "forgotEmailNote": "Automatic reset via email will be added once the transactional email channel is enabled."
+  },
+  "dashboard": {
+    "title": "Overview",
+    "searchPlaceholder": "Search...",
+    "kpiStudents": "Students",
+    "kpiClassrooms": "Classrooms",
+    "kpiStaff": "Staff",
+    "kpiOutstanding": "Pending invoices",
+    "kpiOverdue": "Overdue",
+    "kpiMedicine": "Medicine requests",
+    "attendanceTrend": "Attendance trend (30 days)",
+    "present": "Present",
+    "medicineTitle": "Medicine requests",
+    "thisMonth": "This month",
+    "medPending": "Pending review",
+    "medAdministered": "Administered",
+    "medApproved": "Approved",
+    "revenueTitle": "Revenue by month",
+    "revenueThisMonth": "This month:",
+    "recentAnnouncements": "Recent announcements",
+    "noAnnouncements": "No published announcements yet."
+  },
+  "audience": {
+    "ALL": "Whole school",
+    "CLASS": "Class",
+    "PARENTS": "Parents",
+    "TEACHERS": "Teachers"
+  },
+  "time": {
+    "justNow": "Just now",
+    "hoursAgo": "{n}h ago",
+    "daysAgo": "{n}d ago",
+    "none": "—"
+  },
+  "placeholder": {
+    "hasRoute": "CRM route is ready"
+  },
+  "routes": {
+    "classrooms": "Next P0 screen: classroom list, create/edit, enrollment and homeroom teacher.",
+    "students": "P0 screen: student profiles, filter by class, detail and guardian linking.",
+    "members": "P0 screen: create teacher/nurse/finance/parent accounts and toggle status.",
+    "attendance": "P0 screen: pick class/date, bulk attendance and view the attendance grid.",
+    "reports": "P1 screen: compose daily reports and view the feed by class/date.",
+    "health": "P1 screen: health, allergies, medicine and incidents.",
+    "tuition": "P0 screen: tuition invoices, VietQR, cash collection, HTML print and CSV export.",
+    "announcements": "P0 screen: draft, publish and view the announcement feed.",
+    "auditLogs": "P0 screen: view sensitive action logs within the tenant.",
+    "settings": "P0 screen: school info/branding, tax code & billing address, bank account for VietQR."
+  }
+}

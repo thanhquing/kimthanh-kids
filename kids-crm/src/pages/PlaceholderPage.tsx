@@ -1,22 +1,24 @@
 import type { LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { useT, type TKey } from "@/i18n";
 
 export function PlaceholderPage({
-  title,
-  section,
+  titleKey,
+  sectionKey,
   icon: Icon,
-  description,
+  descKey,
   endpoints,
 }: {
-  title: string;
-  section: string;
+  titleKey: TKey;
+  sectionKey: TKey;
   icon: LucideIcon;
-  description: string;
+  descKey: TKey;
   endpoints: string[];
 }) {
+  const { t } = useT();
   return (
     <>
-      <PageHeader title={title} section={section} />
+      <PageHeader title={t(titleKey)} section={t(sectionKey)} />
       <main className="p-6">
         <div className="card p-6 max-w-3xl">
           <div className="flex items-start gap-4">
@@ -24,8 +26,8 @@ export function PlaceholderPage({
               <Icon className="w-5 h-5" />
             </div>
             <div>
-              <div className="font-bold text-slate-800 mb-1">Đã có route CRM</div>
-              <p className="text-sm text-slate-500">{description}</p>
+              <div className="font-bold text-slate-800 mb-1">{t("placeholder.hasRoute")}</div>
+              <p className="text-sm text-slate-500">{t(descKey)}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 {endpoints.map((e) => (
                   <span key={e} className="badge b-slate font-mono">

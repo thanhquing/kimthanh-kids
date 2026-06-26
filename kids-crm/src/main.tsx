@@ -5,7 +5,10 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { ToastProvider } from "./components/ui/Toast";
 import "./index.css";
+import { initLanguage } from "./lib/language";
 import { queryClient } from "./lib/queryClient";
+
+initLanguage();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

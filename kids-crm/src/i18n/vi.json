@@ -1,0 +1,114 @@
+{
+  "brand": {
+    "name": "KimThanh Kids",
+    "crm": "School CRM"
+  },
+  "nav": {
+    "dashboard": "Tổng quan",
+    "classrooms": "Lớp học",
+    "classroomsShort": "Lớp",
+    "students": "Học sinh",
+    "members": "Nhân sự",
+    "attendance": "Điểm danh",
+    "reports": "Sổ liên lạc",
+    "health": "Sức khỏe",
+    "tuition": "Học phí",
+    "announcements": "Thông báo",
+    "auditLogs": "Nhật ký",
+    "settings": "Cài đặt trường",
+    "logout": "Đăng xuất",
+    "more": "Thêm",
+    "navigation": "Điều hướng"
+  },
+  "navGroups": {
+    "profile": "Hồ sơ",
+    "operations": "Vận hành",
+    "financeContent": "Tài chính & nội dung",
+    "config": "Cấu hình"
+  },
+  "sections": {
+    "home": "Trang chủ",
+    "profile": "Hồ sơ",
+    "operations": "Vận hành",
+    "finance": "Tài chính",
+    "content": "Nội dung",
+    "config": "Cấu hình"
+  },
+  "topbar": {
+    "adminName": "Quản trị trường",
+    "adminRole": "Tenant CRM",
+    "notifications": "Thông báo",
+    "language": "Ngôn ngữ"
+  },
+  "login": {
+    "brandWelcome": "Chào mừng đến với",
+    "adminConsole": "Admin Console",
+    "tagline": "Quản lý toàn bộ hoạt động của trường mầm non trên cùng một nền tảng.",
+    "copyright": "© 2026 KimThanh Kids",
+    "title": "Đăng nhập",
+    "subtitle": "Sử dụng tài khoản được trường cấp",
+    "identifierLabel": "Email hoặc số điện thoại",
+    "passwordLabel": "Mật khẩu",
+    "rememberMe": "Ghi nhớ tôi",
+    "forgot": "Quên mật khẩu?",
+    "submit": "Đăng nhập",
+    "submitting": "Đang đăng nhập…",
+    "errInvalid": "Tài khoản hoặc mật khẩu không đúng.",
+    "errNetwork": "Không kết nối được máy chủ.",
+    "forgotTitle": "Khôi phục tài khoản",
+    "forgotUnderstood": "Đã hiểu",
+    "forgotStaffTitle": "Nhân sự nhà trường",
+    "forgotStaffDesc": "Liên hệ quản trị viên hoặc hiệu trưởng của trường để được đặt lại mật khẩu.",
+    "forgotOwnerTitle": "Chủ trường hoặc tài khoản quản trị cao nhất",
+    "forgotOwnerDesc": "Vui lòng liên hệ KimThanh Kids để xác minh trường và khôi phục quyền truy cập.",
+    "forgotEmailNote": "Reset tự động qua email sẽ được bổ sung khi kênh email giao dịch được bật."
+  },
+  "dashboard": {
+    "title": "Tổng quan",
+    "searchPlaceholder": "Tìm kiếm...",
+    "kpiStudents": "Học sinh",
+    "kpiClassrooms": "Lớp học",
+    "kpiStaff": "Nhân sự",
+    "kpiOutstanding": "Hóa đơn chờ",
+    "kpiOverdue": "Quá hạn",
+    "kpiMedicine": "Yêu cầu thuốc",
+    "attendanceTrend": "Xu hướng điểm danh (30 ngày)",
+    "present": "Có mặt",
+    "medicineTitle": "Yêu cầu thuốc",
+    "thisMonth": "Tháng này",
+    "medPending": "Chờ duyệt",
+    "medAdministered": "Đã cho uống",
+    "medApproved": "Đã duyệt",
+    "revenueTitle": "Doanh thu theo tháng",
+    "revenueThisMonth": "Tháng này:",
+    "recentAnnouncements": "Thông báo gần đây",
+    "noAnnouncements": "Chưa có thông báo đã phát hành."
+  },
+  "audience": {
+    "ALL": "Toàn trường",
+    "CLASS": "Lớp",
+    "PARENTS": "Phụ huynh",
+    "TEACHERS": "Giáo viên"
+  },
+  "time": {
+    "justNow": "Vừa xong",
+    "hoursAgo": "{n} giờ trước",
+    "daysAgo": "{n} ngày trước",
+    "none": "—"
+  },
+  "placeholder": {
+    "hasRoute": "Đã có route CRM"
+  },
+  "routes": {
+    "classrooms": "Màn P0 tiếp theo: danh sách lớp, tạo/sửa lớp, sĩ số và GVCN.",
+    "students": "Màn P0: hồ sơ học sinh, lọc theo lớp, chi tiết và gán phụ huynh.",
+    "members": "Màn P0: tạo tài khoản GV/y tá/kế toán/phụ huynh và bật/tắt trạng thái.",
+    "attendance": "Màn P0: chọn lớp/ngày, điểm danh hàng loạt và xem bảng điểm danh.",
+    "reports": "Màn P1: soạn báo cáo ngày và xem feed theo lớp/ngày.",
+    "health": "Màn P1: sức khỏe, dị ứng, thuốc và sự cố.",
+    "tuition": "Màn P0: hóa đơn học phí, VietQR, thu tiền mặt, in HTML và export CSV.",
+    "announcements": "Màn P0: soạn nháp, publish và xem feed thông báo.",
+    "auditLogs": "Màn P0: xem nhật ký hành động nhạy cảm trong tenant.",
+    "settings": "Màn P0: thông tin/branding trường, MST & địa chỉ chứng từ, tài khoản ngân hàng để sinh VietQR."
+  }
+}

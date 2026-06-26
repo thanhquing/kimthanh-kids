@@ -208,6 +208,26 @@ Fix da thuc hien trong qua trinh test (deu o phia script test, **khong sua backe
 
 Ket qua: **49/49 PASS**, khong con case fail. Backend CRM chu truong khop 100% voi mock UI.
 
+### CRM Login + Dashboard UI wiring (mock `login.html`, `dashboard.html`)
+
+Run: `1782461537`.
+Fixture tenant: `demo.kimthanhkids.vn`.
+Temp response dir: `/tmp/kids-crm-login-dashboard-1782461537`.
+
+| ID | UI behavior | cURL/API | Expected | Actual | Result | Signal |
+|---|---|---|---:|---:|---|---|
+| CRM-LD01 | Dang nhap CRM demo | `POST /auth/login` | `201` | `201` | PASS | token issued |
+| CRM-LD02 | Verify tenant realm | `GET /auth/me` | `200` | `200` | PASS | `type=TENANT`, co `tenantId` |
+| CRM-LD03 | Dashboard mock data | `GET /dashboard/summary` | `200` | `200` | PASS | `students=12`, `classrooms=3`, `staff=6`, `attendanceTrend30d[30]`, `revenueLast6Months[6]`, `recentAnnouncements=2` |
+| CRM-LD04 | Loi localize EN | `POST /auth/login` (`x-language: en`, sai pass) | `401` | `401` | PASS | `code=INVALID_CREDENTIALS`, `message="Email/phone number or password is incorrect"` |
+| CRM-LD05 | Loi localize VI | `POST /auth/login` (`x-language: vi`, sai pass) | `401` | `401` | PASS | `code=INVALID_CREDENTIALS`, `message="Email/số điện thoại hoặc mật khẩu không đúng"` |
+
+Fix/API bo sung trong dot nay:
+
+- `GET /dashboard/summary` bo sung field additive cho dashboard web: `overdueInvoices`, `attendanceTrend30d`, `medicineThisMonth`, `medicineTotalThisMonth`, `revenueLast6Months`, `recentAnnouncements`.
+- Field cu van giu nguyen de khong pha C06/e2e hien co.
+- `AllExceptionsFilter` doc header `x-language` (fallback `accept-language`, mac dinh `vi`) -> localize `error.message` theo `error.code`; `code/details` giu nguyen de client xu ly on dinh. Verify live cURL CRM-LD04/LD05 + e2e `auth-rbac` ("localize lỗi theo x-language").
+
 ## App Nho / Mobile (Giao vien + Phu huynh)
 
 Mock UI source (`kids-landing/public/mock-ui/mobile/`):
