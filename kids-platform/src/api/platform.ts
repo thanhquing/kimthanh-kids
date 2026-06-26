@@ -61,8 +61,8 @@ export type Tenant = {
   billingCycle?: string | null;
   studentCount?: number;
   mrr?: number;
-  // Bổ sung ở GET /platform/tenants/:id (detail):
-  quota?: { metric: string; used: number; limit: number | null; enforcement: string | null }[];
+  // quota: list trả HS/GV/Lớp/Lưu trữ (used/limit) cho cột "Hạn mức"; detail (:id) trả thêm enforcement.
+  quota?: { metric: string; used: number; limit: number | null; enforcement?: string | null }[];
 };
 
 export type TenantStats = {
@@ -259,6 +259,11 @@ export type Worklist = {
       daysLeft?: number | null;
     }[];
   };
+  quota: {
+    thresholdPct: number;
+    atRisk: number;
+    tenants: number;
+  };
   dunning: {
     overdueCount: number;
     overdueAmount: number;
@@ -347,9 +352,15 @@ export const platform = {
   revenue: (months: number) =>
     api.get<RevenueSeries>("/platform/revenue", { query: { months } }),
 
-  listTenants: (page = 1, status?: string, q?: string, planTier?: string) =>
+  listTenants: (page = 1, status?: string, q?: string, planTier?: string, quota?: string) =>
     api.getPage<Tenant>("/platform/tenants", {
-      query: { page, status, q: q || undefined, planTier: planTier || undefined },
+      query: {
+        page,
+        status,
+        q: q || undefined,
+        planTier: planTier || undefined,
+        quota: quota || undefined,
+      },
     }),
   tenantStats: () => api.get<TenantStats>("/platform/tenants/stats"),
   getTenant: (id: string) => api.get<Tenant>(`/platform/tenants/${id}`),

@@ -27,6 +27,19 @@ import {
 import { ProvisioningService, SignupInput } from "../provisioning/provisioning.service";
 import { MrrSnapshotService } from "./mrr-snapshot.service";
 
+/** Ngưỡng cảnh báo quota (dùng cho worklist + filter trang Trường). */
+const QUOTA_AT_RISK_PCT = 80;
+/**
+ * Metric có nguồn usage thật để cảnh báo nâng gói. KHÔNG gồm SCHOOLS: gói phổ thông chỉ cho
+ * 1 cơ sở nên mọi trường đều 1/1 = 100% → nhiễu (gần như trường nào cũng "sắp chạm hạn").
+ */
+const QUOTA_METRICS = [
+  LimitMetric.STUDENTS,
+  LimitMetric.TEACHERS,
+  LimitMetric.CLASSROOMS,
+  LimitMetric.STORAGE_MB,
+] as const;
+
 export interface CreatePlanInput {
   code: string;
   name: string;
@@ -204,11 +217,22 @@ export class PlatformService {
     };
   }
 
-  async listTenants(page = 1, pageSize = 20, status?: string, q?: string, planTier?: string) {
+  async listTenants(
+    page = 1,
+    pageSize = 20,
+    status?: string,
+    q?: string,
+    planTier?: string,
+    quota?: string,
+  ) {
     const term = q?.trim();
+    const now = new Date();
+    // Lọc theo cảnh báo quota: chỉ những trường sắp chạm hạn (>=80%, tính usage thật).
+    const quotaIds = quota === "at-risk" ? await this.quotaRiskTenantIds(now) : undefined;
     const where = {
       ...(status ? { status: status as never } : {}),
       deletedAt: null,
+      ...(quotaIds ? { id: { in: quotaIds } } : {}),
       ...(planTier ? { subscription: { is: { plan: { is: { tier: planTier as never } } } } } : {}),
       ...(term
         ? {
@@ -230,31 +254,36 @@ export class PlatformService {
         orderBy: { createdAt: "desc" },
         include: {
           settings: true,
-          subscription: { include: { plan: { include: { prices: true } } } },
+          subscription: {
+            include: { plan: { include: { prices: true, limits: true } }, overrides: true },
+          },
           _count: { select: { schools: true } },
         },
       }),
       this.prisma.system.tenant.count({ where }),
     ]);
 
-    // Số học sinh đang học theo tenant (1 query gộp cho cả trang).
-    const ids = items.map((t) => t.id);
-    const grouped = ids.length
-      ? await this.prisma.system.student.groupBy({
-          by: ["tenantId"],
-          where: { tenantId: { in: ids }, status: StudentStatus.ACTIVE, deletedAt: null },
-          _count: { _all: true },
-        })
-      : [];
-    const studentCount = new Map(grouped.map((g) => [g.tenantId, g._count._all]));
-
-    const rows = items.map((t) => ({
-      ...t,
-      planTier: t.subscription?.plan?.tier ?? null,
-      billingCycle: t.subscription?.billingCycle ?? null,
-      studentCount: studentCount.get(t.id) ?? 0,
-      mrr: t.subscription ? Math.round(this.mrr.subMrr(t.subscription)) : 0,
-    }));
+    // Usage thật (HS/GV/Lớp/Lưu trữ) cho cả trang → cột "Hạn mức" hiển thị dùng/limit.
+    const usage = await this.usageCounts(items.map((t) => t.id));
+    const rows = items.map((t) => {
+      const used = this.usedForTenant(usage, t.id);
+      const limits = t.subscription?.plan
+        ? this.resolveLimitMap(t.subscription.plan.limits, t.subscription.overrides, now)
+        : new Map<LimitMetric, number | null>();
+      const quota = QUOTA_METRICS.map((metric) => ({
+        metric,
+        used: used[metric] ?? 0,
+        limit: limits.get(metric) ?? null, // null = không giới hạn
+      }));
+      return {
+        ...t,
+        planTier: t.subscription?.plan?.tier ?? null,
+        billingCycle: t.subscription?.billingCycle ?? null,
+        studentCount: used[LimitMetric.STUDENTS] ?? 0,
+        quota,
+        mrr: t.subscription ? Math.round(this.mrr.subMrr(t.subscription)) : 0,
+      };
+    });
     return paginated(rows, { page, pageSize, total });
   }
 
@@ -910,21 +939,23 @@ export class PlatformService {
     const now = new Date();
     const soon = new Date(now.getTime() + 7 * 86_400_000);
 
-    // ── Phễu dùng thử ──
-    const [trialSubs, endedTotal, expiredEnded, atRiskSuspend, suspendedCount] = await Promise.all([
-      this.prisma.system.subscription.findMany({
-        where: { status: SubscriptionStatus.TRIALING, trialEndsAt: { not: null } },
-        orderBy: { trialEndsAt: "asc" },
-        take: 50,
-        include: { plan: { select: { name: true } } },
-      }),
-      this.prisma.system.subscription.count({ where: { trialEndsAt: { not: null, lte: now } } }),
-      this.prisma.system.subscription.count({
-        where: { trialEndsAt: { not: null, lte: now }, status: SubscriptionStatus.EXPIRED },
-      }),
-      this.prisma.system.subscription.count({ where: { status: SubscriptionStatus.PAST_DUE } }),
-      this.prisma.system.subscription.count({ where: { status: SubscriptionStatus.SUSPENDED } }),
-    ]);
+    // ── Phễu dùng thử (+ quota chạy song song trong cùng Promise.all để không tạo promise lửng) ──
+    const [trialSubs, endedTotal, expiredEnded, atRiskSuspend, suspendedCount, quota] =
+      await Promise.all([
+        this.prisma.system.subscription.findMany({
+          where: { status: SubscriptionStatus.TRIALING, trialEndsAt: { not: null } },
+          orderBy: { trialEndsAt: "asc" },
+          take: 50,
+          include: { plan: { select: { name: true } } },
+        }),
+        this.prisma.system.subscription.count({ where: { trialEndsAt: { not: null, lte: now } } }),
+        this.prisma.system.subscription.count({
+          where: { trialEndsAt: { not: null, lte: now }, status: SubscriptionStatus.EXPIRED },
+        }),
+        this.prisma.system.subscription.count({ where: { status: SubscriptionStatus.PAST_DUE } }),
+        this.prisma.system.subscription.count({ where: { status: SubscriptionStatus.SUSPENDED } }),
+        this.quotaRisks(now),
+      ]);
     const converted = endedTotal - expiredEnded;
     const conversionRate = endedTotal ? Math.round((converted / endedTotal) * 100) : 0;
     const expiringSoon = trialSubs.filter((s) => s.trialEndsAt && s.trialEndsAt <= soon).length;
@@ -1001,7 +1032,152 @@ export class PlatformService {
         suspended: suspendedCount,
         items: dunningItems,
       },
+      quota,
     };
+  }
+
+  /**
+   * KPI cảnh báo quota cho worklist (không kèm danh sách — payload nhẹ).
+   *  • atRisk  = số dòng (tenant×metric) dùng >= 80% hạn mức hữu hạn.
+   *  • tenants = số TRƯỜNG (distinct) sắp chạm hạn (= cơ hội nâng gói).
+   * Bấm KPI ở FE → trang Trường lọc `quota=at-risk`.
+   */
+  private async quotaRisks(now: Date) {
+    const lines = await this.quotaLines(now);
+    return {
+      thresholdPct: QUOTA_AT_RISK_PCT,
+      atRisk: lines.length,
+      tenants: new Set(lines.map((l) => l.tenantId)).size,
+    };
+  }
+
+  /**
+   * Các dòng (tenant×metric) đang dùng >= 80% hạn mức hữu hạn, theo usage THẬT
+   * (HS/GV/Lớp/Lưu trữ) — không qua UsageCounter cache. Dùng chung cho worklist + filter trang Trường.
+   */
+  private async quotaLines(now: Date): Promise<{ tenantId: string; percent: number }[]> {
+    const tenants = await this.prisma.system.tenant.findMany({
+      where: {
+        deletedAt: null,
+        status: { in: [TenantStatus.TRIAL, TenantStatus.ACTIVE, TenantStatus.PAST_DUE] },
+      },
+      include: {
+        subscription: { include: { plan: { include: { limits: true } }, overrides: true } },
+      },
+    });
+    if (!tenants.length) return [];
+
+    const usage = await this.usageCounts(tenants.map((t) => t.id));
+    const lines: { tenantId: string; percent: number }[] = [];
+    for (const tenant of tenants) {
+      const sub = tenant.subscription;
+      if (!sub?.plan) continue;
+      const limits = this.resolveLimitMap(sub.plan.limits, sub.overrides, now);
+      const used = this.usedForTenant(usage, tenant.id);
+      for (const metric of QUOTA_METRICS) {
+        const limitValue = limits.get(metric);
+        if (limitValue === undefined || limitValue === null || limitValue <= 0) continue;
+        const percent = Math.round(((used[metric] ?? 0) / limitValue) * 100);
+        if (percent >= QUOTA_AT_RISK_PCT) lines.push({ tenantId: tenant.id, percent });
+      }
+    }
+    return lines;
+  }
+
+  /** Tập tenantId đang sắp chạm hạn (>=80%) — cho filter trang Trường. */
+  private async quotaRiskTenantIds(now: Date): Promise<string[]> {
+    const lines = await this.quotaLines(now);
+    return [...new Set(lines.map((l) => l.tenantId))];
+  }
+
+  /** Đếm usage THẬT theo tenant cho các metric có nguồn dữ liệu (HS/GV/Lớp/Lưu trữ MB). */
+  private async usageCounts(tenantIds: string[]): Promise<{
+    students: Map<string, number>;
+    teachers: Map<string, number>;
+    classrooms: Map<string, number>;
+    storageMb: Map<string, number>;
+  }> {
+    if (!tenantIds.length)
+      return {
+        students: new Map(),
+        teachers: new Map(),
+        classrooms: new Map(),
+        storageMb: new Map(),
+      };
+
+    const [students, classrooms, teachers, storage] = await Promise.all([
+      this.prisma.system.student.groupBy({
+        by: ["tenantId"],
+        where: { tenantId: { in: tenantIds }, status: StudentStatus.ACTIVE, deletedAt: null },
+        _count: { _all: true },
+      }),
+      this.prisma.system.classroom.groupBy({
+        by: ["tenantId"],
+        where: { tenantId: { in: tenantIds }, deletedAt: null },
+        _count: { _all: true },
+      }),
+      // 1 GV dạy nhiều cơ sở sinh nhiều dòng membership (@@unique[userId,role,schoolId]) nên
+      // dedup theo (tenant,user). Prisma groupBy không có COUNT(DISTINCT) và repo cấm raw query
+      // (guardrail cross-tenant) → distinct findMany là phương án Prisma-native chuẩn ở đây.
+      this.prisma.system.membership.findMany({
+        where: {
+          tenantId: { in: tenantIds },
+          role: TenantRole.TEACHER,
+          isActive: true,
+          deletedAt: null,
+        },
+        distinct: ["tenantId", "userId"],
+        select: { tenantId: true, userId: true },
+      }),
+      this.prisma.system.media.groupBy({
+        by: ["tenantId"],
+        where: { tenantId: { in: tenantIds } },
+        _sum: { sizeBytes: true },
+      }),
+    ]);
+
+    const countMap = (rows: { tenantId: string; _count: { _all: number } }[]) =>
+      new Map(rows.map((r) => [r.tenantId, r._count._all]));
+    const teacherCount = new Map<string, number>();
+    for (const row of teachers)
+      teacherCount.set(row.tenantId, (teacherCount.get(row.tenantId) ?? 0) + 1);
+    return {
+      students: countMap(students),
+      classrooms: countMap(classrooms),
+      teachers: teacherCount,
+      storageMb: new Map(
+        storage.map((r) => [r.tenantId, Math.round((r._sum.sizeBytes ?? 0) / (1024 * 1024))]),
+      ),
+    };
+  }
+
+  /** Usage 4 metric của 1 tenant từ kết quả `usageCounts`. */
+  private usedForTenant(
+    usage: Awaited<ReturnType<PlatformService["usageCounts"]>>,
+    tenantId: string,
+  ): Partial<Record<LimitMetric, number>> {
+    return {
+      [LimitMetric.STUDENTS]: usage.students.get(tenantId) ?? 0,
+      [LimitMetric.TEACHERS]: usage.teachers.get(tenantId) ?? 0,
+      [LimitMetric.CLASSROOMS]: usage.classrooms.get(tenantId) ?? 0,
+      [LimitMetric.STORAGE_MB]: usage.storageMb.get(tenantId) ?? 0,
+    };
+  }
+
+  /** Resolve limit hữu hạn theo metric từ plan + override TenantEntitlement (giống EntitlementService). */
+  private resolveLimitMap(
+    planLimits: { metric: LimitMetric; limitValue: number | null }[],
+    overrides: { metric: LimitMetric | null; limitValue: number | null; expiresAt: Date | null }[],
+    now: Date,
+  ): Map<LimitMetric, number | null> {
+    const limits = new Map<LimitMetric, number | null>();
+    for (const l of planLimits) limits.set(l.metric, l.limitValue);
+    for (const o of overrides) {
+      if (o.expiresAt && o.expiresAt < now) continue;
+      if (!o.metric) continue;
+      limits.set(o.metric, o.limitValue ?? null);
+    }
+    return limits;
   }
 
   /** Override entitlement cho tenant (vd dedicated nâng riêng limit/feature). */

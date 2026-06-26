@@ -92,7 +92,7 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 - [x] Subscriptions các trường (`GET /platform/subscriptions`, stats).
 - [x] Hóa đơn nền tảng: list, detail/public link, tạo kỳ, mark-paid (`/platform/invoices`).
 
-**P1 đã có:** entitlement override (nâng/giảm hạn mức 1 trường), **impersonate** → handoff sang tenant token (token không refresh), observability (`usage/overview` + `platform/audit`), worklist công nợ/trial, platform settings (bank + grace dunning).
+**P1 đã có:** entitlement override (nâng/giảm hạn mức 1 trường), **impersonate** → handoff sang tenant token (token không refresh), observability (`usage/overview` + `platform/audit`), worklist công nợ/trial/quota sắp đầy, platform settings (bank + grace dunning).
 **P2 còn lại:** email dunning tự động, coupon redeem thực tế, revoke/rotate public invoice token, PDF server-side, impersonate chọn role/user cụ thể khi CRM/mobile có UI.
 
 ---

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Download, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError } from "@/api/http";
 import { platform, type CreateTenantInput, type Tenant } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
@@ -18,6 +18,19 @@ const CYCLE_SHORT: Record<string, string> = {
   QUARTERLY: "Quý",
   ANNUAL: "Năm",
 };
+
+const QUOTA_SHORT: Record<string, string> = {
+  STUDENTS: "HS",
+  TEACHERS: "GV",
+  CLASSROOMS: "Lớp",
+  STORAGE_MB: "Lưu trữ",
+};
+
+/** Giá trị hạn mức gọn: lưu trữ quy GB, còn lại giữ nguyên số. */
+function quotaValue(metric: string, v: number): string {
+  if (metric === "STORAGE_MB") return `${Math.round((v / 1024) * 10) / 10}GB`;
+  return String(v);
+}
 
 const EMPTY: CreateTenantInput = {
   schoolName: "",
@@ -63,10 +76,13 @@ const initials = (t: Tenant) =>
 
 export function TenantsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const { toast } = useToast();
   const [status, setStatus] = useState("");
   const [plan, setPlan] = useState("");
+  // Lọc theo cảnh báo quota — nhận giá trị từ URL (?quota=) khi điều hướng từ trang Cần hành động.
+  const [quota, setQuota] = useState(() => searchParams.get("quota") ?? "");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
@@ -82,10 +98,23 @@ export function TenantsPage() {
     return () => clearTimeout(id);
   }, [search]);
 
+  // Sync filter quota theo URL (?quota=) — mount lần đầu là no-op (state khởi tạo từ URL),
+  // chỉ đổi khi điều hướng tới ?quota= khác mà không remount.
+  useEffect(() => {
+    setQuota(searchParams.get("quota") ?? "");
+    setPage(1);
+  }, [searchParams]);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["tenants", "list", status, plan, page, debouncedQ],
+    queryKey: ["tenants", "list", status, plan, quota, page, debouncedQ],
     queryFn: () =>
-      platform.listTenants(page, status || undefined, debouncedQ || undefined, plan || undefined),
+      platform.listTenants(
+        page,
+        status || undefined,
+        debouncedQ || undefined,
+        plan || undefined,
+        quota || undefined,
+      ),
   });
   const { data: stats } = useQuery({
     queryKey: ["tenants", "stats"],
@@ -117,6 +146,20 @@ export function TenantsPage() {
   function pick(key: string) {
     setStatus(key);
     setPage(1);
+  }
+
+  // Đổi filter quota = đổi URL (?quota=); effect bên dưới mới là nơi sync state → URL là nguồn
+  // sự thật, link chia sẻ được và bấm KPI khác từ trang Cần hành động luôn lọc đúng.
+  function pickQuota(value: string) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) next.set("quota", value);
+        else next.delete("quota");
+        return next;
+      },
+      { replace: true },
+    );
   }
 
   function exportCsv() {
@@ -179,6 +222,14 @@ export function TenantsPage() {
           ))}
           <select
             className="field !py-1.5 !w-auto ml-auto"
+            value={quota}
+            onChange={(e) => pickQuota(e.target.value)}
+          >
+            <option value="">Tất cả hạn mức</option>
+            <option value="at-risk">Sắp chạm hạn (≥80%)</option>
+          </select>
+          <select
+            className="field !py-1.5 !w-auto"
             value={plan}
             onChange={(e) => {
               setPlan(e.target.value);
@@ -211,7 +262,7 @@ export function TenantsPage() {
                 <th>Trường</th>
                 <th>Gói</th>
                 <th>Trạng thái</th>
-                <th>Học sinh</th>
+                <th>Hạn mức</th>
                 <th>Chu kỳ</th>
                 <th>Hết hạn kỳ</th>
                 <th>MRR</th>
@@ -261,7 +312,36 @@ export function TenantsPage() {
                     <td>
                       <span className={cn("badge", st.badge)}>{st.label}</span>
                     </td>
-                    <td>{t.studentCount ?? 0}</td>
+                    <td>
+                      {t.quota?.length ? (
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-xs min-w-[10rem]">
+                          {t.quota.map((qm) => {
+                            const full = qm.limit != null && qm.used >= qm.limit;
+                            const near = qm.limit != null && qm.used / qm.limit >= 0.8;
+                            return (
+                              <div key={qm.metric} className="flex justify-between gap-2">
+                                <span className="text-slate-400">{QUOTA_SHORT[qm.metric] ?? qm.metric}</span>
+                                <span
+                                  className={cn(
+                                    "tabular-nums",
+                                    full
+                                      ? "text-red-600 font-semibold"
+                                      : near
+                                        ? "text-amber-600 font-semibold"
+                                        : "text-slate-600",
+                                  )}
+                                >
+                                  {quotaValue(qm.metric, qm.used)}/
+                                  {qm.limit == null ? "∞" : quotaValue(qm.metric, qm.limit)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                     <td>{(t.billingCycle && CYCLE_SHORT[t.billingCycle]) || "—"}</td>
                     <td>{endLabel(t)}</td>
                     <td className="font-semibold">{mrrShort(t.mrr)}</td>

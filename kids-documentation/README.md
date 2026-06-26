@@ -43,7 +43,7 @@ pnpm db:up                 # Postgres qua Docker
 cp .env.example .env
 pnpm prisma:migrate        # tạo schema
 pnpm prisma:seed           # 5 gói (free/starter/pro/enterprise/dedicated) + platform super-admin
-pnpm prisma:seed:demo      # 1 trường demo đầy đủ (gói PRO, slug "demo")
+pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # http://localhost:3000/api  · Swagger: /docs
 pnpm test:e2e              # 114 e2e / 13 suite
 ```

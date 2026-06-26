@@ -32,7 +32,7 @@
 - [ ] **P0** Tích hợp `consumeQuota`/`releaseQuota` vào create/delete của Student, Teacher(member), Classroom; reconcile job đếm lại counter.
 - [ ] **P1** Lưu trữ media: object storage (Cloudflare R2 / S3) + signed upload URL; model `Media` + liên kết.
 - [ ] **P1** Push notification: tích hợp FCM/Expo; model `Notification` + `DeviceToken` + service fan-out.
-- [x] **P1** Seed dữ liệu demo domain — `prisma/seed-demo.ts` (`pnpm prisma:seed:demo`, idempotent theo slug `demo`): 1 trường gói **PRO** đủ tính năng, 3 lớp · 12 HS+PH · 6 nhân sự · điểm danh/báo cáo hôm nay · sức khỏe/thuốc/sự cố/nghỉ phép · thực đơn tuần (có cảnh báo dị ứng) · 2 thông báo · 12 hóa đơn (PAID/PARTIAL/UNPAID) · giáo án · album · thông báo in-app · usage login. Đăng nhập: `admin@hoasen.edu.vn` / `Password123` tại host `demo.<ROOT_DOMAIN>`.
+- [x] **P1** Seed dữ liệu demo domain/platform — `prisma/seed-demo.ts` (`pnpm prisma:seed:demo`, idempotent theo slug `demo` + `saomai/bupmang/rangdong/tuoitho/banmai`): 1 trường gói **PRO** đủ tính năng, 3 lớp · 12 HS+PH · 6 nhân sự · điểm danh/báo cáo hôm nay · sức khỏe/thuốc/sự cố/nghỉ phép · thực đơn tuần (có cảnh báo dị ứng) · 2 thông báo · 12 hóa đơn (PAID/PARTIAL/UNPAID) · giáo án · album · thông báo in-app · usage login; thêm 5 tenant platform case để UI thấy đủ quota-risk, gói FREE/STARTER/PRO/ENTERPRISE, trial sắp hết hạn và công nợ cần thu. Đăng nhập demo domain: `admin@hoasen.edu.vn` / `Password123` tại host `demo.<ROOT_DOMAIN>`.
 
 ---
 

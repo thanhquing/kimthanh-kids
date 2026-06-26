@@ -65,7 +65,7 @@ Nguyên tắc: tài liệu KỸ THUẬT ở `kids-documentation/`, NGHIỆP VỤ
 pnpm db:up                 # postgres (docker)
 pnpm prisma:deploy         # áp migration
 pnpm prisma:seed           # 5 gói + platform super-admin
-pnpm prisma:seed:demo      # 1 trường demo đầy đủ (gói PRO, slug "demo")
+pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # /api · Swagger /docs
 pnpm test:e2e              # 114 e2e / 13 suite
 ```

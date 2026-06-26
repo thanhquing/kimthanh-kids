@@ -1,7 +1,8 @@
 /**
- * Seed dữ liệu DEMO: 1 trường mầm non đầy đủ (gói PRO — bật mọi tính năng) để dev UI
- * có dữ liệu thật chạy thử. Idempotent: xoá sạch dữ liệu của tenant slug "demo" rồi tạo lại
- * (chỉ chạm đúng tenant này — an toàn). Chạy SAU prisma:seed (cần các gói đã tồn tại).
+ * Seed dữ liệu DEMO: 1 trường mầm non đầy đủ (gói PRO — bật mọi tính năng) + vài tenant
+ * platform case (quota gần đầy, trial sắp hết hạn, công nợ, đủ gói) để dev UI có dữ liệu
+ * thật chạy thử. Idempotent: xoá sạch dữ liệu của các slug demo rồi tạo lại
+ * (chỉ chạm đúng các tenant demo — an toàn). Chạy SAU prisma:seed (cần các gói đã tồn tại).
  *
  *   pnpm prisma:seed:demo
  *
@@ -14,6 +15,7 @@ import {
   AnnouncementAudience,
   AttendanceStatus,
   BillingCycle,
+  BillingMode,
   Gender,
   IncidentSeverity,
   LeaveStatus,
@@ -38,6 +40,7 @@ import * as bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 const SLUG = "demo";
+const PLATFORM_CASE_SLUGS = ["saomai", "bupmang", "rangdong", "tuoitho", "banmai"];
 const ROOT = process.env.ROOT_DOMAIN || "kimthanhkids.vn";
 const HOST = `${SLUG}.${ROOT}`;
 const PASSWORD = "Password123";
@@ -84,6 +87,10 @@ async function wipeExistingDemo(tenantId: string): Promise<void> {
   await prisma.classroom.deleteMany({ where: { tenantId } });
   await prisma.media.deleteMany({ where: { tenantId } });
   await prisma.membership.deleteMany({ where: { tenantId } });
+  await prisma.usageCounter.deleteMany({ where: { tenantId } });
+  await prisma.tenantEntitlement.deleteMany({ where: { tenantId } });
+  await prisma.platformPayment.deleteMany({ where: { tenantId } });
+  await prisma.creditLedger.deleteMany({ where: { tenantId } });
   await prisma.platformInvoice.deleteMany({ where: { tenantId } }); // trước subscription (FK)
   await prisma.subscription.deleteMany({ where: { tenantId } });
   await prisma.tenantDomain.deleteMany({ where: { tenantId } });
@@ -103,6 +110,14 @@ async function main() {
     await wipeExistingDemo(existing.id);
     // eslint-disable-next-line no-console
     console.log(`Đã xoá dữ liệu demo cũ (tenant ${existing.id}).`);
+  }
+  for (const slug of PLATFORM_CASE_SLUGS) {
+    const t = await prisma.tenant.findUnique({ where: { slug } });
+    if (t) {
+      await wipeExistingDemo(t.id);
+      // eslint-disable-next-line no-console
+      console.log(`Đã xoá dữ liệu platform demo cũ (${slug}, tenant ${t.id}).`);
+    }
   }
 
   const now = new Date();
@@ -186,7 +201,13 @@ async function main() {
       dueAt: addDays(prevIssued, 7),
       paidAt: addDays(prevIssued, 3),
       lines: {
-        create: { kind: "SUBSCRIPTION", label: "Chuyên nghiệp — MONTHLY", quantity: 1, unitPrice: platAmount, amount: platAmount },
+        create: {
+          kind: "SUBSCRIPTION",
+          label: "Chuyên nghiệp — MONTHLY",
+          quantity: 1,
+          unitPrice: platAmount,
+          amount: platAmount,
+        },
       },
     },
   });
@@ -204,7 +225,13 @@ async function main() {
       issuedAt: curIssued,
       dueAt: addDays(now, -3),
       lines: {
-        create: { kind: "SUBSCRIPTION", label: "Chuyên nghiệp — MONTHLY", quantity: 1, unitPrice: platAmount, amount: platAmount },
+        create: {
+          kind: "SUBSCRIPTION",
+          label: "Chuyên nghiệp — MONTHLY",
+          quantity: 1,
+          unitPrice: platAmount,
+          amount: platAmount,
+        },
       },
     },
   });
@@ -765,6 +792,340 @@ async function main() {
     })),
   });
 
+  async function seedPlatformCase(args: {
+    slug: string;
+    legalName: string;
+    taxCode: string;
+    planCode: string;
+    billingCycle?: BillingCycle;
+    billingMode?: BillingMode;
+    tenantStatus?: TenantStatus;
+    subscriptionStatus?: SubscriptionStatus;
+    trialEndsInDays?: number;
+    pastDueDays?: number;
+    students: number;
+    classrooms: number;
+    teachers: number;
+    storageMb?: number;
+    invoiceAmount?: number;
+    overdueInvoice?: { daysLate: number; amountPaid?: number };
+    paidInvoice?: boolean;
+  }) {
+    const plan = await prisma.plan.findUnique({
+      where: { code: args.planCode },
+      include: { prices: true },
+    });
+    if (!plan) throw new Error(`Chưa có gói '${args.planCode}' — chạy prisma:seed trước.`);
+
+    const billingCycle = args.billingCycle ?? BillingCycle.MONTHLY;
+    const planPrice = plan.prices.find((p) => p.billingCycle === billingCycle) ?? plan.prices[0];
+    const planCode = plan.code;
+    const planName = plan.name;
+    const invoiceAmount = args.invoiceAmount ?? Number(planPrice?.amount ?? 0);
+    const host = `${args.slug}.${ROOT}`;
+    const displayName = args.legalName;
+    const trialEndsAt =
+      args.trialEndsInDays !== undefined ? addDays(now, args.trialEndsInDays) : undefined;
+    const pastDueSince =
+      args.pastDueDays !== undefined ? addDays(now, -args.pastDueDays) : undefined;
+    const currentPeriodEnd = addDays(
+      now,
+      args.subscriptionStatus === SubscriptionStatus.TRIALING ? 14 : 30,
+    );
+
+    const seededTenant = await prisma.tenant.create({
+      data: {
+        slug: args.slug,
+        legalName: args.legalName,
+        taxCode: args.taxCode,
+        status:
+          args.tenantStatus ??
+          (args.subscriptionStatus === SubscriptionStatus.TRIALING
+            ? TenantStatus.TRIAL
+            : args.subscriptionStatus === SubscriptionStatus.PAST_DUE
+              ? TenantStatus.PAST_DUE
+              : TenantStatus.ACTIVE),
+        planTier: plan.tier,
+        currentPeriodEnd,
+        trialEndsAt,
+        settings: {
+          create: {
+            displayName,
+            primaryColor: "#2563eb",
+            secondaryColor: "#f97316",
+            supportEmail: `lienhe@${args.slug}.edu.vn`,
+            taxCode: args.taxCode,
+            invoiceAddress: "TP.HCM",
+            bankBin: "970436",
+            bankAccountNumber: `1027${args.taxCode.slice(-6)}`,
+            bankAccountName: displayName.toUpperCase(),
+          },
+        },
+        domains: {
+          create: {
+            host,
+            type: "SUBDOMAIN",
+            status: "ACTIVE",
+            isPrimary: true,
+            verifiedAt: now,
+          },
+        },
+      },
+    });
+
+    const sub = await prisma.subscription.create({
+      data: {
+        tenantId: seededTenant.id,
+        planId: plan.id,
+        billingCycle,
+        billingMode: args.billingMode ?? BillingMode.GATEWAY,
+        status: args.subscriptionStatus ?? SubscriptionStatus.ACTIVE,
+        currentPeriodStart: addDays(now, -15),
+        currentPeriodEnd,
+        trialEndsAt,
+        pastDueSince,
+      },
+    });
+
+    const seededSchool = await prisma.school.create({
+      data: {
+        tenantId: seededTenant.id,
+        name: "Cơ sở chính",
+        code: "MAIN",
+        phone: "02839990000",
+      },
+    });
+
+    const seededAdmin = await prisma.user.create({
+      data: {
+        type: UserType.TENANT,
+        email: `admin@${args.slug}.edu.vn`,
+        passwordHash,
+        fullName: "Quản trị trường",
+        tenantId: seededTenant.id,
+        memberships: {
+          create: { tenantId: seededTenant.id, role: TenantRole.SCHOOL_ADMIN, schoolId: null },
+        },
+      },
+    });
+
+    const teacherIds: string[] = [];
+    for (let i = 0; i < args.teachers; i++) {
+      const teacher = await prisma.user.create({
+        data: {
+          type: UserType.TENANT,
+          email: `gv${String(i + 1).padStart(2, "0")}@${args.slug}.edu.vn`,
+          passwordHash,
+          fullName: `Giáo viên ${i + 1}`,
+          tenantId: seededTenant.id,
+          memberships: {
+            create: { tenantId: seededTenant.id, role: TenantRole.TEACHER, schoolId: null },
+          },
+        },
+      });
+      teacherIds.push(teacher.id);
+    }
+
+    const seededClassIds: string[] = [];
+    for (let i = 0; i < args.classrooms; i++) {
+      const classroom = await prisma.classroom.create({
+        data: {
+          tenantId: seededTenant.id,
+          schoolId: seededSchool.id,
+          name: `Lớp ${String(i + 1).padStart(2, "0")}`,
+          ageGroup: `${2 + (i % 4)}-${3 + (i % 4)} tuổi`,
+          homeroomTeacherId: teacherIds[i % Math.max(1, teacherIds.length)],
+        },
+      });
+      seededClassIds.push(classroom.id);
+    }
+
+    await prisma.student.createMany({
+      data: Array.from({ length: args.students }, (_, i) => ({
+        tenantId: seededTenant.id,
+        schoolId: seededSchool.id,
+        classroomId: seededClassIds[i % seededClassIds.length],
+        fullName: `Bé Demo ${String(i + 1).padStart(3, "0")}`,
+        nickname: `Demo ${i + 1}`,
+        dateOfBirth: dateOnly(addDays(today, -(900 + i * 7))),
+        gender: i % 2 === 0 ? Gender.MALE : Gender.FEMALE,
+        createdById: seededAdmin.id,
+      })),
+    });
+
+    if (args.storageMb && args.storageMb > 0) {
+      const chunks: number[] = [];
+      let remaining = args.storageMb;
+      while (remaining > 0) {
+        const mb = Math.min(900, remaining);
+        chunks.push(mb);
+        remaining -= mb;
+      }
+      await prisma.media.createMany({
+        data: chunks.map((mb, i) => ({
+          tenantId: seededTenant.id,
+          schoolId: seededSchool.id,
+          kind: "DOCUMENT",
+          path: `${seededTenant.id}/seed-storage-${i + 1}.bin`,
+          mimeType: "application/octet-stream",
+          sizeBytes: mb * 1024 * 1024,
+          originalName: `seed-storage-${i + 1}.bin`,
+          uploadedById: seededAdmin.id,
+        })),
+      });
+    }
+
+    let invoiceSeq = 0;
+    const invoiceNumber = (issuedAt: Date) => {
+      invoiceSeq += 1;
+      const y = issuedAt.getFullYear();
+      const m = String(issuedAt.getMonth() + 1).padStart(2, "0");
+      const d = String(issuedAt.getDate()).padStart(2, "0");
+      return `${args.slug}-${planCode}-${y}${m}${d}-${String(invoiceSeq).padStart(2, "0")}`.toUpperCase();
+    };
+
+    async function createPlatformInvoice(input: {
+      status: PlatformInvoiceStatus;
+      issuedAt: Date;
+      dueAt: Date;
+      total: number;
+      amountPaid?: number;
+      paidAt?: Date;
+    }) {
+      await prisma.platformInvoice.create({
+        data: {
+          invoiceNumber: invoiceNumber(input.issuedAt),
+          tenantId: seededTenant.id,
+          subscriptionId: sub.id,
+          status: input.status,
+          periodStart: input.issuedAt,
+          periodEnd: addDays(input.issuedAt, 30),
+          subtotal: input.total,
+          total: input.total,
+          amountPaid: input.amountPaid ?? 0,
+          issuedAt: input.issuedAt,
+          dueAt: input.dueAt,
+          paidAt: input.paidAt,
+          lines: {
+            create: {
+              kind: "SUBSCRIPTION",
+              label: `${planName} — ${billingCycle}`,
+              quantity: 1,
+              unitPrice: input.total,
+              amount: input.total,
+            },
+          },
+        },
+      });
+    }
+
+    if (args.paidInvoice) {
+      const issuedAt = addDays(now, -38);
+      await createPlatformInvoice({
+        status: PlatformInvoiceStatus.PAID,
+        issuedAt,
+        dueAt: addDays(issuedAt, 7),
+        total: invoiceAmount,
+        amountPaid: invoiceAmount,
+        paidAt: addDays(issuedAt, 4),
+      });
+    }
+    if (args.overdueInvoice) {
+      const issuedAt = addDays(now, -(args.overdueInvoice.daysLate + 10));
+      await createPlatformInvoice({
+        status: PlatformInvoiceStatus.OPEN,
+        issuedAt,
+        dueAt: addDays(now, -args.overdueInvoice.daysLate),
+        total: invoiceAmount,
+        amountPaid: args.overdueInvoice.amountPaid ?? 0,
+      });
+    }
+
+    await prisma.usageEvent.createMany({
+      data: [0, 1, 3].map((daysAgo) => ({
+        tenantId: seededTenant.id,
+        userId: seededAdmin.id,
+        type: "login",
+        createdAt: addDays(now, -daysAgo),
+      })),
+    });
+
+    return {
+      slug: args.slug,
+      name: args.legalName,
+      plan: plan.name,
+      students: args.students,
+      classrooms: args.classrooms,
+      teachers: args.teachers,
+    };
+  }
+
+  const platformCases = [
+    await seedPlatformCase({
+      slug: "saomai",
+      legalName: "Mầm non Sao Mai",
+      taxCode: "0311111111",
+      planCode: "free",
+      students: 21,
+      classrooms: 2,
+      teachers: 2,
+      storageMb: 980,
+      paidInvoice: true,
+    }),
+    await seedPlatformCase({
+      slug: "bupmang",
+      legalName: "Mầm non Búp Măng",
+      taxCode: "0311111112",
+      planCode: "starter",
+      students: 96,
+      classrooms: 8,
+      teachers: 7,
+      storageMb: 4_800,
+      subscriptionStatus: SubscriptionStatus.PAST_DUE,
+      pastDueDays: 9,
+      overdueInvoice: { daysLate: 8, amountPaid: 150_000 },
+      paidInvoice: true,
+    }),
+    await seedPlatformCase({
+      slug: "rangdong",
+      legalName: "Mầm non Rạng Đông",
+      taxCode: "0311111115",
+      planCode: "starter",
+      students: 72,
+      classrooms: 5,
+      teachers: 5,
+      storageMb: 1_200,
+      paidInvoice: true,
+    }),
+    await seedPlatformCase({
+      slug: "tuoitho",
+      legalName: "Mầm non Tuổi Thơ",
+      taxCode: "0311111113",
+      planCode: "pro",
+      tenantStatus: TenantStatus.TRIAL,
+      subscriptionStatus: SubscriptionStatus.TRIALING,
+      trialEndsInDays: 2,
+      students: 285,
+      classrooms: 18,
+      teachers: 22,
+      storageMb: 18_800,
+    }),
+    await seedPlatformCase({
+      slug: "banmai",
+      legalName: "Hệ thống Mầm non Ban Mai",
+      taxCode: "0311111114",
+      planCode: "enterprise",
+      billingCycle: BillingCycle.ANNUAL,
+      billingMode: BillingMode.MANUAL,
+      students: 420,
+      classrooms: 28,
+      teachers: 38,
+      invoiceAmount: 36_000_000,
+      overdueInvoice: { daysLate: 14 },
+      paidInvoice: true,
+    }),
+  ];
+
   // eslint-disable-next-line no-console
   console.log(
     [
@@ -773,6 +1134,11 @@ async function main() {
       `  Tài khoản: admin@hoasen.edu.vn / ${PASSWORD} (và hieutruong/co.mai/co.lan/yta.hoa/ketoan, ph01..ph12)`,
       `  Dữ liệu: 3 lớp · ${kids.length} học sinh+PH · điểm danh hôm nay · báo cáo · sức khỏe/thuốc/sự cố · nghỉ phép`,
       "           · thực đơn tuần (có cảnh báo dị ứng) · 2 thông báo · 12 hóa đơn (1 đã trả, 1 trả 1 phần) · giáo án · album",
+      "  Platform cases:",
+      ...platformCases.map(
+        (x) =>
+          `    - ${x.name} (slug=${x.slug}, gói ${x.plan}): ${x.students} HS · ${x.classrooms} lớp · ${x.teachers} GV`,
+      ),
     ].join("\n"),
   );
 }

@@ -47,8 +47,9 @@ export class PlatformController {
     @Query("status") status?: string,
     @Query("q") q?: string,
     @Query("planTier") planTier?: string,
+    @Query("quota") quota?: string,
   ) {
-    return this.platform.listTenants(Number(page) || 1, 20, status, q, planTier);
+    return this.platform.listTenants(Number(page) || 1, 20, status, q, planTier, quota);
   }
 
   // Đặt TRƯỚC "tenants/:id" để route tĩnh không bị param ":id" nuốt.

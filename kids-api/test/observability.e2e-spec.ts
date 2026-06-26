@@ -384,10 +384,16 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const upd = await api()
       .patch(`/api/platform/plans/${plan.id}`)
       .set(phead)
-      .send({ description: "Gói chuyên nghiệp (đã sửa)", trialDays: 14, prices: [{ billingCycle: "MONTHLY", amount: 1_300_000 }] })
+      .send({
+        description: "Gói chuyên nghiệp (đã sửa)",
+        trialDays: 14,
+        prices: [{ billingCycle: "MONTHLY", amount: 1_300_000 }],
+      })
       .expect(200);
     expect(upd.body.data.trialDays).toBe(14);
-    const monthly = upd.body.data.prices.find((x: { billingCycle: string }) => x.billingCycle === "MONTHLY");
+    const monthly = upd.body.data.prices.find(
+      (x: { billingCycle: string }) => x.billingCycle === "MONTHLY",
+    );
     expect(Number(monthly.amount)).toBe(1_300_000);
 
     // Khôi phục giá để không lệch các test khác chạy chung DB.
@@ -406,7 +412,11 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
 
     // Tenant thường không sửa được gói.
     const t = await createTenant(app);
-    await api().patch(`/api/platform/plans/${plan.id}`).set(auth(t)).send({ name: "x" }).expect(403);
+    await api()
+      .patch(`/api/platform/plans/${plan.id}`)
+      .set(auth(t))
+      .send({ name: "x" })
+      .expect(403);
   });
 
   // ── Trang Mã giảm giá: tạo (REPEATING + maxRedemptions) + list giàu trường + meta.total + 400/403 ──
@@ -436,7 +446,16 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     expect(list.body.meta.total).toBeGreaterThanOrEqual(1);
     const row = list.body.data.find((c: { code: string }) => c.code === code);
     expect(row).toBeDefined();
-    for (const f of ["kind", "amount", "duration", "durationCount", "maxRedemptions", "redeemedCount", "validUntil", "isActive"]) {
+    for (const f of [
+      "kind",
+      "amount",
+      "duration",
+      "durationCount",
+      "maxRedemptions",
+      "redeemedCount",
+      "validUntil",
+      "isActive",
+    ]) {
       expect(row).toHaveProperty(f);
     }
     expect(row.durationCount).toBe(3);
@@ -485,14 +504,24 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const list = await api().get("/api/platform/audit?page=1").set(phead).expect(200);
     expect(list.body.meta.total).toBeGreaterThanOrEqual(1);
     const row = list.body.data[0];
-    for (const f of ["createdAt", "action", "actorType", "tenantName", "actorName", "targetType", "ip"]) {
+    for (const f of [
+      "createdAt",
+      "action",
+      "actorType",
+      "tenantName",
+      "actorName",
+      "targetType",
+      "ip",
+    ]) {
       expect(row).toHaveProperty(f);
     }
 
     // Lọc theo action "impersonate" → mọi dòng chứa "impersonate".
     const imp = await api().get("/api/platform/audit?action=impersonate").set(phead).expect(200);
     expect(imp.body.data.length).toBeGreaterThanOrEqual(1);
-    expect(imp.body.data.every((r: { action: string }) => r.action.includes("impersonate"))).toBe(true);
+    expect(imp.body.data.every((r: { action: string }) => r.action.includes("impersonate"))).toBe(
+      true,
+    );
     const impRow = imp.body.data.find((r: { tenantId: string }) => r.tenantId === tid);
     expect(impRow.tenantName).toContain(slug);
     expect(impRow.actorType).toBe("PLATFORM");
@@ -502,8 +531,8 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     await api().get("/api/platform/audit").set(auth(t)).expect(403);
   });
 
-  // ── Trang Cần hành động: phễu trial (sắp hết hạn + conversion) + công nợ quá hạn + 403 ──
-  it("platform worklist: phễu trial + công nợ + 403", async () => {
+  // ── Trang Cần hành động: phễu trial + quota sắp đầy + công nợ quá hạn + 403 ──
+  it("platform worklist: phễu trial + quota sắp đầy + công nợ + 403", async () => {
     const t = await createTenant(app);
     const ptoken = await loginPlatform(app);
     const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
@@ -513,6 +542,23 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     await prisma.system.subscription.update({
       where: { tenantId: tid },
       data: { status: "TRIALING", trialEndsAt: new Date(Date.now() + 3 * 86_400_000) },
+    });
+
+    // Tạo usage rồi hạ override xuống rất thấp để row test luôn nằm trong top quota risk,
+    // kể cả DB dev/e2e đã có nhiều tenant rác từ lần chạy trước.
+    const school = await mainSchool(t);
+    const p = await parent(t);
+    for (let i = 0; i < 16; i++) await student(t, school, p.userId);
+    await prisma.system.tenantEntitlement.create({
+      data: {
+        tenantId: tid,
+        subscriptionId: (
+          await prisma.system.subscription.findUniqueOrThrow({ where: { tenantId: tid } })
+        ).id,
+        metric: "STUDENTS",
+        limitValue: 1,
+        reason: "e2e quota risk",
+      },
     });
 
     // Tạo hóa đơn rồi đẩy hạn về quá khứ → công nợ quá hạn.
@@ -549,6 +595,23 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     expect(dueRow.daysLate).toBeGreaterThanOrEqual(4);
     expect(dueRow.amountDue).toBeGreaterThan(0);
 
+    // Quota risk / cơ hội nâng gói — worklist chỉ trả KPI (không kèm danh sách), chỉ 1 mức >=80%.
+    expect(wl.quota.thresholdPct).toBe(80);
+    expect(wl.quota.atRisk).toBeGreaterThanOrEqual(1); // STUDENTS 16/1 = 1600% → 1 dòng ≥80%
+    expect(wl.quota.tenants).toBeGreaterThanOrEqual(1);
+    expect(wl.quota).not.toHaveProperty("items"); // payload nhẹ, danh sách nằm ở trang Trường
+    expect(wl.quota).not.toHaveProperty("critical"); // đã bỏ mức ≥90%
+
+    // Filter trang Trường theo cảnh báo quota → trường vượt hạn phải xuất hiện trong danh sách at-risk.
+    const listed = await api().get("/api/platform/tenants?quota=at-risk").set(phead).expect(200);
+    const listedRow = listed.body.data.find((row: { id: string }) => row.id === tid);
+    expect(listedRow).toBeDefined();
+    // Cột "Hạn mức": mỗi dòng kèm quota 4 metric (không có SCHOOLS), STUDENTS = 16/1.
+    const metrics = listedRow.quota.map((x: { metric: string }) => x.metric);
+    expect(metrics).toEqual(["STUDENTS", "TEACHERS", "CLASSROOMS", "STORAGE_MB"]);
+    const studentQuota = listedRow.quota.find((x: { metric: string }) => x.metric === "STUDENTS");
+    expect(studentQuota).toMatchObject({ used: 16, limit: 1 });
+
     // Tenant thường không xem worklist nền tảng.
     await api().get("/api/platform/worklist").set(auth(t)).expect(403);
   });
@@ -582,7 +645,11 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
 
     // Tenant thường không sửa cài đặt nền tảng.
     const t = await createTenant(app);
-    await api().patch("/api/platform/settings").set(auth(t)).send({ pastDueGraceDays: 1 }).expect(403);
+    await api()
+      .patch("/api/platform/settings")
+      .set(auth(t))
+      .send({ pastDueGraceDays: 1 })
+      .expect(403);
 
     // Khôi phục mặc định (singleton dùng chung DB).
     await api()
@@ -618,12 +685,25 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const phead = { Host: PLATFORM_HOST, Authorization: `Bearer ${ptoken}` };
     const t = await createTenant(app);
     const tid = (await api().get(`/api/platform/tenants?q=${t.slug}`).set(phead)).body.data[0].id;
-    const inv = await api().post("/api/platform/invoices").set(phead).send({ tenantId: tid }).expect(201);
+    const inv = await api()
+      .post("/api/platform/invoices")
+      .set(phead)
+      .send({ tenantId: tid })
+      .expect(201);
     const invId = inv.body.data.id;
 
     // Admin: chi tiết đủ trường (bên bán/mua/ngân hàng/dòng) + publicToken.
     const detail = await api().get(`/api/platform/invoices/${invId}`).set(phead).expect(200);
-    for (const f of ["invoiceNumber", "publicToken", "buyer", "seller", "bank", "lines", "total", "amountDue"]) {
+    for (const f of [
+      "invoiceNumber",
+      "publicToken",
+      "buyer",
+      "seller",
+      "bank",
+      "lines",
+      "total",
+      "amountDue",
+    ]) {
       expect(detail.body.data).toHaveProperty(f);
     }
     const token = detail.body.data.publicToken;

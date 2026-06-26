@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, CircleCheck, Clock, Lock, Receipt, Sparkles, TrendingUp } from "lucide-react";
+import { AlertCircle, CircleCheck, Clock, Gauge, Lock, Receipt, Sparkles, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "@/api/http";
@@ -15,21 +15,31 @@ function Stat({
   tint,
   num,
   label,
+  to,
 }: {
   icon: typeof Sparkles;
   tint: string;
   num: ReactNode;
   label: string;
+  to?: string;
 }) {
-  return (
-    <div className="kpi">
+  const body = (
+    <>
       <div className={`w-9 h-9 rounded-xl grid place-items-center ${tint}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div className="num">{num}</div>
       <div className="lbl">{label}</div>
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link to={to} className="kpi hover:shadow-md transition-shadow cursor-pointer">
+        {body}
+      </Link>
+    );
+  }
+  return <div className="kpi">{body}</div>;
 }
 
 export function WorklistPage() {
@@ -47,6 +57,7 @@ export function WorklistPage() {
   });
 
   const t = data?.trial;
+  const q = data?.quota;
   const d = data?.dunning;
   const n = (v?: number): ReactNode => (isLoading ? "…" : (v ?? 0));
 
@@ -113,6 +124,34 @@ export function WorklistPage() {
               </table>
             </div>
           </div>
+        </section>
+
+        {/* ── Cơ hội nâng gói do sắp chạm quota — KPI bấm được, dẫn sang trang Trường đã lọc ── */}
+        <section>
+          <div className="flex items-center gap-2 font-bold text-slate-700 mb-3">
+            <Gauge className="w-4 h-4 text-[color:var(--primary)]" />
+            Sắp chạm hạn mức
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Stat
+              icon={TrendingUp}
+              tint="bg-emerald-50 text-emerald-600"
+              num={n(q?.tenants)}
+              label="Trường nên tư vấn nâng gói"
+              to="/tenants?quota=at-risk"
+            />
+            <Stat
+              icon={Gauge}
+              tint="bg-orange-50 text-orange-600"
+              num={n(q?.atRisk)}
+              label={`Dòng quota ≥${q?.thresholdPct ?? 80}%`}
+              to="/tenants?quota=at-risk"
+            />
+          </div>
+          <p className="text-xs text-slate-400 mt-3">
+            Số liệu dùng usage thật của từng trường. Bấm một chỉ số để mở danh sách trường tương ứng
+            (đã lọc sẵn) và chủ động tư vấn nâng gói trước khi họ bị chặn tạo thêm học sinh/lớp/giáo viên.
+          </p>
         </section>
 
         {/* ── Công nợ cần thu ── */}

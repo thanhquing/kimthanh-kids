@@ -77,16 +77,17 @@
 
 ## 8. Worklist — Cần hành động (bảo vệ doanh thu)  ✅ MỚI (`GET /platform/worklist`)
 
-- **Trang mới `/worklist`** (nav nhóm "Doanh thu" → "Cần hành động"). Gộp 2 nguồn rò rỉ doanh thu để operator **chủ động xử lý**.
+- **Trang mới `/worklist`** (nav nhóm "Doanh thu" → "Cần hành động"). Gộp 3 nguồn rò rỉ/cơ hội doanh thu để operator **chủ động xử lý**.
 - **Phễu dùng thử:** TRIALING đang chạy + sắp hết hạn (≤7 ngày) + tỷ lệ chuyển đổi (`converted/endedTotal`, converted = trial kết thúc KHÔNG thành EXPIRED). **Lưu ý mô hình:** signup mặc định FREE/ACTIVE (freemium, `trialEndsAt=null`) → trial chỉ phát sinh khi nâng gói trả phí có `trialDays`; demo trống là đúng.
+- **Sắp chạm quota (chỉ KPI ở worklist):** tenant ACTIVE/TRIAL/PAST_DUE dùng >=80% limit hữu hạn `STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB` — **KHÔNG tính SCHOOLS** (gói 1 cơ sở luôn 1/1=100% → mọi trường đều "at-risk", nhiễu; mỗi cơ sở = 1 tenant). Worklist trả 2 KPI bấm-được (`atRisk` = số dòng / `tenants` = số trường) cho NHẸ; **danh sách + cột "Hạn mức"** (used/limit 4 metric) ở trang Trường qua filter `GET /platform/tenants?quota=at-risk` (helper `quotaLines`/`usageCounts`/`resolveLimitMap` dùng chung, usage thật, không qua `UsageCounter` cache). Đã bỏ mức critical >=90% — chỉ cần >=80%.
 - **Công nợ:** hóa đơn `OPEN/OVERDUE` quá hạn (dueAt < now, còn nợ) — query theo **ngày + còn nợ**, KHÔNG phụ thuộc cron `markOverdueInvoices` đã chạy hay chưa → thấy ngay. Resolve `tenantName` (PlatformInvoice không có quan hệ tenant) + `subStatus` (batch). Nút "Đã thu" dùng lại `markPaid`.
-- **KHÔNG trùng** với dashboard (`overview` chỉ đếm `overdueInvoices` theo status OVERDUE — đã chạy cron) — worklist rộng hơn (gồm OPEN-quá-hạn) + có item list để hành động. Giữ cả 2.
+- **KHÔNG trùng** với dashboard (`overview` chỉ đếm overdue + KPI tổng quan, không có quota-risk theo tenant/metric) — worklist rộng hơn (gồm OPEN-quá-hạn + KPI quota-risk) + có item công nợ để hành động. Giữ cả 2.
 - **Engine đã có sẵn** (`billing-jobs`: expireTrials/markOverdueInvoices/dunningSuspend/dunningCancel trên cron) — trang này chỉ là **lớp hiển thị**, không lặp logic.
 - **P2 (cần kênh email):** nhắc tự động tới chủ trường ở các mốc dunning (chỉ thêm 1 `mail.send` mỗi job). Hiện chưa có email service → nhắc thủ công qua trang này.
 
 ## 10. Polish đợt sau (số HĐ / filter / search / confirm / mobile)  ✅
 
-- **Số HĐ nền tảng đổi định dạng:** `PINV-{year}-{seq}` → **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`). Sinh ở `billing.service.nextInvoiceNumber(slug, planCode, issuedAt)`; createPeriodInvoice include thêm `tenant`. Không test nào assert format cũ → an toàn. **seed-demo** giờ tạo 2 HĐ nền tảng demo (1 PAID, 1 OPEN quá hạn) — trang Hóa đơn/Cần hành động có data sau reseed. Cleanup demo idempotent: xóa `platformInvoice` trước `subscription` (FK).
+- **Số HĐ nền tảng đổi định dạng:** `PINV-{year}-{seq}` → **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`). Sinh ở `billing.service.nextInvoiceNumber(slug, planCode, issuedAt)`; createPeriodInvoice include thêm `tenant`. Không test nào assert format cũ → an toàn. **seed-demo** tạo HĐ nền tảng cho `demo` và các tenant platform case (`saomai/bupmang/rangdong/tuoitho/banmai`) để trang Hóa đơn/Cần hành động có data quota/công nợ/gói sau reseed. Cleanup demo idempotent: xóa `platformPayment/creditLedger/platformInvoice` trước `subscription` (FK).
 - **Trường thuê — lọc theo Gói:** `listTenants` thêm `planTier?` (filter qua `subscription.plan.tier`); FE dropdown "Tất cả gói" cạnh search.
 - **Tổng quan — tìm nhanh:** `GET /platform/search?q=` (top 5 trường + 5 HĐ, resolve tenantName). FE QuickSearch (debounce 300ms, dropdown) → click trường `/tenants/:id`, click HĐ `/invoices?q=` (InvoicesPage đọc `q` từ URL).
 - **Hóa đơn — confirm "đã thu":** thêm Modal xác nhận trước `markPaid` (số HĐ + trường + tiền + hệ quả). (Worklist vẫn markPaid trực tiếp — cân nhắc thêm confirm tương tự nếu cần.)
