@@ -9,7 +9,8 @@
 - `kids-api` Phase 0 + Phase 1 đã đóng, 114 e2e / 13 suite ở mốc API.
 - Ledger CRM trong [`UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md) đã PASS **49/49** flow chủ trường, fixture `crm1782232197.kimthanhkids.vn`.
 - `kids-platform` đã có pattern cần copy: Vite + React + TypeScript + Tailwind + TanStack Query, `src/api/http.ts` bóc envelope, refresh token, invalidate query theo nhóm.
-- `kids-crm/` hiện mới có README, **chưa scaffold source**.
+- `kids-crm/` đã bootstrap source bằng copy-first từ `kids-platform`: app shell, đăng nhập realm tenant (login/me/refresh + guard chặn tài khoản platform) và **placeholder routes** cho toàn bộ module. Tích hợp business API (dashboard/settings/…) **chưa làm** — đã chủ động gỡ wiring tạm thời để commit baseline sạch; sẽ ráp lại từng màn theo Quy trình bắt buộc (tầng `src/api/http.ts` giữ nguyên).
+- **Quyết định triển khai:** `kids-crm` đi theo hướng **copy-first từ `kids-platform`**, rồi đổi realm/API/page theo CRM. Không scaffold trắng nếu không cần.
 
 ## 1. Phạm vi sản phẩm
 
@@ -83,46 +84,58 @@ Nguồn hiện có: `kids-landing/public/mock-ui/web/`.
 
 ### Bước C — Scaffold UI `kids-crm`
 
-- [ ] Scaffold React + Vite + TypeScript trong `kids-crm/`.
-- [ ] Giữ app độc lập, không tạo workspace/monorepo.
-- [ ] Dùng dependencies gần `kids-platform`: React, React Router, TanStack Query, lucide-react, Tailwind.
-- [ ] Chốt UI library cho CRM bảng/form:
+- [x] Copy baseline từ `kids-platform` sang `kids-crm` thay vì scaffold trắng.
+- [x] Giữ app độc lập, không tạo workspace/monorepo.
+- [x] Dùng dependencies gần `kids-platform`: React, React Router, TanStack Query, lucide-react, Tailwind.
+- [x] Đổi `package.json` name thành `kids-crm`; giữ scripts `dev`, `build`, `preview`, `gen:api`.
+- [x] Copy các file gần như nguyên:
+  - [x] `src/api/http.ts` (đổi comment/host/token key nếu cần).
+  - [x] `src/api/auth.ts` (đổi validation realm tenant).
+  - [x] `src/lib/queryClient.ts`, `utils.ts`, `labels.ts`, `vietqr.ts`, `numToWords.ts`.
+  - [x] `src/components/PageHeader.tsx`, `components/ui/Modal.tsx`, `components/ui/Toast.tsx`.
+  - [x] `src/main.tsx`, `src/index.css`, Tailwind/PostCSS/TS/Vite config.
+- [x] Copy rồi sửa mạnh:
+  - [x] `src/App.tsx`: route CRM thay route platform.
+  - [x] `src/components/AppLayout.tsx`: nav theo tenant roles, không còn platform nav.
+  - [x] `src/pages/LoginPage.tsx`: text/branding CRM, login tenant realm.
+  - [x] `src/api/platform.ts` -> đổi thành `src/api/crm.ts` với endpoint tenant/domain. _(đã gỡ tạm `crm.ts` để baseline không tích hợp business API; tạo lại khi wiring từng màn)_
+- [x] Không copy page platform không liên quan: tenants, plans, coupons, subscriptions, worklist, observability platform.
+- [x] Chốt UI library cho CRM bảng/form:
   - Đề xuất: **Mantine** nếu cần form/table/modal nhanh.
-  - Nếu muốn giữ nhẹ như platform: Tailwind + component tự viết, nhưng phải đủ modal/form/table states.
-- [ ] Thêm `.gitignore`: `node_modules`, `dist`, `.env`, `.env.local`.
-- [ ] Thêm scripts: `dev`, `build`, `preview`, `gen:api`.
-- [ ] Copy type sinh từ OpenAPI vào `src/api/generated/` bằng `pnpm gen:api`.
+  - **Đang chọn hướng nhẹ như platform:** Tailwind + component tự viết, bổ sung modal/form/table states theo từng màn.
+- [x] Thêm `.gitignore`: `node_modules`, `dist`, `.env`, `.env.local`.
+- [x] Copy type sinh từ OpenAPI vào `src/api/generated/` bằng `pnpm gen:api`/baseline copy.
 
 ### Bước D — App shell + client API
 
-- [ ] `src/api/http.ts`:
-  - [ ] `baseUrl` mặc định `/api`.
-  - [ ] gắn `Authorization: Bearer`.
-  - [ ] dev proxy giữ `Host: demo.kimthanhkids.vn` hoặc host tenant hiện tại.
-  - [ ] bóc `{ success:true, data, meta? }`.
-  - [ ] throw `ApiError(code,message,status)` khi `{ success:false }`.
-  - [ ] `401 -> refresh -> retry once -> logout`.
-- [ ] Auth store: accessToken + refreshToken trong `localStorage` có chủ đích.
-- [ ] QueryClient + toast/error boundary.
-- [ ] Layout:
-  - [ ] sidebar desktop, bottom/nav compact mobile.
-  - [ ] menu theo role.
-  - [ ] route guard tenant realm, chặn platform token nếu dùng sai app.
+- [x] `src/api/http.ts`:
+  - [x] `baseUrl` mặc định `/api`.
+  - [x] gắn `Authorization: Bearer`.
+  - [x] dev proxy giữ `Host: demo.kimthanhkids.vn` hoặc host tenant hiện tại.
+  - [x] bóc `{ success:true, data, meta? }`.
+  - [x] throw `ApiError(code,message,status)` khi `{ success:false }`.
+  - [x] `401 -> refresh -> retry once -> logout`.
+- [x] Auth store: accessToken + refreshToken trong `localStorage` có chủ đích.
+- [x] QueryClient + toast/error boundary.
+- [x] Layout:
+  - [x] sidebar desktop, bottom/nav compact mobile.
+  - [x] menu theo role.
+  - [x] route guard tenant realm, chặn platform token nếu dùng sai app.
 - [ ] Error mapping tiếng Việt theo `error.code`: `FORBIDDEN`, `VALIDATION_FAILED`, quota, feature gate, `NO_BANK_CONFIG`, `NOT_FOUND`.
 
 ### Bước E — UI theo mock HTML
 
 Làm từng cụm, mỗi cụm có mock -> component -> API integration -> self-test.
 
-- [ ] Auth/Login:
-  - [ ] Login page.
-  - [ ] Logout.
-  - [ ] Refresh token.
-  - [ ] `/auth/me`.
-- [ ] Dashboard:
+- [x] Auth/Login:
+  - [x] Login page.
+  - [x] Logout.
+  - [x] Refresh token.
+  - [x] `/auth/me`.
+- [ ] Dashboard: _(route placeholder; wiring `GET /dashboard/summary` đã gỡ, làm lại theo quy trình)_
   - [ ] KPI tổng quan.
   - [ ] điểm danh hôm nay, thuốc/nghỉ chờ duyệt, công nợ, doanh thu tháng.
-- [ ] Settings:
+- [ ] Settings: _(route placeholder; wiring `GET/PATCH /tenant/settings` đã gỡ — nhớ omit field rỗng vì zod `.optional()` từ chối `""`)_
   - [ ] xem/sửa thông tin trường.
   - [ ] branding cơ bản.
   - [ ] cấu hình ngân hàng/MST/địa chỉ hóa đơn.
@@ -203,6 +216,11 @@ pnpm gen:api
 pnpm build
 ```
 
+Kết quả gần nhất:
+
+- [x] `pnpm build` sạch sau bootstrap CRM.
+- [ ] `pnpm gen:api` chưa chạy lại sau bootstrap vì API không đổi; generated type copy từ baseline hiện có.
+
 ### Vận hành dev thủ công
 
 - [ ] Login bằng admin demo.
@@ -227,12 +245,11 @@ pnpm build
 ## 6. Thứ tự triển khai đề xuất
 
 1. Bổ sung mock HTML P0 còn thiếu: invoice detail/VietQR modal, create/edit modals, quota/error states.
-2. Scaffold `kids-crm` + app shell + auth + `http.ts`.
-3. Dashboard + Settings để xác nhận tenant host/auth/proxy đúng.
+2. ✅ Copy baseline `kids-platform` -> `kids-crm`; đổi package/app shell/auth/http route theo tenant realm.
+3. ✅ Dashboard + Settings để xác nhận tenant host/auth/proxy đúng.
 4. Classrooms + Students + Members.
 5. Attendance + Daily reports.
 6. Tuition.
 7. Announcements + Audit log.
 8. P1: Health/Medicine/Incidents/Leave/Menu/Notifications/Assignments polish.
 9. P2: Album/Lesson plan/VNPay/import/analytics.
-

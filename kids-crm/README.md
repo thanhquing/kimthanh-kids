@@ -2,7 +2,7 @@
 
 Web quản trị (CRM/dashboard) cho nhà trường & nhân viên KimThanh Kids.
 
-> 🚧 Chưa khởi tạo source. Thư mục này hiện chỉ có file README để Git theo dõi (Git không track thư mục rỗng).
+> Đã bootstrap bằng copy-first từ `kids-platform`: app shell, đăng nhập realm tenant (login/me/refresh + guard chặn tài khoản platform) và **placeholder routes** cho toàn bộ module P0/P1. Phần tích hợp business API (dashboard, settings, …) **chưa làm** — sẽ wiring từng màn theo Quy trình bắt buộc; tầng `src/api/http.ts` đã sẵn để ráp lại nhanh.
 
 ## Dự kiến
 - Giao diện quản lý: học sinh, lớp học, điểm danh, hóa đơn/học phí, thông báo, báo cáo
@@ -13,4 +13,11 @@ Web quản trị (CRM/dashboard) cho nhà trường & nhân viên KimThanh Kids.
 Theo dõi checklist triển khai ở [`../kids-tasks/PHASE_CRM_TASKS.md`](../kids-tasks/PHASE_CRM_TASKS.md).
 
 ## Bắt đầu
-Khi khởi tạo project, nhớ thêm `.gitignore` để loại `node_modules`, `dist`, `.env`.
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Dev mặc định proxy API sang `http://localhost:3000` và gắn `Host: demo.kimthanhkids.vn`.
+Demo login: `admin@hoasen.edu.vn` / `Password123`.
