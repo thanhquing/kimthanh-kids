@@ -4,6 +4,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { useT, type TKey } from "@/i18n";
 import { useMobileState } from "@/lib/mobileState";
 import { cn } from "@/lib/utils";
 import { parentTabs, roleBase, teacherTabs } from "@/lib/routes";
@@ -25,6 +26,7 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
 export function MobileLayout() {
   const { role } = useMobileState();
   const { pathname } = useLocation();
+  const { t } = useT();
   const tabs = role === "teacher" ? teacherTabs : parentTabs;
 
   return (
@@ -42,7 +44,7 @@ export function MobileLayout() {
               className={() => cn("tab", isTabActive(pathname, tab) && "active")}
             >
               <Icon className="h-5 w-5" />
-              <span>{tab.label}</span>
+              <span>{t(tab.label as TKey)}</span>
             </NavLink>
           );
         })}

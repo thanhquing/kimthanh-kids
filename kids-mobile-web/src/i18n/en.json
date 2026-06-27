@@ -1,0 +1,49 @@
+{
+  "brand": {
+    "name": "KimThanh Kids"
+  },
+  "common": {
+    "back": "Back"
+  },
+  "auth": {
+    "welcome": "Welcome back",
+    "subtitle": "Sign in to continue with KimThanh Kids",
+    "phoneLabel": "Phone number",
+    "phonePlaceholder": "Phone number registered with the school",
+    "passwordLabel": "Password",
+    "forgot": "Forgot password?",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "errInvalid": "Incorrect phone number or password",
+    "errNetwork": "Could not reach the server. Please try again.",
+    "errRole": "This account cannot be used on the app. Please use your school's admin console.",
+    "resetTitle": "Forgot password?",
+    "resetDesc": "Your account is issued by the school. Please contact your homeroom teacher or the school office to have your password reset.",
+    "resetHotline": "School hotline",
+    "resetBack": "Back to sign in"
+  },
+  "nav": {
+    "home": "Home",
+    "children": "My children",
+    "class": "Class",
+    "reports": "Reports",
+    "announcements": "Notices",
+    "profile": "Profile"
+  },
+  "profile": {
+    "title": "My profile",
+    "roleTeacher": "Teacher",
+    "roleParent": "Parent",
+    "sectionPersonal": "Personal information",
+    "fullName": "Full name",
+    "phone": "Phone number",
+    "sectionSettings": "Settings",
+    "notifications": "Notifications",
+    "notificationsOn": "On",
+    "darkMode": "Dark mode",
+    "off": "Off",
+    "changePassword": "Change password",
+    "language": "Language",
+    "logout": "Sign out"
+  }
+}

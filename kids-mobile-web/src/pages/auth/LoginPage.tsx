@@ -1,46 +1,98 @@
-import { Lock } from "lucide-react";
+import { Lock, Phone } from "lucide-react";
+import { useState, type FormEvent } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { login, me, roleForMobile } from "@/api/auth";
+import { ApiError, tokenStore } from "@/api/http";
 import { assets } from "@/mockData";
+import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { useT } from "@/i18n";
 import { useMobileState } from "@/lib/mobileState";
-import { useToast } from "@/components/ui/Toast";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { t } = useT();
   const { setRole } = useMobileState();
-  const { toast } = useToast();
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function enter(role: "parent" | "teacher") {
-    setRole(role);
-    toast(role === "parent" ? "Đã vào vai phụ huynh" : "Đã vào vai giáo viên");
-    navigate(role === "parent" ? "/parent" : "/teacher");
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await login({ identifier: phone.trim(), password });
+      const profile = await me();
+      const role = roleForMobile(profile.roles);
+      if (!role) {
+        tokenStore.clear();
+        setError(t("auth.errRole"));
+        return;
+      }
+      setRole(role);
+      navigate(role === "parent" ? "/parent" : "/teacher", { replace: true });
+    } catch (err) {
+      setError(err instanceof ApiError ? t("auth.errInvalid") : t("auth.errNetwork"));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="phone-body">
-      <div className="pt-2 text-center">
+      <div className="flex justify-end py-2">
+        <LanguageToggle />
+      </div>
+      <div className="text-center">
         <img src={assets.heroKids} alt="Các bé KimThanh" className="hero-img mb-4" />
         <img src={assets.logo} alt="KimThanh Kids" className="mx-auto mb-3 h-14 object-contain" />
-        <div className="text-2xl font-bold">Chào mừng trở lại</div>
-        <div className="mt-1 text-sm text-slate-500">Đăng nhập để tiếp tục với KimThanh Kids</div>
+        <div className="text-2xl font-bold">{t("auth.welcome")}</div>
+        <div className="mt-1 text-sm text-slate-500">{t("auth.subtitle")}</div>
       </div>
-      <form className="mt-8 space-y-4" onSubmit={(event) => event.preventDefault()}>
+      <form className="mt-8 space-y-4" onSubmit={onSubmit}>
         <div>
-          <label className="label">Email</label>
-          <input className="field" type="email" defaultValue="phuhuynh@kimthanh.edu.vn" />
+          <label className="label">{t("auth.phoneLabel")}</label>
+          <div className="relative">
+            <input
+              className="field pr-10"
+              type="tel"
+              inputMode="tel"
+              autoComplete="username"
+              placeholder={t("auth.phonePlaceholder")}
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
+            />
+            <Phone className="absolute right-3 top-3.5 h-4 w-4 text-slate-400" />
+          </div>
         </div>
         <div>
-          <label className="label">Mật khẩu</label>
+          <label className="label">{t("auth.passwordLabel")}</label>
           <div className="relative">
-            <input className="field pr-10" type="password" defaultValue="Password123" />
+            <input
+              className="field pr-10"
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+            />
             <Lock className="absolute right-3 top-3.5 h-4 w-4 text-slate-400" />
           </div>
         </div>
-        <div className="flex justify-between text-xs">
-          <NavLink to="/reset-password" className="font-medium text-[color:var(--primary)]">Quên mật khẩu?</NavLink>
-          <span className="text-slate-500">Demo role</span>
+
+        {error && (
+          <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+        )}
+
+        <div className="flex justify-end text-xs">
+          <NavLink to="/reset-password" className="font-medium text-[color:var(--primary)]">
+            {t("auth.forgot")}
+          </NavLink>
         </div>
-        <button type="button" onClick={() => enter("parent")} className="btn-primary w-full">Vào app phụ huynh</button>
-        <button type="button" onClick={() => enter("teacher")} className="btn-soft w-full">Dùng demo giáo viên</button>
+        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
+          {loading ? t("auth.submitting") : t("auth.submit")}
+        </button>
       </form>
     </div>
   );

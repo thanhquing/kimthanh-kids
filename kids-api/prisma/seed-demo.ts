@@ -255,16 +255,38 @@ async function main() {
       },
     });
   }
-  const admin = await createStaff("admin@hoasen.edu.vn", "Trần Quản Trị", TenantRole.SCHOOL_ADMIN);
+  // Staff cũng đăng nhập bằng SĐT (như phụ huynh) — prefix 0909 để tách khỏi PH (0901).
+  const admin = await createStaff(
+    "admin@hoasen.edu.vn",
+    "Trần Quản Trị",
+    TenantRole.SCHOOL_ADMIN,
+    "0909000001",
+  );
   const hieuTruong = await createStaff(
     "hieutruong@hoasen.edu.vn",
     "Lê Thị Hiệu",
     TenantRole.PRINCIPAL,
+    "0909000002",
   );
-  const coMai = await createStaff("co.mai@hoasen.edu.vn", "Nguyễn Thị Mai", TenantRole.TEACHER);
-  const coLan = await createStaff("co.lan@hoasen.edu.vn", "Phạm Thị Lan", TenantRole.TEACHER);
-  const nurse = await createStaff("yta.hoa@hoasen.edu.vn", "Đỗ Thị Hoa", TenantRole.NURSE);
-  await createStaff("ketoan@hoasen.edu.vn", "Vũ Kế Toán", TenantRole.FINANCE);
+  const coMai = await createStaff(
+    "co.mai@hoasen.edu.vn",
+    "Nguyễn Thị Mai",
+    TenantRole.TEACHER,
+    "0909000010",
+  );
+  const coLan = await createStaff(
+    "co.lan@hoasen.edu.vn",
+    "Phạm Thị Lan",
+    TenantRole.TEACHER,
+    "0909000011",
+  );
+  const nurse = await createStaff(
+    "yta.hoa@hoasen.edu.vn",
+    "Đỗ Thị Hoa",
+    TenantRole.NURSE,
+    "0909000020",
+  );
+  await createStaff("ketoan@hoasen.edu.vn", "Vũ Kế Toán", TenantRole.FINANCE, "0909000030");
 
   // ─── Lớp học (GV chủ nhiệm) ───
   const clsMam = await prisma.classroom.create({
@@ -1132,6 +1154,7 @@ async function main() {
       "Seed DEMO xong:",
       `  Tenant : ${tenant.legalName} (slug=${SLUG}, host=${HOST}, gói PRO)`,
       `  Tài khoản: admin@hoasen.edu.vn / ${PASSWORD} (và hieutruong/co.mai/co.lan/yta.hoa/ketoan, ph01..ph12)`,
+      `  Đăng nhập bằng SĐT: GV co.mai=0909000010, co.lan=0909000011 · PH ph01=0901000001..ph12=0901000012`,
       `  Dữ liệu: 3 lớp · ${kids.length} học sinh+PH · điểm danh hôm nay · báo cáo · sức khỏe/thuốc/sự cố · nghỉ phép`,
       "           · thực đơn tuần (có cảnh báo dị ứng) · 2 thông báo · 12 hóa đơn (1 đã trả, 1 trả 1 phần) · giáo án · album",
       "  Platform cases:",

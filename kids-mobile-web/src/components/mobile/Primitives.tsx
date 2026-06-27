@@ -144,11 +144,13 @@ export function ProfileRow({
   label,
   value,
   to,
+  onClick,
 }: {
   icon: LucideIcon;
   label: string;
   value?: string;
   to?: string;
+  onClick?: () => void;
 }) {
   const content = (
     <>
@@ -167,6 +169,14 @@ export function ProfileRow({
       <NavLink to={to} className="flex w-full items-center gap-3 p-3 text-left">
         {content}
       </NavLink>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className="flex w-full items-center gap-3 p-3 text-left">
+        {content}
+      </button>
     );
   }
 

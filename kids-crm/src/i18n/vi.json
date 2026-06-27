@@ -47,7 +47,7 @@
     "copyright": "© 2026 KimThanh Kids",
     "title": "Đăng nhập",
     "subtitle": "Sử dụng tài khoản được trường cấp",
-    "identifierLabel": "Email hoặc số điện thoại",
+    "identifierLabel": "Số điện thoại",
     "passwordLabel": "Mật khẩu",
     "rememberMe": "Ghi nhớ tôi",
     "forgot": "Quên mật khẩu?",
@@ -61,7 +61,7 @@
     "forgotStaffDesc": "Liên hệ quản trị viên hoặc hiệu trưởng của trường để được đặt lại mật khẩu.",
     "forgotOwnerTitle": "Chủ trường hoặc tài khoản quản trị cao nhất",
     "forgotOwnerDesc": "Vui lòng liên hệ KimThanh Kids để xác minh trường và khôi phục quyền truy cập.",
-    "forgotEmailNote": "Reset tự động qua email sẽ được bổ sung khi kênh email giao dịch được bật."
+    "forgotEmailNote": "Tính năng tự đặt lại mật khẩu sẽ được bổ sung sau. Hiện tại vui lòng liên hệ nhà trường để được cấp lại."
   },
   "dashboard": {
     "title": "Tổng quan",

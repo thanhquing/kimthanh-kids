@@ -5,7 +5,10 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
 import { ToastProvider } from "./components/ui/Toast";
 import "./index.css";
+import { initLanguage } from "./lib/language";
 import { MobileStateProvider } from "./lib/mobileState";
+
+initLanguage();
 
 const queryClient = new QueryClient({
   defaultOptions: {

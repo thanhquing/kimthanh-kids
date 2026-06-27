@@ -1,4 +1,4 @@
-import { Building2, Headphones, Lock, Mail, Sun, UserCog } from "lucide-react";
+import { Building2, Headphones, Lock, Phone, Sun, UserCog } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
@@ -9,7 +9,7 @@ import { useT } from "@/i18n";
 export function LoginPage() {
   const navigate = useNavigate();
   const { t } = useT();
-  const [identifier, setIdentifier] = useState("admin@hoasen.edu.vn");
+  const [identifier, setIdentifier] = useState("0909000001");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -64,9 +64,10 @@ export function LoginPage() {
             <div>
               <label className="label">{t("login.identifierLabel")}</label>
               <div className="relative">
-                <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                 <input
                   className="field !pl-9"
+                  type="tel"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   autoComplete="username"

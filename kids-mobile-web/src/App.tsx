@@ -1,5 +1,7 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import { useLayoutEffect } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { useEffect, useLayoutEffect, type ReactNode } from "react";
+import { isAuthed } from "@/api/auth";
+import { setOnUnauthorized } from "@/api/http";
 import { PhoneFrame, MobileLayout } from "@/components/mobile/MobileShell";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
@@ -29,6 +31,12 @@ import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
 import { useMobileState } from "@/lib/mobileState";
 import type { Role } from "@/lib/routes";
 
+/** Chặn vào khu vực đã đăng nhập khi chưa có phiên. */
+function RequireAuth({ children }: { children: ReactNode }) {
+  if (!isAuthed()) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
 function RoleLayout({ role }: { role: Role }) {
   const { setRole } = useMobileState();
   useLayoutEffect(() => setRole(role), [role, setRole]);
@@ -36,13 +44,25 @@ function RoleLayout({ role }: { role: Role }) {
 }
 
 export function App() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    setOnUnauthorized(() => navigate("/login", { replace: true }));
+  }, [navigate]);
+
   return (
     <PhoneFrame>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/parent" element={<RoleLayout role="parent" />}>
+        <Route
+          path="/parent"
+          element={
+            <RequireAuth>
+              <RoleLayout role="parent" />
+            </RequireAuth>
+          }
+        >
           <Route index element={<ParentHomePage />} />
           <Route path="children" element={<ChildrenListPage />} />
           <Route path="student/:id" element={<StudentDetailPage />} />
@@ -60,7 +80,14 @@ export function App() {
           <Route path="profile" element={<ProfilePage />} />
         </Route>
 
-        <Route path="/teacher" element={<RoleLayout role="teacher" />}>
+        <Route
+          path="/teacher"
+          element={
+            <RequireAuth>
+              <RoleLayout role="teacher" />
+            </RequireAuth>
+          }
+        >
           <Route index element={<TeacherHomePage />} />
           <Route path="class" element={<ClassRosterPage />} />
           <Route path="student/:id" element={<StudentDetailPage />} />

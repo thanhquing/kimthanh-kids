@@ -1,0 +1,49 @@
+{
+  "brand": {
+    "name": "KimThanh Kids"
+  },
+  "common": {
+    "back": "Quay lại"
+  },
+  "auth": {
+    "welcome": "Chào mừng trở lại",
+    "subtitle": "Đăng nhập để tiếp tục với KimThanh Kids",
+    "phoneLabel": "Số điện thoại",
+    "phonePlaceholder": "Số điện thoại đã đăng ký với trường",
+    "passwordLabel": "Mật khẩu",
+    "forgot": "Quên mật khẩu?",
+    "submit": "Đăng nhập",
+    "submitting": "Đang đăng nhập…",
+    "errInvalid": "Số điện thoại hoặc mật khẩu không đúng",
+    "errNetwork": "Không kết nối được máy chủ. Vui lòng thử lại.",
+    "errRole": "Tài khoản này không dùng được trên app. Vui lòng dùng trang quản trị của trường.",
+    "resetTitle": "Quên mật khẩu?",
+    "resetDesc": "Tài khoản được nhà trường cấp. Vui lòng liên hệ giáo viên chủ nhiệm hoặc văn phòng trường để được cấp lại mật khẩu.",
+    "resetHotline": "Hotline nhà trường",
+    "resetBack": "Quay lại đăng nhập"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "children": "Con tôi",
+    "class": "Lớp",
+    "reports": "Báo cáo",
+    "announcements": "Thông báo",
+    "profile": "Hồ sơ"
+  },
+  "profile": {
+    "title": "Hồ sơ của tôi",
+    "roleTeacher": "Giáo viên",
+    "roleParent": "Phụ huynh",
+    "sectionPersonal": "Thông tin cá nhân",
+    "fullName": "Họ tên",
+    "phone": "Số điện thoại",
+    "sectionSettings": "Cài đặt",
+    "notifications": "Thông báo",
+    "notificationsOn": "Đang bật",
+    "darkMode": "Giao diện tối",
+    "off": "Tắt",
+    "changePassword": "Đổi mật khẩu",
+    "language": "Ngôn ngữ",
+    "logout": "Đăng xuất"
+  }
+}

@@ -47,7 +47,7 @@
     "copyright": "© 2026 KimThanh Kids",
     "title": "Sign in",
     "subtitle": "Use the account issued by your school",
-    "identifierLabel": "Email or phone number",
+    "identifierLabel": "Phone number",
     "passwordLabel": "Password",
     "rememberMe": "Remember me",
     "forgot": "Forgot password?",
@@ -61,7 +61,7 @@
     "forgotStaffDesc": "Contact your school's administrator or principal to have your password reset.",
     "forgotOwnerTitle": "School owner or top-level administrator",
     "forgotOwnerDesc": "Please contact KimThanh Kids to verify the school and restore access.",
-    "forgotEmailNote": "Automatic reset via email will be added once the transactional email channel is enabled."
+    "forgotEmailNote": "Self-service password reset will be added later. For now, please contact your school to have it reset."
   },
   "dashboard": {
     "title": "Overview",

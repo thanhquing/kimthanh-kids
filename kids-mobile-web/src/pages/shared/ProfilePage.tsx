@@ -1,38 +1,57 @@
-import { Bell, Lock, LogOut, Mail, Moon, User } from "lucide-react";
+import { Bell, Languages, Lock, LogOut, Moon, Phone, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { logout } from "@/api/auth";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { Avatar, ProfileRow } from "@/components/mobile/Primitives";
-import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/i18n";
+import { languageStore } from "@/lib/language";
 import { useMobileState } from "@/lib/mobileState";
 import { roleBase } from "@/lib/routes";
 import { assets } from "@/mockData";
 
 export function ProfilePage() {
-  const { role } = useMobileState();
-  const { toast } = useToast();
+  const { role, setRole } = useMobileState();
+  const navigate = useNavigate();
+  const { t, lang } = useT();
   const isTeacher = role === "teacher";
   const base = roleBase(role);
+  const name = isTeacher ? "Trần Thu Hà" : "Nguyễn Thị Lan";
+  const phone = isTeacher ? "0909000010" : "0901000001";
+  const roleLabel = isTeacher ? t("profile.roleTeacher") : t("profile.roleParent");
+
+  async function onLogout() {
+    await logout();
+    setRole(null);
+    navigate("/login", { replace: true });
+  }
 
   return (
     <>
-      <TopBar title="Hồ sơ của tôi" />
+      <TopBar title={t("profile.title")} />
       <div className="mt-3 text-center">
         <Avatar initials={isTeacher ? "H" : "L"} image={isTeacher ? assets.teacher : undefined} size="xl" />
-        <div className="mt-3 text-lg font-bold">{isTeacher ? "Trần Thu Hà" : "Nguyễn Thị Lan"}</div>
-        <div className="text-xs text-slate-500">{isTeacher ? "Giáo viên · ha.tran@kimthanh.edu.vn" : "Phụ huynh · lan.nguyen@gmail.com"}</div>
+        <div className="mt-3 text-lg font-bold">{name}</div>
+        <div className="text-xs text-slate-500">{`${roleLabel} · ${phone}`}</div>
       </div>
-      <div className="section-title">Thông tin cá nhân</div>
+      <div className="section-title">{t("profile.sectionPersonal")}</div>
       <div className="card divide-y divide-slate-100">
-        <ProfileRow icon={User} label="Họ tên" value={isTeacher ? "Trần Thu Hà" : "Nguyễn Thị Lan"} />
-        <ProfileRow icon={Mail} label="Email" value={isTeacher ? "ha.tran@kimthanh.edu.vn" : "lan.nguyen@gmail.com"} />
+        <ProfileRow icon={User} label={t("profile.fullName")} value={name} />
+        <ProfileRow icon={Phone} label={t("profile.phone")} value={phone} />
       </div>
-      <div className="section-title">Cài đặt</div>
+      <div className="section-title">{t("profile.sectionSettings")}</div>
       <div className="card divide-y divide-slate-100">
-        <ProfileRow icon={Bell} label="Thông báo" value="Đang bật" to={`${base}/notifications`} />
-        <ProfileRow icon={Moon} label="Giao diện tối" value="Tắt" />
-        <ProfileRow icon={Lock} label="Đổi mật khẩu" />
+        <ProfileRow icon={Bell} label={t("profile.notifications")} value={t("profile.notificationsOn")} to={`${base}/notifications`} />
+        <ProfileRow
+          icon={Languages}
+          label={t("profile.language")}
+          value={lang === "vi" ? "Tiếng Việt" : "English"}
+          onClick={() => languageStore.toggle()}
+        />
+        <ProfileRow icon={Moon} label={t("profile.darkMode")} value={t("profile.off")} />
+        <ProfileRow icon={Lock} label={t("profile.changePassword")} />
       </div>
-      <button type="button" onClick={() => toast("Đã đăng xuất demo")} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 p-3 font-semibold text-red-600">
-        <LogOut className="h-4 w-4" /> Đăng xuất
+      <button type="button" onClick={onLogout} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 p-3 font-semibold text-red-600">
+        <LogOut className="h-4 w-4" /> {t("profile.logout")}
       </button>
     </>
   );
