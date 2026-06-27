@@ -1,0 +1,19 @@
+{
+  "name": "KimThanh Kids",
+  "short_name": "KT Kids",
+  "description": "Mobile web/PWA cho phụ huynh và giáo viên KimThanh Kids.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fff8f3",
+  "theme_color": "#f26b5e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/mock-ui/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
