@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Override Tailwind font-weight utilities to also set fontFamily.
+  On React Native (iOS/Android), custom fonts loaded via expo-google-fonts are
+  registered as separate font faces (e.g. "BeVietnamPro_700Bold"), not as weight
+  variants of a single family. A plain fontWeight: 700 won't switch the typeface
+  on its own — we must explicitly set fontFamily to the correct variant.
+*/
+@layer utilities {
+  .font-normal {
+    font-family: "BeVietnamPro_400Regular";
+    font-weight: 400;
+  }
+  .font-medium {
+    font-family: "BeVietnamPro_500Medium";
+    font-weight: 500;
+  }
+  .font-semibold {
+    font-family: "BeVietnamPro_600SemiBold";
+    font-weight: 600;
+  }
+  .font-bold {
+    font-family: "BeVietnamPro_700Bold";
+    font-weight: 700;
+  }
+}
