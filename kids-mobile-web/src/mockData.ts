@@ -25,7 +25,6 @@ export type Invoice = {
 
 export const assets = {
   logo: "/mock-ui/logo.png",
-  heroKids: "/mock-ui/images/hero-kids.jpg",
   teacher: "/mock-ui/images/teacher.jpg",
   parent: "/mock-ui/images/parent.jpg",
   avatar1: "/mock-ui/images/avatar-1.jpg",

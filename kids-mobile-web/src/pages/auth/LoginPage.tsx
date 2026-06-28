@@ -40,7 +40,9 @@ export function LoginPage() {
       setRole(role);
       navigate(role === "parent" ? "/parent" : "/teacher", { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? t("auth.errInvalid") : t("auth.errNetwork"));
+      setError(
+        err instanceof ApiError ? t("auth.errInvalid") : t("auth.errNetwork"),
+      );
     } finally {
       setLoading(false);
     }
@@ -52,8 +54,11 @@ export function LoginPage() {
         <LanguageToggle />
       </div>
       <div className="text-center">
-        <img src={assets.heroKids} alt="Các bé KimThanh" className="hero-img mb-4" />
-        <img src={assets.logo} alt="KimThanh Kids" className="mx-auto mb-3 h-14 object-contain" />
+        <img
+          src={assets.logo}
+          alt="KimThanh Kids"
+          className="mx-auto mb-3 h-14 object-contain"
+        />
         <div className="text-2xl font-bold">{t("auth.welcome")}</div>
         <div className="mt-1 text-sm text-slate-500">{t("auth.subtitle")}</div>
       </div>
@@ -90,15 +95,24 @@ export function LoginPage() {
         </div>
 
         {error && (
-          <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
+          <div className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">
+            {error}
+          </div>
         )}
 
         <div className="flex justify-end text-xs">
-          <NavLink to="/reset-password" className="font-medium text-[color:var(--primary)]">
+          <NavLink
+            to="/reset-password"
+            className="font-medium text-[color:var(--primary)]"
+          >
             {t("auth.forgot")}
           </NavLink>
         </div>
-        <button type="submit" disabled={loading || !tenant} className="btn-primary w-full disabled:opacity-60">
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary w-full disabled:opacity-60"
+        >
           {loading ? t("auth.submitting") : t("auth.submit")}
         </button>
       </form>
