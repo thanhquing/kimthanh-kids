@@ -2,8 +2,9 @@ import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 
+// KHÔNG ghim Host tenant nữa: tenant được chọn ở login và gửi qua header x-tenant
+// (xem src/api/http.ts). Host về localhost → middleware không resolve tenant → x-tenant + JWT điều khiển.
 const API_TARGET = process.env.VITE_API_TARGET ?? "http://localhost:3000";
-const TENANT_HOST = process.env.VITE_TENANT_HOST ?? "demo.kimthanhkids.vn";
 
 export default defineConfig({
   plugins: [react()],
@@ -18,11 +19,6 @@ export default defineConfig({
       "/api": {
         target: API_TARGET,
         changeOrigin: true,
-        configure: (proxy) => {
-          proxy.on("proxyReq", (proxyReq) => {
-            proxyReq.setHeader("host", TENANT_HOST);
-          });
-        },
       },
     },
   },

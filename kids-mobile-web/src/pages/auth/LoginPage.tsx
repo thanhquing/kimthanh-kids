@@ -3,8 +3,10 @@ import { useState, type FormEvent } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { login, me, roleForMobile } from "@/api/auth";
 import { ApiError, tokenStore } from "@/api/http";
+import type { TenantOption } from "@/api/public";
 import { assets } from "@/mockData";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
+import { TenantSelect } from "@/components/ui/TenantSelect";
 import { useT } from "@/i18n";
 import { useMobileState } from "@/lib/mobileState";
 
@@ -12,6 +14,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const { t } = useT();
   const { setRole } = useMobileState();
+  const [tenant, setTenant] = useState<TenantOption | null>(null);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,9 +23,13 @@ export function LoginPage() {
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    if (!tenant) {
+      setError(t("auth.schoolRequired"));
+      return;
+    }
     setLoading(true);
     try {
-      await login({ identifier: phone.trim(), password });
+      await login({ identifier: phone.trim(), password }, tenant.id);
       const profile = await me();
       const role = roleForMobile(profile.roles);
       if (!role) {
@@ -51,6 +58,7 @@ export function LoginPage() {
         <div className="mt-1 text-sm text-slate-500">{t("auth.subtitle")}</div>
       </div>
       <form className="mt-8 space-y-4" onSubmit={onSubmit}>
+        <TenantSelect value={tenant} onChange={setTenant} />
         <div>
           <label className="label">{t("auth.phoneLabel")}</label>
           <div className="relative">
@@ -90,7 +98,7 @@ export function LoginPage() {
             {t("auth.forgot")}
           </NavLink>
         </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-60">
+        <button type="submit" disabled={loading || !tenant} className="btn-primary w-full disabled:opacity-60">
           {loading ? t("auth.submitting") : t("auth.submit")}
         </button>
       </form>

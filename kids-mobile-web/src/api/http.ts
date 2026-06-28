@@ -12,6 +12,24 @@ const BASE = "/api";
 const ACCESS_KEY = "kk_mw_access";
 const REFRESH_KEY = "kk_mw_refresh";
 const LANGUAGE_KEY = "kk_mw_lang";
+const TENANT_KEY = "kk_mw_tenant";
+
+/**
+ * Tenant đã chọn ở màn login (độc lập subdomain). Lưu để gắn header `x-tenant` cho mọi request:
+ * cần lúc login (server chưa có token để biết trường); sau login token đã mang tenantId nên header
+ * chỉ bổ trợ (TenantGuard vẫn chặn nếu lệch token).
+ */
+export const tenantStore = {
+  get id() {
+    return localStorage.getItem(TENANT_KEY);
+  },
+  set(id: string) {
+    localStorage.setItem(TENANT_KEY, id);
+  },
+  clear() {
+    localStorage.removeItem(TENANT_KEY);
+  },
+};
 
 export const tokenStore = {
   get access() {
@@ -69,6 +87,8 @@ async function raw(method: string, path: string, opts: Options, token: string | 
   };
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
   if (opts.auth !== false && token) headers["Authorization"] = `Bearer ${token}`;
+  const tenantId = localStorage.getItem(TENANT_KEY);
+  if (tenantId) headers["x-tenant"] = tenantId;
   return fetch(buildUrl(path, opts.query), {
     method,
     headers,

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api, tokenStore } from "./http";
+import { api, tenantStore, tokenStore } from "./http";
 import type { Role } from "@/lib/routes";
 
 /** Đăng nhập bằng số điện thoại (hoặc email) — kids-api nhận `identifier`. */
@@ -19,10 +19,17 @@ export type Me = {
   allowedSchoolIds?: string[] | null;
 };
 
-export async function login(input: LoginInput): Promise<LoginResult> {
-  const res = await api.post<LoginResult>("/auth/login", input, { auth: false });
-  tokenStore.set(res.accessToken, res.refreshToken);
-  return res;
+export async function login(input: LoginInput, tenantId: string): Promise<LoginResult> {
+  // Lưu tenant đã chọn TRƯỚC khi gọi: http gắn header x-tenant cho /auth/login (và các request sau).
+  tenantStore.set(tenantId);
+  try {
+    const res = await api.post<LoginResult>("/auth/login", input, { auth: false });
+    tokenStore.set(res.accessToken, res.refreshToken);
+    return res;
+  } catch (err) {
+    tenantStore.clear(); // login hỏng → bỏ tenant để không “dính” trường sai
+    throw err;
+  }
 }
 
 export function me(): Promise<Me> {
@@ -47,6 +54,7 @@ export async function logout(): Promise<void> {
     if (refreshToken) await api.post("/auth/logout", { refreshToken });
   } finally {
     tokenStore.clear();
+    tenantStore.clear();
   }
 }
 
