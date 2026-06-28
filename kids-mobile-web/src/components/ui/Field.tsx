@@ -17,11 +17,23 @@ export function TextField({ label, value, type = "text" }: { label: string; valu
   );
 }
 
-export function TextAreaField({ label, value }: { label: string; value: string }) {
+export function TextAreaField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange?: (value: string) => void;
+}) {
   return (
     <Field label={label}>
-      <textarea className="field min-h-24 resize-none" defaultValue={value} />
+      <textarea
+        className="field min-h-24 resize-none"
+        value={value}
+        onChange={(event) => onChange?.(event.target.value)}
+        readOnly={!onChange}
+      />
     </Field>
   );
 }
-

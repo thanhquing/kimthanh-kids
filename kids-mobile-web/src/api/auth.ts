@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { api, tokenStore } from "./http";
 import type { Role } from "@/lib/routes";
 
@@ -12,6 +13,8 @@ export type Me = {
   type: "PLATFORM" | "TENANT";
   tenantId?: string | null;
   platformRole?: string | null;
+  fullName?: string | null;
+  phone?: string | null;
   roles: TenantRole[];
   allowedSchoolIds?: string[] | null;
 };
@@ -24,6 +27,18 @@ export async function login(input: LoginInput): Promise<LoginResult> {
 
 export function me(): Promise<Me> {
   return api.get<Me>("/auth/me");
+}
+
+export const meKeys = { me: ["auth", "me"] as const };
+
+/** Hồ sơ người đăng nhập — dùng cho ProfilePage + greeting + guard role. */
+export function useMe() {
+  return useQuery({
+    queryKey: meKeys.me,
+    queryFn: me,
+    enabled: isAuthed(),
+    staleTime: 5 * 60_000,
+  });
 }
 
 export async function logout(): Promise<void> {

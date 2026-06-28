@@ -7,6 +7,9 @@ export interface AuthUser {
   type: UserType;
   tenantId: string | null;
   platformRole: PlatformRole | null;
+  /** Tên hiển thị + SĐT (cho /auth/me; client mobile dùng greeting + hồ sơ). */
+  fullName: string | null;
+  phone: string | null;
   /** role trong tenant (gộp từ Membership), kèm school scope. */
   roles: TenantRole[];
   allowedSchoolIds: string[] | null; // null = toàn tenant

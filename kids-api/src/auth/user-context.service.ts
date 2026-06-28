@@ -28,6 +28,8 @@ export class UserContextService {
       type: user.type,
       tenantId: user.tenantId,
       platformRole: user.platformRole,
+      fullName: user.fullName ?? null,
+      phone: user.phone ?? null,
       roles,
       allowedSchoolIds,
     };

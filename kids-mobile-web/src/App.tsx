@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, type ReactNode } from "react";
-import { isAuthed } from "@/api/auth";
+import { isAuthed, roleForMobile, useMe } from "@/api/auth";
 import { setOnUnauthorized } from "@/api/http";
 import { PhoneFrame, MobileLayout } from "@/components/mobile/MobileShell";
 import { LoginPage } from "@/pages/auth/LoginPage";
@@ -31,9 +31,19 @@ import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
 import { useMobileState } from "@/lib/mobileState";
 import type { Role } from "@/lib/routes";
 
-/** Chặn vào khu vực đã đăng nhập khi chưa có phiên. */
-function RequireAuth({ children }: { children: ReactNode }) {
+/**
+ * Chặn theo phiên + vai trò: chưa login → /login; đã login nhưng role không khớp khu vực
+ * (vd phụ huynh mở /teacher/*) → điều hướng về home đúng role. Verify bằng /auth/me khi
+ * reload sâu (token có sẵn nhưng state role chưa khôi phục).
+ */
+function RoleGuard({ role, children }: { role: Role; children: ReactNode }) {
+  const { data: me, isLoading, isError } = useMe();
   if (!isAuthed()) return <Navigate to="/login" replace />;
+  if (isLoading) return null;
+  if (isError || !me) return <Navigate to="/login" replace />;
+  const actual = roleForMobile(me.roles);
+  if (!actual) return <Navigate to="/login" replace />;
+  if (actual !== role) return <Navigate to={actual === "teacher" ? "/teacher" : "/parent"} replace />;
   return <>{children}</>;
 }
 
@@ -58,9 +68,9 @@ export function App() {
         <Route
           path="/parent"
           element={
-            <RequireAuth>
+            <RoleGuard role="parent">
               <RoleLayout role="parent" />
-            </RequireAuth>
+            </RoleGuard>
           }
         >
           <Route index element={<ParentHomePage />} />
@@ -83,9 +93,9 @@ export function App() {
         <Route
           path="/teacher"
           element={
-            <RequireAuth>
+            <RoleGuard role="teacher">
               <RoleLayout role="teacher" />
-            </RequireAuth>
+            </RoleGuard>
           }
         >
           <Route index element={<TeacherHomePage />} />

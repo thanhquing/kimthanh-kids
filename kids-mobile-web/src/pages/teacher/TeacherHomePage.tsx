@@ -1,49 +1,71 @@
-import { AlertCircle, CheckSquare, Clock, FileText, Megaphone, Pill } from "lucide-react";
+import { CheckSquare, FileText, Megaphone, Pill, School } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { useMe } from "@/api/auth";
+import { useMedicineList } from "@/api/medicine";
+import { useClassrooms } from "@/api/students";
 import { GreetingHeader } from "@/components/mobile/MobileShell";
-import { QuickAction, ScheduleRow, TaskCard } from "@/components/mobile/Primitives";
-import { assets } from "@/mockData";
+import { QuickAction, TaskCard } from "@/components/mobile/Primitives";
+import { useT } from "@/i18n";
+import { initialsFromName } from "@/lib/studentDisplay";
 
 export function TeacherHomePage() {
+  const { t } = useT();
+  const { data: profile } = useMe();
+  const { data: classrooms = [] } = useClassrooms();
+  const { data: pendingMedicine = [] } = useMedicineList("teacher", "PENDING");
+
+  const name = profile?.fullName ?? "—";
+  const homeroom = classrooms[0];
+
   return (
     <>
-      <GreetingHeader greeting="Xin chào cô," name="Trần Thu Hà" initials="H" />
+      <GreetingHeader greeting={t("home.greetingTeacher")} name={name} initials={initialsFromName(name)} />
       <div className="card brand-grad mt-4 p-4 text-white">
-        <div className="text-xs opacity-80">Lớp chủ nhiệm</div>
-        <div className="mt-1 text-xl font-bold">Lớp Mầm A · 24 bé</div>
-        <div className="mt-3 flex gap-3 text-sm">
-          <div>✓ <b>20</b> có mặt</div>
-          <div>⏰ <b>2</b> muộn</div>
-          <div>✗ <b>2</b> vắng</div>
-        </div>
+        <div className="text-xs opacity-80">{t("home.myClasses")}</div>
+        <div className="mt-1 text-xl font-bold">{homeroom ? homeroom.name : t("home.noClass")}</div>
+        {homeroom ? (
+          <div className="mt-2 text-sm opacity-90">
+            {t("home.studentsCount", { count: homeroom._count?.students ?? 0 })}
+          </div>
+        ) : null}
       </div>
-      <img src={assets.teacher} alt="Cô giáo lớp Mầm A" className="hero-img mt-3" />
-      <div className="section-title">Hành động nhanh</div>
+
+      <div className="section-title">{t("home.quickAttendance")}</div>
       <div className="grid grid-cols-3 gap-2">
-        <QuickAction icon={CheckSquare} label="Điểm danh" to="/teacher/attendance" tone="blue" />
-        <QuickAction icon={FileText} label="Báo cáo" to="/teacher/reports/new" tone="orange" />
-        <QuickAction icon={Megaphone} label="Thông báo" to="/teacher/announcements/new" tone="green" />
+        <QuickAction icon={CheckSquare} label={t("home.quickAttendance")} to="/teacher/attendance" tone="blue" />
+        <QuickAction icon={FileText} label={t("home.quickReport")} to="/teacher/reports/new" tone="orange" />
+        <QuickAction icon={Megaphone} label={t("home.quickAnnounce")} to="/teacher/announcements/new" tone="green" />
       </div>
-      <div className="section-title">Lịch phân công tuần này</div>
-      <div className="card p-3">
-        <div className="mb-1 flex items-center justify-between">
-          <div className="text-sm font-semibold">Thứ 2 · Hôm nay</div>
-          <span className="badge b-green">Đang làm</span>
-        </div>
-        <ScheduleRow label="Sáng" title="Lớp Mầm A" sub="GV chính" color="text-blue-600" />
-        <ScheduleRow label="Chiều" title="Trực trưa" sub="Toàn trường" color="text-orange-600" />
-        <div className="mt-2 flex gap-1 text-center text-[11px]">
-          {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day, index) => (
-            <div key={day} className={index === 0 ? "flex-1 rounded-lg bg-[color:var(--primary)] py-1 text-white" : "flex-1 rounded-lg bg-slate-100 py-1 text-slate-500"}>
-              {day}
+
+      <div className="section-title">{t("home.myClasses")}</div>
+      <div className="space-y-2">
+        {classrooms.map((classroom) => (
+          <NavLink key={classroom.id} to="/teacher/class" className="card flex items-center gap-3 p-3 text-left">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-blue-100 text-blue-600">
+              <School className="h-5 w-5" />
             </div>
-          ))}
-        </div>
+            <div className="flex-1">
+              <div className="text-sm font-semibold">{classroom.name}</div>
+              <div className="text-xs text-slate-500">
+                {t("home.studentsCount", { count: classroom._count?.students ?? 0 })}
+              </div>
+            </div>
+          </NavLink>
+        ))}
       </div>
-      <div className="section-title">Cần xử lý</div>
-      <TaskCard icon={AlertCircle} title="4 bé chưa điểm danh hôm nay" sub="Bé Lan, Bé Hùng, Bé Mai, Bé Nam" to="/teacher/attendance" tone="amber" />
-      <TaskCard icon={Pill} title="2 yêu cầu thuốc chờ duyệt" sub="Vitamin C, Hapacol 250" to="/teacher/medicine/approve" tone="blue" />
-      <TaskCard icon={Clock} title="6 báo cáo còn thiếu" sub="Hạn cuối: 17:30 hôm nay" to="/teacher/reports/new" tone="blue" />
+
+      <div className="section-title">{t("home.toHandle")}</div>
+      {pendingMedicine.length > 0 ? (
+        <TaskCard
+          icon={Pill}
+          title={t("home.pendingMedicine", { count: pendingMedicine.length })}
+          sub={pendingMedicine.map((m) => m.medicineName).filter(Boolean).slice(0, 3).join(", ")}
+          to="/teacher/medicine/approve"
+          tone="blue"
+        />
+      ) : (
+        <div className="card p-4 text-sm text-slate-500">{t("home.noPending")}</div>
+      )}
     </>
   );
 }
-

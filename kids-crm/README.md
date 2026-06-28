@@ -20,4 +20,4 @@ pnpm dev
 ```
 
 Dev mặc định proxy API sang `http://localhost:3000` và gắn `Host: demo.kimthanhkids.vn`.
-Demo login: `admin@hoasen.edu.vn` / `Password123`.
+Demo login (đăng nhập bằng **số điện thoại**): admin `0909000001` / `Password123` (identifier vẫn chấp nhận email `admin@hoasen.edu.vn`).

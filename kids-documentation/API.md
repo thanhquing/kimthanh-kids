@@ -108,7 +108,7 @@ Ghi chú: signup tạo tenant gói `free` ở trạng thái `ACTIVE`, không tri
 | `POST` | `/auth/login` | `LoginInput` | `{ user, accessToken, refreshToken }` |
 | `POST` | `/auth/refresh` | `{ refreshToken: string }` | `{ accessToken, refreshToken }` mới |
 | `POST` | `/auth/logout` | `{ refreshToken: string }` | `{ ok: true }` |
-| `GET` | `/auth/me` | Bearer | user hiện tại + memberships/roles |
+| `GET` | `/auth/me` | Bearer | `{ id, type, tenantId, platformRole, fullName, phone, roles[], allowedSchoolIds }` |
 
 `LoginInput`:
 

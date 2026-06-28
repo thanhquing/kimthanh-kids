@@ -1,38 +1,61 @@
 import { Plus } from "lucide-react";
+import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useMedicineList, type MedicineStatus } from "@/api/medicine";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { StatusBadge } from "@/components/mobile/Primitives";
+import { useT } from "@/i18n";
+import { formatDateRange, medicineStatusFilters, medicineStatusLabel } from "@/lib/medicineDisplay";
 import { useMobileState } from "@/lib/mobileState";
 import { roleBase } from "@/lib/routes";
-import { medicines } from "@/mockData";
 
 export function MedicineListPage() {
   const navigate = useNavigate();
+  const { t, lang } = useT();
   const { role } = useMobileState();
+  const appRole = role === "teacher" ? "teacher" : "parent";
   const base = roleBase(role);
+  const [status, setStatus] = useState<MedicineStatus | "ALL">("ALL");
+  const { data: requests = [], isLoading, isError } = useMedicineList(
+    appRole,
+    appRole === "teacher" && status !== "ALL" ? status : undefined,
+  );
+  const visibleRequests =
+    appRole === "parent" && status !== "ALL" ? requests.filter((item) => item.status === status) : requests;
 
   return (
     <>
-      <TopBar title="Yêu cầu thuốc" rightIcon={role === "parent" ? Plus : undefined} onRight={() => navigate(`${base}/medicine/new`)} />
+      <TopBar title={t("medicine.title")} rightIcon={role === "parent" ? Plus : undefined} onRight={() => navigate(`${base}/medicine/new`)} />
       <div className="mb-3 mt-3 flex gap-2 overflow-x-auto">
-        <span className="chip active">Tất cả</span>
-        <span className="chip">Chờ duyệt</span>
-        <span className="chip">Đã duyệt</span>
-        <span className="chip">Đã cho uống</span>
+        {medicineStatusFilters.map((item) => (
+          <button
+            key={item}
+            type="button"
+            onClick={() => setStatus(item)}
+            className={`chip whitespace-nowrap ${status === item ? "active" : ""}`}
+          >
+            {medicineStatusLabel(item, t)}
+          </button>
+        ))}
       </div>
+      {isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
+      {isError ? <div className="card p-4 text-sm text-red-600">{t("medicine.listError")}</div> : null}
+      {!isLoading && !isError && visibleRequests.length === 0 ? (
+        <div className="card p-4 text-sm text-slate-500">{t("medicine.listEmpty")}</div>
+      ) : null}
       <div className="space-y-2">
-        {medicines.map((medicine) => (
+        {visibleRequests.map((medicine) => (
           <NavLink key={medicine.id} to={`${base}/medicine/${medicine.id}`} className="card block p-3 text-left">
             <div className="mb-1 flex items-center justify-between gap-2">
-              <div className="text-sm font-semibold">{medicine.name}</div>
-              <StatusBadge status={medicine.status} />
+              <div className="text-sm font-semibold">{medicine.medicineName}</div>
+              <StatusBadge status={medicineStatusLabel(medicine.status, t)} />
             </div>
-            <div className="text-xs text-slate-500">{medicine.studentName} · {medicine.dose}</div>
-            <div className="mt-1 text-xs text-slate-400">{medicine.period}</div>
+            <div className="text-xs text-slate-500">{medicine.student?.fullName ?? t("medicine.student")} · {medicine.dosage}</div>
+            <div className="mt-1 text-xs text-slate-400">{formatDateRange(medicine.startDate, medicine.endDate, lang)} · {medicine.schedule}</div>
           </NavLink>
         ))}
       </div>
-      {role === "teacher" ? <NavLink to="/teacher/medicine/approve" className="btn-primary mt-4 block w-full text-center">Duyệt yêu cầu chờ</NavLink> : null}
+      {role === "teacher" ? <NavLink to="/teacher/medicine/approve" className="btn-primary mt-4 block w-full text-center">{t("medicine.approvePending")}</NavLink> : null}
     </>
   );
 }
