@@ -9,6 +9,7 @@ import { ProvisioningService } from "./provisioning.service";
 const signupSchema = z.object({
   schoolName: z.string().min(2).max(120),
   slug: z.string().min(3).max(32),
+  code: z.string().min(3).max(20).optional(),
   taxCode: z
     .string()
     .refine(isValidTaxCode, { message: "Mã số thuế không hợp lệ (10 hoặc 13 chữ số)" }),
@@ -34,6 +35,12 @@ export class ProvisioningController {
   @Get("availability")
   availability(@Query("slug") slug: string) {
     return this.provisioning.checkSlugAvailable((slug ?? "").toLowerCase());
+  }
+
+  // Search công khai để chọn tenant ở login (theo tên/mã trường/MST). Độc lập subdomain.
+  @Get("tenants")
+  searchTenants(@Query("q") q: string) {
+    return this.provisioning.searchTenants(q ?? "");
   }
 
   @Get("branding")

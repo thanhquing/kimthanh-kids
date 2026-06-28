@@ -7,6 +7,7 @@ import {
   UserType,
 } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import { randomBytes } from "node:crypto";
 import { isValidTaxCode, normalizeTaxCode } from "../common/validation/tax-code";
 import { EnvService } from "../config/env.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -30,6 +31,8 @@ const SLUG_RE = /^[a-z][a-z0-9-]{1,30}[a-z0-9]$/;
 export interface SignupInput {
   schoolName: string;
   slug: string;
+  /** Mã trường human-friendly để search/chọn ở login. Bỏ trống → tự sinh từ slug. */
+  code?: string;
   taxCode: string;
   adminEmail: string;
   adminPassword: string;
@@ -46,6 +49,46 @@ export class ProvisioningService {
 
   private hostFor(slug: string): string {
     return `${slug}.${this.env.get("ROOT_DOMAIN")}`;
+  }
+
+  /**
+   * Chuẩn hóa + đảm bảo duy nhất "mã trường". Có nhập tay → uppercase chữ/số, validate 3-20 ký tự,
+   * chặn trùng. Bỏ trống → tự sinh từ slug (+ hậu tố ngẫu nhiên nếu đụng).
+   */
+  private async resolveTenantCode(raw: string | undefined, slug: string): Promise<string> {
+    const explicit = raw
+      ?.trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, "");
+    if (explicit) {
+      if (explicit.length < 3 || explicit.length > 20)
+        throw new BadRequestException({
+          code: "INVALID_CODE",
+          message: "Mã trường gồm 3-20 ký tự chữ/số",
+        });
+      const taken = await this.prisma.system.tenant.findFirst({
+        where: { code: explicit, deletedAt: null },
+        select: { id: true },
+      });
+      if (taken)
+        throw new ConflictException({ code: "CODE_TAKEN", message: "Mã trường đã được dùng" });
+      return explicit;
+    }
+    const base =
+      slug
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "")
+        .slice(0, 16) || "TENANT";
+    let candidate = base;
+    for (let i = 0; i < 5; i++) {
+      const exists = await this.prisma.system.tenant.findFirst({
+        where: { code: candidate },
+        select: { id: true },
+      });
+      if (!exists) return candidate;
+      candidate = `${base}${randomBytes(2).toString("hex").toUpperCase()}`;
+    }
+    return `${base}${randomBytes(3).toString("hex").toUpperCase()}`;
   }
 
   async checkSlugAvailable(slug: string): Promise<{ available: boolean; reason?: string }> {
@@ -88,6 +131,8 @@ export class ProvisioningService {
         message: "Chưa cấu hình gói Miễn phí",
       });
 
+    const code = await this.resolveTenantCode(input.code, input.slug);
+
     const passwordHash = await bcrypt.hash(input.adminPassword, 10);
     const now = new Date();
     // Freemium: gói Miễn phí dùng vĩnh viễn (ACTIVE), không có hạn dùng thử.
@@ -99,6 +144,7 @@ export class ProvisioningService {
         const tenant = await tx.tenant.create({
           data: {
             slug: input.slug,
+            code,
             legalName: input.schoolName,
             taxCode,
             status: TenantStatus.ACTIVE,
@@ -164,6 +210,7 @@ export class ProvisioningService {
           tenant: {
             id: tenant.id,
             slug: tenant.slug,
+            code: tenant.code,
             host,
             status: tenant.status,
             trialEndsAt: null,
@@ -182,6 +229,53 @@ export class ProvisioningService {
       }
       throw e;
     }
+  }
+
+  /**
+   * Search công khai để CHỌN tenant ở màn login (độc lập subdomain). Tìm theo tên trường,
+   * mã trường, MST. Chỉ trả field an toàn (logo/tên/MST/mã/domain) — KHÔNG lộ gói/email/bank.
+   * Bắt buộc q ≥ 2 ký tự + cap 20 để chống scrape toàn bộ tenant.
+   */
+  async searchTenants(q: string) {
+    const term = (q ?? "").trim();
+    if (term.length < 2) return [];
+    const ci = { contains: term, mode: "insensitive" as const };
+    const tenants = await this.prisma.system.tenant.findMany({
+      where: {
+        deletedAt: null,
+        status: { not: TenantStatus.SUSPENDED },
+        OR: [
+          { legalName: ci },
+          { code: ci },
+          { taxCode: ci },
+          { settings: { is: { displayName: ci } } },
+        ],
+      },
+      take: 20,
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        code: true,
+        slug: true,
+        legalName: true,
+        taxCode: true,
+        settings: { select: { displayName: true, logoUrl: true } },
+        domains: {
+          where: { status: "ACTIVE", isPrimary: true },
+          select: { host: true },
+          take: 1,
+        },
+      },
+    });
+    return tenants.map((t) => ({
+      id: t.id,
+      code: t.code,
+      slug: t.slug,
+      displayName: t.settings?.displayName ?? t.legalName,
+      taxCode: t.taxCode ?? null,
+      logoUrl: t.settings?.logoUrl ?? null,
+      primaryDomain: t.domains[0]?.host ?? null,
+    }));
   }
 
   async brandingByHost(host: string) {

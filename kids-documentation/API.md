@@ -83,6 +83,7 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 |---|---|---|---|
 | `POST` | `/public/signup` | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | `{ tenant, school, admin, subscription, host }`. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400) |
 | `GET` | `/public/availability?slug=` | Query `slug: string` | `{ available: boolean }` |
+| `GET` | `/public/tenants?q=` | Query `q: string` (**≥ 2 ký tự**, else `[]`) | Search trường để chọn ở login (độc lập subdomain). Tìm theo tên/`code`/MST. Mảng item **chỉ field an toàn**: `{ id, code, slug, displayName, taxCode, logoUrl, primaryDomain }` (cap 20, ẩn tenant `SUSPENDED`/đã xoá; KHÔNG lộ gói/email/bank) |
 | `GET` | `/public/branding?host=` | Query `host: string` | branding/settings theo host |
 | `GET` | `/public/platform-invoices/:token` | `token` = `PlatformInvoice.publicToken` (uuid khó đoán) | hóa đơn để xem + thanh toán VietQR **không cần đăng nhập** (link chia sẻ cho trường). Trả như `/platform/invoices/:id` nhưng **bỏ `id`/`publicToken`**; 404 nếu token sai |
 
@@ -92,6 +93,8 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 {
   schoolName: string;      // 2..120
   slug: string;            // 3..32
+  code?: string;           // 3..20 — mã trường; bỏ trống → tự sinh từ slug (uppercase chữ/số, unique). Lỗi: INVALID_CODE/CODE_TAKEN
+  taxCode: string;         // MST 10/13 số, đúng checksum (bắt buộc)
   adminEmail: string;      // email
   adminPassword: string;   // min 8
   adminFullName: string;   // 2..120
@@ -121,6 +124,8 @@ Ghi chú: signup tạo tenant gói `free` ở trạng thái `ACTIVE`, không tri
 ```
 
 Cần có `identifier` hoặc `email`. Với tenant user, host phải khớp tenant của token; sai host trả `TENANT_MISMATCH`.
+
+**Xác định tenant (độc lập subdomain).** Thứ tự resolve ở `TenantResolutionMiddleware`: `SILO env → Host(domain) → header x-tenant → JWT`. Header **`x-tenant: <tenantId>`** cho phép client (app native/web không qua subdomain) chọn trường ở login: chọn từ `/public/tenants` rồi gửi `x-tenant` khi `POST /auth/login`. Bảo mật: `x-tenant` chỉ *seed* ctx **trước auth**; sau khi có token, `tenantId` trong token là nguồn sự thật và `TenantGuard` chặn nếu `x-tenant` ≠ tenant của token (`TENANT_MISMATCH`) → không thể vượt tenant. Request đã đăng nhập **không cần** gửi `x-tenant`. Thiếu cả Host lẫn `x-tenant` khi login tenant → `TENANT_REQUIRED`.
 
 ---
 

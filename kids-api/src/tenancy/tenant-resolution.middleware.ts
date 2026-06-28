@@ -34,7 +34,16 @@ export class TenantResolutionMiddleware implements NestMiddleware {
       });
       if (domain) ctx.tenantId = domain.tenantId;
     }
-    // host === API_HOST hoặc không khớp (vd localhost): để trống → JWT fallback ở guard.
+
+    // Fallback header x-tenant (client chọn tenant ở login, độc lập subdomain) — CHỈ khi Host
+    // chưa resolve tenant và không phải platform. An toàn: chỉ seed ctx pre-auth; sau JwtAuthGuard
+    // token là authoritative, TenantGuard chặn nếu x-tenant ≠ tenant của token → không escalate.
+    if (!ctx.tenantId && !ctx.platformScope) {
+      const header = req.headers["x-tenant"];
+      const xTenant = (Array.isArray(header) ? header[0] : header)?.trim();
+      if (xTenant) ctx.tenantId = xTenant;
+    }
+    // host === API_HOST + không x-tenant: để trống → JWT fallback ở guard.
 
     // Lưu host để TenantGuard so khớp.
     (req as Request & { resolvedHost?: string }).resolvedHost = host;

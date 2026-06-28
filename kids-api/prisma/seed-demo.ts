@@ -129,6 +129,7 @@ async function main() {
   const tenant = await prisma.tenant.create({
     data: {
       slug: SLUG,
+      code: "HOASEN", // mã trường để search/chọn ở login (độc lập subdomain)
       legalName: "Mầm non Hoa Sen",
       taxCode: "0312345673", // MST hợp lệ (đúng checksum)
       status: TenantStatus.ACTIVE,
@@ -858,6 +859,7 @@ async function main() {
     const seededTenant = await prisma.tenant.create({
       data: {
         slug: args.slug,
+        code: args.slug.toUpperCase(), // mã trường để search/chọn ở login
         legalName: args.legalName,
         taxCode: args.taxCode,
         status:

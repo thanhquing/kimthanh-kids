@@ -38,6 +38,7 @@ erDiagram
   Tenant {
     uuid id PK
     string slug UK "→ slug.kimthanhkids.vn"
+    string code UK "mã trường human-friendly — search/chọn tenant ở login (độc lập subdomain)"
     string legalName
     string taxCode UK "MST pháp nhân — 1 MST = 1 trường (chống mở trùng)"
     datetime taxVerifiedAt "đã xác minh MST với cơ quan thuế"
