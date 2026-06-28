@@ -48,7 +48,7 @@
     "title": "Sign in",
     "subtitle": "Use the account issued by your school",
     "schoolLabel": "School",
-    "schoolPlaceholder": "Search by school name, code or tax code",
+    "schoolPlaceholder": "Select a school or type to search",
     "schoolHint": "Type at least 2 characters to search",
     "schoolSearching": "Searching…",
     "schoolEmpty": "No matching school found",
