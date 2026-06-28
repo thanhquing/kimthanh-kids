@@ -441,6 +441,14 @@ export function TenantsPage() {
             onChange={(e) => setForm({ ...form, taxCode: e.target.value })}
           />
         </Field>
+        <Field label={t("tenants.fCode")}>
+          <input
+            className="field"
+            placeholder={t("tenants.fCodePh")}
+            value={form.code ?? ""}
+            onChange={(e) => setForm({ ...form, code: e.target.value || undefined })}
+          />
+        </Field>
         <Field label={t("tenants.fAdminName")}>
           <input
             className="field"

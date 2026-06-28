@@ -203,6 +203,10 @@ export function TenantDetailPage() {
                 }
               />
               <Row k={t("td.domainSlug")} v={tenant.slug} />
+              <Row
+                k={t("td.code")}
+                v={tenant.code ? <span className="font-mono text-xs">{tenant.code}</span> : "—"}
+              />
               <Row k={t("td.tenantId")} v={<span className="font-mono text-xs">{tenant.id}</span>} />
               <Row k={t("td.createdAt")} v={formatDate(tenant.createdAt)} />
               <Row k={t("td.timezone")} v={tenant.settings?.timezone ?? "Asia/Ho_Chi_Minh"} />

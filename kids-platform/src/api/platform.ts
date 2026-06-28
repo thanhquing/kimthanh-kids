@@ -23,6 +23,7 @@ export type Plan = {
 export type Tenant = {
   id: string;
   slug: string;
+  code?: string | null;
   legalName: string;
   taxCode?: string | null;
   taxVerifiedAt?: string | null;
@@ -176,6 +177,7 @@ export type DashboardOverview = {
 export type CreateTenantInput = {
   schoolName: string;
   slug: string;
+  code?: string;
   taxCode: string;
   adminEmail: string;
   adminPassword: string;
