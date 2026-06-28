@@ -65,12 +65,14 @@ describe("Tenant discovery + x-tenant login (e2e)", () => {
     expect(res.body.data.some((t: { id: string }) => t.id === tenantId)).toBe(true);
   });
 
-  it("q < 2 ký tự → rỗng (chống scrape toàn bộ tenant)", async () => {
+  it("q rỗng → trả danh sách để chọn ở dropdown (mảng, cap 50)", async () => {
     const res = await request(app.getHttpServer())
       .get("/api/public/tenants")
-      .query({ q: "a" })
+      .query({ q: "" })
       .expect(200);
-    expect(res.body.data).toEqual([]);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBeGreaterThan(0);
+    expect(res.body.data.length).toBeLessThanOrEqual(50);
   });
 
   it("login qua x-tenant (KHÔNG cần Host) → token gọi được endpoint đã auth", async () => {

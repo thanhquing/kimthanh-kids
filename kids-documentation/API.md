@@ -83,7 +83,7 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 |---|---|---|---|
 | `POST` | `/public/signup` | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | `{ tenant, school, admin, subscription, host }`. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400) |
 | `GET` | `/public/availability?slug=` | Query `slug: string` | `{ available: boolean }` |
-| `GET` | `/public/tenants?q=` | Query `q: string` (**≥ 2 ký tự**, else `[]`) | Search trường để chọn ở login (độc lập subdomain). Tìm theo tên/`code`/MST. Mảng item **chỉ field an toàn**: `{ id, code, slug, displayName, taxCode, logoUrl, primaryDomain }` (cap 20, ẩn tenant `SUSPENDED`/đã xoá; KHÔNG lộ gói/email/bank) |
+| `GET` | `/public/tenants?q=` | Query `q?: string` (tùy chọn) | Danh sách trường để **chọn ở dropdown** login (độc lập subdomain). `q` rỗng → trả danh sách (sắp theo tên); có `q` → lọc theo tên/`code`/MST. Mảng item **chỉ field an toàn**: `{ id, code, slug, displayName, taxCode, logoUrl, primaryDomain }` (**cap 50**, ẩn tenant `SUSPENDED`/đã xoá; KHÔNG lộ gói/email/bank) |
 | `GET` | `/public/branding?host=` | Query `host: string` | branding/settings theo host |
 | `GET` | `/public/platform-invoices/:token` | `token` = `PlatformInvoice.publicToken` (uuid khó đoán) | hóa đơn để xem + thanh toán VietQR **không cần đăng nhập** (link chia sẻ cho trường). Trả như `/platform/invoices/:id` nhưng **bỏ `id`/`publicToken`**; 404 nếu token sai |
 

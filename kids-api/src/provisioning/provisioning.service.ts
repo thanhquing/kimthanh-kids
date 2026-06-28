@@ -232,27 +232,30 @@ export class ProvisioningService {
   }
 
   /**
-   * Search công khai để CHỌN tenant ở màn login (độc lập subdomain). Tìm theo tên trường,
-   * mã trường, MST. Chỉ trả field an toàn (logo/tên/MST/mã/domain) — KHÔNG lộ gói/email/bank.
-   * Bắt buộc q ≥ 2 ký tự + cap 20 để chống scrape toàn bộ tenant.
+   * Danh sách trường công khai để CHỌN ở màn login (độc lập subdomain). Mặc định (q rỗng) trả
+   * danh sách để hiện thẳng trong dropdown; có q → lọc thêm theo tên/mã trường/MST. Chỉ trả field
+   * an toàn (logo/tên/MST/mã/domain) — KHÔNG lộ gói/email/bank. Cap 50 để giới hạn payload.
    */
   async searchTenants(q: string) {
     const term = (q ?? "").trim();
-    if (term.length < 2) return [];
     const ci = { contains: term, mode: "insensitive" as const };
     const tenants = await this.prisma.system.tenant.findMany({
       where: {
         deletedAt: null,
         status: { not: TenantStatus.SUSPENDED },
-        OR: [
-          { legalName: ci },
-          { code: ci },
-          { taxCode: ci },
-          { settings: { is: { displayName: ci } } },
-        ],
+        ...(term
+          ? {
+              OR: [
+                { legalName: ci },
+                { code: ci },
+                { taxCode: ci },
+                { settings: { is: { displayName: ci } } },
+              ],
+            }
+          : {}),
       },
-      take: 20,
-      orderBy: { createdAt: "asc" },
+      take: 50,
+      orderBy: { legalName: "asc" },
       select: {
         id: true,
         code: true,
