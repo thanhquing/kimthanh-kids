@@ -4,8 +4,8 @@
 
 ## Dự án là gì
 
-**KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant, truy cập qua subdomain riêng). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
-**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (114 e2e / 13 suite). `kids-platform` đã scaffold/tích hợp UI nền tảng; CRM + mobile là phase sau.
+**KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant). Truy cập qua subdomain HOẶC **chọn trường ở login** (dropdown `/public/tenants` + header `x-tenant`, độc lập subdomain). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
+**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (121 e2e / 14 suite). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` 🟡 scaffold+login · `kids-mobile-native` ⛔ chưa khởi tạo (sẽ **copy-first** từ mobile-web → Expo).
 
 ## Bản đồ repo
 
@@ -16,8 +16,10 @@
 | `kids-business-docs/`                                  | Tài liệu **nghiệp vụ/đào tạo/sale** (CEO/PO/Sale)                                                     |
 | `kids-tasks/PHASE_DOMAIN_API_TASKS.md`                 | Kế hoạch & tiến độ (checklist task)                                                                   |
 | `kids-landing/public/mock-ui/`                         | Mockup UI tham chiếu                                                                                  |
-| `kids-platform/`                                       | Platform Console (React + Vite) — đã scaffold, tích hợp các trang vận hành nền tảng                   |
-| `kids-crm/`, `kids-mobile-native/`, `kids-mobile-web/` | Phase UI tenant/mobile — **chưa khởi tạo source**                                                     |
+| `kids-platform/`                                       | Platform Console (React + Vite) — ✅ tích hợp các trang vận hành nền tảng                              |
+| `kids-mobile-web/`                                     | App PH/GV (React + Vite PWA) — ✅ API thật + i18n VI/EN + login chọn trường (x-tenant)                 |
+| `kids-crm/`                                            | Web quản trị trường (React + Vite) — 🟡 scaffold + login; business API phần lớn chưa tích hợp         |
+| `kids-mobile-native/`                                  | App native (Expo) — ⛔ chưa khởi tạo; sẽ **copy-first** từ `kids-mobile-web` (xem README app)          |
 
 ## Đọc trước khi làm task (theo loại việc)
 
@@ -67,7 +69,7 @@ pnpm prisma:deploy         # áp migration
 pnpm prisma:seed           # 5 gói + platform super-admin
 pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # /api · Swagger /docs
-pnpm test:e2e              # 114 e2e / 13 suite
+pnpm test:e2e              # 121 e2e / 14 suite
 ```
 
 Demo login (host `demo.<ROOT_DOMAIN>`, mật khẩu `Password123`): `admin@hoasen.edu.vn` (admin) … `ph01@gmail.com` (PH). Platform: `admin@kimthanhkids.vn` / `Admin@12345`.

@@ -41,22 +41,32 @@ Code **không phân nhánh nghiệp vụ** giữa 2 chế độ. SILO chỉ khá
 [`src/tenancy/tenant-resolution.middleware.ts`](../kids-api/src/tenancy/tenant-resolution.middleware.ts) chạy trước guard, set ALS context:
 
 ```
-Host header
+Thứ tự resolve (precedence): SILO → Host → x-tenant → JWT
  ├─ TENANCY_MODE=SILO            → tenantId = FIXED_TENANT_ID
  ├─ host == PLATFORM_HOST        → platformScope = true (xác nhận lại bằng user role)
- ├─ host == API_HOST             → để trống → fallback JWT (mobile/API client)
  ├─ khớp TenantDomain (ACTIVE)   → tenantId
- └─ không khớp (vd localhost)    → để trống → fallback JWT
+ ├─ header x-tenant: <tenantId>  → tenantId  (CHỈ khi Host chưa resolve & không platform)
+ └─ host == API_HOST / không khớp (localhost) & không x-tenant → để trống → fallback JWT
 ```
 
-`JwtAuthGuard` sau đó patch context với `userId`, và đặt `platformScope = (user.type === PLATFORM)`. `TenantGuard` đảm bảo **`jwt.tenantId === host.tenantId`** (chống dùng token tenant A qua host tenant B).
+`JwtAuthGuard` sau đó patch context: `tenantId = ctx.tenantId ?? user.tenantId` (tenant user), đặt `platformScope = (user.type === PLATFORM)`. `TenantGuard` đảm bảo **`jwt.tenantId === ctx.tenantId`** nếu ctx đã có (chống dùng token tenant A qua host/x-tenant của tenant B → 403 `TENANT_MISMATCH`).
+
+### Chọn tenant độc lập subdomain (CRM + mobile)
+
+Client không qua subdomain (mobile-web/native, CRM dev) chọn trường ở **màn login** rồi gửi tenant qua header — không phụ thuộc Host:
+
+1. **Discovery công khai** `GET /public/tenants?q=` (`@Public`, cross-tenant `prisma.system`): `q` rỗng → danh sách (cap 50, sắp theo tên); có `q` → lọc theo tên/`Tenant.code`/MST. Trả **chỉ field an toàn** `{ id, code, slug, displayName, taxCode, logoUrl, primaryDomain }` (ẩn `SUSPENDED`/đã xoá; KHÔNG lộ gói/email/bank).
+2. Client lưu `tenantId` đã chọn, gửi **`x-tenant: <tenantId>`** ở `POST /auth/login` (và các request sau — tùy chọn vì token đã mang `tenantId`).
+3. **An toàn:** `x-tenant` chỉ *seed* context **trước auth**; sau khi có token, `jwt.tenantId` là nguồn sự thật và `TenantGuard` chặn nếu lệch → **không thể vượt tenant**. `x-tenant` sai/không có khi login tenant (mà cũng không có Host) → `TENANT_REQUIRED`.
+
+Field **`Tenant.code`** (human-friendly, `@unique`) phục vụ search/hiển thị ở dropdown; nhập ở form tạo tenant của platform hoặc tự sinh từ `slug` lúc signup.
 
 ## Rủi ro rò rỉ cross-tenant & cách chặn
 
 | Rủi ro | Cách chặn |
 |---|---|
 | `$queryRaw`/`$executeRaw` bỏ qua extension | ESLint rule cấm trong domain code (xem `.eslintrc.cjs`); nếu cần, bind `tenantId` tường minh |
-| Token tenant A dùng qua host tenant B | `TenantGuard` so khớp `jwt.tenantId === host.tenantId` → 403 `TENANT_MISMATCH` |
+| Token tenant A dùng qua host/`x-tenant` của tenant B | `TenantGuard` so khớp `jwt.tenantId === ctx.tenantId` → 403 `TENANT_MISMATCH` (đã test cả qua proxy không-Host + x-tenant) |
 | Worker/cron mất ALS context | Job **bắt buộc nhận `tenantId` qua tham số**; KHÔNG đọc ALS trong worker (dùng `prisma.system` + filter tường minh) |
 | Quên `tenantId` trên bảng domain mới | Convention bắt buộc; thêm vào `TENANT_KEY` của extension |
 | `findUnique` theo id không filter | Dùng `findFirst` cho đọc đơn theo tenant (xem trên) |

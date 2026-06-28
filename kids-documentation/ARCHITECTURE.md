@@ -25,10 +25,10 @@ kids-api/src/
 │   ├── interceptors/        # TransformInterceptor → ApiSuccess envelope
 │   ├── http/                # ApiResponse types + paginated()
 │   └── pipes/               # ZodValidationPipe
-├── tenancy/                 # TenantResolutionMiddleware
+├── tenancy/                 # TenantResolutionMiddleware (SILO → Host → x-tenant → JWT)
 ├── auth/                    # login/refresh/logout/me + TokenService + UserContextService
 ├── entitlement/             # EntitlementService (resolve features/limits + quota)
-├── provisioning/            # POST /public/signup + branding + availability
+├── provisioning/            # POST /public/signup + branding + availability + GET /public/tenants (discovery chọn trường, độc lập subdomain)
 ├── billing/                 # plan/subscription/invoice/payment/webhook/cron/lifecycle (grace dunning ← PlatformConfig)
 ├── platform-config/         # PlatformConfigService — config nền tảng singleton (NH VietQR + grace dunning); dùng chung billing + platform (tránh cycle)
 ├── platform/                # platform-admin (tenants/subs/invoices/plans/coupons/audit/worklist/settings) + dashboard overview + MRR snapshot/cron + PublicInvoiceController (@Public link hóa đơn /public/platform-invoices/:token)
@@ -113,7 +113,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — **114 e2e / 13 suite** (gồm isolation đa-tenant 8/8 ở mốc API đóng).
+- `pnpm test:e2e` — **121 e2e / 14 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.
 - Cron billing chạy tự động (`@nestjs/schedule`); logic tách ở `BillingJobsService` để test gọi trực tiếp.

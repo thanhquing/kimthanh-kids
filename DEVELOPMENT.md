@@ -59,7 +59,7 @@ pnpm dev:mobile         # Expo (iOS/Android/Web)
 ```bash
 pnpm build:platform     # → kids-platform/dist (file tĩnh) → nginx
 pnpm build:crm          # → kids-crm/dist → nginx
-pnpm build:mobile-web   # → Expo web export (tĩnh) → nginx (PWA)
+pnpm build:mobile-web   # → kids-mobile-web/dist (React+Vite PWA, tĩnh) → nginx
 # kids-api: cd kids-api && pnpm build && pnpm start:prod (pm2)
 ```
 

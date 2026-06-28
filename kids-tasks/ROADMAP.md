@@ -11,7 +11,7 @@
 | **2**   | Tích hợp & hạ tầng        | ◻️ Chưa         | Phase 1     | _(tạo khi tới)_                                          |
 | **3**   | AI & nâng cao             | ◻️ Chưa         | Phase 1–2   | _(tạo khi tới)_                                          |
 | **0.5** | Hoàn thiện billing        | ◻️ Chèn khi cần | Phase 0     | _(tạo khi tới)_                                          |
-| **UI**  | kids-platform + kids-crm + mobile | 🟡 Platform đang tích hợp; CRM/mobile chưa | Toàn bộ API | [PHASE_UI_TASKS.md](./PHASE_UI_TASKS.md)                 |
+| **UI**  | kids-platform + kids-crm + mobile | 🟡 Platform ✅ · mobile-web ✅ (Vite PWA) · CRM scaffold+login · mobile-native (Expo) chưa | Toàn bộ API | [PHASE_UI_TASKS.md](./PHASE_UI_TASKS.md)                 |
 
 ---
 
@@ -57,7 +57,7 @@ Các phần còn **defer có chủ đích**: **proration** đổi gói giữa k�
 
 ## Phase UI/UX ◻️
 
-API đã ổn định để UI tiêu thụ. **kids-platform** đã scaffold/tích hợp console nền tảng; tiếp theo là **kids-crm** (web quản trị trường), **kids-mobile-native**, **kids-mobile-web** — tiêu thụ API Tầng A+B, áp white-label (logo/màu từ `/public/branding`).
+API đã ổn định để UI tiêu thụ. **kids-platform** ✅ console nền tảng. **kids-mobile-web** ✅ (React + Vite PWA: tích hợp API thật + i18n VI/EN + login chọn trường qua `x-tenant`). **kids-crm** 🟡 (đã scaffold + login; business API phần lớn chưa tích hợp). **kids-mobile-native** ⛔ chưa khởi tạo → sẽ **copy-first** từ mobile-web (Expo: copy tầng logic, viết lại UI bằng RN). Chọn tenant **độc lập subdomain** (dropdown `/public/tenants` + header `x-tenant`); white-label logo/màu từ `/public/branding`.
 
 ---
 

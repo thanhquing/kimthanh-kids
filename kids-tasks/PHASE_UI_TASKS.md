@@ -16,13 +16,18 @@
 | D2 | Stack CRM web (`kids-crm`) | **React + TypeScript + Vite** | CORS đã whitelist `:5173`; mock-ui là web desktop; hệ sinh thái table/form admin tốt | ◻️ |
 | D3 | Thư viện UI CRM | **Mantine** (hoặc Ant Design) | CRM nhiều bảng/form → cần DataTable/Form sẵn; Mantine free, hooks tốt; AntD nếu thích table mạnh | ◻️ |
 | D4 | Stack mobile | **Expo (React Native + react-native-web)** — 1 codebase → iOS + Android + Web | Memory: mobile luôn làm cả 3 nền tảng. Expo build được cả 3 từ 1 nguồn | ◻️ |
-| D5 | Vai trò `kids-mobile-native` vs `kids-mobile-web` | **Hợp nhất 1 codebase Expo** ở `kids-mobile-native`; `kids-mobile-web` = bản **web export** (PWA) của chính nó | Tránh maintain 2 codebase trùng. Nếu sau muốn tách PWA riêng thì nâng cấp `kids-mobile-web` thành codebase độc lập | ✅ **chốt: hợp nhất Expo** |
+| D5 | Vai trò `kids-mobile-native` vs `kids-mobile-web` | **2 codebase tách, chia sẻ logic bằng copy-first.** `kids-mobile-web` = app React + Vite PWA **độc lập** (ĐÃ XONG); `kids-mobile-native` = app **Expo riêng**, copy `src/api`+`src/i18n`+`src/lib` từ mobile-web, **chỉ viết lại UI** (RN + NativeWind + expo-router) | (Cập nhật 2026-06-28) Ban đầu chốt "hợp nhất 1 Expo + web-export", **đảo lại** vì thực tế đã build mobile-web thành app Vite riêng (PWA tối ưu hơn react-native-web). Giữ web Vite + native Expo, chia sẻ **tầng logic** qua copy → đổi logic thì diff cơ học sang native | ✅ **chốt lại: copy-first, 2 codebase** |
 | D6 | Server-state | **TanStack Query (React Query)** cho cả platform/CRM/mobile | Hợp REST + cache + retry 401→refresh; `kids-platform` đã dùng React Query | 🟡 platform xong |
 | D7 | Codegen từ OpenAPI | **openapi-typescript spec mỏng** từ `kids-api/openapi.json` + type body/response khai tay theo ledger | Đúng pipeline hiện tại: root `gen:api` sinh `api.d.ts` rồi copy vào app; tránh đổi backend đã ổn định | ✅ **chốt & đã dựng** |
-| D8 | Form + validate | **react-hook-form + zod** (tái dùng shape Zod backend) | Đồng bộ rule với DTO backend (date `YYYY-MM-DD`, phone, v.v.) | ◻️ |
+| D8 | Form + validate | (thực tế) **state thuần + validate ở backend**; react-hook-form/zod **chưa dùng** | Form hiện tại đơn giản (login, vài form CRM/platform) → state thuần đủ; backend đã validate bằng **Zod (nguồn chân lý)**. Cân nhắc rhf+zod khi CRM có form nhiều bước | 🟡 **chưa áp — state thuần** |
 | D9 | Platform Console: gộp vào CRM hay tách app | **Tách app riêng `kids-platform/`** | Khác **realm quyền** (platform role vs tenant role), khác **host** (`admin.*` vs `<slug>.*`), khác đối tượng & deploy. Vẫn dùng chung `kids-api/openapi.json` để sinh client nên chi phí tách thấp. Impersonate = handoff sang kids-crm kèm token | ✅ **chốt: tách riêng** |
 
 > ⚠️ D1/D5/D9 là các điểm rẽ kiến trúc — đã chốt.
+>
+> **Cập nhật quan trọng (2026-06-28):**
+> - **D5 đảo hướng** → copy-first 2 codebase (xem ô D5). `kids-mobile-web` đã hoàn thiện thành app Vite riêng.
+> - **Chọn tenant độc lập subdomain:** CRM + mobile login bằng **dropdown chọn trường** (`GET /public/tenants`) → gửi header **`x-tenant`**; backend resolve `SILO → Host → x-tenant → JWT` (xem [`MULTI_TENANCY.md`](../kids-documentation/MULTI_TENANCY.md)). Vite proxy CRM/mobile **không còn ghim Host**; platform vẫn ghim `Host=admin.*`.
+> - **D7 thực tế:** platform + crm dùng `src/api/generated/api.d.ts`; **mobile-web gõ tay 100%** module `src/api/*` (không copy generated). Cả 3 dùng react-query.
 
 ---
 
@@ -49,7 +54,8 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 ## 2. Môi trường dev (làm 1 lần)
 
 - [x] **Platform dev proxy:** `kids-platform` gọi `/api/*` qua Vite proxy sang `:3000` và set `Host: admin.kimthanhkids.vn` (xem `kids-platform/README.md`).
-- [ ] **CRM/mobile subdomain → localhost:** thêm `/etc/hosts` (`demo.kimthanhkids.vn`, `app.kimthanhkids.vn` → `127.0.0.1`) **hoặc** dùng proxy giữ Host. Chốt 1 cách và ghi vào README mỗi app khi scaffold.
+- [x] **CRM/mobile chọn tenant ở login (độc lập subdomain):** dropdown search `GET /public/tenants` → gửi header **`x-tenant: <tenantId>`** khi login (xem `src/api/http.ts` + component `TenantSelect`). Vite proxy CRM/mobile **không còn ghim Host** (đẩy về localhost → middleware không resolve tenant → x-tenant + JWT điều khiển). Platform giữ ghim `Host=admin.kimthanhkids.vn`.
+- [x] **Font `@fontsource` + pnpm dedup:** realpath file font trỏ ra ngoài thư mục app (pnpm hardlink store) → thêm `server.fs.allow=[".."]` ở `vite.config` mỗi FE để tránh **403** lúc dev. KHÔNG ảnh hưởng `vite build` (production bundle font bình thường).
 - [ ] **CORS**: thêm origin dev của CRM/mobile vào `API_CORS_ORIGINS` (hiện có `:5173,:3000`). Bổ sung subdomain khi truy cập qua host thật.
 - [ ] **Seed demo**: `pnpm prisma:seed:demo` cho tenant `demo` (gói PRO, đủ data) để dev UI không phải tự tạo.
 - [ ] **`.gitignore`** mỗi app FE (`node_modules`, `dist`, `.expo`, `.env`).
@@ -119,9 +125,13 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 ---
 
-## 6. Mobile (Expo: iOS + Android + Web) — làm SAU CRM
+## 6. Mobile — GV + PH (2 codebase: web Vite đã xong · native Expo copy-first)
 
 > Tiêu thụ flow **App mobile GV + PH** (55 case). Map với `mock-ui/mobile/`.
+>
+> **Trạng thái (2026-06-28):**
+> - ✅ **`kids-mobile-web` (React + Vite PWA)** đã tích hợp API thật + i18n VI/EN + login chọn trường (x-tenant) + hầu hết P0/P1 dưới đây. Chi tiết & việc còn lại: [`../kids-mobile-web/MOBILE_WEB_TASKS.md`](../kids-mobile-web/MOBILE_WEB_TASKS.md), kịch bản: [`../kids-mobile-web/FE_TEST_SCENARIOS.md`](../kids-mobile-web/FE_TEST_SCENARIOS.md).
+> - ⛔ **`kids-mobile-native` (Expo)** chưa khởi tạo — sẽ **copy-first** từ mobile-web (copy `src/api`+`src/i18n`+`src/lib`, viết lại UI bằng RN/NativeWind/expo-router; xem README app + D5). Danh sách P0/P1 dưới là **flow nghiệp vụ chung** cho cả 2 bản.
 
 **P0 — Giáo viên (home-teacher):**
 - [ ] Login + home (phân công của tôi `/assignments/mine`), class-roster (`/students?classroomId=`).
@@ -152,11 +162,11 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 
 ## 8. Thứ tự đề xuất
 
-1. ✅ Chốt kiến trúc **D1 (app độc lập, không monorepo) · D5 (Expo hợp nhất) · D9 (tách kids-platform)**.
-2. Ở `kids-api`: thêm script `openapi:json` + commit `openapi.json` (§3) — **nguồn type chung**.
-3. ✅ **kids-platform P0/P1 chính** (§4) — đã dựng lớp `http` + `gen:api` mẫu và các trang vận hành nền tảng.
-4. **kids-crm P0** (§5) — chốt pattern auth/tenant/query/form/error cho realm tenant (tái dùng cho mobile).
-5. **mobile P0** (§6) — GV + PH, tái dùng pattern + client từ bước 4.
+1. ✅ Chốt kiến trúc **D1 (app độc lập, không monorepo) · D5 (copy-first, 2 codebase) · D9 (tách kids-platform)**.
+2. ✅ Ở `kids-api`: `openapi:json` + commit `openapi.json` (§3) — **nguồn type chung**.
+3. ✅ **kids-platform P0/P1 chính** (§4) — lớp `http` + `gen:api` + các trang vận hành nền tảng + field `code`.
+4. 🟡 **kids-crm** (§5) — đã scaffold + login (chọn trường qua `x-tenant`); **business API phần lớn chưa tích hợp** (xem [`PHASE_CRM_TASKS.md`](./PHASE_CRM_TASKS.md)).
+5. 🟡 **mobile** (§6) — ✅ **`kids-mobile-web` đã tích hợp gần hết P0/P1**; ⛔ **`kids-mobile-native` (Expo)** chưa khởi tạo → **copy-first** từ mobile-web là bước kế tiếp.
 6. P1 → P2 mỗi app theo nhu cầu vận hành thật.
 
 > Lưu ý: platform và CRM **có thể làm song song** vì API cả 2 đã PASS và độc lập realm; thứ tự trên là nếu làm tuần tự.

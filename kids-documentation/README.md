@@ -21,9 +21,9 @@ Tài liệu tham chiếu cho hệ thống SaaS quản lý mầm non **KimThanh K
 kimthanh-kids/
 ├── kids-api/             # Backend NestJS + Prisma + PostgreSQL (XONG Phase 0 Tầng A + Phase 1 A→G)
 ├── kids-platform/        # Platform Console (React + Vite) — đã scaffold/tích hợp UI nền tảng
-├── kids-crm/             # Web quản trị cho trường (phase UI — chưa khởi tạo)
-├── kids-mobile-native/   # App native phụ huynh/giáo viên (phase UI — chưa khởi tạo)
-├── kids-mobile-web/      # Mobile web (phase UI — chưa khởi tạo)
+├── kids-crm/             # Web quản trị trường (React+Vite) — 🟡 scaffold + login (business API phần lớn chưa)
+├── kids-mobile-native/   # App native PH/GV (Expo) — ⛔ chưa khởi tạo (sẽ copy-first từ mobile-web)
+├── kids-mobile-web/      # App PH/GV (React+Vite PWA) — ✅ API thật + i18n VI/EN + login chọn trường (x-tenant)
 ├── kids-landing/         # Landing page (TanStack Start) — đã có
 └── kids-documentation/   # Tài liệu (thư mục này)
 ```
@@ -45,7 +45,7 @@ pnpm prisma:migrate        # tạo schema
 pnpm prisma:seed           # 5 gói (free/starter/pro/enterprise/dedicated) + platform super-admin
 pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # http://localhost:3000/api  · Swagger: /docs
-pnpm test:e2e              # 114 e2e / 13 suite
+pnpm test:e2e              # 121 e2e / 14 suite
 ```
 
 > Yêu cầu Node ≥ 20 (khuyến nghị 22). Tài khoản platform seed: `admin@kimthanhkids.vn` / `Admin@12345`.
