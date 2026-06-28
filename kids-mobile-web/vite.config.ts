@@ -14,6 +14,9 @@ export default defineConfig({
   server: {
     port: 5176,
     host: true,
+    // pnpm hoist + dedup: file font @fontsource có realpath ngoài thư mục app → cho phép
+    // monorepo root để Vite serve được (tránh 403 Forbidden trên /@fs).
+    fs: { allow: [".."] },
     allowedHosts: ["demo.kimthanhkids.vn", "localhost"],
     proxy: {
       "/api": {
