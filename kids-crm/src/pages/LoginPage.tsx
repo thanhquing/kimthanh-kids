@@ -3,12 +3,15 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
 import { ApiError } from "@/api/http";
+import type { TenantOption } from "@/api/public";
 import { Modal } from "@/components/ui/Modal";
+import { TenantSelect } from "@/components/ui/TenantSelect";
 import { useT } from "@/i18n";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { t } = useT();
+  const [tenant, setTenant] = useState<TenantOption | null>(null);
   const [identifier, setIdentifier] = useState("0909000001");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,9 +21,13 @@ export function LoginPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!tenant) {
+      setError(t("login.schoolRequired"));
+      return;
+    }
     setLoading(true);
     try {
-      await login({ identifier, password });
+      await login({ identifier, password }, tenant.id);
       navigate("/", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -61,6 +68,8 @@ export function LoginPage() {
           <p className="text-sm text-slate-500 mb-6">{t("login.subtitle")}</p>
 
           <div className="space-y-4">
+            <TenantSelect value={tenant} onChange={setTenant} />
+
             <div>
               <label className="label">{t("login.identifierLabel")}</label>
               <div className="relative">
@@ -108,7 +117,7 @@ export function LoginPage() {
               <div className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</div>
             )}
 
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
+            <button type="submit" className="btn-primary w-full" disabled={loading || !tenant}>
               {loading ? t("login.submitting") : t("login.submit")}
             </button>
           </div>
