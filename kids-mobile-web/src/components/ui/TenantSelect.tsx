@@ -21,26 +21,22 @@ export function TenantSelect({
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
+  // Mở dropdown → nạp danh sách (q rỗng) để chọn ngay; gõ → debounce lọc lại. Bỏ kết quả cũ (chống race).
   useEffect(() => {
-    const term = query.trim();
-    if (term.length < 2) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
+    if (!open) return;
     setLoading(true);
     let active = true;
     const timer = window.setTimeout(() => {
-      searchTenants(term)
+      searchTenants(query.trim())
         .then((items) => active && setResults(items))
         .catch(() => active && setResults([]))
         .finally(() => active && setLoading(false));
-    }, 300);
+    }, 250);
     return () => {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [query]);
+  }, [query, open]);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
@@ -99,8 +95,6 @@ export function TenantSelect({
         <div className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg">
           {loading ? (
             <div className="px-3 py-3 text-sm text-slate-500">{t("auth.schoolSearching")}</div>
-          ) : query.trim().length < 2 ? (
-            <div className="px-3 py-3 text-sm text-slate-400">{t("auth.schoolHint")}</div>
           ) : results.length === 0 ? (
             <div className="px-3 py-3 text-sm text-slate-500">{t("auth.schoolEmpty")}</div>
           ) : (
