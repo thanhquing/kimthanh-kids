@@ -147,8 +147,20 @@ async function getPage<T>(path: string, opts: Options = {}): Promise<Page<T>> {
   throw new ApiError(err.code ?? "UNKNOWN", err.message ?? res.statusText, res.status);
 }
 
+/** GET trả về text thô (HTML bản in, CSV…) — vẫn gắn auth + refresh, KHÔNG bóc envelope. */
+async function getText(path: string, opts: Options = {}): Promise<string> {
+  const res = await send("GET", path, opts);
+  if (!res.ok) {
+    const json = await res.json().catch(() => null);
+    const err = json?.error ?? {};
+    throw new ApiError(err.code ?? "UNKNOWN", err.message ?? res.statusText, res.status);
+  }
+  return res.text();
+}
+
 export const api = {
   get: <T>(path: string, opts?: Options) => request<T>("GET", path, opts ?? {}),
+  getText,
   getPage,
   post: <T>(path: string, body?: unknown, opts?: Options) =>
     request<T>("POST", path, { ...opts, body }),

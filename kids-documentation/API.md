@@ -139,7 +139,7 @@ Role: `AD`, `HT`. Host: tenant.
 | `PATCH` | `/tenant/settings` | `TenantSettingsPatch` | `TenantSettings` sau cập nhật |
 | `GET` | `/tenant/schools` | - | `School[]` |
 | `POST` | `/tenant/schools` | `SchoolInput` | `School` |
-| `GET` | `/tenant/members` | - | users + memberships |
+| `GET` | `/tenant/members` | - | users (id,email,phone,fullName,isActive) + memberships, mới nhất trước |
 | `POST` | `/tenant/members` | `CreateMemberInput` | user mới + membership |
 | `PATCH` | `/tenant/members/:userId/status` | `{ isActive: boolean }` | user sau cập nhật |
 | `GET` | `/tenant/domains` | - | `TenantDomain[]` |
@@ -357,7 +357,7 @@ Create check quota `CLASSROOMS`. Delete là soft-delete.
 | Method | Path | Role | Body / Query | Data trả về |
 |---|---|---|---|---|
 | `GET` | `/students/mine` | PH | - | children của PH |
-| `GET` | `/students?classroomId=&schoolId=` | STAFF | filters optional | `Student[]` |
+| `GET` | `/students?classroomId=&schoolId=` | STAFF | filters optional | `Student[]` (+ parents/classroom) |
 | `GET` | `/students/:id` | STAFF | - | `Student` + parents/classroom |
 | `POST` | `/students` | AD,HT,GV | `StudentCreate` | `Student` |
 | `PATCH` | `/students/:id` | AD,HT,GV | `StudentPatch` | `Student` |

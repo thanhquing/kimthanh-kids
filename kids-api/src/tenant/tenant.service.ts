@@ -79,9 +79,10 @@ export class TenantService {
     return this.prisma.system.membership.findMany({
       where: { tenantId, deletedAt: null },
       include: {
-        user: { select: { id: true, email: true, fullName: true, isActive: true } },
+        user: { select: { id: true, email: true, phone: true, fullName: true, isActive: true } },
         school: true,
       },
+      orderBy: { createdAt: "desc" },
     });
   }
 

@@ -5,7 +5,7 @@
 ## Dự án là gì
 
 **KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant). Truy cập qua subdomain HOẶC **chọn trường ở login** (dropdown `/public/tenants` + header `x-tenant`, độc lập subdomain). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
-**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (121 e2e / 14 suite). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` 🟡 scaffold+login · `kids-mobile-native` ⛔ chưa khởi tạo (sẽ **copy-first** từ mobile-web → Expo).
+**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (121 e2e / 14 suite). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 (Dashboard · Hồ sơ · Điểm danh · Sổ liên lạc · Sức khỏe · Học phí/VietQR · Thông báo · Nhật ký · Cài đặt); còn nhóm mở rộng ở `CRM_FEATURE_IDEAS.md` · `kids-mobile-native` ⛔ chưa khởi tạo (sẽ **copy-first** từ mobile-web → Expo).
 
 ## Bản đồ repo
 
@@ -18,7 +18,7 @@
 | `kids-landing/public/mock-ui/`                         | Mockup UI tham chiếu                                                                                  |
 | `kids-platform/`                                       | Platform Console (React + Vite) — ✅ tích hợp các trang vận hành nền tảng                              |
 | `kids-mobile-web/`                                     | App PH/GV (React + Vite PWA) — ✅ API thật + i18n VI/EN + login chọn trường (x-tenant)                 |
-| `kids-crm/`                                            | Web quản trị trường (React + Vite) — 🟡 scaffold + login; business API phần lớn chưa tích hợp         |
+| `kids-crm/`                                            | Web quản trị trường (React + Vite) — ✅ toàn bộ mục nav P0/P1 (hồ sơ/điểm danh/sổ liên lạc/sức khỏe/học phí/thông báo/nhật ký/cài đặt); mở rộng ở `CRM_FEATURE_IDEAS.md` |
 | `kids-mobile-native/`                                  | App native (Expo) — ⛔ chưa khởi tạo; sẽ **copy-first** từ `kids-mobile-web` (xem README app)          |
 
 ## Đọc trước khi làm task (theo loại việc)

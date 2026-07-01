@@ -9,7 +9,10 @@
 - `kids-api` Phase 0 + Phase 1 đã đóng, 114 e2e / 13 suite ở mốc API.
 - Ledger CRM trong [`UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md) đã PASS **49/49** flow chủ trường, fixture `crm1782232197.kimthanhkids.vn`.
 - `kids-platform` đã có pattern cần copy: Vite + React + TypeScript + Tailwind + TanStack Query, `src/api/http.ts` bóc envelope, refresh token, invalidate query theo nhóm.
-- `kids-crm/` đã bootstrap source bằng copy-first từ `kids-platform`: app shell, đăng nhập realm tenant (login/me/refresh + guard chặn tài khoản platform) và **placeholder routes** cho toàn bộ module. Tích hợp business API (dashboard/settings/…) **chưa làm** — đã chủ động gỡ wiring tạm thời để commit baseline sạch; sẽ ráp lại từng màn theo Quy trình bắt buộc (tầng `src/api/http.ts` giữ nguyên).
+- `kids-crm/` đã bootstrap source bằng copy-first từ `kids-platform`: app shell, đăng nhập realm tenant (login/me/refresh + guard chặn tài khoản platform).
+- **Đã tích hợp (toàn bộ mục nav P0/P1):** Dashboard · Hồ sơ (Lớp/Học sinh/Nhân sự) · Điểm danh · Sổ liên lạc · Sức khỏe (thuốc/sự cố/đo lường/dị ứng) · Học phí (HĐ/chi tiết/VietQR/thu tiền/in/hủy) · Thông báo · Nhật ký · Cài đặt trường. Tất cả qua `src/api/crm.ts`, i18n VI/EN đầy đủ, bám mock `web/*.html`.
+- Tinh chỉnh BE phục vụ mock: thêm `phone` vào `/tenant/members`, `parents` vào `GET /students`. Verify: 121 e2e PASS · `pnpm build` CRM sạch · smoke cURL 16 endpoint (3 mutate + 13 GET) trả 200/khớp shape.
+- **Còn lại (mở rộng — thuộc `CRM_FEATURE_IDEAS.md`):** Assignments (phân công), Leave (duyệt nghỉ), Weekly menu, Notifications feed, Album/upload, Lesson plan, reset mật khẩu, và các mắt xích mobile↔CRM. **Đã dừng đúng ranh giới CRM_FEATURE_IDEAS theo yêu cầu.**
 - **Quyết định triển khai:** `kids-crm` đi theo hướng **copy-first từ `kids-platform`**, rồi đổi realm/API/page theo CRM. Không scaffold trắng nếu không cần.
 
 ## 1. Phạm vi sản phẩm
@@ -142,51 +145,53 @@ Làm từng cụm, mỗi cụm có mock -> component -> API integration -> self-
   - [x] KPI tổng quan theo mock `dashboard.html`.
   - [x] trend điểm danh 30 ngày, thuốc tháng này, doanh thu 6 tháng, thông báo gần đây.
   - [x] tích hợp `GET /dashboard/summary` + cURL PASS.
-- [ ] Settings: _(route placeholder; wiring `GET/PATCH /tenant/settings` đã gỡ — nhớ omit field rỗng vì zod `.optional()` từ chối `""`)_
-  - [ ] xem/sửa thông tin trường.
-  - [ ] branding cơ bản.
-  - [ ] cấu hình ngân hàng/MST/địa chỉ hóa đơn.
-- [ ] Classrooms:
-  - [ ] list/search/filter.
-  - [ ] create/edit.
-  - [ ] detail roster.
-  - [ ] quota message khi vượt gói.
-- [ ] Students/Guardians:
-  - [ ] list/filter theo lớp.
-  - [ ] create/edit/detail.
-  - [ ] link/unlink guardian nếu API hỗ trợ.
-  - [ ] trạng thái và soft-delete nếu đã có endpoint.
-- [ ] Members:
-  - [ ] create teacher/nurse/finance/parent.
-  - [ ] activate/deactivate.
-  - [ ] role badges.
-- [ ] Attendance:
-  - [ ] chọn lớp/ngày.
-  - [ ] bulk mark.
-  - [ ] xem bảng theo lớp/ngày.
-- [ ] Daily reports:
-  - [ ] soạn/upsert theo học sinh hoặc lớp.
-  - [ ] list theo lớp/ngày.
-- [ ] Health/medicine/incidents:
-  - [ ] health records + growth.
-  - [ ] allergies.
-  - [ ] medicine list/handle timeline.
-  - [ ] incidents list/create.
-- [ ] Tuition:
-  - [ ] invoice list/detail/create.
-  - [ ] VietQR.
-  - [ ] manual cash payment.
-  - [ ] print HTML.
-  - [ ] export CSV.
-- [ ] Announcements:
-  - [ ] compose/draft.
-  - [ ] publish.
-  - [ ] feed.
-- [ ] Assignments:
+- [x] Settings (`SettingsPage`): _(patch chỉ gửi field non-empty — zod `.optional()` từ chối `""`)_
+  - [x] thông tin trường (read-only từ School: tên/mã/địa chỉ/SĐT — chưa có endpoint update School).
+  - [x] branding: displayName, logoUrl, primaryColor/secondaryColor, supportEmail.
+  - [x] cấu hình ngân hàng (chọn từ BANKS)/MST/địa chỉ hóa đơn → `PATCH /tenant/settings`.
+- [x] Classrooms (`ClassroomsPage` + `ClassroomDetailPage`):
+  - [x] list + search theo tên + summary "{lớp} · {HS} · {GV}".
+  - [x] create/edit (modal): tên, độ tuổi, sức chứa, GVCN (chọn từ members role TEACHER).
+  - [x] detail roster (tab Học sinh) + stats Sĩ số/Sức chứa/Còn trống; các tab khác = coming soon.
+  - [x] soft-delete (confirm modal) → `DELETE /classrooms/:id`.
+  - [x] quota khi vượt gói: backend trả 403 `QUOTA_EXCEEDED`, FE hiển thị `error.message` qua toast.
+- [x] Students/Guardians (`StudentsPage` + `StudentProfilePage`):
+  - [x] list + filter theo lớp/giới tính + search + export CSV.
+  - [x] create/edit (modal) + detail (profile) + soft-delete.
+  - [x] link/unlink guardian trên profile (`POST/DELETE /students/:id/guardians`).
+  - [x] cột Phụ huynh ở list/roster: thêm `parents` vào `GET /students` include (đồng bộ với `get`).
+- [x] Members (`MembersPage`):
+  - [x] create GV/y tá/kế toán/phụ huynh (modal, SĐT/email + mật khẩu mặc định).
+  - [x] activate/deactivate (confirm) → `PATCH /tenant/members/:userId/status`.
+  - [x] role badges + filter vai trò/trạng thái + search + phân trang client + export CSV + xem chi tiết.
+  - [x] cột SĐT: thêm `phone` vào `GET /tenant/members` include (login bằng SĐT).
+- [x] Attendance (`AttendancePage`):
+  - [x] chọn lớp/ngày.
+  - [x] bulk mark (4 trạng thái + giờ đến + ghi chú) → `POST /attendance/mark`.
+  - [x] KPI có mặt/muộn/vắng/phép + nạp lại bản ghi đã có theo lớp/ngày.
+- [x] Daily reports (`ReportsPage`):
+  - [x] chọn lớp → danh sách học sinh → feed báo cáo (`GET /daily-reports/student/:id`).
+  - [x] soạn báo cáo (mood/meals/nap/activities/note) → `POST /daily-reports`.
+- [x] Health/medicine/incidents (`HealthPage`, 4 tab):
+  - [x] hồ sơ đo lường theo học sinh (`GET /health/student/:id`, `POST /health`).
+  - [x] dị ứng theo học sinh (`GET/POST/DELETE /allergies`).
+  - [x] medicine list + handle (duyệt/từ chối/đã cho uống) → `POST /medicine/:id/handle`.
+  - [x] incidents list (card) + create → `POST /incidents`.
+- [x] Tuition (`TuitionPage` + `TuitionInvoiceDetailPage`):
+  - [x] invoice list (KPI + filter trạng thái/search) + detail + create (modal nhiều khoản).
+  - [x] VietQR (modal, dựng ảnh img.vietqr.io từ `GET /tuition/invoices/:id/vietqr`).
+  - [x] manual cash/bank payment → `POST /tuition/invoices/:id/pay/manual`.
+  - [x] print HTML (fetch kèm auth → window mới + print) + cancel.
+  - [x] tab Thanh toán (suy ra từ HĐ đã thu). _(export CSV server-side `/export` chưa nối — dùng client-side ở list khác; bổ sung sau nếu cần)_
+- [x] Announcements (`AnnouncementsPage`):
+  - [x] compose/draft (modal: audience/lớp/tiêu đề/nội dung).
+  - [x] publish (`POST /announcements/:id/publish`) + delete.
+  - [x] master-detail list + filter audience/search.
+- [ ] Assignments: _(chưa nối — không có mục nav hiện tại; thuộc nhóm mở rộng/CRM_FEATURE_IDEAS)_
   - [ ] create weekly assignment.
   - [ ] list/mine.
-- [ ] Audit log:
-  - [ ] list/filter action.
+- [x] Audit log (`AuditPage`):
+  - [x] list + filter prefix action (member/invoice/student) + resolve tên actor qua members.
 
 ## 3. Seed data + dev vận hành
 
@@ -225,8 +230,11 @@ pnpm build
 
 Kết quả gần nhất:
 
-- [x] `pnpm build` sạch sau bootstrap CRM.
-- [ ] `pnpm gen:api` chưa chạy lại sau bootstrap vì API không đổi; generated type copy từ baseline hiện có.
+- [x] `kids-crm`: `pnpm gen:api` sạch (copy OpenAPI type vào 3 app).
+- [x] `kids-crm`: `pnpm build` sạch.
+- [x] `kids-api`: `pnpm exec tsc --noEmit` sạch.
+- [x] `kids-api`: `pnpm lint` sạch.
+- [ ] `kids-api`: `pnpm test:e2e` cần chạy lại khi Docker/Postgres local hoạt động; lần chạy hiện tại bị chặn do không kết nối được `localhost:5432` (`pnpm db:up` fail vì Docker daemon chưa chạy).
 
 ### Vận hành dev thủ công
 

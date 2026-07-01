@@ -54,7 +54,7 @@ export class StudentsService {
         ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
       },
       orderBy: { fullName: "asc" },
-      include: { classroom: { select: { id: true, name: true } } },
+      include: studentInclude,
     });
   }
 
