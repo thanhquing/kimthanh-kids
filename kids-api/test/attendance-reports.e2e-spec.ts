@@ -1,4 +1,5 @@
 import { INestApplication } from "@nestjs/common";
+import sharp from "sharp";
 import request from "supertest";
 import { TenantFixture, bootstrap, createTenant, rnd } from "./helpers";
 
@@ -32,6 +33,13 @@ describe("Phase 1 — attendance / daily reports", () => {
       .send({ email, password: "Password123" })
       .expect(201);
     return { userId: r.body.data.id as string, token: login.body.data.accessToken as string };
+  }
+  async function reportPhoto(): Promise<Buffer> {
+    return sharp({
+      create: { width: 64, height: 64, channels: 3, background: { r: 120, g: 180, b: 240 } },
+    })
+      .png()
+      .toBuffer();
   }
 
   // Bộ dữ liệu dùng chung
@@ -130,11 +138,26 @@ describe("Phase 1 — attendance / daily reports", () => {
   });
 
   it("báo cáo hằng ngày: GV soạn → phụ huynh xem feed con mình", async () => {
-    await api()
+    const photo = await api()
+      .post("/api/media?kind=REPORT_PHOTO")
+      .set(auth(t))
+      .attach("file", await reportPhoto(), { filename: "daily.png", contentType: "image/png" })
+      .expect(201);
+
+    const created = await api()
       .post("/api/daily-reports")
       .set(auth(t))
-      .send({ studentId: s1, date: today, mood: "HAPPY", meals: "Ăn hết suất", nap: "Ngủ ngon" })
+      .send({
+        studentId: s1,
+        date: today,
+        mood: "HAPPY",
+        meals: "Ăn hết suất",
+        nap: "Ngủ ngon",
+        photoIds: [photo.body.data.id],
+      })
       .expect(201);
+    expect(created.body.data.photos).toHaveLength(1);
+    expect(created.body.data.photos[0].media.id).toBe(photo.body.data.id);
 
     const feed = await api()
       .get(`/api/daily-reports/student/${s1}`)
@@ -142,6 +165,7 @@ describe("Phase 1 — attendance / daily reports", () => {
       .expect(200);
     expect(feed.body.data.length).toBe(1);
     expect(feed.body.data[0].mood).toBe("HAPPY");
+    expect(feed.body.data[0].photos[0].media.id).toBe(photo.body.data.id);
 
     const byClass = await api()
       .get(`/api/daily-reports?classroomId=${classroomId}&date=${today}`)

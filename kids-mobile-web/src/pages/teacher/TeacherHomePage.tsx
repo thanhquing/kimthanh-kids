@@ -1,7 +1,8 @@
-import { CheckSquare, FileText, Megaphone, Pill, School } from "lucide-react";
+import { CalendarClock, CheckSquare, FileText, Megaphone, Pill, School } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useMe } from "@/api/auth";
 import { useMedicineList } from "@/api/medicine";
+import { useStaffLeaveRequests } from "@/api/leave";
 import { useClassrooms } from "@/api/students";
 import { GreetingHeader } from "@/components/mobile/MobileShell";
 import { QuickAction, TaskCard } from "@/components/mobile/Primitives";
@@ -13,6 +14,7 @@ export function TeacherHomePage() {
   const { data: profile } = useMe();
   const { data: classrooms = [] } = useClassrooms();
   const { data: pendingMedicine = [] } = useMedicineList("teacher", "PENDING");
+  const { data: pendingLeave = [] } = useStaffLeaveRequests("PENDING");
 
   const name = profile?.fullName ?? "—";
   const homeroom = classrooms[0];
@@ -55,6 +57,15 @@ export function TeacherHomePage() {
       </div>
 
       <div className="section-title">{t("home.toHandle")}</div>
+      {pendingLeave.length > 0 ? (
+        <TaskCard
+          icon={CalendarClock}
+          title={t("home.pendingLeave", { count: pendingLeave.length })}
+          sub={pendingLeave.map((item) => item.student?.fullName).filter(Boolean).slice(0, 3).join(", ")}
+          to="/teacher/leave/approve"
+          tone="amber"
+        />
+      ) : null}
       {pendingMedicine.length > 0 ? (
         <TaskCard
           icon={Pill}
@@ -63,9 +74,9 @@ export function TeacherHomePage() {
           to="/teacher/medicine/approve"
           tone="blue"
         />
-      ) : (
+      ) : pendingLeave.length === 0 ? (
         <div className="card p-4 text-sm text-slate-500">{t("home.noPending")}</div>
-      )}
+      ) : null}
     </>
   );
 }

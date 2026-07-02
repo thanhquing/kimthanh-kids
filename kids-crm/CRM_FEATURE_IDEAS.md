@@ -64,7 +64,7 @@
 4. **Phát hành hóa đơn** — PH chỉ thấy hóa đơn có sẵn; FINANCE cần màn tạo/đợt phát hành. (cao)
 5. **Lịch cho uống thuốc + log y tế** — mobile duyệt thuốc nhưng thực thi hằng ngày thuộc NURSE. (trung bình)
 6. **Soạn thực đơn / giáo án** — mobile chỉ xem; cần màn soạn (ADMIN/NURSE/GV). (trung bình)
-7. **Quản lý người đón / điểm danh ra-về** — chưa có ở cả 2; nghiệp vụ mầm non quan trọng (an toàn đón trả). (ý tưởng mới)
+7. **Quản lý người đón / điểm danh ra-về** — đã bổ sung API `pickup` + CRM `PickupPage`; mobile có thể đọc cùng nguồn để hiển thị người được phép đón và lịch sử CHECK_IN/CHECK_OUT.
 
 ---
 
@@ -73,6 +73,13 @@
 - **PH xem sức khỏe con**: API `/allergies|/incidents/student/:id` đã cho PARENT → mở khối sức khỏe cho PH trên StudentDetail (hiện chỉ GV). Tương ứng NURSE nhập liệu trên CRM.
 - **GV duyệt đơn nghỉ ngay trên mobile** thay vì chỉ CRM — đối ứng nhanh với PH gửi.
 - **PH nhận biên nhận sau thanh toán** + lịch sử thanh toán — đối ứng FINANCE đối soát.
-- **Đính kèm ảnh vào báo cáo ngày** (mobile đang disable "Thêm ảnh") — cần media upload (chung hạ tầng với album).
+- **Đính kèm ảnh vào báo cáo ngày** — đã nối mobile GV upload ảnh qua media, `POST /daily-reports` nhận `photoIds`, PH xem ảnh trong report feed.
 
 > Mục tiêu: mỗi vòng nghiệp vụ **khép kín** giữa mobile (PH/GV) và CRM (admin/principal/nurse/finance). Backend đã sẵn phần lớn endpoint; CRM là lớp vận hành còn thiếu để dữ liệu mobile "sống" thật.
+
+## Trạng thái triển khai CRM
+
+- Đã nối trong `kids-crm`: reset mật khẩu nhân sự, phân công tuần, duyệt đơn nghỉ, thực đơn tuần + cảnh báo dị ứng, album/upload ảnh, giáo án tuần, notifications feed/preferences, quản lý người đón + nhật ký CHECK_IN/CHECK_OUT.
+- Đã nối follow-up mobile-web: PH xem dị ứng/sự cố trong hồ sơ bé, PH/GV xem đón-trả, GV ghi CHECK_IN/CHECK_OUT, GV duyệt/từ chối đơn nghỉ, GV đính kèm ảnh báo cáo ngày và PH xem ảnh trong feed.
+- Backend bổ sung mới: `PATCH /tenant/members/:userId/password` để ADMIN/PRINCIPAL đặt lại mật khẩu và revoke refresh token hiện có.
+- Verify gần nhất: `kids-crm pnpm build` sạch; `kids-api pnpm exec tsc --noEmit` + `pnpm lint` sạch. `test:e2e` cần chạy lại khi Docker/Postgres local hoạt động.

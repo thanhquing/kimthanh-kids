@@ -12,8 +12,15 @@
     "attendance": "Điểm danh",
     "reports": "Sổ liên lạc",
     "health": "Sức khỏe",
+    "leave": "Đơn nghỉ",
+    "assignments": "Phân công",
+    "menus": "Thực đơn",
+    "albums": "Album",
+    "lessons": "Giáo án",
+    "pickup": "Đón trả",
     "tuition": "Học phí",
     "announcements": "Thông báo",
+    "notifications": "Hộp tin",
     "auditLogs": "Nhật ký",
     "settings": "Cài đặt trường",
     "logout": "Đăng xuất",
@@ -24,6 +31,7 @@
     "profile": "Hồ sơ",
     "operations": "Vận hành",
     "financeContent": "Tài chính & nội dung",
+    "planningContent": "Kế hoạch & kết nối",
     "config": "Cấu hình"
   },
   "sections": {
@@ -105,6 +113,15 @@
     "daysAgo": "{n} ngày trước",
     "none": "—"
   },
+  "weekdays": {
+    "1": "Thứ 2",
+    "2": "Thứ 3",
+    "3": "Thứ 4",
+    "4": "Thứ 5",
+    "5": "Thứ 6",
+    "6": "Thứ 7",
+    "7": "Chủ nhật"
+  },
   "placeholder": {
     "hasRoute": "Đã có route CRM"
   },
@@ -139,7 +156,100 @@
     "saved": "Đã lưu thay đổi",
     "created": "Đã tạo thành công",
     "deleted": "Đã xóa",
+    "approved": "Đã duyệt",
+    "rejected": "Đã từ chối",
+    "markRead": "Đánh dấu đã đọc",
+    "markAllRead": "Đánh dấu tất cả đã đọc",
+    "upload": "Tải ảnh",
     "errorGeneric": "Có lỗi xảy ra, vui lòng thử lại."
+  },
+  "feature": {
+    "assignmentsTitle": "Phân công tuần",
+    "assignmentsSection": "Kế hoạch / Phân công",
+    "assignmentCreate": "Tạo phân công",
+    "staff": "Nhân sự",
+    "weekday": "Thứ",
+    "shift": "Ca",
+    "duty": "Nhiệm vụ",
+    "note": "Ghi chú",
+    "leaveTitle": "Duyệt đơn xin nghỉ",
+    "leaveSection": "Vận hành / Đơn nghỉ",
+    "leaveType": "Loại nghỉ",
+    "dateRange": "Thời gian",
+    "reason": "Lý do",
+    "decisionNote": "Ghi chú xử lý",
+    "menusTitle": "Thực đơn tuần",
+    "menusSection": "Nội dung / Thực đơn",
+    "menuCreate": "Tạo thực đơn",
+    "weekStart": "Tuần bắt đầu",
+    "meal": "Bữa ăn",
+    "ingredients": "Thành phần",
+    "allergyCheck": "Soát dị ứng",
+    "noWarnings": "Chưa có cảnh báo dị ứng.",
+    "albumsTitle": "Album lớp",
+    "albumsSection": "Nội dung / Album",
+    "albumCreate": "Tạo album",
+    "addPhotos": "Thêm ảnh",
+    "photos": "ảnh",
+    "lessonsTitle": "Giáo án tuần",
+    "lessonsSection": "Kế hoạch / Giáo án",
+    "lessonCreate": "Tạo giáo án",
+    "theme": "Chủ đề",
+    "activity": "Hoạt động",
+    "materials": "Học liệu",
+    "notificationsTitle": "Hộp tin thông báo",
+    "notificationsSection": "Kết nối / Hộp tin",
+    "preferences": "Tùy chọn nhận tin",
+    "resetPassword": "Đặt lại mật khẩu",
+    "newPassword": "Mật khẩu mới",
+    "passwordResetOk": "Đã đặt lại mật khẩu",
+    "pickupTitle": "Đón trả học sinh",
+    "pickupSection": "An toàn / Đón trả",
+    "guardian": "Người đón",
+    "guardianPhone": "SĐT người đón",
+    "relationship": "Quan hệ",
+    "authorizationCreate": "Thêm người đón",
+    "logPickup": "Ghi nhận ra/vào",
+    "eventType": "Sự kiện",
+    "revoke": "Thu hồi"
+  },
+  "pickupStatus": {
+    "ACTIVE": "Đang hiệu lực",
+    "REVOKED": "Đã thu hồi"
+  },
+  "pickupEvent": {
+    "CHECK_IN": "Đưa đến",
+    "CHECK_OUT": "Đón về"
+  },
+  "shift": {
+    "MORNING": "Sáng",
+    "AFTERNOON": "Chiều",
+    "FULL_DAY": "Cả ngày"
+  },
+  "leaveStatus": {
+    "PENDING": "Chờ duyệt",
+    "APPROVED": "Đã duyệt",
+    "REJECTED": "Từ chối"
+  },
+  "leaveType": {
+    "SICK": "Ốm",
+    "FAMILY": "Gia đình",
+    "OTHER": "Khác"
+  },
+  "mealType": {
+    "BREAKFAST": "Sáng",
+    "LUNCH": "Trưa",
+    "SNACK": "Xế",
+    "DINNER": "Tối"
+  },
+  "notificationType": {
+    "ATTENDANCE": "Điểm danh",
+    "DAILY_REPORT": "Sổ liên lạc",
+    "ANNOUNCEMENT": "Thông báo",
+    "INVOICE": "Học phí",
+    "MEDICINE": "Thuốc",
+    "LEAVE": "Đơn nghỉ",
+    "INCIDENT": "Sự cố"
   },
   "gender": {
     "MALE": "Nam",

@@ -139,6 +139,46 @@ function ViewMemberModal({ member, onClose }: { member: Member; onClose: () => v
   );
 }
 
+function ResetPasswordModal({ member, onClose }: { member: Member; onClose: () => void }) {
+  const { t } = useT();
+  const { toast } = useToast();
+  const [password, setPassword] = useState("Password123");
+  const reset = useMutation({
+    mutationFn: () => crm.members.resetPassword(member.user.id, password),
+    onSuccess: () => {
+      toast(t("feature.passwordResetOk"));
+      onClose();
+    },
+    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+  });
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={t("feature.resetPassword")}
+      footer={
+        <>
+          <button className="btn-soft text-sm" onClick={onClose} disabled={reset.isPending}>
+            {t("common.cancel")}
+          </button>
+          <button
+            className="btn-primary text-sm"
+            onClick={() => reset.mutate()}
+            disabled={password.length < 8 || reset.isPending}
+          >
+            {reset.isPending ? t("common.saving") : t("common.save")}
+          </button>
+        </>
+      }
+    >
+      <div className="rounded-lg bg-slate-50 p-3 text-sm font-semibold">{member.user.fullName}</div>
+      <Field label={t("feature.newPassword")}>
+        <input className="field" value={password} onChange={(e) => setPassword(e.target.value)} autoFocus />
+      </Field>
+    </Modal>
+  );
+}
+
 export function MembersPage() {
   const { t } = useT();
   const { toast } = useToast();
@@ -150,6 +190,7 @@ export function MembersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [viewing, setViewing] = useState<Member | null>(null);
   const [toggling, setToggling] = useState<Member | null>(null);
+  const [resetting, setResetting] = useState<Member | null>(null);
 
   const members = useQuery({ queryKey: ["members"], queryFn: () => crm.members.list() });
 
@@ -305,6 +346,12 @@ export function MembersPage() {
                       >
                         {t(m.user.isActive ? "members.deactivate" : "members.activate")}
                       </button>
+                      <button
+                        className="text-xs font-semibold ml-3 text-amber-700"
+                        onClick={() => setResetting(m)}
+                      >
+                        {t("feature.resetPassword")}
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -342,6 +389,7 @@ export function MembersPage() {
 
       {createOpen && <CreateMemberModal open={createOpen} onClose={() => setCreateOpen(false)} />}
       {viewing && <ViewMemberModal member={viewing} onClose={() => setViewing(null)} />}
+      {resetting && <ResetPasswordModal member={resetting} onClose={() => setResetting(null)} />}
       <ConfirmDialog
         open={!!toggling}
         title={t(toggling?.user.isActive ? "members.deactivate" : "members.activate")}

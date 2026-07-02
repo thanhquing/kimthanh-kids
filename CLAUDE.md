@@ -5,7 +5,7 @@
 ## Dự án là gì
 
 **KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant). Truy cập qua subdomain HOẶC **chọn trường ở login** (dropdown `/public/tenants` + header `x-tenant`, độc lập subdomain). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
-**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (121 e2e / 14 suite). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 (Dashboard · Hồ sơ · Điểm danh · Sổ liên lạc · Sức khỏe · Học phí/VietQR · Thông báo · Nhật ký · Cài đặt); còn nhóm mở rộng ở `CRM_FEATURE_IDEAS.md` · `kids-mobile-native` ⛔ chưa khởi tạo (sẽ **copy-first** từ mobile-web → Expo).
+**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (131 e2e / 15 suite). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 + mở rộng `CRM_FEATURE_IDEAS.md` (phân công, nghỉ phép, thực đơn, album/upload, giáo án, notifications, reset mật khẩu, đón-trả) · `kids-mobile-native` ⛔ chưa khởi tạo (sẽ **copy-first** từ mobile-web → Expo).
 
 ## Bản đồ repo
 
@@ -18,7 +18,7 @@
 | `kids-landing/public/mock-ui/`                         | Mockup UI tham chiếu                                                                                  |
 | `kids-platform/`                                       | Platform Console (React + Vite) — ✅ tích hợp các trang vận hành nền tảng                              |
 | `kids-mobile-web/`                                     | App PH/GV (React + Vite PWA) — ✅ API thật + i18n VI/EN + login chọn trường (x-tenant)                 |
-| `kids-crm/`                                            | Web quản trị trường (React + Vite) — ✅ toàn bộ mục nav P0/P1 (hồ sơ/điểm danh/sổ liên lạc/sức khỏe/học phí/thông báo/nhật ký/cài đặt); mở rộng ở `CRM_FEATURE_IDEAS.md` |
+| `kids-crm/`                                            | Web quản trị trường (React + Vite) — ✅ P0/P1 + mở rộng mobile↔CRM (`CRM_FEATURE_IDEAS.md`) |
 | `kids-mobile-native/`                                  | App native (Expo) — ⛔ chưa khởi tạo; sẽ **copy-first** từ `kids-mobile-web` (xem README app)          |
 
 ## Đọc trước khi làm task (theo loại việc)
@@ -69,7 +69,7 @@ pnpm prisma:deploy         # áp migration
 pnpm prisma:seed           # 5 gói + platform super-admin
 pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # /api · Swagger /docs
-pnpm test:e2e              # 121 e2e / 14 suite
+pnpm test:e2e              # 131 e2e / 15 suite
 ```
 
 Demo login (host `demo.<ROOT_DOMAIN>`, mật khẩu `Password123`): `admin@hoasen.edu.vn` (admin) … `ph01@gmail.com` (PH). Platform: `admin@kimthanhkids.vn` / `Admin@12345`.

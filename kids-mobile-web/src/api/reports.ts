@@ -15,6 +15,12 @@ export type DailyReport = {
   activities?: string | null;
   note?: string | null;
   student?: { id: string; fullName: string };
+  photos?: {
+    id: string;
+    mediaId: string;
+    caption?: string | null;
+    media: { id: string; mimeType: string; width?: number | null; height?: number | null };
+  }[];
 };
 
 export type UpsertDailyReportInput = {
@@ -25,6 +31,7 @@ export type UpsertDailyReportInput = {
   nap?: string;
   activities?: string;
   note?: string;
+  photoIds?: string[];
 };
 
 export const reportKeys = {
@@ -67,4 +74,3 @@ export function useUpsertDailyReport() {
     mutationFn: upsertDailyReport,
   });
 }
-

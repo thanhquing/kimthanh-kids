@@ -1,6 +1,7 @@
 import { Camera } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { uploadImage } from "@/api/media";
 import { reportKeys, useReportsByClass, useUpsertDailyReport, type Mood } from "@/api/reports";
 import { useClassrooms, useStudents } from "@/api/students";
 import { TopBar } from "@/components/mobile/MobileShell";
@@ -23,6 +24,7 @@ export function ReportComposePage() {
   const [nap, setNap] = useState("");
   const [activities, setActivities] = useState("");
   const [note, setNote] = useState("");
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const { data: classrooms = [], isLoading: classroomsLoading, isError: classroomsError } = useClassrooms();
   const activeClassrooms = useMemo(() => classrooms.filter((classroom) => classroom.isActive), [classrooms]);
   const currentClassroom = activeClassrooms.find((classroom) => classroom.id === classroomId) ?? activeClassrooms[0];
@@ -48,10 +50,16 @@ export function ReportComposePage() {
     setNap(existingReport?.nap ?? "");
     setActivities(existingReport?.activities ?? "");
     setNote(existingReport?.note ?? "");
+    setPhotoFiles([]);
   }, [existingReport?.id, existingReport?.mood, existingReport?.meals, existingReport?.nap, existingReport?.activities, existingReport?.note]);
 
   async function onSubmit() {
     if (!studentId || !currentClassroom) return;
+    const uploaded = [];
+    for (const file of photoFiles) {
+      uploaded.push(await uploadImage(file, { kind: "REPORT_PHOTO" }));
+    }
+    const existingPhotoIds = existingReport?.photos?.map((photo) => photo.media.id) ?? [];
     const report = await upsertMutation.mutateAsync({
       studentId,
       date,
@@ -60,6 +68,7 @@ export function ReportComposePage() {
       nap: nap.trim() || undefined,
       activities: activities.trim() || undefined,
       note: note.trim() || undefined,
+      photoIds: [...existingPhotoIds, ...uploaded.map((item) => item.id)],
     });
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: reportKeys.byClass(currentClassroom.id, date) }),
@@ -111,9 +120,21 @@ export function ReportComposePage() {
         <TextAreaField label={t("reports.nap")} value={nap} onChange={setNap} />
         <TextAreaField label={t("reports.activities")} value={activities} onChange={setActivities} />
         <TextAreaField label={t("reports.note")} value={note} onChange={setNote} />
-        <button type="button" className="btn-soft flex w-full justify-center gap-2 opacity-70" disabled>
-          <Camera className="h-4 w-4" /> {t("reports.addPhoto")}
-        </button>
+        <Field label={t("reports.photos")}>
+          <label className="btn-soft flex w-full cursor-pointer justify-center gap-2">
+            <Camera className="h-4 w-4" /> {t("reports.addPhoto")}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(event) => setPhotoFiles(Array.from(event.target.files ?? []).slice(0, 12))}
+            />
+          </label>
+          <div className="mt-2 text-xs text-slate-500">
+            {t("reports.photoCount", { count: (existingReport?.photos?.length ?? 0) + photoFiles.length })}
+          </div>
+        </Field>
         <button
           type="button"
           onClick={onSubmit}

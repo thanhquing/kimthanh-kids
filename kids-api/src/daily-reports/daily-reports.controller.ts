@@ -16,6 +16,7 @@ const upsertSchema = z.object({
   nap: z.string().max(500).optional(),
   activities: z.string().max(500).optional(),
   note: z.string().max(1000).optional(),
+  photoIds: z.array(z.string().uuid()).max(12).optional(),
 });
 
 const STAFF = [

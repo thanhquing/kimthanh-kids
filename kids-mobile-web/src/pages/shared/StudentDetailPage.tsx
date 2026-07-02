@@ -1,4 +1,4 @@
-import { FileText, Image, Pill } from "lucide-react";
+import { ContactRound, FileText, Image, Pill } from "lucide-react";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useStudentAttendance } from "@/api/attendance";
@@ -36,9 +36,8 @@ export function StudentDetailPage() {
   const backTo = role === "teacher" ? "/teacher/class" : "/parent/children";
   const attendanceQuery = useStudentAttendance(student?.id);
   const latestAttendance = attendanceQuery.data?.[0];
-  // Khối sức khỏe chỉ hiển thị cho giáo viên → chỉ fetch khi là teacher (tránh gọi thừa).
-  const allergiesQuery = useAllergies(isTeacher ? student?.id : undefined);
-  const incidentsQuery = useIncidents(isTeacher ? student?.id : undefined);
+  const allergiesQuery = useAllergies(student?.id);
+  const incidentsQuery = useIncidents(student?.id);
   const allergies = allergiesQuery.data ?? [];
   const incidents = incidentsQuery.data ?? [];
 
@@ -65,7 +64,7 @@ export function StudentDetailPage() {
           {student.classroom?.name ?? t("students.noClass")} · {t("students.age", { age: ageFromDate(student.dateOfBirth) })}
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-4 gap-2">
         <QuickAction
           icon={FileText}
           label={t("students.reports")}
@@ -74,6 +73,7 @@ export function StudentDetailPage() {
         />
         <QuickAction icon={Pill} label={t("students.medicine")} to={`${base}/medicine`} tone="green" />
         <QuickAction icon={Image} label={t("students.album")} to={`${base}/album`} tone="blue" />
+        <QuickAction icon={ContactRound} label={t("pickup.titleShort")} to={`${base}/pickup?studentId=${student.id}`} tone="amber" />
       </div>
       <div className="section-title">{t("students.profileSection")}</div>
       <div className="card space-y-3 p-4">
@@ -101,22 +101,18 @@ export function StudentDetailPage() {
           <div className="text-sm text-slate-500">{t("attendance.studentEmpty")}</div>
         )}
       </div>
-      {role === "teacher" ? (
-        <>
-          <div className="section-title">{t("health.alertSection")}</div>
-          <div className="card space-y-3 p-4">
-            {allergiesQuery.isLoading || incidentsQuery.isLoading ? (
-              <div className="text-sm text-slate-500">{t("common.loading")}</div>
-            ) : null}
-            {allergies.length ? (
-              <InfoLine label={t("health.allergies")} value={allergies.map((item) => item.allergen).join(", ")} />
-            ) : (
-              <InfoLine label={t("health.allergies")} value={t("health.noAllergies")} />
-            )}
-            <InfoLine label={t("health.incidents")} value={incidents.length ? t("health.incidentCount", { count: incidents.length }) : t("health.noIncidents")} />
-          </div>
-        </>
-      ) : null}
+      <div className="section-title">{t("health.alertSection")}</div>
+      <div className="card space-y-3 p-4">
+        {allergiesQuery.isLoading || incidentsQuery.isLoading ? (
+          <div className="text-sm text-slate-500">{t("common.loading")}</div>
+        ) : null}
+        {allergies.length ? (
+          <InfoLine label={t("health.allergies")} value={allergies.map((item) => item.allergen).join(", ")} />
+        ) : (
+          <InfoLine label={t("health.allergies")} value={t("health.noAllergies")} />
+        )}
+        <InfoLine label={t("health.incidents")} value={incidents.length ? t("health.incidentCount", { count: incidents.length }) : t("health.noIncidents")} />
+      </div>
       <div className="section-title">{t("students.guardianSection")}</div>
       {guardian ? (
         <div className="card flex items-center gap-3 p-3">

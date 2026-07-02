@@ -215,6 +215,30 @@ export class TenantService {
     return { id: userId, isActive };
   }
 
+  async resetMemberPassword(tenantId: string, userId: string, password: string, actorId?: string) {
+    const user = await this.prisma.system.user.findFirst({
+      where: { id: userId, tenantId, type: UserType.TENANT, deletedAt: null },
+      select: { id: true },
+    });
+    if (!user)
+      throw new BadRequestException({ code: "NO_MEMBER", message: "Không tìm thấy thành viên" });
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    await this.prisma.system.user.update({ where: { id: userId }, data: { passwordHash } });
+    await this.prisma.system.refreshToken.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    await this.audit.log({
+      tenantId,
+      actorId,
+      action: "member.password.reset",
+      targetType: "User",
+      targetId: userId,
+    });
+    return { id: userId, passwordReset: true };
+  }
+
   listDomains(tenantId: string) {
     return this.prisma.system.tenantDomain.findMany({ where: { tenantId } });
   }

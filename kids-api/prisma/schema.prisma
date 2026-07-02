@@ -200,27 +200,27 @@ model Tenant {
 }
 
 model TenantSettings {
-  id             String   @id @default(uuid())
-  tenantId       String   @unique
-  tenant         Tenant   @relation(fields: [tenantId], references: [id])
-  displayName    String
-  logoUrl        String?
-  faviconUrl     String?
-  primaryColor   String?  @default("#2563eb")
-  secondaryColor String?
-  emailFromName  String?
-  emailFromAddr  String?
-  supportEmail   String?
-  locale         String   @default("vi-VN")
-  timezone       String   @default("Asia/Ho_Chi_Minh")
+  id                String   @id @default(uuid())
+  tenantId          String   @unique
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  displayName       String
+  logoUrl           String?
+  faviconUrl        String?
+  primaryColor      String?  @default("#2563eb")
+  secondaryColor    String?
+  emailFromName     String?
+  emailFromAddr     String?
+  supportEmail      String?
+  locale            String   @default("vi-VN")
+  timezone          String   @default("Asia/Ho_Chi_Minh")
   // Thông tin chứng từ/thanh toán (học phí trường→phụ huynh)
   taxCode           String? // MST trường — phục vụ quyết toán thuế
   invoiceAddress    String? // địa chỉ xuất hóa đơn
   bankBin           String? // mã ngân hàng napas (VietQR)
   bankAccountNumber String?
   bankAccountName   String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("tenant_settings")
 }
@@ -243,22 +243,24 @@ model TenantDomain {
 }
 
 model School {
-  id          String       @id @default(uuid())
-  tenantId    String
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  name        String
-  code        String
-  moetCode    String? // mã trường trên CSDL ngành GD&ĐT (Bộ GD&ĐT) — định danh cơ sở chuẩn ngành
-  address     String?
-  phone       String?
-  isActive    Boolean      @default(true)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  createdById String?
-  deletedAt   DateTime?
-  memberships Membership[]
-  classrooms  Classroom[]
-  students    Student[]
+  id                   String                @id @default(uuid())
+  tenantId             String
+  tenant               Tenant                @relation(fields: [tenantId], references: [id])
+  name                 String
+  code                 String
+  moetCode             String? // mã trường trên CSDL ngành GD&ĐT (Bộ GD&ĐT) — định danh cơ sở chuẩn ngành
+  address              String?
+  phone                String?
+  isActive             Boolean               @default(true)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  createdById          String?
+  deletedAt            DateTime?
+  memberships          Membership[]
+  classrooms           Classroom[]
+  students             Student[]
+  pickupAuthorizations PickupAuthorization[]
+  pickupLogs           PickupLog[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -266,22 +268,23 @@ model School {
 }
 
 model User {
-  id           String        @id @default(uuid())
-  type         UserType
-  email        String? // định danh: email HOẶC phone (ít nhất 1)
-  phone        String?
-  passwordHash String?
-  fullName     String
-  isActive     Boolean       @default(true)
-  platformRole PlatformRole? // chỉ set khi type=PLATFORM
-  tenantId     String? // null nếu PLATFORM
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
-  memberships  Membership[]
-  homeroomClasses Classroom[]     @relation("HomeroomTeacher")
-  childLinks      StudentParent[] @relation("ParentLinks")
-  assignments     StaffAssignment[] @relation("StaffAssignments")
+  id                   String                @id @default(uuid())
+  type                 UserType
+  email                String? // định danh: email HOẶC phone (ít nhất 1)
+  phone                String?
+  passwordHash         String?
+  fullName             String
+  isActive             Boolean               @default(true)
+  platformRole         PlatformRole? // chỉ set khi type=PLATFORM
+  tenantId             String? // null nếu PLATFORM
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  deletedAt            DateTime?
+  memberships          Membership[]
+  homeroomClasses      Classroom[]           @relation("HomeroomTeacher")
+  childLinks           StudentParent[]       @relation("ParentLinks")
+  assignments          StaffAssignment[]     @relation("StaffAssignments")
+  pickupAuthorizations PickupAuthorization[] @relation("PickupParentUser")
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -314,17 +317,17 @@ model Membership {
 // ──────────────── NHÓM 2: PLAN / PRICING / FEATURE / LIMIT ────────────────
 
 model Plan {
-  id          String   @id @default(uuid())
-  code        String   @unique
+  id          String    @id @default(uuid())
+  code        String    @unique
   name        String
   description String?
-  tier        PlanTier @default(STARTER)
-  isPublic    Boolean  @default(true)
-  isActive    Boolean  @default(true)
-  trialDays   Int      @default(0)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tier        PlanTier  @default(STARTER)
+  isPublic    Boolean   @default(true)
+  isActive    Boolean   @default(true)
+  trialDays   Int       @default(0)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
   prices        PlanPrice[]
@@ -607,20 +610,20 @@ model UsageCounter {
 }
 
 model Coupon {
-  id             String          @id @default(uuid())
-  code           String          @unique
+  id             String           @id @default(uuid())
+  code           String           @unique
   kind           DiscountKind
-  amount         Decimal         @db.Decimal(12, 2)
+  amount         Decimal          @db.Decimal(12, 2)
   currency       BillingCurrency?
-  duration       CouponDuration  @default(ONCE)
+  duration       CouponDuration   @default(ONCE)
   durationCount  Int?
   maxRedemptions Int?
-  redeemedCount  Int             @default(0)
+  redeemedCount  Int              @default(0)
   validFrom      DateTime?
   validUntil     DateTime?
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   subscriptions Subscription[]
 
@@ -646,7 +649,7 @@ model CreditLedger {
 // ──────────────── AUDIT LOG (cross-cutting, hành động tài chính & admin) ────────────────
 
 model AuditLog {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   tenantId   String?
   actorId    String?
   actorType  UserType?
@@ -656,7 +659,7 @@ model AuditLog {
   metadata   Json?
   ip         String?
   userAgent  String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([tenantId, createdAt])
   @@index([action])
@@ -697,18 +700,18 @@ enum StudentStatus {
 }
 
 model Classroom {
-  id                String    @id @default(uuid())
+  id                String            @id @default(uuid())
   tenantId          String
   schoolId          String
-  school            School    @relation(fields: [schoolId], references: [id])
+  school            School            @relation(fields: [schoolId], references: [id])
   name              String
   ageGroup          String?
-  capacity          Int       @default(25)
+  capacity          Int               @default(25)
   homeroomTeacherId String?
-  homeroomTeacher   User?     @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
-  isActive          Boolean   @default(true)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  homeroomTeacher   User?             @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  isActive          Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   createdById       String?
   deletedAt         DateTime?
   students          Student[]
@@ -727,31 +730,33 @@ model Classroom {
 }
 
 model Student {
-  id          String          @id @default(uuid())
-  tenantId    String
-  schoolId    String
-  school      School          @relation(fields: [schoolId], references: [id])
-  classroomId String?
-  classroom   Classroom?      @relation(fields: [classroomId], references: [id])
-  fullName    String
-  nickname    String?
-  dateOfBirth DateTime        @db.Date
-  gender      Gender
-  avatarUrl   String?
-  status      StudentStatus   @default(ACTIVE)
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  createdById String?
-  deletedAt   DateTime?
-  parents     StudentParent[]
-  attendance  Attendance[]
-  dailyReports DailyReport[]
-  healthRecords    HealthRecord[]
-  medicineRequests MedicineRequest[]
-  incidents        Incident[]
-  allergies        Allergy[]
-  leaveRequests    LeaveRequest[]
-  tuitionInvoices  TuitionInvoice[]
+  id                   String                @id @default(uuid())
+  tenantId             String
+  schoolId             String
+  school               School                @relation(fields: [schoolId], references: [id])
+  classroomId          String?
+  classroom            Classroom?            @relation(fields: [classroomId], references: [id])
+  fullName             String
+  nickname             String?
+  dateOfBirth          DateTime              @db.Date
+  gender               Gender
+  avatarUrl            String?
+  status               StudentStatus         @default(ACTIVE)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  createdById          String?
+  deletedAt            DateTime?
+  parents              StudentParent[]
+  attendance           Attendance[]
+  dailyReports         DailyReport[]
+  healthRecords        HealthRecord[]
+  medicineRequests     MedicineRequest[]
+  incidents            Incident[]
+  allergies            Allergy[]
+  leaveRequests        LeaveRequest[]
+  tuitionInvoices      TuitionInvoice[]
+  pickupAuthorizations PickupAuthorization[]
+  pickupLogs           PickupLog[]
 
   @@index([tenantId])
   @@index([schoolId])
@@ -815,28 +820,107 @@ model Attendance {
   @@map("attendance")
 }
 
+enum PickupAuthorizationStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum PickupEventType {
+  CHECK_IN
+  CHECK_OUT
+}
+
+// Người được phép đưa/đón học sinh. Có thể là phụ huynh trong hệ thống (parentUserId)
+// hoặc người được ủy quyền ngoài hệ thống, nên lưu tên/SĐT độc lập để vận hành tại cổng trường.
+model PickupAuthorization {
+  id            String                    @id @default(uuid())
+  tenantId      String
+  schoolId      String
+  school        School                    @relation(fields: [schoolId], references: [id])
+  studentId     String
+  student       Student                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parentUserId  String?
+  parentUser    User?                     @relation("PickupParentUser", fields: [parentUserId], references: [id])
+  guardianName  String
+  guardianPhone String
+  relationship  String?
+  note          String?
+  status        PickupAuthorizationStatus @default(ACTIVE)
+  createdById   String?
+  revokedAt     DateTime?
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+  logs          PickupLog[]
+
+  @@index([tenantId])
+  @@index([studentId, status])
+  @@index([schoolId, status])
+  @@map("pickup_authorizations")
+}
+
+// Nhật ký ra/vào tại cổng trường. CHECK_IN = đưa bé đến; CHECK_OUT = đón bé về.
+model PickupLog {
+  id              String               @id @default(uuid())
+  tenantId        String
+  schoolId        String
+  school          School               @relation(fields: [schoolId], references: [id])
+  studentId       String
+  student         Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  authorizationId String?
+  authorization   PickupAuthorization? @relation(fields: [authorizationId], references: [id])
+  eventType       PickupEventType
+  guardianName    String
+  guardianPhone   String?
+  note            String?
+  occurredAt      DateTime
+  recordedById    String?
+  createdAt       DateTime             @default(now())
+
+  @@index([tenantId])
+  @@index([studentId, occurredAt])
+  @@index([schoolId, occurredAt])
+  @@map("pickup_logs")
+}
+
 model DailyReport {
-  id          String     @id @default(uuid())
+  id          String             @id @default(uuid())
   tenantId    String
   schoolId    String
   studentId   String
-  student     Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student     Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
   classroomId String?
-  classroom   Classroom? @relation(fields: [classroomId], references: [id])
-  date        DateTime   @db.Date
+  classroom   Classroom?         @relation(fields: [classroomId], references: [id])
+  date        DateTime           @db.Date
   mood        Mood?
   meals       String? // ăn uống
   nap         String? // ngủ trưa
   activities  String? // hoạt động
   note        String?
   authorId    String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  photos      DailyReportPhoto[]
 
   @@unique([studentId, date])
   @@index([tenantId])
   @@index([classroomId, date])
   @@map("daily_reports")
+}
+
+model DailyReportPhoto {
+  id        String      @id @default(uuid())
+  tenantId  String
+  reportId  String
+  report    DailyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media       @relation(fields: [mediaId], references: [id])
+  caption   String?
+  sortOrder Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  @@index([tenantId])
+  @@index([reportId, sortOrder])
+  @@map("daily_report_photos")
 }
 
 // ──────────── Media (lưu trữ nội bộ, nén trước khi lưu) ────────────
@@ -850,10 +934,10 @@ enum MediaKind {
 }
 
 model Media {
-  id           String    @id @default(uuid())
+  id           String             @id @default(uuid())
   tenantId     String
   schoolId     String?
-  kind         MediaKind @default(OTHER)
+  kind         MediaKind          @default(OTHER)
   path         String // tương đối dưới MEDIA_ROOT: <tenantId>/<id>.webp
   mimeType     String
   sizeBytes    Int
@@ -861,8 +945,9 @@ model Media {
   height       Int?
   originalName String?
   uploadedById String?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime           @default(now())
   albumPhotos  AlbumPhoto[]
+  reportPhotos DailyReportPhoto[]
 
   @@index([tenantId])
   @@map("media")
@@ -1168,15 +1253,15 @@ model Announcement {
   id          String               @id @default(uuid())
   tenantId    String
   schoolId    String
-  audience    AnnouncementAudience  @default(ALL)
+  audience    AnnouncementAudience @default(ALL)
   classroomId String? // bắt buộc khi audience=CLASS
-  classroom   Classroom?            @relation(fields: [classroomId], references: [id])
+  classroom   Classroom?           @relation(fields: [classroomId], references: [id])
   title       String
   body        String
   publishedAt DateTime? // null = nháp
   authorId    String?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
 
   @@index([tenantId])
   @@index([schoolId, publishedAt])
@@ -1275,14 +1360,14 @@ model Album {
 }
 
 model AlbumPhoto {
-  id       String   @id @default(uuid())
-  tenantId String
-  albumId  String
-  album    Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
-  mediaId  String
-  media    Media    @relation(fields: [mediaId], references: [id])
-  caption  String?
-  sortOrder Int     @default(0)
+  id        String   @id @default(uuid())
+  tenantId  String
+  albumId   String
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id])
+  caption   String?
+  sortOrder Int      @default(0)
   createdAt DateTime @default(now())
 
   @@index([tenantId])

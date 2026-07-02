@@ -1,5 +1,6 @@
 import { TopBar } from "@/components/mobile/MobileShell";
 import { ReportLine } from "@/components/mobile/Primitives";
+import { AuthImage } from "@/components/ui/AuthImage";
 import { useT } from "@/i18n";
 import { formatShortDate } from "@/lib/date";
 import { useMobileState } from "@/lib/mobileState";
@@ -42,6 +43,18 @@ export function ReportFeedPage() {
               <ReportLine label={t("reports.activities")} value={report.activities || t("reports.notUpdated")} />
               {report.note ? <ReportLine label={t("reports.note")} value={report.note} /> : null}
             </div>
+            {report.photos?.length ? (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {report.photos.map((photo) => (
+                  <AuthImage
+                    key={photo.id}
+                    mediaId={photo.media.id}
+                    alt={t("reports.photoAlt")}
+                    className="h-20 w-full rounded-xl object-cover"
+                  />
+                ))}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

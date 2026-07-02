@@ -142,6 +142,9 @@
     "student": "Student",
     "mood": "Mood",
     "addPhoto": "Add photo",
+    "photos": "Attached photos",
+    "photoCount": "{count} photos selected",
+    "photoAlt": "Daily report photo",
     "composeSubmit": "Send report",
     "composeSaving": "Sending…",
     "composeSaved": "Saved report for {name}"
@@ -249,7 +252,32 @@
     "statusApproved": "Approved",
     "statusRejected": "Rejected",
     "confirmTitle": "Leave request",
-    "confirmBody": "The leave request has been sent to the homeroom teacher."
+    "confirmBody": "The leave request has been sent to the homeroom teacher.",
+    "approveTitle": "Review leave requests",
+    "pendingEmpty": "No pending leave requests.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "decisionNote": "Decision note",
+    "decisionSubmit": "Send response",
+    "approvedToast": "Leave request approved",
+    "rejectedToast": "Leave request rejected"
+  },
+  "pickup": {
+    "title": "Student pickup",
+    "titleShort": "Pickup",
+    "authorized": "Authorized pickup people",
+    "emptyAuthorized": "No authorized pickup people yet.",
+    "history": "Pickup history",
+    "emptyHistory": "No pickup history yet.",
+    "loadError": "Could not load pickup data.",
+    "chooseStudent": "Please select a student from the profile.",
+    "guardian": "Pickup person",
+    "active": "Active",
+    "checkIn": "Check in",
+    "checkOut": "Check out",
+    "time": "Time",
+    "confirmLog": "Record",
+    "logSaved": "Pickup event recorded"
   },
   "announcements": {
     "title": "Announcements",
@@ -309,6 +337,7 @@
     "studentsCount": "{count} children",
     "toHandle": "To handle",
     "pendingMedicine": "{count} medicine requests pending",
+    "pendingLeave": "{count} leave requests pending",
     "noPending": "Nothing to handle"
   },
   "weekdays": {

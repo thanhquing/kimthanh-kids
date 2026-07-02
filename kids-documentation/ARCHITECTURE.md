@@ -36,6 +36,7 @@ kids-api/src/
 │   ── Phase 1 (domain nghiệp vụ A→G) ──
 ├── students/ classrooms/    # B  hồ sơ học sinh + lớp + guardian
 ├── attendance/ daily-reports/  # C  điểm danh + báo cáo ngày
+├── pickup/                 #    người được phép đón + nhật ký CHECK_IN/CHECK_OUT
 ├── media/                   #    upload ảnh (sharp → webp, quota STORAGE_MB)
 ├── health/ medicine/ incidents/ leave/  # D  sức khỏe (+ allergies)
 ├── assignments/             # B3 phân công nhân sự (lịch tuần)
@@ -90,7 +91,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 | --- | --- | --- |
 | **B** Hồ sơ/tổ chức | students, classrooms (+ guardians) | CRUD, gán phụ huynh (`StudentParent` N-N), "con của tôi" cho PH; quota STUDENTS/CLASSROOMS |
 | **B3** Nhân sự | assignments | tạo tài khoản trực tiếp (`/tenant/members`, email **hoặc** phone), bật/tắt (nhả quota); lịch phân công tuần (weekday+shift+duty) |
-| **C** Vận hành | attendance, daily-reports, media | điểm danh hàng loạt theo lớp (unique studentId+date); báo cáo ngày (upsert); ảnh nén webp |
+| **C** Vận hành | attendance, daily-reports, pickup, media | điểm danh hàng loạt theo lớp (unique studentId+date); báo cáo ngày (upsert + ảnh đính kèm qua media); danh sách người được phép đón + nhật ký CHECK_IN/CHECK_OUT; ảnh nén webp |
 | **D** Sức khỏe | health, medicine, incidents, leave | chỉ số + API growth; đơn thuốc (state machine PENDING→APPROVED→ADMINISTERED + history); sự cố; dị ứng (cho cảnh báo menu); đơn nghỉ duyệt 1 lần |
 | **E** Học phí | tuition | `TuitionInvoice/Item/Payment`, số HĐ tuần tự; **VietQR** (EMVCo+CRC16, miễn phí) + **tiền mặt** + **VNPay sandbox** (webhook idempotent); bản in HTML + xuất CSV; cron `markOverdue` |
 | **F** Giao tiếp | announcements, menus, lesson-plans, albums | thông báo (audience ALL/PARENTS/TEACHERS/CLASS, feed lọc theo người xem); thực đơn + cảnh báo dị ứng; giáo án (`@RequireFeature lesson_plan`); album (`@RequireFeature media_gallery`) |
@@ -113,7 +114,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — **121 e2e / 14 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6).
+- `pnpm test:e2e` — **131 e2e / 15 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6 + pickup 7/7).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.
 - Cron billing chạy tự động (`@nestjs/schedule`); logic tách ở `BillingJobsService` để test gọi trực tiếp.

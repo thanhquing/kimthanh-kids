@@ -82,14 +82,15 @@ function buildUrl(path: string, query?: Options["query"]): string {
 
 async function raw(method: string, path: string, opts: Options, token: string | null) {
   const headers: Record<string, string> = { "x-language": localStorage.getItem(LANGUAGE_KEY) === "en" ? "en" : "vi" };
-  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  const isForm = typeof FormData !== "undefined" && opts.body instanceof FormData;
+  if (opts.body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (opts.auth !== false && token) headers["Authorization"] = `Bearer ${token}`;
   const tenantId = localStorage.getItem(TENANT_KEY);
   if (tenantId) headers["x-tenant"] = tenantId;
   return fetch(buildUrl(path, opts.query), {
     method,
     headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    body: opts.body !== undefined ? (isForm ? (opts.body as FormData) : JSON.stringify(opts.body)) : undefined,
   });
 }
 

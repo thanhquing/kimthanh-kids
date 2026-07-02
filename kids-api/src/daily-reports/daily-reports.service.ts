@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Mood, NotificationType } from "@prisma/client";
+import { Mood, NotificationType, Prisma } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { isStaff, schoolWhere } from "../common/scope/school-scope";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -13,7 +13,17 @@ export interface UpsertReportInput {
   nap?: string;
   activities?: string;
   note?: string;
+  photoIds?: string[];
 }
+
+const reportInclude = {
+  photos: {
+    orderBy: { sortOrder: "asc" as const },
+    include: {
+      media: { select: { id: true, mimeType: true, width: true, height: true } },
+    },
+  },
+} satisfies Prisma.DailyReportInclude;
 
 @Injectable()
 export class DailyReportsService {
@@ -59,6 +69,32 @@ export class DailyReportsService {
       update: fields,
     });
 
+    if (input.photoIds) {
+      const uniqueIds = [...new Set(input.photoIds)];
+      const media = uniqueIds.length
+        ? await this.prisma.db.media.findMany({
+            where: { id: { in: uniqueIds } },
+            select: { id: true },
+          })
+        : [];
+      if (media.length !== uniqueIds.length)
+        throw new NotFoundException({ code: "NO_MEDIA", message: "Không tìm thấy ảnh" });
+
+      await this.prisma.system.dailyReportPhoto.deleteMany({
+        where: { tenantId: user.tenantId!, reportId: report.id },
+      });
+      if (uniqueIds.length) {
+        await this.prisma.system.dailyReportPhoto.createMany({
+          data: uniqueIds.map((mediaId, index) => ({
+            tenantId: user.tenantId!,
+            reportId: report.id,
+            mediaId,
+            sortOrder: index,
+          })),
+        });
+      }
+    }
+
     if (!existing) {
       await this.notifications.notifyStudentParents(user.tenantId!, input.studentId, {
         type: NotificationType.DAILY_REPORT,
@@ -68,14 +104,17 @@ export class DailyReportsService {
         linkId: report.id,
       });
     }
-    return report;
+    return this.prisma.db.dailyReport.findFirst({
+      where: { id: report.id },
+      include: reportInclude,
+    });
   }
 
   /** Báo cáo của 1 lớp trong 1 ngày. */
   listByClass(user: AuthUser, classroomId: string, date: string) {
     return this.prisma.db.dailyReport.findMany({
       where: { classroomId, date: new Date(date), ...schoolWhere(user) },
-      include: { student: { select: { id: true, fullName: true } } },
+      include: { student: { select: { id: true, fullName: true } }, ...reportInclude },
       orderBy: { student: { fullName: "asc" } },
     });
   }
@@ -87,6 +126,7 @@ export class DailyReportsService {
       : { student: { parents: { some: { parentId: user.id } } } };
     return this.prisma.db.dailyReport.findMany({
       where: { studentId, ...access },
+      include: reportInclude,
       orderBy: { date: "desc" },
       take: 60,
     });

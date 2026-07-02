@@ -3,20 +3,28 @@ import {
   Bell,
   BookOpen,
   CalendarCheck,
+  CalendarDays,
   ClipboardList,
+  ClipboardCheck,
+  ContactRound,
   HeartPulse,
+  Images,
+  Inbox,
   LayoutDashboard,
   LogOut,
   Megaphone,
   MoreHorizontal,
   Receipt,
   Settings,
+  Utensils,
   Users,
   X,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { logout } from "@/api/auth";
+import { crm } from "@/api/crm";
 import { useT, type TKey, type Translator } from "@/i18n";
 import { languageStore, type Language } from "@/lib/language";
 import { cn } from "@/lib/utils";
@@ -39,6 +47,8 @@ const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
       { to: "/attendance", labelKey: "nav.attendance", icon: CalendarCheck },
       { to: "/reports", labelKey: "nav.reports", icon: Bell },
       { to: "/health", labelKey: "nav.health", icon: HeartPulse },
+      { to: "/leave", labelKey: "nav.leave", icon: CalendarDays },
+      { to: "/pickup", labelKey: "nav.pickup", icon: ContactRound },
     ],
   },
   {
@@ -46,7 +56,17 @@ const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
     items: [
       { to: "/tuition", labelKey: "nav.tuition", icon: Receipt },
       { to: "/announcements", labelKey: "nav.announcements", icon: Megaphone },
+      { to: "/notifications", labelKey: "nav.notifications", icon: Inbox },
       { to: "/audit-logs", labelKey: "nav.auditLogs", icon: Activity },
+    ],
+  },
+  {
+    groupKey: "navGroups.planningContent",
+    items: [
+      { to: "/assignments", labelKey: "nav.assignments", icon: ClipboardCheck },
+      { to: "/menus", labelKey: "nav.menus", icon: Utensils },
+      { to: "/albums", labelKey: "nav.albums", icon: Images },
+      { to: "/lessons", labelKey: "nav.lessons", icon: BookOpen },
     ],
   },
   {
@@ -110,18 +130,23 @@ function LanguageToggle({ lang, className }: { lang: Language; className?: strin
   );
 }
 
-function NotificationBell({ label }: { label: string }) {
+function NotificationBell({ label, onClick }: { label: string; onClick: () => void }) {
+  const count = useQuery({ queryKey: ["notification-count"], queryFn: () => crm.notifications.unreadCount() });
+  const n = count.data?.count ?? 0;
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
+      onClick={onClick}
       className="relative shrink-0 rounded-lg border border-[#f4e7e0] p-2 text-slate-500 transition hover:bg-[#fff3ec]"
     >
       <Bell className="h-4 w-4" />
-      <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-red-500 text-[10px] font-semibold text-white">
-        3
-      </span>
+      {n > 0 && (
+        <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+          {Math.min(n, 9)}
+        </span>
+      )}
     </button>
   );
 }
@@ -130,10 +155,12 @@ function AccountPanel({
   t,
   lang,
   onLogout,
+  onNotifications,
 }: {
   t: Translator;
   lang: Language;
   onLogout: () => void;
+  onNotifications: () => void;
 }) {
   return (
     <div className="space-y-2">
@@ -157,7 +184,7 @@ function AccountPanel({
       </div>
       <div className="flex items-center gap-2">
         <LanguageToggle lang={lang} className="flex-1" />
-        <NotificationBell label={t("topbar.notifications")} />
+        <NotificationBell label={t("topbar.notifications")} onClick={onNotifications} />
       </div>
     </div>
   );
@@ -188,7 +215,7 @@ export function AppLayout() {
         </div>
 
         <div className="mb-3 border-b border-[#f4e7e0] pb-4">
-          <AccountPanel t={t} lang={lang} onLogout={onLogout} />
+          <AccountPanel t={t} lang={lang} onLogout={onLogout} onNotifications={() => navigate("/notifications")} />
         </div>
 
         <nav className="flex-1 overflow-y-auto">
@@ -243,7 +270,7 @@ export function AppLayout() {
               </button>
             </div>
             <div className="mb-3 border-b border-[#f4e7e0] pb-3">
-              <AccountPanel t={t} lang={lang} onLogout={onLogout} />
+              <AccountPanel t={t} lang={lang} onLogout={onLogout} onNotifications={() => { setMoreOpen(false); navigate("/notifications"); }} />
             </div>
             <NavSections onNavigate={() => setMoreOpen(false)} />
           </div>

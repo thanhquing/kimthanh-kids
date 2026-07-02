@@ -21,6 +21,7 @@ import { IncidentsModule } from "./incidents/incidents.module";
 import { LeaveModule } from "./leave/leave.module";
 import { MedicineModule } from "./medicine/medicine.module";
 import { MediaModule } from "./media/media.module";
+import { PickupModule } from "./pickup/pickup.module";
 import { StudentsModule } from "./students/students.module";
 import { TuitionModule } from "./tuition/tuition.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
@@ -61,6 +62,7 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     MedicineModule,
     IncidentsModule,
     LeaveModule,
+    PickupModule,
     AssignmentsModule,
     TuitionModule,
     AnnouncementsModule,

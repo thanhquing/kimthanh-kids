@@ -314,7 +314,7 @@ erDiagram
   }
 ```
 
-**Đã hoàn thành toàn bộ domain Phase 1 (A→G)** — ER chi tiết theo từng nhóm (D/B3/E/F/G) ở các mục bên dưới + [chỉ mục nhanh cuối tài liệu](#bảng-domain-phase-1-ag--chỉ-mục-nhanh) (Attendance, DailyReport, Health/Medicine/Incident/Allergy/Leave, StaffAssignment, Tuition*, Announcement, WeeklyMenu/Meal, LessonPlan, Album, Notification, UsageEvent…). Mỗi bảng đều mang `tenantId` + `schoolId`. *(Chat đã loại khỏi kế hoạch.)*
+**Đã hoàn thành toàn bộ domain Phase 1 (A→G)** — ER chi tiết theo từng nhóm (D/B3/E/F/G) ở các mục bên dưới + [chỉ mục nhanh cuối tài liệu](#bảng-domain-phase-1-ag--chỉ-mục-nhanh) (Attendance, DailyReport, PickupAuthorization/PickupLog, Health/Medicine/Incident/Allergy/Leave, StaffAssignment, Tuition*, Announcement, WeeklyMenu/Meal, LessonPlan, Album, Notification, UsageEvent…). Mỗi bảng đều mang `tenantId` + `schoolId`. *(Chat đã loại khỏi kế hoạch.)*
 
 ### C — Điểm danh & Báo cáo + Media (Phase 1)
 
@@ -324,6 +324,11 @@ erDiagram
   Classroom ||--o{ Attendance : ""
   Student ||--o{ DailyReport : ""
   Classroom ||--o{ DailyReport : ""
+  DailyReport ||--o{ DailyReportPhoto : ""
+  Media ||--o{ DailyReportPhoto : ""
+  Student ||--o{ PickupAuthorization : ""
+  Student ||--o{ PickupLog : ""
+  PickupAuthorization ||--o{ PickupLog : ""
 
   Attendance {
     uuid id PK
@@ -349,6 +354,35 @@ erDiagram
     string activities
     string note
   }
+  DailyReportPhoto {
+    uuid id PK
+    string tenantId
+    uuid reportId FK
+    uuid mediaId FK
+    string caption
+    int sortOrder
+    datetime createdAt
+  }
+  PickupAuthorization {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    uuid parentUserId FK "nullable"
+    string guardianName
+    string guardianPhone
+    enum status "ACTIVE|REVOKED"
+  }
+  PickupLog {
+    uuid id PK
+    string tenantId
+    uuid schoolId
+    uuid studentId FK
+    uuid authorizationId FK "nullable"
+    enum eventType "CHECK_IN|CHECK_OUT"
+    string guardianName
+    datetime occurredAt
+  }
   Media {
     uuid id PK
     string tenantId
@@ -362,7 +396,7 @@ erDiagram
   }
 ```
 
-**Media — lưu trữ nội bộ + nén:** ảnh được nén bằng `sharp` (resize cạnh ≤ `MEDIA_MAX_DIM`=1280px, **webp** quality `MEDIA_QUALITY`=72, xoá metadata) trước khi ghi xuống `MEDIA_ROOT/<tenantId>/<id>.webp` — đủ chất lượng cho phụ huynh xem, tiết kiệm dung lượng. Quota `STORAGE_MB` enforce theo tổng `sizeBytes` của tenant. Phục vụ qua `GET /api/media/:id/file` (StreamableFile, cô lập theo tenant). Xem `kids-api/src/media/`.
+**Media — lưu trữ nội bộ + nén:** ảnh được nén bằng `sharp` (resize cạnh ≤ `MEDIA_MAX_DIM`=1280px, **webp** quality `MEDIA_QUALITY`=72, xoá metadata) trước khi ghi xuống `MEDIA_ROOT/<tenantId>/<id>.webp` — đủ chất lượng cho phụ huynh xem, tiết kiệm dung lượng. Quota `STORAGE_MB` enforce theo tổng `sizeBytes` của tenant. Phục vụ qua `GET /api/media/:id/file` (StreamableFile, cô lập theo tenant). `DailyReportPhoto` nối ảnh đã upload vào báo cáo ngày theo `sortOrder`; album dùng `AlbumPhoto`. Xem `kids-api/src/media/`.
 
 ### D — Sức khỏe (Phase 1)
 
@@ -656,6 +690,8 @@ erDiagram
 | `StudentParent` | Student N–N User(PARENT) | PK `(studentId, parentId)`; `relationship`, `isPrimary` |
 | `Attendance` | Student/Classroom | **unique `(studentId, date)`**; status PRESENT/LATE/ABSENT/EXCUSED |
 | `DailyReport` | Student/Classroom | **unique `(studentId, date)`**; mood/meals/nap/activities |
+| `PickupAuthorization` | Student; optional User(PARENT) | người được phép đưa/đón; status ACTIVE/REVOKED |
+| `PickupLog` | Student; optional PickupAuthorization | nhật ký CHECK_IN/CHECK_OUT tại cổng trường |
 | `HealthRecord` | Student | heightCm/weightKg/temperatureC (nguồn biểu đồ growth) |
 | `MedicineRequest` + `MedicineStatusHistory` | Student; history N–1 request | status PENDING→APPROVED→ADMINISTERED/REJECTED; history ghi timeline |
 | `Incident` | Student | severity LOW/MEDIUM/HIGH |

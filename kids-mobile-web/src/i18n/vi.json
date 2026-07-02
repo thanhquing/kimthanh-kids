@@ -142,6 +142,9 @@
     "student": "Học sinh",
     "mood": "Tâm trạng",
     "addPhoto": "Thêm ảnh",
+    "photos": "Ảnh đính kèm",
+    "photoCount": "{count} ảnh đã chọn",
+    "photoAlt": "Ảnh báo cáo ngày",
     "composeSubmit": "Gửi báo cáo",
     "composeSaving": "Đang gửi…",
     "composeSaved": "Đã lưu báo cáo cho {name}"
@@ -249,7 +252,32 @@
     "statusApproved": "Đã duyệt",
     "statusRejected": "Từ chối",
     "confirmTitle": "Đơn xin nghỉ",
-    "confirmBody": "Đơn xin nghỉ đã được gửi tới giáo viên chủ nhiệm."
+    "confirmBody": "Đơn xin nghỉ đã được gửi tới giáo viên chủ nhiệm.",
+    "approveTitle": "Duyệt đơn xin nghỉ",
+    "pendingEmpty": "Không có đơn xin nghỉ chờ duyệt.",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "decisionNote": "Ghi chú xử lý",
+    "decisionSubmit": "Gửi phản hồi",
+    "approvedToast": "Đã duyệt đơn xin nghỉ",
+    "rejectedToast": "Đã từ chối đơn xin nghỉ"
+  },
+  "pickup": {
+    "title": "Đón trả học sinh",
+    "titleShort": "Đón trả",
+    "authorized": "Người được phép đón",
+    "emptyAuthorized": "Chưa có người đón được cấp quyền.",
+    "history": "Lịch sử đón trả",
+    "emptyHistory": "Chưa có lịch sử đón trả.",
+    "loadError": "Không tải được dữ liệu đón trả.",
+    "chooseStudent": "Vui lòng chọn học sinh từ hồ sơ bé.",
+    "guardian": "Người đón",
+    "active": "Đang hiệu lực",
+    "checkIn": "Đưa đến",
+    "checkOut": "Đón về",
+    "time": "Thời gian",
+    "confirmLog": "Ghi nhận",
+    "logSaved": "Đã ghi nhận đón trả"
   },
   "announcements": {
     "title": "Thông báo",
@@ -309,6 +337,7 @@
     "studentsCount": "{count} bé",
     "toHandle": "Cần xử lý",
     "pendingMedicine": "{count} yêu cầu thuốc chờ duyệt",
+    "pendingLeave": "{count} đơn nghỉ chờ duyệt",
     "noPending": "Không có việc cần xử lý"
   },
   "weekdays": {

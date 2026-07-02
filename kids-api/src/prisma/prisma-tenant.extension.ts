@@ -25,7 +25,10 @@ const TENANT_KEY: Record<string, "id" | "tenantId"> = {
   Student: "tenantId",
   StudentParent: "tenantId",
   Attendance: "tenantId",
+  PickupAuthorization: "tenantId",
+  PickupLog: "tenantId",
   DailyReport: "tenantId",
+  DailyReportPhoto: "tenantId",
   Media: "tenantId",
   // ── D — Sức khỏe (Phase 1) ──
   HealthRecord: "tenantId",

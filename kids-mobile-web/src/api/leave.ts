@@ -27,14 +27,26 @@ export type CreateLeaveInput = {
 export const leaveKeys = {
   all: ["leave"] as const,
   mine: () => [...leaveKeys.all, "mine"] as const,
+  staff: (status?: LeaveStatus) => [...leaveKeys.all, "staff", status] as const,
 };
 
 export function listMyLeaveRequests() {
   return api.get<LeaveRequest[]>("/leave/mine");
 }
 
+export function listLeaveRequests(status?: LeaveStatus) {
+  return api.get<LeaveRequest[]>("/leave", { query: { status } });
+}
+
 export function createLeaveRequest(input: CreateLeaveInput) {
   return api.post<LeaveRequest>("/leave", input);
+}
+
+export function decideLeaveRequest(input: { id: string; status: Exclude<LeaveStatus, "PENDING">; note?: string }) {
+  return api.post<LeaveRequest>(`/leave/${input.id}/decide`, {
+    status: input.status,
+    note: input.note,
+  });
 }
 
 export function useMyLeaveRequests() {
@@ -50,3 +62,15 @@ export function useCreateLeaveRequest() {
   });
 }
 
+export function useStaffLeaveRequests(status?: LeaveStatus) {
+  return useQuery({
+    queryKey: leaveKeys.staff(status),
+    queryFn: () => listLeaveRequests(status),
+  });
+}
+
+export function useDecideLeaveRequest() {
+  return useMutation({
+    mutationFn: decideLeaveRequest,
+  });
+}

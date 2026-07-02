@@ -12,7 +12,7 @@
 - `kids-crm/` đã bootstrap source bằng copy-first từ `kids-platform`: app shell, đăng nhập realm tenant (login/me/refresh + guard chặn tài khoản platform).
 - **Đã tích hợp (toàn bộ mục nav P0/P1):** Dashboard · Hồ sơ (Lớp/Học sinh/Nhân sự) · Điểm danh · Sổ liên lạc · Sức khỏe (thuốc/sự cố/đo lường/dị ứng) · Học phí (HĐ/chi tiết/VietQR/thu tiền/in/hủy) · Thông báo · Nhật ký · Cài đặt trường. Tất cả qua `src/api/crm.ts`, i18n VI/EN đầy đủ, bám mock `web/*.html`.
 - Tinh chỉnh BE phục vụ mock: thêm `phone` vào `/tenant/members`, `parents` vào `GET /students`. Verify: 121 e2e PASS · `pnpm build` CRM sạch · smoke cURL 16 endpoint (3 mutate + 13 GET) trả 200/khớp shape.
-- **Còn lại (mở rộng — thuộc `CRM_FEATURE_IDEAS.md`):** Assignments (phân công), Leave (duyệt nghỉ), Weekly menu, Notifications feed, Album/upload, Lesson plan, reset mật khẩu, và các mắt xích mobile↔CRM. **Đã dừng đúng ranh giới CRM_FEATURE_IDEAS theo yêu cầu.**
+- **Mở rộng `CRM_FEATURE_IDEAS.md` đã nối UI/API:** Assignments (phân công), Leave (duyệt nghỉ), Weekly menu + allergy warnings, Notifications feed/preferences, Album/upload, Lesson plan, reset mật khẩu nhân sự, quản lý người đón/nhật ký CHECK_IN/CHECK_OUT. Còn cần smoke test dev đầy đủ khi Docker/Postgres local hoạt động.
 - **Quyết định triển khai:** `kids-crm` đi theo hướng **copy-first từ `kids-platform`**, rồi đổi realm/API/page theo CRM. Không scaffold trắng nếu không cần.
 
 ## 1. Phạm vi sản phẩm
@@ -172,6 +172,7 @@ Làm từng cụm, mỗi cụm có mock -> component -> API integration -> self-
 - [x] Daily reports (`ReportsPage`):
   - [x] chọn lớp → danh sách học sinh → feed báo cáo (`GET /daily-reports/student/:id`).
   - [x] soạn báo cáo (mood/meals/nap/activities/note) → `POST /daily-reports`.
+  - [x] mobile GV đính kèm ảnh báo cáo ngày (`photoIds` từ media upload); PH xem ảnh trong feed.
 - [x] Health/medicine/incidents (`HealthPage`, 4 tab):
   - [x] hồ sơ đo lường theo học sinh (`GET /health/student/:id`, `POST /health`).
   - [x] dị ứng theo học sinh (`GET/POST/DELETE /allergies`).
@@ -187,9 +188,30 @@ Làm từng cụm, mỗi cụm có mock -> component -> API integration -> self-
   - [x] compose/draft (modal: audience/lớp/tiêu đề/nội dung).
   - [x] publish (`POST /announcements/:id/publish`) + delete.
   - [x] master-detail list + filter audience/search.
-- [ ] Assignments: _(chưa nối — không có mục nav hiện tại; thuộc nhóm mở rộng/CRM_FEATURE_IDEAS)_
-  - [ ] create weekly assignment.
-  - [ ] list/mine.
+- [x] Assignments (`AssignmentsPage`):
+  - [x] create weekly assignment.
+  - [x] list/filter theo nhân sự/lớp/thứ + delete.
+- [x] Leave requests (`LeaveRequestsPage`):
+  - [x] list/filter trạng thái.
+  - [x] approve/reject kèm ghi chú.
+- [x] Weekly menu (`MenusPage`):
+  - [x] create menu nhiều bữa.
+  - [x] detail + allergy warnings theo học sinh + delete.
+- [x] Album/upload (`AlbumsPage`):
+  - [x] create album lớp/toàn trường.
+  - [x] upload media + attach photos.
+- [x] Lesson plan (`LessonPlansPage`):
+  - [x] create weekly lesson plan + activities.
+  - [x] list/detail/delete.
+- [x] Notifications feed (`NotificationsPage`):
+  - [x] feed cá nhân + mark read/all-read.
+  - [x] preferences theo notification type.
+- [x] Reset password:
+  - [x] `PATCH /tenant/members/:userId/password` + CRM action trong `MembersPage`.
+- [x] Pickup / drop-off (`PickupPage` + `pickup` API):
+  - [x] danh sách người được phép đón theo học sinh.
+  - [x] revoke người đón.
+  - [x] ghi nhật ký CHECK_IN/CHECK_OUT.
 - [x] Audit log (`AuditPage`):
   - [x] list + filter prefix action (member/invoice/student) + resolve tên actor qua members.
 

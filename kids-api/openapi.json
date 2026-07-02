@@ -213,6 +213,29 @@
         ]
       }
     },
+    "/api/public/tenants": {
+      "get": {
+        "operationId": "ProvisioningController_searchTenants",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "public"
+        ]
+      }
+    },
     "/api/public/branding": {
       "get": {
         "operationId": "ProvisioningController_branding",
@@ -374,6 +397,66 @@
         ]
       }
     },
+    "/api/platform/overview": {
+      "get": {
+        "operationId": "PlatformController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/revenue": {
+      "get": {
+        "operationId": "PlatformController_revenue",
+        "parameters": [
+          {
+            "name": "months",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/mrr/backfill": {
+      "post": {
+        "operationId": "PlatformController_backfillMrr",
+        "parameters": [
+          {
+            "name": "months",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
     "/api/platform/tenants": {
       "get": {
         "operationId": "PlatformController_listTenants",
@@ -388,6 +471,30 @@
           },
           {
             "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "planTier",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "quota",
             "required": true,
             "in": "query",
             "schema": {
@@ -409,6 +516,20 @@
         "parameters": [],
         "responses": {
           "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/tenants/stats": {
+      "get": {
+        "operationId": "PlatformController_tenantStats",
+        "parameters": [],
+        "responses": {
+          "200": {
             "description": ""
           }
         },
@@ -532,6 +653,20 @@
         ]
       }
     },
+    "/api/platform/subscriptions/stats": {
+      "get": {
+        "operationId": "PlatformController_subscriptionStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
     "/api/platform/subscriptions": {
       "get": {
         "operationId": "PlatformController_listSubscriptions",
@@ -553,6 +688,20 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/invoices/stats": {
+      "get": {
+        "operationId": "PlatformController_invoiceStats",
+        "parameters": [],
         "responses": {
           "200": {
             "description": ""
@@ -590,6 +739,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -606,6 +763,29 @@
         "parameters": [],
         "responses": {
           "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/invoices/{id}": {
+      "get": {
+        "operationId": "PlatformController_getInvoice",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
             "description": ""
           }
         },
@@ -663,6 +843,29 @@
         ]
       }
     },
+    "/api/platform/plans/{id}": {
+      "patch": {
+        "operationId": "PlatformController_updatePlan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
     "/api/platform/coupons": {
       "get": {
         "operationId": "PlatformController_listCoupons",
@@ -703,6 +906,131 @@
         },
         "tags": [
           "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/worklist": {
+      "get": {
+        "operationId": "PlatformController_worklist",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/search": {
+      "get": {
+        "operationId": "PlatformController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/settings": {
+      "get": {
+        "operationId": "PlatformController_getSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      },
+      "patch": {
+        "operationId": "PlatformController_updateSettings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/platform/audit": {
+      "get": {
+        "operationId": "PlatformController_listAudit",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-admin"
+        ]
+      }
+    },
+    "/api/public/platform-invoices/{token}": {
+      "get": {
+        "operationId": "PublicInvoiceController_get",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "public"
         ]
       }
     },
@@ -787,6 +1115,29 @@
     "/api/tenant/members/{userId}/status": {
       "patch": {
         "operationId": "TenantController_setMemberStatus",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "tenant"
+        ]
+      }
+    },
+    "/api/tenant/members/{userId}/password": {
+      "patch": {
+        "operationId": "TenantController_resetMemberPassword",
         "parameters": [
           {
             "name": "userId",
@@ -1685,6 +2036,107 @@
         },
         "tags": [
           "leave"
+        ]
+      }
+    },
+    "/api/pickup/authorizations": {
+      "get": {
+        "operationId": "PickupController_authorizations",
+        "parameters": [
+          {
+            "name": "studentId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pickup"
+        ]
+      },
+      "post": {
+        "operationId": "PickupController_createAuthorization",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pickup"
+        ]
+      }
+    },
+    "/api/pickup/authorizations/{id}/revoke": {
+      "patch": {
+        "operationId": "PickupController_revokeAuthorization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pickup"
+        ]
+      }
+    },
+    "/api/pickup/logs": {
+      "get": {
+        "operationId": "PickupController_logs",
+        "parameters": [
+          {
+            "name": "studentId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pickup"
+        ]
+      },
+      "post": {
+        "operationId": "PickupController_createLog",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "pickup"
         ]
       }
     },

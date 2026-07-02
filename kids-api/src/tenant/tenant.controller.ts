@@ -44,6 +44,7 @@ const createMemberSchema = z
     path: ["email"],
   });
 const memberStatusSchema = z.object({ isActive: z.boolean() });
+const resetPasswordSchema = z.object({ password: z.string().min(8) });
 const schoolSchema = z.object({
   name: z.string().min(2).max(120),
   code: z.string().min(1).max(20),
@@ -102,6 +103,16 @@ export class TenantController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.tenant.setMemberStatus(user.tenantId!, userId, dto.isActive, user.id);
+  }
+
+  // Đặt lại mật khẩu thành viên khi mobile/CRM chưa có self-service forgot password.
+  @Patch("members/:userId/password")
+  resetMemberPassword(
+    @Param("userId") userId: string,
+    @Body(new ZodValidationPipe(resetPasswordSchema)) dto: z.infer<typeof resetPasswordSchema>,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.tenant.resetMemberPassword(user.tenantId!, userId, dto.password, user.id);
   }
 
   @Get("domains")

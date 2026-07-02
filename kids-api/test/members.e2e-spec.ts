@@ -162,6 +162,72 @@ describe("Tạo tài khoản thành viên — định danh email/phone + login c
     expect(blocked.body.error.code).toBe("QUOTA_EXCEEDED");
   });
 
+  it("admin đặt lại mật khẩu thành viên → login mật khẩu mới OK, mật khẩu cũ fail", async () => {
+    const t = await createTenant(app);
+    const phone = randomPhone();
+    const created = await api()
+      .post("/api/tenant/members")
+      .set(auth(t))
+      .send({ phone, fullName: "GV Đổi Mật Khẩu", role: "TEACHER", password: "Password123" })
+      .expect(201);
+    const userId = created.body.data.id as string;
+
+    const reset = await api()
+      .patch(`/api/tenant/members/${userId}/password`)
+      .set(auth(t))
+      .send({ password: "NewPass456" })
+      .expect(200);
+    expect(reset.body.data.passwordReset).toBe(true);
+
+    // mật khẩu cũ không còn dùng được
+    await api()
+      .post("/api/auth/login")
+      .set("Host", t.host)
+      .send({ identifier: phone, password: "Password123" })
+      .expect(401);
+    // mật khẩu mới OK
+    await api()
+      .post("/api/auth/login")
+      .set("Host", t.host)
+      .send({ identifier: phone, password: "NewPass456" })
+      .expect(201);
+  });
+
+  it("đặt lại mật khẩu < 8 ký tự → 400 VALIDATION_FAILED", async () => {
+    const t = await createTenant(app);
+    const created = await api()
+      .post("/api/tenant/members")
+      .set(auth(t))
+      .send({ phone: randomPhone(), fullName: "GV", role: "TEACHER", password: "Password123" })
+      .expect(201);
+    const res = await api()
+      .patch(`/api/tenant/members/${created.body.data.id}/password`)
+      .set(auth(t))
+      .send({ password: "short" })
+      .expect(400);
+    expect(res.body.error.code).toBe("VALIDATION_FAILED");
+  });
+
+  it("giáo viên thường không được đặt lại mật khẩu người khác (403)", async () => {
+    const t = await createTenant(app);
+    const phone = randomPhone();
+    const teacher = await api()
+      .post("/api/tenant/members")
+      .set(auth(t))
+      .send({ phone, fullName: "GV thường", role: "TEACHER", password: "Password123" })
+      .expect(201);
+    const login = await api()
+      .post("/api/auth/login")
+      .set("Host", t.host)
+      .send({ identifier: phone, password: "Password123" })
+      .expect(201);
+    await api()
+      .patch(`/api/tenant/members/${teacher.body.data.id}/password`)
+      .set(auth(t, login.body.data.accessToken))
+      .send({ password: "Whatever789" })
+      .expect(403);
+  });
+
   it("không phải chủ trường/hiệu trưởng → không tạo được tài khoản (403)", async () => {
     const t = await createTenant(app);
     // tạo 1 giáo viên rồi đăng nhập bằng tài khoản đó

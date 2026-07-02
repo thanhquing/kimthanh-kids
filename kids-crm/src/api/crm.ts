@@ -104,6 +104,7 @@ export type UpdateStudent = {
 };
 
 export type TenantRole = "SCHOOL_ADMIN" | "PRINCIPAL" | "TEACHER" | "NURSE" | "FINANCE" | "PARENT";
+export type Shift = "MORNING" | "AFTERNOON" | "FULL_DAY";
 export type Member = {
   id: string; // membership id
   role: TenantRole;
@@ -153,6 +154,8 @@ export const crm = {
     create: (body: CreateMember) => api.post<Member["user"]>("/tenant/members", body),
     setStatus: (userId: string, isActive: boolean) =>
       api.patch<{ id: string; isActive: boolean }>(`/tenant/members/${userId}/status`, { isActive }),
+    resetPassword: (userId: string, password: string) =>
+      api.patch<{ id: string; passwordReset: true }>(`/tenant/members/${userId}/password`, { password }),
   },
 
   settings: {
@@ -220,6 +223,82 @@ export const crm = {
     create: (body: { studentId: string; allergen: string; note?: string }) =>
       api.post<Allergy>("/allergies", body),
     remove: (id: string) => api.delete<{ ok: true }>(`/allergies/${id}`),
+  },
+
+  assignments: {
+    list: (opts: { staffId?: string; classroomId?: string; weekday?: number } = {}) =>
+      api.get<Assignment[]>("/assignments", { query: opts }),
+    mine: () => api.get<Assignment[]>("/assignments/mine"),
+    create: (body: CreateAssignment) => api.post<Assignment>("/assignments", body),
+    update: (id: string, body: Partial<CreateAssignment>) => api.patch<Assignment>(`/assignments/${id}`, body),
+    remove: (id: string) => api.delete<{ ok: true }>(`/assignments/${id}`),
+  },
+
+  leave: {
+    list: (status?: LeaveStatus) => api.get<LeaveRequest[]>("/leave", { query: { status } }),
+    mine: () => api.get<LeaveRequest[]>("/leave/mine"),
+    get: (id: string) => api.get<LeaveRequest>(`/leave/${id}`),
+    create: (body: CreateLeaveRequest) => api.post<LeaveRequest>("/leave", body),
+    decide: (id: string, body: { status: Exclude<LeaveStatus, "PENDING">; note?: string }) =>
+      api.post<LeaveRequest>(`/leave/${id}/decide`, body),
+  },
+
+  menus: {
+    list: (opts: { weekStart?: string; classroomId?: string } = {}) =>
+      api.get<WeeklyMenu[]>("/menus", { query: opts }),
+    get: (id: string) => api.get<WeeklyMenu>(`/menus/${id}`),
+    create: (body: CreateWeeklyMenu) => api.post<WeeklyMenu>("/menus", body),
+    remove: (id: string) => api.delete<{ ok: true }>(`/menus/${id}`),
+    allergyWarnings: (id: string, studentId: string) =>
+      api.get<MenuAllergyWarnings>(`/menus/${id}/allergy-warnings`, { query: { studentId } }),
+  },
+
+  lessons: {
+    list: (opts: { classroomId?: string; week?: string } = {}) =>
+      api.get<LessonPlan[]>("/lesson-plans", { query: opts }),
+    get: (id: string) => api.get<LessonPlan>(`/lesson-plans/${id}`),
+    create: (body: CreateLessonPlan) => api.post<LessonPlan>("/lesson-plans", body),
+    remove: (id: string) => api.delete<{ ok: true }>(`/lesson-plans/${id}`),
+  },
+
+  media: {
+    uploadImage: (file: File, opts: { kind?: MediaKind; schoolId?: string } = {}) => {
+      const form = new FormData();
+      form.append("file", file);
+      return api.post<UploadedMedia>("/media", form, { query: opts });
+    },
+  },
+
+  albums: {
+    list: (classroomId?: string) => api.get<Album[]>("/albums", { query: { classroomId } }),
+    get: (id: string) => api.get<Album>(`/albums/${id}`),
+    create: (body: CreateAlbum) => api.post<Album>("/albums", body),
+    addPhotos: (id: string, photos: { mediaId: string; caption?: string }[]) =>
+      api.post<Album>(`/albums/${id}/photos`, { photos }),
+    removePhoto: (photoId: string) => api.delete<{ ok: true }>(`/albums/photos/${photoId}`),
+    remove: (id: string) => api.delete<{ ok: true }>(`/albums/${id}`),
+  },
+
+  notifications: {
+    feed: (unreadOnly?: boolean) =>
+      api.get<NotificationItem[]>("/notifications", { query: { unreadOnly } }),
+    unreadCount: () => api.get<{ count: number }>("/notifications/unread-count"),
+    preferences: () => api.get<NotificationPreference[]>("/notifications/preferences"),
+    setPreference: (type: NotificationType, enabled: boolean) =>
+      api.patch<NotificationPreference>("/notifications/preferences", { type, enabled }),
+    markRead: (id: string) => api.post<NotificationItem>(`/notifications/${id}/read`),
+    markAllRead: () => api.post<{ updated: number }>("/notifications/read-all"),
+  },
+
+  pickup: {
+    authorizations: (opts: { studentId?: string; status?: PickupAuthorizationStatus } = {}) =>
+      api.get<PickupAuthorization[]>("/pickup/authorizations", { query: opts }),
+    createAuthorization: (body: CreatePickupAuthorization) =>
+      api.post<PickupAuthorization>("/pickup/authorizations", body),
+    revokeAuthorization: (id: string) =>
+      api.patch<PickupAuthorization>(`/pickup/authorizations/${id}/revoke`),
+    logs: (studentId?: string) => api.get<PickupLog[]>("/pickup/logs", { query: { studentId } }),
+    createLog: (body: CreatePickupLog) => api.post<PickupLog>("/pickup/logs", body),
   },
 };
 
@@ -290,6 +369,214 @@ export type Allergy = {
   allergen: string;
   note?: string | null;
   createdAt: string;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// CRM feature ideas: phân công · nghỉ phép · thực đơn · giáo án · album · notifications.
+// ──────────────────────────────────────────────────────────────────────────
+
+export type Assignment = {
+  id: string;
+  schoolId: string;
+  staffId: string;
+  classroomId?: string | null;
+  weekday: number;
+  shift: Shift;
+  duty: string;
+  note?: string | null;
+  createdAt: string;
+  staff?: { id: string; fullName: string };
+  classroom?: { id: string; name: string } | null;
+};
+export type CreateAssignment = {
+  staffId: string;
+  classroomId?: string;
+  schoolId?: string;
+  weekday: number;
+  shift: Shift;
+  duty: string;
+  note?: string;
+};
+
+export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type LeaveType = "SICK" | "FAMILY" | "OTHER";
+export type LeaveRequest = {
+  id: string;
+  studentId: string;
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  reason?: string | null;
+  attachmentUrl?: string | null;
+  status: LeaveStatus;
+  decisionNote?: string | null;
+  handledAt?: string | null;
+  createdAt: string;
+  student?: { id: string; fullName: string };
+};
+export type CreateLeaveRequest = {
+  studentId: string;
+  leaveType: LeaveType;
+  startDate: string;
+  endDate: string;
+  reason?: string;
+  attachmentUrl?: string;
+};
+
+export type MealType = "BREAKFAST" | "LUNCH" | "SNACK" | "DINNER";
+export type MenuMeal = {
+  id: string;
+  weekday: number;
+  mealType: MealType;
+  name: string;
+  ingredients?: string | null;
+};
+export type WeeklyMenu = {
+  id: string;
+  schoolId: string;
+  classroomId?: string | null;
+  weekStart: string;
+  note?: string | null;
+  createdAt: string;
+  classroom?: { id: string; name: string } | null;
+  meals?: MenuMeal[];
+};
+export type CreateWeeklyMenu = {
+  weekStart: string;
+  schoolId?: string;
+  classroomId?: string;
+  note?: string;
+  meals: { weekday: number; mealType: MealType; name: string; ingredients?: string }[];
+};
+export type MenuAllergyWarnings = {
+  menuId: string;
+  studentId: string;
+  warnings: { mealId: string; weekday: number; mealType: MealType; name: string; matched: string[] }[];
+};
+
+export type LessonActivity = {
+  id: string;
+  dayOfWeek: number;
+  startTime?: string | null;
+  title: string;
+  materials?: string | null;
+};
+export type LessonPlan = {
+  id: string;
+  classroomId: string;
+  week: string;
+  theme: string;
+  note?: string | null;
+  createdAt: string;
+  classroom?: { id: string; name: string };
+  activities?: LessonActivity[];
+};
+export type CreateLessonPlan = {
+  classroomId: string;
+  week: string;
+  theme: string;
+  note?: string;
+  activities?: { dayOfWeek: number; startTime?: string; title: string; materials?: string }[];
+};
+
+export type MediaKind = "REPORT_PHOTO" | "ALBUM" | "AVATAR" | "DOCUMENT" | "OTHER";
+export type UploadedMedia = {
+  id: string;
+  url: string;
+  mimeType: string;
+  sizeBytes: number;
+  width?: number | null;
+  height?: number | null;
+};
+export type AlbumPhoto = {
+  id: string;
+  mediaId: string;
+  caption?: string | null;
+  sortOrder: number;
+  media: { id: string; path?: string | null; mimeType: string; width?: number | null; height?: number | null };
+};
+export type Album = {
+  id: string;
+  classroomId?: string | null;
+  title: string;
+  description?: string | null;
+  createdAt: string;
+  classroom?: { id: string; name: string } | null;
+  photos?: AlbumPhoto[];
+  _count?: { photos: number };
+};
+export type CreateAlbum = {
+  title: string;
+  description?: string;
+  classroomId?: string;
+  schoolId?: string;
+};
+
+export type NotificationType =
+  | "ATTENDANCE"
+  | "DAILY_REPORT"
+  | "ANNOUNCEMENT"
+  | "INVOICE"
+  | "MEDICINE"
+  | "LEAVE"
+  | "INCIDENT";
+export type NotificationItem = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body?: string | null;
+  linkType?: string | null;
+  linkId?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+};
+export type NotificationPreference = { type: NotificationType; enabled: boolean };
+
+export type PickupAuthorizationStatus = "ACTIVE" | "REVOKED";
+export type PickupEventType = "CHECK_IN" | "CHECK_OUT";
+export type PickupAuthorization = {
+  id: string;
+  studentId: string;
+  parentUserId?: string | null;
+  guardianName: string;
+  guardianPhone: string;
+  relationship?: string | null;
+  note?: string | null;
+  status: PickupAuthorizationStatus;
+  createdAt: string;
+  revokedAt?: string | null;
+  student?: { id: string; fullName: string; classroom?: { id: string; name: string } | null };
+  parentUser?: { id: string; fullName: string; phone?: string | null } | null;
+};
+export type CreatePickupAuthorization = {
+  studentId: string;
+  parentUserId?: string;
+  guardianName: string;
+  guardianPhone: string;
+  relationship?: string;
+  note?: string;
+};
+export type PickupLog = {
+  id: string;
+  studentId: string;
+  authorizationId?: string | null;
+  eventType: PickupEventType;
+  guardianName: string;
+  guardianPhone?: string | null;
+  note?: string | null;
+  occurredAt: string;
+  createdAt: string;
+  student?: { id: string; fullName: string; classroom?: { id: string; name: string } | null };
+  authorization?: { id: string; guardianName: string; guardianPhone: string; relationship?: string | null } | null;
+};
+export type CreatePickupLog = {
+  studentId?: string;
+  authorizationId?: string;
+  eventType: PickupEventType;
+  guardianName?: string;
+  guardianPhone?: string;
+  note?: string;
+  occurredAt?: string;
 };
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -440,4 +727,3 @@ export type AuditLog = {
   metadata?: Record<string, unknown> | null;
   createdAt: string;
 };
-

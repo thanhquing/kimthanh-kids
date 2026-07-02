@@ -18,6 +18,7 @@ import { MedicineCreatePage } from "@/pages/shared/MedicineCreatePage";
 import { MedicineDetailPage } from "@/pages/shared/MedicineDetailPage";
 import { MedicineListPage } from "@/pages/shared/MedicineListPage";
 import { NotificationsPage } from "@/pages/shared/NotificationsPage";
+import { PickupPage } from "@/pages/shared/PickupPage";
 import { ProfilePage } from "@/pages/shared/ProfilePage";
 import { StudentDetailPage } from "@/pages/shared/StudentDetailPage";
 import { AnnouncementComposePage } from "@/pages/teacher/AnnouncementComposePage";
@@ -25,6 +26,7 @@ import { AttendanceHistoryPage } from "@/pages/teacher/AttendanceHistoryPage";
 import { AttendanceMarkPage } from "@/pages/teacher/AttendanceMarkPage";
 import { ClassRosterPage } from "@/pages/teacher/ClassRosterPage";
 import { LessonPlanPage } from "@/pages/teacher/LessonPlanPage";
+import { LeaveApprovePage } from "@/pages/teacher/LeaveApprovePage";
 import { MedicineApprovePage } from "@/pages/teacher/MedicineApprovePage";
 import { ReportComposePage } from "@/pages/teacher/ReportComposePage";
 import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
@@ -82,6 +84,7 @@ export function App() {
           <Route path="payment" element={<PaymentCheckoutPage />} />
           <Route path="menu" element={<MenuWeeklyPage />} />
           <Route path="leave" element={<LeaveRequestPage />} />
+          <Route path="pickup" element={<PickupPage />} />
           <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="medicine" element={<MedicineListPage />} />
           <Route path="medicine/new" element={<MedicineCreatePage />} />
@@ -108,6 +111,8 @@ export function App() {
           <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="announcements/new" element={<AnnouncementComposePage />} />
           <Route path="lesson-plan" element={<LessonPlanPage />} />
+          <Route path="leave/approve" element={<LeaveApprovePage />} />
+          <Route path="pickup" element={<PickupPage />} />
           <Route path="medicine" element={<MedicineListPage />} />
           <Route path="medicine/approve" element={<MedicineApprovePage />} />
           <Route path="medicine/:id" element={<MedicineDetailPage />} />

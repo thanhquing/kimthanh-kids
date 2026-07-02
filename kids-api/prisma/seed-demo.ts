@@ -1,7 +1,8 @@
 /**
- * Seed dữ liệu DEMO: 1 trường mầm non đầy đủ (gói PRO — bật mọi tính năng) + vài tenant
- * platform case (quota gần đầy, trial sắp hết hạn, công nợ, đủ gói) để dev UI có dữ liệu
- * thật chạy thử. Idempotent: xoá sạch dữ liệu của các slug demo rồi tạo lại
+ * Seed dữ liệu DEMO: 1 trường mầm non đầy đủ (gói PRO — bật mọi tính năng) với ~2 THÁNG
+ * lịch sử (02/04/2026 → nay): điểm danh/báo cáo/đón-trả theo từng ngày học, học phí & thực đơn
+ * theo tháng/tuần. Kèm vài tenant platform case (quota gần đầy, trial sắp hết hạn, công nợ, đủ
+ * gói) để dev UI có dữ liệu thật chạy thử. Idempotent: xoá sạch dữ liệu của các slug demo rồi tạo lại
  * (chỉ chạm đúng các tenant demo — an toàn). Chạy SAU prisma:seed (cần các gói đã tồn tại).
  *
  *   pnpm prisma:seed:demo
@@ -36,6 +37,9 @@ import {
   UserType,
 } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import sharp from "sharp";
 
 const prisma = new PrismaClient();
 
@@ -56,6 +60,43 @@ function addDays(d: Date, days: number): Date {
 function mondayOf(d: Date): Date {
   const day = d.getUTCDay() || 7; // CN=0 → 7
   return dateOnly(addDays(d, 1 - day));
+}
+
+/**
+ * Tạo media ẢNH thật cho demo: sinh 1 webp đặc (màu bg) ghi xuống MEDIA_ROOT/<tenantId>/<id>.webp
+ * để endpoint /media/:id/file (và AuthImage ở FE) render được — placeholder path sẽ 404.
+ */
+async function createDemoImageMedia(
+  tenantId: string,
+  schoolId: string,
+  uploadedById: string,
+  opts: { kind: "ALBUM" | "REPORT_PHOTO"; bg: { r: number; g: number; b: number }; originalName: string },
+) {
+  const width = 640;
+  const height = 428;
+  const buf = await sharp({ create: { width, height, channels: 3, background: opts.bg } })
+    .webp({ quality: 80 })
+    .toBuffer();
+  const media = await prisma.media.create({
+    data: {
+      tenantId,
+      schoolId,
+      kind: opts.kind,
+      path: "pending", // gán lại sau khi có id
+      mimeType: "image/webp",
+      sizeBytes: buf.length,
+      width,
+      height,
+      originalName: opts.originalName,
+      uploadedById,
+    },
+  });
+  const rel = `${tenantId}/${media.id}.webp`;
+  const root = process.env.MEDIA_ROOT || "storage";
+  await mkdir(join(root, tenantId), { recursive: true });
+  await writeFile(join(root, rel), buf);
+  await prisma.media.update({ where: { id: media.id }, data: { path: rel } });
+  return media;
 }
 
 async function wipeExistingDemo(tenantId: string): Promise<void> {
@@ -80,6 +121,9 @@ async function wipeExistingDemo(tenantId: string): Promise<void> {
   await prisma.medicineStatusHistory.deleteMany({ where: { tenantId } });
   await prisma.medicineRequest.deleteMany({ where: { tenantId } });
   await prisma.healthRecord.deleteMany({ where: { tenantId } });
+  await prisma.pickupLog.deleteMany({ where: { tenantId } });
+  await prisma.pickupAuthorization.deleteMany({ where: { tenantId } });
+  await prisma.dailyReportPhoto.deleteMany({ where: { tenantId } });
   await prisma.dailyReport.deleteMany({ where: { tenantId } });
   await prisma.attendance.deleteMany({ where: { tenantId } });
   await prisma.studentParent.deleteMany({ where: { tenantId } });
@@ -123,6 +167,14 @@ async function main() {
   const now = new Date();
   const today = dateOnly(now);
   const periodEnd = addDays(now, 100 * 365);
+  // Lịch sử demo trải từ 02/04/2026 đến hôm nay (điểm danh/báo cáo/đón-trả theo ngày học T2–T6).
+  const HISTORY_START = dateOnly(new Date("2026-04-02T00:00:00.000Z"));
+  const schoolDays: Date[] = [];
+  for (let d = HISTORY_START; d.getTime() <= today.getTime(); d = addDays(d, 1)) {
+    const wd = d.getUTCDay();
+    if (wd >= 1 && wd <= 5) schoolDays.push(dateOnly(d));
+  }
+  const lastSchoolDay = schoolDays[schoolDays.length - 1] ?? today;
   const passwordHash = await bcrypt.hash(PASSWORD, 10);
 
   // ─── Tenant + settings + domain + subscription (gói PRO) + school ───
@@ -406,66 +458,230 @@ async function main() {
     });
   }
 
-  // ─── Điểm danh hôm nay (đa số có mặt, 1 vắng, 1 muộn) ───
+  // ─── Điểm danh mỗi ngày học trong 2 tháng (đa số có mặt, rải rác muộn/vắng) ───
   await prisma.attendance.createMany({
-    data: kids.map((k, i) => ({
-      tenantId,
-      schoolId,
-      studentId: k.id,
-      classroomId: k.classroomId,
-      date: today,
-      status:
-        i === 3
-          ? AttendanceStatus.ABSENT
-          : i === 5
-            ? AttendanceStatus.LATE
-            : AttendanceStatus.PRESENT,
-      checkInAt: i === 3 ? null : new Date(now.getTime()),
-    })),
+    data: schoolDays.flatMap((date, dayIdx) =>
+      kids.map((k, i) => {
+        const roll = (dayIdx * 7 + i * 3) % 20; // biến thiên tất định
+        const status =
+          roll === 0
+            ? AttendanceStatus.ABSENT
+            : roll === 1
+              ? AttendanceStatus.LATE
+              : AttendanceStatus.PRESENT;
+        return {
+          tenantId,
+          schoolId,
+          studentId: k.id,
+          classroomId: k.classroomId,
+          date,
+          status,
+          checkInAt:
+            status === AttendanceStatus.ABSENT
+              ? null
+              : new Date(`${date.toISOString().slice(0, 10)}T${status === AttendanceStatus.LATE ? "08:15" : "07:30"}:00.000Z`),
+        };
+      }),
+    ),
   });
 
-  // ─── Báo cáo hằng ngày (lớp Mầm) ───
-  const moods = [Mood.HAPPY, Mood.NEUTRAL, Mood.TIRED, Mood.HAPPY];
+  // ─── Báo cáo hằng ngày cho lớp Mầm, mỗi ngày học trong 2 tháng ───
+  const moods = [Mood.HAPPY, Mood.NEUTRAL, Mood.TIRED, Mood.HAPPY, Mood.FUSSY];
+  const mealNotes = ["Ăn hết suất", "Ăn khá, còn ít canh", "Ăn chậm, cần nhắc", "Ăn hết suất, xin thêm"];
+  const activityNotes = [
+    "Vẽ tranh, hát, chơi ngoài trời",
+    "Kể chuyện, xếp hình, vận động",
+    "Học chữ cái, tô màu, chơi cát",
+    "Âm nhạc, đóng kịch, chăm cây",
+  ];
+  const mamKids = kids.filter((k) => k.classroomId === clsMam.id);
   await prisma.dailyReport.createMany({
-    data: kids
-      .filter((k) => k.classroomId === clsMam.id)
-      .map((k, i) => ({
+    data: schoolDays.flatMap((date, dayIdx) =>
+      mamKids.map((k, i) => ({
         tenantId,
         schoolId,
         studentId: k.id,
         classroomId: clsMam.id,
-        date: today,
-        mood: moods[i % moods.length],
-        meals: "Ăn hết suất",
-        nap: "Ngủ ngon 90 phút",
-        activities: "Vẽ tranh, hát, chơi ngoài trời",
+        date,
+        mood: moods[(dayIdx + i) % moods.length],
+        meals: mealNotes[(dayIdx + i) % mealNotes.length],
+        nap: dayIdx % 4 === 0 ? "Khó ngủ, ngủ 45 phút" : "Ngủ ngon 90 phút",
+        activities: activityNotes[(dayIdx + i) % activityNotes.length],
         authorId: coMai.id,
       })),
+    ),
   });
 
-  // ─── Sức khỏe: chỉ số tăng trưởng + dị ứng + thuốc + sự cố ───
-  for (const k of kids.slice(0, 4)) {
-    await prisma.healthRecord.createMany({
+  // ─── Ảnh đính kèm báo cáo hằng ngày (báo cáo của lớp Mầm ngày học gần nhất) ───
+  const mamReports = await prisma.dailyReport.findMany({
+    where: { tenantId, classroomId: clsMam.id, date: lastSchoolDay },
+    orderBy: { studentId: "asc" },
+    select: { id: true },
+  });
+  const reportBgs = [
+    { r: 244, g: 180, b: 90 },
+    { r: 120, g: 190, b: 140 },
+    { r: 130, g: 170, b: 235 },
+  ];
+  const reportMedia = [];
+  for (let n = 0; n < reportBgs.length; n++) {
+    reportMedia.push(
+      await createDemoImageMedia(tenantId, schoolId, coMai.id, {
+        kind: "REPORT_PHOTO",
+        bg: reportBgs[n],
+        originalName: `hoat-dong-${n + 1}.webp`,
+      }),
+    );
+  }
+  if (mamReports[0]) {
+    await prisma.dailyReportPhoto.createMany({
       data: [
-        {
-          tenantId,
-          schoolId,
-          studentId: k.id,
-          date: dateOnly(addDays(today, -60)),
-          heightCm: 92 + Math.random() * 6,
-          weightKg: 13 + Math.random() * 2,
-          recordedById: nurse.id,
-        },
-        {
-          tenantId,
-          schoolId,
-          studentId: k.id,
-          date: today,
-          heightCm: 94 + Math.random() * 6,
-          weightKg: 14 + Math.random() * 2,
-          recordedById: nurse.id,
-        },
+        { tenantId, reportId: mamReports[0].id, mediaId: reportMedia[0].id, caption: "Giờ vẽ tranh", sortOrder: 0 },
+        { tenantId, reportId: mamReports[0].id, mediaId: reportMedia[1].id, caption: "Chơi ngoài trời", sortOrder: 1 },
       ],
+    });
+  }
+  if (mamReports[1]) {
+    await prisma.dailyReportPhoto.create({
+      data: { tenantId, reportId: mamReports[1].id, mediaId: reportMedia[2].id, caption: "Giờ ăn trưa", sortOrder: 0 },
+    });
+  }
+
+  // ─── Đón/trả: người đón được ủy quyền + nhật ký ra/vào cổng ───
+  const atDay = (date: Date, hhmm: string) =>
+    new Date(`${date.toISOString().slice(0, 10)}T${hhmm}:00.000Z`);
+  // kids[0]: mẹ (gắn tài khoản PH) + bà ngoại (khách được ủy quyền)
+  const authMom = await prisma.pickupAuthorization.create({
+    data: {
+      tenantId,
+      schoolId,
+      studentId: kids[0].id,
+      parentUserId: kids[0].parentId,
+      guardianName: `Phụ huynh bé ${kids[0].fullName.split(" ").pop()}`,
+      guardianPhone: "0901000001",
+      relationship: "Mẹ",
+      createdById: admin.id,
+    },
+  });
+  const authGrandma = await prisma.pickupAuthorization.create({
+    data: {
+      tenantId,
+      schoolId,
+      studentId: kids[0].id,
+      guardianName: "Bà Nguyễn Thị Tư",
+      guardianPhone: "0903000001",
+      relationship: "Bà ngoại",
+      note: "Chỉ đón chiều thứ 6",
+      createdById: admin.id,
+    },
+  });
+  // kids[1]: bố; kids[2]: chú (khách)
+  const authDad = await prisma.pickupAuthorization.create({
+    data: {
+      tenantId,
+      schoolId,
+      studentId: kids[1].id,
+      parentUserId: kids[1].parentId,
+      guardianName: `Phụ huynh bé ${kids[1].fullName.split(" ").pop()}`,
+      guardianPhone: "0901000002",
+      relationship: "Bố",
+      createdById: admin.id,
+    },
+  });
+  await prisma.pickupAuthorization.create({
+    data: {
+      tenantId,
+      schoolId,
+      studentId: kids[2].id,
+      guardianName: "Ông Trần Văn Năm",
+      guardianPhone: "0903000002",
+      relationship: "Chú",
+      createdById: admin.id,
+    },
+  });
+  // Nhật ký mỗi ngày học: kids[0] (mẹ đưa; bà ngoại đón chiều T6) + kids[1] (bố đưa/đón).
+  await prisma.pickupLog.createMany({
+    data: schoolDays.flatMap((date, dayIdx) => {
+      const rows: {
+        tenantId: string;
+        schoolId: string;
+        studentId: string;
+        authorizationId: string;
+        eventType: "CHECK_IN" | "CHECK_OUT";
+        guardianName: string;
+        guardianPhone: string | null;
+        occurredAt: Date;
+        recordedById: string;
+      }[] = [];
+      const isFriday = date.getUTCDay() === 5;
+      // kids[0] có mặt (bỏ ngày vắng: roll0 === 0)
+      if ((dayIdx * 7) % 20 !== 0) {
+        rows.push({
+          tenantId,
+          schoolId,
+          studentId: kids[0].id,
+          authorizationId: authMom.id,
+          eventType: "CHECK_IN",
+          guardianName: authMom.guardianName,
+          guardianPhone: authMom.guardianPhone,
+          occurredAt: atDay(date, "07:35"),
+          recordedById: coMai.id,
+        });
+        const pickup = isFriday ? authGrandma : authMom;
+        rows.push({
+          tenantId,
+          schoolId,
+          studentId: kids[0].id,
+          authorizationId: pickup.id,
+          eventType: "CHECK_OUT",
+          guardianName: pickup.guardianName,
+          guardianPhone: pickup.guardianPhone,
+          occurredAt: atDay(date, "16:40"),
+          recordedById: coMai.id,
+        });
+      }
+      // kids[1] có mặt (bỏ ngày vắng: roll1 === 0)
+      if ((dayIdx * 7 + 3) % 20 !== 0) {
+        rows.push({
+          tenantId,
+          schoolId,
+          studentId: kids[1].id,
+          authorizationId: authDad.id,
+          eventType: "CHECK_IN",
+          guardianName: authDad.guardianName,
+          guardianPhone: authDad.guardianPhone,
+          occurredAt: atDay(date, "07:50"),
+          recordedById: coLan.id,
+        });
+        rows.push({
+          tenantId,
+          schoolId,
+          studentId: kids[1].id,
+          authorizationId: authDad.id,
+          eventType: "CHECK_OUT",
+          guardianName: authDad.guardianName,
+          guardianPhone: authDad.guardianPhone,
+          occurredAt: atDay(date, "17:05"),
+          recordedById: coLan.id,
+        });
+      }
+      return rows;
+    }),
+  });
+
+  // ─── Sức khỏe: chỉ số tăng trưởng theo tháng (đầu mỗi tháng trong lịch sử) + dị ứng + thuốc + sự cố ───
+  const healthDates = [HISTORY_START, dateOnly(addDays(HISTORY_START, 30)), dateOnly(addDays(HISTORY_START, 60)), today];
+  for (const [ki, k] of kids.slice(0, 4).entries()) {
+    await prisma.healthRecord.createMany({
+      data: healthDates.map((date, mi) => ({
+        tenantId,
+        schoolId,
+        studentId: k.id,
+        date,
+        heightCm: 92 + ki * 0.8 + mi * 0.7, // tăng dần theo tháng
+        weightKg: 13 + ki * 0.4 + mi * 0.3,
+        recordedById: nurse.id,
+      })),
     });
   }
   await prisma.allergy.createMany({
@@ -562,35 +778,47 @@ async function main() {
     },
   });
 
-  // ─── Thực đơn tuần (T2–T6), có món chứa đậu phộng để minh hoạ cảnh báo dị ứng ───
-  const weekStart = mondayOf(now);
-  await prisma.weeklyMenu.create({
-    data: {
-      tenantId,
-      schoolId,
-      weekStart,
-      note: "Thực đơn tuần (áp dụng toàn trường)",
-      createdById: admin.id,
-      meals: {
-        create: [1, 2, 3, 4, 5].flatMap((weekday) => [
-          {
-            tenantId,
-            weekday,
-            mealType: MealType.LUNCH,
-            name: "Cơm gà, canh rau ngót",
-            ingredients: "gà, gạo, rau ngót",
-          },
-          {
-            tenantId,
-            weekday,
-            mealType: MealType.SNACK,
-            name: weekday === 3 ? "Bánh quy bơ đậu phộng" : "Sữa chua trái cây",
-            ingredients: weekday === 3 ? "bột mì, bơ, đậu phộng" : "sữa chua, xoài, chuối",
-          },
-        ]),
+  // ─── Thực đơn tuần (T2–T6) cho mỗi tuần trong lịch sử; tuần có món đậu phộng minh hoạ cảnh báo dị ứng ───
+  const lunchRotation = [
+    { name: "Cơm gà, canh rau ngót", ingredients: "gà, gạo, rau ngót" },
+    { name: "Cơm cá kho, canh bí đỏ", ingredients: "cá, gạo, bí đỏ" },
+    { name: "Cơm thịt viên, canh cải", ingredients: "thịt heo, gạo, cải xanh" },
+    { name: "Mì bò rau củ", ingredients: "bò, mì, cà rốt, khoai tây" },
+  ];
+  const menuWeeks: Date[] = [];
+  for (let w = mondayOf(HISTORY_START); w.getTime() <= mondayOf(now).getTime(); w = addDays(w, 7)) {
+    menuWeeks.push(dateOnly(w));
+  }
+  for (const [wi, weekStart] of menuWeeks.entries()) {
+    const lunch = lunchRotation[wi % lunchRotation.length];
+    await prisma.weeklyMenu.create({
+      data: {
+        tenantId,
+        schoolId,
+        weekStart,
+        note: "Thực đơn tuần (áp dụng toàn trường)",
+        createdById: admin.id,
+        meals: {
+          create: [1, 2, 3, 4, 5].flatMap((weekday) => [
+            {
+              tenantId,
+              weekday,
+              mealType: MealType.LUNCH,
+              name: lunch.name,
+              ingredients: lunch.ingredients,
+            },
+            {
+              tenantId,
+              weekday,
+              mealType: MealType.SNACK,
+              name: weekday === 3 ? "Bánh quy bơ đậu phộng" : "Sữa chua trái cây",
+              ingredients: weekday === 3 ? "bột mì, bơ, đậu phộng" : "sữa chua, xoài, chuối",
+            },
+          ]),
+        },
       },
-    },
-  });
+    });
+  }
 
   // ─── Thông báo ───
   await prisma.announcement.create({
@@ -617,63 +845,85 @@ async function main() {
     },
   });
 
-  // ─── Học phí: mỗi bé 1 hoá đơn kỳ này; 1 đã trả (CASH), 1 trả một phần, còn lại chưa trả ───
+  // ─── Học phí theo THÁNG suốt lịch sử: tháng cũ đã thu đủ; tháng hiện tại có bé đã trả / trả 1 phần / chưa trả ───
   const year = today.getUTCFullYear();
-  let seq = 0;
-  for (const k of kids) {
-    seq += 1;
-    const tuition = 2_000_000;
-    const meal = 770_000; // 22 buổi x 35k
-    const discount = seq === 1 ? 100_000 : 0;
-    const subtotal = tuition + meal;
-    const total = subtotal - discount;
-    const invoiceNumber = `HD-${year}-${String(seq).padStart(4, "0")}`;
-    const isPaid = seq === 2;
-    const isPartial = seq === 3;
-    const amountPaid = isPaid ? total : isPartial ? 1_000_000 : 0;
-    const status = isPaid
-      ? TuitionInvoiceStatus.PAID
-      : isPartial
-        ? TuitionInvoiceStatus.PARTIAL
-        : TuitionInvoiceStatus.UNPAID;
-
-    const invoice = await prisma.tuitionInvoice.create({
-      data: {
-        tenantId,
-        schoolId,
-        studentId: k.id,
-        invoiceNumber,
-        period: `${year}-${String(today.getUTCMonth() + 1).padStart(2, "0")}`,
-        issueDate: today,
-        dueDate: addDays(today, 10),
-        subtotal,
-        discount,
-        total,
-        amountPaid,
-        status,
-        createdById: admin.id,
-        items: {
-          create: [
-            { tenantId, label: "Học phí tháng", quantity: 1, unitPrice: tuition, amount: tuition },
-            { tenantId, label: "Tiền ăn (22 buổi)", quantity: 22, unitPrice: 35_000, amount: meal },
-          ],
-        },
-      },
+  const currentPeriod = `${year}-${String(today.getUTCMonth() + 1).padStart(2, "0")}`;
+  const billingMonths: { period: string; issueDate: Date }[] = [];
+  for (let y = HISTORY_START.getUTCFullYear(), m = HISTORY_START.getUTCMonth(); ; ) {
+    billingMonths.push({
+      period: `${y}-${String(m + 1).padStart(2, "0")}`,
+      issueDate: dateOnly(new Date(Date.UTC(y, m, 1))),
     });
-    if (amountPaid > 0) {
-      await prisma.tuitionPayment.create({
+    if (y === year && m === today.getUTCMonth()) break;
+    m += 1;
+    if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+  }
+  for (const bm of billingMonths) {
+    const isCurrent = bm.period === currentPeriod;
+    for (const [ki, k] of kids.entries()) {
+      const tuition = 2_000_000;
+      const meal = 770_000; // 22 buổi x 35k
+      const discount = ki === 0 ? 100_000 : 0;
+      const subtotal = tuition + meal;
+      const total = subtotal - discount;
+      const invoiceNumber = `HD-${bm.period}-${String(ki + 1).padStart(4, "0")}`;
+      // Tháng cũ: đã thu đủ. Tháng hiện tại: bé#2 đã trả, bé#3 trả 1 phần, còn lại chưa trả.
+      let amountPaid = total;
+      let status: TuitionInvoiceStatus = TuitionInvoiceStatus.PAID;
+      if (isCurrent) {
+        if (ki === 1) {
+          amountPaid = total;
+          status = TuitionInvoiceStatus.PAID;
+        } else if (ki === 2) {
+          amountPaid = 1_000_000;
+          status = TuitionInvoiceStatus.PARTIAL;
+        } else {
+          amountPaid = 0;
+          status = TuitionInvoiceStatus.UNPAID;
+        }
+      }
+
+      const invoice = await prisma.tuitionInvoice.create({
         data: {
           tenantId,
           schoolId,
-          invoiceId: invoice.id,
-          method: TuitionPaymentMethod.CASH,
-          status: TuitionPaymentStatus.SUCCEEDED,
-          amount: amountPaid,
-          reference: "Thu tại văn phòng",
-          paidAt: now,
-          recordedById: admin.id,
+          studentId: k.id,
+          invoiceNumber,
+          period: bm.period,
+          issueDate: bm.issueDate,
+          dueDate: addDays(bm.issueDate, 10),
+          subtotal,
+          discount,
+          total,
+          amountPaid,
+          status,
+          createdById: admin.id,
+          items: {
+            create: [
+              { tenantId, label: "Học phí tháng", quantity: 1, unitPrice: tuition, amount: tuition },
+              { tenantId, label: "Tiền ăn (22 buổi)", quantity: 22, unitPrice: 35_000, amount: meal },
+            ],
+          },
         },
       });
+      if (amountPaid > 0) {
+        await prisma.tuitionPayment.create({
+          data: {
+            tenantId,
+            schoolId,
+            invoiceId: invoice.id,
+            method: TuitionPaymentMethod.CASH,
+            status: TuitionPaymentStatus.SUCCEEDED,
+            amount: amountPaid,
+            reference: "Thu tại văn phòng",
+            paidAt: addDays(bm.issueDate, 5),
+            recordedById: admin.id,
+          },
+        });
+      }
     }
   }
 
@@ -707,20 +957,11 @@ async function main() {
     },
   });
 
-  // ─── Album ảnh (PRO) — 1 media placeholder + 1 ảnh ───
-  const media = await prisma.media.create({
-    data: {
-      tenantId,
-      schoolId,
-      kind: "ALBUM",
-      path: `${tenantId}/demo-photo.webp`,
-      mimeType: "image/webp",
-      sizeBytes: 102_400,
-      width: 1280,
-      height: 853,
-      originalName: "da-ngoai.webp",
-      uploadedById: coMai.id,
-    },
+  // ─── Album ảnh (PRO) — media ảnh thật + 1 ảnh trong album ───
+  const media = await createDemoImageMedia(tenantId, schoolId, coMai.id, {
+    kind: "ALBUM",
+    bg: { r: 150, g: 200, b: 120 },
+    originalName: "da-ngoai.webp",
   });
   await prisma.album.create({
     data: {
@@ -750,7 +991,7 @@ async function main() {
         tenantId,
         userId: kids[0].parentId,
         type: NotificationType.INVOICE,
-        title: `Hóa đơn học phí HD-${year}-0001`,
+        title: `Hóa đơn học phí HD-${currentPeriod}-0001`,
         body: "Vui lòng thanh toán trước hạn.",
         linkType: "TuitionInvoice",
       },
@@ -1157,8 +1398,8 @@ async function main() {
       `  Tenant : ${tenant.legalName} (slug=${SLUG}, host=${HOST}, gói PRO)`,
       `  Tài khoản: admin@hoasen.edu.vn / ${PASSWORD} (và hieutruong/co.mai/co.lan/yta.hoa/ketoan, ph01..ph12)`,
       `  Đăng nhập bằng SĐT: GV co.mai=0909000010, co.lan=0909000011 · PH ph01=0901000001..ph12=0901000012`,
-      `  Dữ liệu: 3 lớp · ${kids.length} học sinh+PH · điểm danh hôm nay · báo cáo · sức khỏe/thuốc/sự cố · nghỉ phép`,
-      "           · thực đơn tuần (có cảnh báo dị ứng) · 2 thông báo · 12 hóa đơn (1 đã trả, 1 trả 1 phần) · giáo án · album",
+      `  Dữ liệu 2 tháng (${HISTORY_START.toISOString().slice(0, 10)} → nay, ${schoolDays.length} ngày học): điểm danh · báo cáo (có ảnh) · đón-trả (ủy quyền + nhật ký) · sức khỏe/thuốc/sự cố · nghỉ phép`,
+      `           · thực đơn ${menuWeeks.length} tuần (có cảnh báo dị ứng) · thông báo · học phí ${billingMonths.length} tháng (tháng cũ đã thu, tháng này còn nợ/1 phần) · giáo án · album`,
       "  Platform cases:",
       ...platformCases.map(
         (x) =>

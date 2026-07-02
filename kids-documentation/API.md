@@ -53,6 +53,8 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 | `Gender` | `MALE`, `FEMALE`, `OTHER` |
 | `StudentStatus` | `ACTIVE`, `INACTIVE`, `GRADUATED`, `WITHDRAWN` |
 | `AttendanceStatus` | `PRESENT`, `LATE`, `ABSENT`, `EXCUSED` |
+| `PickupAuthorizationStatus` | `ACTIVE`, `REVOKED` |
+| `PickupEventType` | `CHECK_IN`, `CHECK_OUT` |
 | `Mood` | `HAPPY`, `NEUTRAL`, `TIRED`, `FUSSY` |
 | `MediaKind` | `REPORT_PHOTO`, `ALBUM`, `AVATAR`, `DOCUMENT`, `OTHER` |
 | `MedicineStatus` | `PENDING`, `APPROVED`, `ADMINISTERED`, `REJECTED` |
@@ -142,6 +144,7 @@ Role: `AD`, `HT`. Host: tenant.
 | `GET` | `/tenant/members` | - | users (id,email,phone,fullName,isActive) + memberships, mới nhất trước |
 | `POST` | `/tenant/members` | `CreateMemberInput` | user mới + membership |
 | `PATCH` | `/tenant/members/:userId/status` | `{ isActive: boolean }` | user sau cập nhật |
+| `PATCH` | `/tenant/members/:userId/password` | `{ password: string }` | `{ id, passwordReset: true }` — đặt lại mật khẩu, revoke refresh token hiện có, ghi audit |
 | `GET` | `/tenant/domains` | - | `TenantDomain[]` |
 | `POST` | `/tenant/domains` | `{ host: string }` | domain PENDING + `verifyToken` |
 | `POST` | `/tenant/domains/:id/verify` | - | domain ACTIVE nếu verify OK |
@@ -436,10 +439,43 @@ type DailyReportUpsertInput = {
   nap?: string;        // max 500
   activities?: string; // max 500
   note?: string;       // max 1000
+  photoIds?: string[]; // max 12 Media id, ảnh đã upload qua POST /media
 };
 ```
 
-Upsert unique theo `(studentId, date)`. Notification chỉ phát khi tạo mới.
+Upsert unique theo `(studentId, date)`. Nếu truyền `photoIds`, backend thay toàn bộ danh sách ảnh của báo cáo bằng các media đó và trả về `photos[]` kèm metadata `media`. Notification chỉ phát khi tạo mới.
+
+### Pickup / Drop-off
+
+Role: `STAFF` xem/ghi; `PH` xem dữ liệu của con mình.
+
+| Method | Path | Role | Body / Query | Data trả về |
+|---|---|---|---|---|
+| `GET` | `/pickup/authorizations?studentId=&status=` | STAFF,PH | filters optional | `PickupAuthorization[]` |
+| `POST` | `/pickup/authorizations` | AD,HT,GV,YT | `PickupAuthorizationCreate` | `PickupAuthorization` |
+| `PATCH` | `/pickup/authorizations/:id/revoke` | AD,HT,GV,YT | - | authorization status `REVOKED` |
+| `GET` | `/pickup/logs?studentId=` | STAFF,PH | filter optional | `PickupLog[]` |
+| `POST` | `/pickup/logs` | AD,HT,GV,YT | `PickupLogCreate` | `PickupLog` |
+
+```ts
+type PickupAuthorizationCreate = {
+  studentId: string;
+  parentUserId?: string;
+  guardianName: string;
+  guardianPhone: string;
+  relationship?: string;
+  note?: string;
+};
+type PickupLogCreate = {
+  studentId?: string;
+  authorizationId?: string;
+  eventType: PickupEventType;
+  guardianName?: string;
+  guardianPhone?: string;
+  note?: string;
+  occurredAt?: string; // DateTime, mặc định now
+};
+```
 
 ### Media
 
