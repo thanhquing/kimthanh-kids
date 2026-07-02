@@ -117,7 +117,7 @@ Legend: `TODO` / `PROGRESS` / `DONE`. Mỗi task ghi: endpoint, role, ghi chú c
 | Status | Hạng mục | Ghi chú |
 | --- | --- | --- |
 | DONE | Rà toàn bộ api module + ~24 page | invalidation nhất quán sau mutation; loading/error/empty đủ 3 nhánh; role-gating đúng; quyền API khớp (teacher ∈ COMPOSERS; `allergies/incidents/student/:id` cho PARENT). **Không bug nghiêm trọng.** |
-| DONE | Fix: `StudentDetailPage` | Chỉ fetch `useAllergies/useIncidents` khi `isTeacher` (khối sức khỏe chỉ hiển thị cho GV) → bỏ gọi API thừa cho PH. |
+| DONE | Follow-up: `StudentDetailPage` | Mở khối dị ứng/sự cố cho cả PH và GV; PH dùng con từ `/students/mine`, GV dùng `/students/:id`, cùng gọi `/allergies|/incidents/student/:id`. |
 | DONE | Verify cuối | `pnpm build` (tsc+Vite) xanh · dict parity **302/302** · cURL từng domain pass. |
 | — | Lưu ý seed | Album media trả 400 (`ENOENT demo-photo.webp`) do seed thiếu file nhị phân — không phải lỗi code; `AuthImage` fallback "—". |
 

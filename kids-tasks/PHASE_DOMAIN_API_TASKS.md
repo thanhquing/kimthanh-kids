@@ -1,6 +1,6 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
-> ## ✅ Tiến độ (114 e2e / 13 suite · tsc + lint sạch ở mốc API đóng)
+> ## ✅ Tiến độ (131 e2e / 15 suite ở inventory hiện tại · tsc + lint sạch ở mốc verify gần nhất)
 > - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` + `recordScopeWhere`/`ownedStudentWhere` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
 > - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
 > - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).
@@ -13,9 +13,9 @@
 > - **Seed demo:** `pnpm prisma:seed:demo` — 1 trường mẫu đầy đủ (gói PRO) để dev/demo UI. ✅
 > - **Còn lại (đẩy sau theo trigger — đã thống nhất):** reset mật khẩu thật + email (P2), **push FCM** (làm cùng phase mobile — tái dùng `NotificationsService.notify` làm điểm phát), reconcile-counter (cuối P1), cổng MoMo/ZaloPay + đối soát VietQR tự động (P2), Analytics nâng cao G3/audit pipeline G5 (P2).
 > - **Định danh & chống lạm dụng (đã làm 1 phần):** signup **bắt buộc MST** (`Tenant.taxCode` unique + checksum, 1 MST = 1 trường). **P2 còn lại:** xác minh MST live qua API thuế/ĐKKD (set `taxVerifiedAt`), SĐT OTP, gắn CCCD chủ, populate `School.moetCode` (mã Bộ GD&ĐT), hỗ trợ "chuỗi" (1 MST nhiều trường có duyệt).
-> - **Kế tiếp:** API Phase 1 coi như đóng → `kids-platform` đã scaffold/tích hợp console nền tảng; tiếp tục phase UI tenant/mobile (`kids-crm` / mobile). Push FCM làm trong phase mobile.
+> - **Kế tiếp:** API Phase 1 coi như đóng → `kids-platform`, `kids-crm` và `kids-mobile-web` đã tích hợp API thật cho các flow chính; `kids-mobile-native` đã scaffold/port copy-first. Push FCM làm trong phase mobile/release.
 
-> **Chiến lược:** API-first toàn bộ. Làm **dứt điểm tất cả các phase API** (`kids-api`) trước; **UI/UX** tiêu thụ lại API đã ổn định (`kids-platform` đã scaffold/tích hợp console nền tảng; CRM/mobile tiếp theo). File này chỉ liệt kê **task API**.
+> **Chiến lược:** API-first toàn bộ. Làm **dứt điểm tất cả các phase API** (`kids-api`) trước; **UI/UX** tiêu thụ lại API đã ổn định (`kids-platform`/`kids-crm`/`kids-mobile-web` đã nối API thật; `kids-mobile-native` copy-first từ mobile-web). File này chỉ liệt kê **task API**.
 >
 > **Tiền đề:** Phase 0 (Tầng A — nền tảng SaaS) đã xong. Mọi bảng domain dưới đây **BẮT BUỘC** có `tenantId` (non-null) + `schoolId`, và thêm tên model vào `TENANT_KEY` trong [`prisma-tenant.extension.ts`](../kids-api/src/prisma/prisma-tenant.extension.ts) để tự cô lập.
 >
@@ -141,4 +141,4 @@
 
 ## Sau khi HOÀN TẤT toàn bộ API → mới sang UI/UX
 
-Phase UI/UX (file task riêng, làm sau): **kids-crm** (web quản trị), **kids-mobile-native**, **kids-mobile-web** — tiêu thụ API Tầng A + B, áp white-label (logo/màu từ `/public/branding`). KHÔNG bắt đầu khi API chưa ổn định.
+Phase UI/UX (file task riêng): **kids-platform**, **kids-crm**, **kids-mobile-web**, **kids-mobile-native** — tiêu thụ API Tầng A + B, áp white-label (logo/màu từ `/public/branding`). Trạng thái chi tiết xem [`PHASE_UI_TASKS.md`](./PHASE_UI_TASKS.md).

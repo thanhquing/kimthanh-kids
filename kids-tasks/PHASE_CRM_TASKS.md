@@ -6,12 +6,12 @@
 
 ## 0. Trạng thái hiện tại
 
-- `kids-api` Phase 0 + Phase 1 đã đóng, 114 e2e / 13 suite ở mốc API.
+- `kids-api` Phase 0 + Phase 1 đã đóng; inventory hiện tại 131 e2e / 15 suite (xem `ARCHITECTURE.md`). Lần verify gần nhất: `tsc` + `lint` sạch; `test:e2e` cần chạy lại khi Docker/Postgres local hoạt động.
 - Ledger CRM trong [`UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md) đã PASS **49/49** flow chủ trường, fixture `crm1782232197.kimthanhkids.vn`.
 - `kids-platform` đã có pattern cần copy: Vite + React + TypeScript + Tailwind + TanStack Query, `src/api/http.ts` bóc envelope, refresh token, invalidate query theo nhóm.
 - `kids-crm/` đã bootstrap source bằng copy-first từ `kids-platform`: app shell, đăng nhập realm tenant (login/me/refresh + guard chặn tài khoản platform).
 - **Đã tích hợp (toàn bộ mục nav P0/P1):** Dashboard · Hồ sơ (Lớp/Học sinh/Nhân sự) · Điểm danh · Sổ liên lạc · Sức khỏe (thuốc/sự cố/đo lường/dị ứng) · Học phí (HĐ/chi tiết/VietQR/thu tiền/in/hủy) · Thông báo · Nhật ký · Cài đặt trường. Tất cả qua `src/api/crm.ts`, i18n VI/EN đầy đủ, bám mock `web/*.html`.
-- Tinh chỉnh BE phục vụ mock: thêm `phone` vào `/tenant/members`, `parents` vào `GET /students`. Verify: 121 e2e PASS · `pnpm build` CRM sạch · smoke cURL 16 endpoint (3 mutate + 13 GET) trả 200/khớp shape.
+- Tinh chỉnh BE phục vụ mock: thêm `phone` vào `/tenant/members`, `parents` vào `GET /students`, reset mật khẩu nhân sự và pickup/check-in/out. Verify gần nhất: `pnpm build` CRM sạch · `kids-api pnpm exec tsc --noEmit` + `pnpm lint` sạch · smoke cURL 16 endpoint (3 mutate + 13 GET) trả 200/khớp shape; e2e full cần chạy lại khi DB local sẵn.
 - **Mở rộng `CRM_FEATURE_IDEAS.md` đã nối UI/API:** Assignments (phân công), Leave (duyệt nghỉ), Weekly menu + allergy warnings, Notifications feed/preferences, Album/upload, Lesson plan, reset mật khẩu nhân sự, quản lý người đón/nhật ký CHECK_IN/CHECK_OUT. Còn cần smoke test dev đầy đủ khi Docker/Postgres local hoạt động.
 - **Quyết định triển khai:** `kids-crm` đi theo hướng **copy-first từ `kids-platform`**, rồi đổi realm/API/page theo CRM. Không scaffold trắng nếu không cần.
 
@@ -116,7 +116,7 @@ Nguồn hiện có: `kids-landing/public/mock-ui/web/`.
   - [x] `baseUrl` mặc định `/api`.
   - [x] gắn `Authorization: Bearer`.
   - [x] gắn `x-language` theo lựa chọn VI/EN trong CRM.
-  - [x] dev proxy giữ `Host: demo.kimthanhkids.vn` hoặc host tenant hiện tại.
+  - [x] dev proxy **không ghim Host tenant**; tenant chọn ở login và gửi `x-tenant`, JWT điều khiển scope sau login.
   - [x] bóc `{ success:true, data, meta? }`.
   - [x] throw `ApiError(code,message,status)` khi `{ success:false }`.
   - [x] `401 -> refresh -> retry once -> logout`.
@@ -218,13 +218,13 @@ Làm từng cụm, mỗi cụm có mock -> component -> API integration -> self-
 ## 3. Seed data + dev vận hành
 
 - [ ] Dùng `pnpm prisma:seed:demo` để có tenant `demo` gói PRO đủ dữ liệu.
-- [ ] CRM dev chạy với host `demo.kimthanhkids.vn`:
+- [ ] CRM dev có thể chạy bằng `localhost:5173` (tenant chọn qua dropdown) hoặc host `demo.kimthanhkids.vn` nếu muốn kiểm tra subdomain:
 
 ```bash
 127.0.0.1 demo.kimthanhkids.vn
 ```
 
-- [ ] Vite proxy CRM phải set `Host: demo.kimthanhkids.vn` khi gọi API local nếu chạy qua `localhost`.
+- [x] Vite proxy CRM không set `Host`; login chọn tenant qua `/public/tenants` và header `x-tenant`.
 - [ ] Demo login tenant:
   - Admin: `admin@hoasen.edu.vn` / `Password123`
   - Phụ huynh mẫu: `ph01@gmail.com` / `Password123`

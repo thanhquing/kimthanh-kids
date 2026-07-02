@@ -11,7 +11,7 @@
 | **2**   | Tích hợp & hạ tầng        | ◻️ Chưa         | Phase 1     | _(tạo khi tới)_                                          |
 | **3**   | AI & nâng cao             | ◻️ Chưa         | Phase 1–2   | _(tạo khi tới)_                                          |
 | **0.5** | Hoàn thiện billing        | ◻️ Chèn khi cần | Phase 0     | _(tạo khi tới)_                                          |
-| **UI**  | kids-platform + kids-crm + mobile | 🟡 Platform ✅ · mobile-web ✅ (Vite PWA) · CRM scaffold+login · mobile-native (Expo) chưa | Toàn bộ API | [PHASE_UI_TASKS.md](./PHASE_UI_TASKS.md)                 |
+| **UI**  | kids-platform + kids-crm + mobile | 🟡 Platform ✅ · CRM ✅ · mobile-web ✅ (Vite PWA) · mobile-native 🟡 Expo scaffold/port P0 | Toàn bộ API | [PHASE_UI_TASKS.md](./PHASE_UI_TASKS.md)                 |
 
 ---
 
@@ -57,7 +57,7 @@ Các phần còn **defer có chủ đích**: **proration** đổi gói giữa k�
 
 ## Phase UI/UX ◻️
 
-API đã ổn định để UI tiêu thụ. **kids-platform** ✅ console nền tảng. **kids-mobile-web** ✅ (React + Vite PWA: tích hợp API thật + i18n VI/EN + login chọn trường qua `x-tenant`). **kids-crm** 🟡 (đã scaffold + login; business API phần lớn chưa tích hợp). **kids-mobile-native** ⛔ chưa khởi tạo → sẽ **copy-first** từ mobile-web (Expo: copy tầng logic, viết lại UI bằng RN). Chọn tenant **độc lập subdomain** (dropdown `/public/tenants` + header `x-tenant`); white-label logo/màu từ `/public/branding`.
+API đã ổn định để UI tiêu thụ. **kids-platform** ✅ console nền tảng. **kids-crm** ✅ web quản trị trường đã nối API thật cho các module P0/P1 chính (dashboard, hồ sơ, điểm danh, báo cáo, sức khỏe, học phí, thông báo, phân công, nghỉ phép, menu, album, giáo án, notifications, pickup, audit, settings). **kids-mobile-web** ✅ React + Vite PWA: API thật + i18n VI/EN + login chọn trường qua `x-tenant`. **kids-mobile-native** 🟡 đã scaffold Expo/copy-first từ mobile-web và port P0 nhiều màn; còn cần smoke thiết bị thật, EAS/dev build, upload ảnh native và push FCM/Expo. Chọn tenant **độc lập subdomain** (dropdown `/public/tenants` + header `x-tenant`); white-label logo/màu từ `/public/branding`.
 
 ---
 

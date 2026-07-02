@@ -20,9 +20,9 @@ Tài liệu tham chiếu cho hệ thống SaaS quản lý mầm non **KimThanh K
 ```
 kimthanh-kids/
 ├── kids-api/             # Backend NestJS + Prisma + PostgreSQL (XONG Phase 0 Tầng A + Phase 1 A→G)
-├── kids-platform/        # Platform Console (React + Vite) — đã scaffold/tích hợp UI nền tảng
-├── kids-crm/             # Web quản trị trường (React+Vite) — 🟡 scaffold + login (business API phần lớn chưa)
-├── kids-mobile-native/   # App native PH/GV (Expo) — ⛔ chưa khởi tạo (sẽ copy-first từ mobile-web)
+├── kids-platform/        # Platform Console (React + Vite) — ✅ console nền tảng đã tích hợp API thật
+├── kids-crm/             # Web quản trị trường (React+Vite) — ✅ các module P0/P1 chính đã nối API thật
+├── kids-mobile-native/   # App native PH/GV (Expo) — 🟡 đã scaffold/port P0; còn test thiết bị/EAS/upload ảnh
 ├── kids-mobile-web/      # App PH/GV (React+Vite PWA) — ✅ API thật + i18n VI/EN + login chọn trường (x-tenant)
 ├── kids-landing/         # Landing page (TanStack Start) — đã có
 └── kids-documentation/   # Tài liệu (thư mục này)
@@ -32,7 +32,7 @@ kimthanh-kids/
 
 - **Phase 0 — Tầng A (Platform/SaaS) — ĐÃ XONG:** đa-tenant, tenant/school, white-label, gói cước, subscription, billing nền tảng, feature-gating, quota, RBAC 2 cấp, auth.
 - **Phase 1 — Tầng B (Domain nghiệp vụ) — ĐÃ XONG (A→G):** B hồ sơ/lớp/nhân sự · C điểm danh/báo cáo · D sức khỏe (health/medicine/incident/allergy/leave) · E học phí (VietQR/tiền mặt/VNPay + chứng từ) · F giao tiếp (announcement/menu/lesson-plan/album) · G observability (notification/dashboard/audit/usage). Mọi bảng domain có `tenantId` + `schoolId`. **Chat realtime đã loại khỏi kế hoạch.**
-- **Phase UI:** `kids-platform` đã scaffold/tích hợp console nền tảng; `kids-crm`, `kids-mobile-native`, `kids-mobile-web` + push FCM là các bước tiếp theo, tiêu thụ lại API đã ổn định.
+- **Phase UI:** `kids-platform` ✅, `kids-mobile-web` ✅ và `kids-crm` ✅ đã tiêu thụ API thật cho các flow chính. `kids-mobile-native` 🟡 đã khởi tạo Expo/copy-first và port nhiều màn P0/P1; còn cần smoke trên thiết bị thật, EAS/dev build, upload ảnh native và push FCM/Expo.
 
 ## Chạy nhanh `kids-api`
 

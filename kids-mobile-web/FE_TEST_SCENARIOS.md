@@ -26,8 +26,8 @@
 | Chức năng | Route | Role | Thao tác | API | Kịch bản |
 |---|---|---|---|---|---|
 | Liệt kê con | `/parent/children` | PH | xem danh sách | `GET /students/mine` | hiện đủ con (tên, lớp, tuổi); rỗng → "chưa có học sinh"; bấm 1 bé → `/parent/student/:id` |
-| Chi tiết bé (PH) | `/parent/student/:id` | PH | xem | lấy từ `/students/mine` | hiện hồ sơ + điểm danh gần nhất + người giám hộ; KHÔNG có khối sức khỏe |
-| Chi tiết bé (GV) | `/teacher/student/:id` | GV | xem | `GET /students/:id` + `/attendance/student/:id` + `/allergies/student/:id` + `/incidents/student/:id` | thêm khối "Cảnh báo sức khỏe" (dị ứng + số sự cố) |
+| Chi tiết bé (PH) | `/parent/student/:id` | PH | xem | lấy từ `/students/mine` + `/attendance/student/:id` + `/allergies/student/:id` + `/incidents/student/:id` | hiện hồ sơ + điểm danh gần nhất + cảnh báo sức khỏe + người giám hộ |
+| Chi tiết bé (GV) | `/teacher/student/:id` | GV | xem | `GET /students/:id` + `/attendance/student/:id` + `/allergies/student/:id` + `/incidents/student/:id` | hiện khối "Cảnh báo sức khỏe" (dị ứng + số sự cố) |
 | Sĩ số lớp | `/teacher/class` | GV | xem + đổi lớp | `GET /classrooms` + `GET /students?classroomId=` | KPI tổng/đang học/cần rà soát; chip chọn lớp; bấm bé → detail |
 
 ## 3. Attendance
@@ -42,8 +42,8 @@
 
 | Chức năng | Route | Role | Thao tác | API | Kịch bản |
 |---|---|---|---|---|---|
-| Soạn/sửa báo cáo | `/teacher/reports/new` | GV | chọn ngày/lớp/bé, tâm trạng, bữa ăn/ngủ/hoạt động/nhận xét, Gửi | `GET /daily-reports?classroomId=&date=` → `POST /daily-reports` (upsert) | nếu đã có báo cáo cho bé/ngày → form prefill; gửi → toast; "Thêm ảnh" disabled (chưa làm) |
-| Feed báo cáo (PH) | `/parent/reports` | PH | xem theo bé | `GET /daily-reports/student/:id` | bé lấy từ `selectedStudentId` (set khi mở detail) hoặc con đầu; rỗng → "chưa có báo cáo" |
+| Soạn/sửa báo cáo | `/teacher/reports/new` | GV | chọn ngày/lớp/bé, tâm trạng, bữa ăn/ngủ/hoạt động/nhận xét, đính kèm ảnh, Gửi | `GET /daily-reports?classroomId=&date=` → `POST /media?kind=REPORT_PHOTO` → `POST /daily-reports` (upsert + `photoIds`) | nếu đã có báo cáo cho bé/ngày → form prefill; upload ảnh → preview; gửi → toast |
+| Feed báo cáo (PH) | `/parent/reports` | PH | xem theo bé | `GET /daily-reports/student/:id` | bé lấy từ `selectedStudentId` hoặc con đầu; ảnh báo cáo render qua media Bearer; rỗng → "chưa có báo cáo" |
 
 ## 5. Medicine + Health
 
@@ -68,6 +68,7 @@
 |---|---|---|---|---|---|
 | Xin nghỉ | `/parent/leave` | PH | chọn bé, loại nghỉ (Ốm/Gia đình/Khác), từ/đến, lý do → Gửi | `POST /leave` | gửi → invalidate list → toast + bottom sheet xác nhận |
 | Lịch sử đơn nghỉ | `/parent/leave` | PH | xem | `GET /leave/mine` | mỗi đơn: bé, loại, khoảng ngày, badge trạng thái (Chờ/Duyệt/Từ chối) |
+| Duyệt đơn nghỉ | `/teacher/leave/approve` | GV | lọc đơn chờ, duyệt/từ chối kèm ghi chú | `GET /leave?status=PENDING` · `POST /leave/:id/decide` | thao tác xong → toast + list/badge cập nhật |
 
 ## 8. Announcements + Notifications
 
@@ -86,6 +87,7 @@
 | Thực đơn tuần | `/parent/menu` | PH | xem | `GET /menus` → `GET /menus/:id` | menu mới nhất; meals nhóm theo thứ (Sáng/Trưa/Xế/Tối); rỗng → "chưa có thực đơn" |
 | Album ảnh | `/{role}/album` | PH/GV | chọn album, xem ảnh | `GET /albums` → `GET /albums/:id` · `GET /media/:id/file` (AuthImage Bearer) | chip chọn album (+ số ảnh); grid ảnh fetch blob; ảnh lỗi/thiếu file → ô "—" (không vỡ) |
 | Giáo án tuần | `/teacher/lesson-plan` | GV | xem | `GET /lesson-plans` → `GET /lesson-plans/:id` | plan mới nhất: chủ đề + tuần + hoạt động theo thứ; rỗng → "chưa có giáo án" |
+| Đón trả | `/{role}/pickup` | PH/GV | PH xem người đón/lịch sử; GV ghi CHECK_IN/CHECK_OUT | `GET /pickup/authorizations` · `GET /pickup/events` · `POST /pickup/events` | chọn bé từ query hoặc state; ghi nhận xong list lịch sử cập nhật |
 | Hồ sơ | `/{role}/profile` | PH/GV | xem, đổi ngôn ngữ, đăng xuất | `GET /auth/me` | tên/SĐT thật từ me; toggle VI/EN; "Đổi mật khẩu" (chưa có API); đăng xuất |
 
 ---
@@ -99,4 +101,4 @@
 5. **Mutation → list refresh** (invalidateQueries): tạo thuốc/đơn nghỉ/điểm danh/báo cáo/duyệt → list/badge cập nhật ngay không cần reload.
 6. **Reload sâu** (`/parent/student/:id` trực tiếp) → RoleGuard fetch `me` → render đúng, không nhảy về login khi đã có token hợp lệ.
 
-> **Trạng thái review**: code integrate đã pass build + dict parity 302/302 + cURL từng domain. Bug nghiêm trọng: không. Đã sửa: gate fetch sức khỏe theo teacher. Sẵn sàng để Codex review.
+> **Trạng thái review**: code integrate đã pass build + dict parity 302/302 + cURL từng domain. Bug nghiêm trọng: không. Đã mở khối sức khỏe cho PH/GV và nối ảnh báo cáo ngày. Sẵn sàng làm Playwright smoke theo bảng này.

@@ -8,7 +8,7 @@
 
 | Mobile (PH/GV) làm gì | CRM phải có gì (role) | Trạng thái backend |
 |---|---|---|
-| Đăng nhập bằng SĐT | Cấp tài khoản + SĐT + mật khẩu mặc định (generate thuật toán), reset mật khẩu (ADMIN) | provisioning có; reset chưa có |
+| Đăng nhập bằng SĐT | Cấp tài khoản + SĐT + mật khẩu mặc định, reset mật khẩu (ADMIN/PRINCIPAL) | provisioning + `PATCH /tenant/members/:userId/password` có |
 | Xem danh sách con / sĩ số lớp | Quản lý học sinh + xếp lớp + gán phụ huynh (ADMIN) | students/classrooms CRUD có |
 | GV điểm danh | Bảng tổng hợp điểm danh toàn trường + cảnh báo vắng (ADMIN/PRINCIPAL) | attendance có |
 | GV gửi báo cáo ngày | Theo dõi % báo cáo đã gửi / nhắc GV (PRINCIPAL) | daily-reports có |
@@ -38,14 +38,14 @@
 
 ### TEACHER (giáo viên) — đa số đã có trên mobile, CRM bổ trợ desktop
 - **Bản desktop của**: điểm danh, soạn báo cáo, duyệt thuốc, soạn thông báo lớp, giáo án — thao tác nhanh hơn trên màn lớn (nhập hàng loạt).
-- **Duyệt đơn nghỉ của lớp mình** (mobile chưa có màn duyệt nghỉ cho GV — chỉ PH gửi). → CRM nên có inbox đơn nghỉ.
-- **Quản lý album lớp**: **upload ảnh** (mobile chỉ xem; album cần ảnh từ đâu? → CRM/GV upload). Đây là mắt xích còn thiếu: mobile xem album nhưng chưa có nơi đẩy ảnh.
-- **Soạn giáo án tuần** kèm hoạt động theo ngày (mobile GV chỉ xem).
+- **Duyệt đơn nghỉ của lớp mình**: CRM có inbox duyệt; mobile-web cũng đã có màn GV duyệt nhanh.
+- **Quản lý album lớp**: CRM có upload media → album; mobile-web/native đọc album cùng nguồn.
+- **Soạn giáo án tuần** kèm hoạt động theo ngày: CRM có màn tạo/list/detail/delete; mobile GV xem.
 
 ### NURSE (y tá) — mảng sức khỏe mobile chưa khai thác hết
 - **Lịch cho uống thuốc hôm nay**: từ các yêu cầu APPROVED → danh sách bé cần cho uống theo giờ + **log từng lần thực hiện** (mobile mới có duyệt + đánh dấu "đã cho uống" 1 lần; y tá cần lịch chi tiết).
 - **Hồ sơ sức khỏe**: quản lý **dị ứng** từng bé (mobile chỉ đọc), tiêm chủng, chỉ số cơ bản.
-- **Sự cố/incident**: ghi nhận sự cố (té ngã, sốt…) + mức độ + xử lý → mobile PH nên được xem sự cố của con (hiện mobile chỉ GV xem). *Gợi ý: mở khối sức khỏe cho PH trên mobile vì API `/incidents/student/:id` đã cho PARENT.*
+- **Sự cố/incident**: ghi nhận sự cố (té ngã, sốt…) + mức độ + xử lý → mobile PH/GV đã xem khối sức khỏe trong hồ sơ bé.
 - **Soát dị ứng thực đơn**: đối chiếu thực đơn tuần với dị ứng của bé (`/menus/:id/allergy-warnings`) → cảnh báo bếp.
 
 ### FINANCE (kế toán) — đối ứng học phí mobile
@@ -56,22 +56,27 @@
 
 ---
 
-## Mắt xích còn THIẾU (mobile có màn nhưng chưa có nguồn/đối ứng) — ưu tiên cho CRM
+## Mắt xích đã khép kín giữa mobile ↔ CRM
 
-1. **Upload ảnh album** — mobile xem album nhưng chưa nơi nào đẩy ảnh (seed thiếu file). CRM/GV cần màn upload media → album. (cao)
-2. **Reset mật khẩu** — mobile defer; CRM ADMIN phải có nút reset (vì không có self-service). (cao)
-3. **Duyệt đơn xin nghỉ** — PH gửi trên mobile nhưng chưa role nào duyệt trên mobile. CRM cần inbox duyệt nghỉ (GV/ADMIN). (cao)
-4. **Phát hành hóa đơn** — PH chỉ thấy hóa đơn có sẵn; FINANCE cần màn tạo/đợt phát hành. (cao)
-5. **Lịch cho uống thuốc + log y tế** — mobile duyệt thuốc nhưng thực thi hằng ngày thuộc NURSE. (trung bình)
-6. **Soạn thực đơn / giáo án** — mobile chỉ xem; cần màn soạn (ADMIN/NURSE/GV). (trung bình)
-7. **Quản lý người đón / điểm danh ra-về** — đã bổ sung API `pickup` + CRM `PickupPage`; mobile có thể đọc cùng nguồn để hiển thị người được phép đón và lịch sử CHECK_IN/CHECK_OUT.
+1. **Upload ảnh album** — CRM/GV có upload media → album; mobile đọc album/ảnh bằng `AuthImage`/`expo-image`.
+2. **Reset mật khẩu** — CRM ADMIN/PRINCIPAL có nút reset; mobile vẫn defer self-service forgot/reset cho tới khi có email/SMS infra.
+3. **Duyệt đơn xin nghỉ** — CRM có inbox duyệt; mobile-web GV cũng đã có màn duyệt/từ chối nhanh.
+4. **Phát hành hóa đơn** — FINANCE/ADMIN tạo hóa đơn trong CRM; PH xem và thanh toán từ mobile.
+5. **Soạn thực đơn / giáo án** — CRM tạo thực đơn/giáo án; mobile xem.
+6. **Quản lý người đón / điểm danh ra-về** — API `pickup` + CRM `PickupPage`; mobile PH/GV xem lịch sử, GV ghi CHECK_IN/CHECK_OUT.
+
+## Mắt xích còn nên polish
+
+1. **Lịch cho uống thuốc chi tiết cho NURSE** — hiện có handle duyệt/từ chối/đã cho uống; nếu vận hành y tế sâu hơn cần lịch theo giờ + log nhiều lần trong ngày.
+2. **Biên nhận/lịch sử thanh toán giàu hơn trên mobile** — PH đã xem hóa đơn/thanh toán; có thể thêm biên nhận sau đối soát.
+3. **Upload ảnh native** — mobile-web đã upload ảnh báo cáo; native còn cần image-picker → `/media`.
 
 ---
 
 ## Gợi ý nâng cấp mobile-web (để PH/GV dùng hiệu quả hơn) — đối chiếu CRM
 
-- **PH xem sức khỏe con**: API `/allergies|/incidents/student/:id` đã cho PARENT → mở khối sức khỏe cho PH trên StudentDetail (hiện chỉ GV). Tương ứng NURSE nhập liệu trên CRM.
-- **GV duyệt đơn nghỉ ngay trên mobile** thay vì chỉ CRM — đối ứng nhanh với PH gửi.
+- **PH xem sức khỏe con**: đã mở khối dị ứng/sự cố trong StudentDetail; tương ứng NURSE/CRM nhập liệu.
+- **GV duyệt đơn nghỉ ngay trên mobile**: đã nối mobile-web; CRM vẫn là inbox vận hành desktop.
 - **PH nhận biên nhận sau thanh toán** + lịch sử thanh toán — đối ứng FINANCE đối soát.
 - **Đính kèm ảnh vào báo cáo ngày** — đã nối mobile GV upload ảnh qua media, `POST /daily-reports` nhận `photoIds`, PH xem ảnh trong report feed.
 
