@@ -7,23 +7,20 @@
   "scripts": {
     "openapi": "cd kids-api && pnpm openapi:json",
     "gen:api": "node scripts/gen-api.mjs",
-
+    "gen:icons": "node scripts/gen-icons.mjs",
     "db:up": "cd kids-api && pnpm db:up",
     "db:down": "cd kids-api && pnpm db:down",
     "seed:demo": "cd kids-api && pnpm prisma:seed:demo",
-
     "dev:api": "cd kids-api && pnpm start:dev",
     "dev:landing": "cd kids-landing && pnpm dev",
     "dev:platform": "cd kids-platform && pnpm dev",
     "dev:crm": "cd kids-crm && pnpm dev",
     "dev:mobile": "cd kids-mobile-native && pnpm start",
     "dev:mobile-web": "cd kids-mobile-web && pnpm dev",
-
     "build:landing": "cd kids-landing && pnpm build",
     "build:platform": "cd kids-platform && pnpm build",
     "build:crm": "cd kids-crm && pnpm build",
     "build:mobile-web": "cd kids-mobile-web && pnpm build",
-
     "install:landing": "cd kids-landing && pnpm install",
     "install:platform": "cd kids-platform && pnpm install",
     "install:crm": "cd kids-crm && pnpm install",
@@ -31,7 +28,8 @@
     "install:mobile-web": "cd kids-mobile-web && pnpm install"
   },
   "devDependencies": {
-    "openapi-typescript": "^7.4.0"
+    "openapi-typescript": "^7.4.0",
+    "sharp": "^0.35.3"
   },
   "engines": {
     "node": ">=22"

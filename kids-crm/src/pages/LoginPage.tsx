@@ -1,8 +1,9 @@
-import { Building2, Headphones, Lock, Phone, Sun, UserCog } from "lucide-react";
+import { Building2, Headphones, Lock, Phone, UserCog } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
 import { ApiError } from "@/api/http";
+import logoFull from "@/assets/logo-kimthanh.png";
 import type { TenantOption } from "@/api/public";
 import { Modal } from "@/components/ui/Modal";
 import { TenantSelect } from "@/components/ui/TenantSelect";
@@ -46,11 +47,8 @@ export function LoginPage() {
     <main className="min-h-screen grid place-items-center bg-[#fff8f3] p-6">
       <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl shadow-[#b94a3f]/15 ring-1 ring-white/70 md:grid-cols-2">
         <div className="brand-grad text-white p-10 hidden md:flex flex-col justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-white/20 grid place-items-center">
-              <Sun className="w-5 h-5" />
-            </div>
-            <span className="font-bold">{t("brand.name")}</span>
+          <div className="inline-flex w-fit rounded-2xl bg-white px-4 py-3 shadow-lg shadow-[#b94a3f]/15">
+            <img src={logoFull} alt={t("brand.name")} className="h-12 w-auto" />
           </div>
           <div>
             <div className="text-3xl font-bold mb-2">

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
 import { ApiError } from "@/api/http";
+import logoFull from "@/assets/logo-kimthanh.png";
 import { useT } from "@/i18n";
 
 export function LoginPage() {
@@ -30,13 +31,10 @@ export function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center brand-grad p-4">
       <form onSubmit={onSubmit} className="card w-full max-w-md p-8">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl brand-grad grid place-items-center text-white font-bold">
-            K
-          </div>
+        <div className="mb-1">
+          <img src={logoFull} alt={t("brand.name")} className="h-14 w-auto" />
           <div>
-            <div className="font-bold text-lg leading-tight">{t("brand.name")}</div>
-            <div className="text-xs text-slate-400">{t("login.consoleInternal")}</div>
+            <div className="mt-1 text-xs text-slate-400">{t("login.consoleInternal")}</div>
           </div>
         </div>
         <h1 className="text-xl font-bold mt-5">{t("login.title")}</h1>

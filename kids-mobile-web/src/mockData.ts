@@ -24,7 +24,7 @@ export type Invoice = {
 };
 
 export const assets = {
-  logo: "/mock-ui/logo.png",
+  logo: "/logo-kimthanh.png",
   teacher: "/mock-ui/images/teacher.jpg",
   parent: "/mock-ui/images/parent.jpg",
   avatar1: "/mock-ui/images/avatar-1.jpg",
@@ -205,4 +205,3 @@ export const notifications = [
 ];
 
 export const money = new Intl.NumberFormat("vi-VN");
-

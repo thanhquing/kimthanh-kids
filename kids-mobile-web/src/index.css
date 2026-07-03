@@ -256,6 +256,14 @@
   }
 }
 
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 @layer utilities {
   .safe-top {
     padding-top: max(2.25rem, env(safe-area-inset-top));
@@ -296,4 +304,3 @@
     padding-bottom: max(14px, env(safe-area-inset-bottom));
   }
 }
-

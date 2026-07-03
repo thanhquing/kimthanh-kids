@@ -221,6 +221,15 @@
   }
 }
 
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select,
+  [cmdk-input] {
+    font-size: 16px !important;
+  }
+}
+
 @layer utilities {
   .font-display {
     font-family: var(--font-display);

@@ -258,6 +258,14 @@
   }
 }
 
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* In hóa đơn: chỉ in vùng .print-area, ẩn phần còn lại (sidebar, nút...). */
 @media print {
   body * {

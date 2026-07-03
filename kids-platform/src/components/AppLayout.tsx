@@ -16,6 +16,7 @@ import {
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { logout } from "@/api/auth";
+import logoFull from "@/assets/logo-kimthanh.png";
 import { useT, type TKey, type Translator } from "@/i18n";
 import { languageStore, type Language } from "@/lib/language";
 import { cn } from "@/lib/utils";
@@ -176,13 +177,10 @@ export function AppLayout() {
     <div className="flex">
       {/* Sidebar — chỉ desktop */}
       <aside className="sidebar hidden md:flex md:flex-col">
-        <div className="flex items-center gap-2 px-2 mb-4">
-          <div className="w-8 h-8 rounded-lg brand-grad grid place-items-center text-white font-bold">
-            K
-          </div>
+        <div className="px-2 mb-4">
+          <img src={logoFull} alt="KimThanh Kids" className="h-10 w-auto max-w-[160px]" />
           <div>
-            <div className="font-bold text-sm">{t("brand.name")}</div>
-            <div className="text-xs text-slate-400">{t("brand.console")}</div>
+            <div className="mt-1 text-xs text-slate-400">{t("brand.console")}</div>
           </div>
         </div>
 
