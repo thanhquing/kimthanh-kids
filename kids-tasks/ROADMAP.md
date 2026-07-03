@@ -12,6 +12,7 @@
 | **3**   | AI & nâng cao             | ◻️ Chưa         | Phase 1–2   | _(tạo khi tới)_                                          |
 | **0.5** | Hoàn thiện billing        | ◻️ Chèn khi cần | Phase 0     | _(tạo khi tới)_                                          |
 | **UI**  | kids-platform + kids-crm + mobile | 🟡 Platform ✅ · CRM ✅ · mobile-web ✅ (Vite PWA) · mobile-native 🟡 Expo scaffold/port P0 | Toàn bộ API | [PHASE_UI_TASKS.md](./PHASE_UI_TASKS.md)                 |
+| **L**   | Landing self-service      | ✅ MVP xong     | Phase 0 + UI | [PHASE_LANDING_SELF_SERVICE_TASKS.md](./PHASE_LANDING_SELF_SERVICE_TASKS.md) |
 
 ---
 
@@ -58,6 +59,10 @@ Các phần còn **defer có chủ đích**: **proration** đổi gói giữa k�
 ## Phase UI/UX ◻️
 
 API đã ổn định để UI tiêu thụ. **kids-platform** ✅ console nền tảng. **kids-crm** ✅ web quản trị trường đã nối API thật cho các module P0/P1 chính (dashboard, hồ sơ, điểm danh, báo cáo, sức khỏe, học phí, thông báo, phân công, nghỉ phép, menu, album, giáo án, notifications, pickup, audit, settings). **kids-mobile-web** ✅ React + Vite PWA: API thật + i18n VI/EN + login chọn trường qua `x-tenant`. **kids-mobile-native** 🟡 đã scaffold Expo/copy-first từ mobile-web và port P0 nhiều màn; còn cần smoke thiết bị thật, EAS/dev build, upload ảnh native và push FCM/Expo. Chọn tenant **độc lập subdomain** (dropdown `/public/tenants` + header `x-tenant`); white-label logo/màu từ `/public/branding`.
+
+## Phase L — Landing self-service ✅ MVP
+
+`kids-landing` đã có pricing public từ API, signup trường thật, tenant Free ACTIVE ngay, gói trả phí tạo hóa đơn nâng cấp + VietQR, và blog landing đọc từ `kids-platform` CMS nhỏ. Auto đối soát ngân hàng/lead API nâng cao vẫn để P2. Chi tiết: [PHASE_LANDING_SELF_SERVICE_TASKS.md](./PHASE_LANDING_SELF_SERVICE_TASKS.md).
 
 ---
 

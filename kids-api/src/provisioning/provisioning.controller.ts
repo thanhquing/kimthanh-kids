@@ -1,6 +1,8 @@
 import { Body, Controller, Get, Post, Query, UsePipes } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { BillingCycle } from "@prisma/client";
 import { z } from "zod";
+import { BillingService } from "../billing/billing.service";
 import { Public } from "../common/decorators/public.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { isValidTaxCode } from "../common/validation/tax-code";
@@ -17,6 +19,8 @@ const signupSchema = z.object({
   adminPassword: z.string().min(8),
   adminFullName: z.string().min(2).max(120),
   phone: z.string().max(20).optional(),
+  planCode: z.string().min(2).max(40).optional(),
+  billingCycle: z.nativeEnum(BillingCycle).optional(),
 });
 type SignupDto = z.infer<typeof signupSchema>;
 
@@ -24,7 +28,15 @@ type SignupDto = z.infer<typeof signupSchema>;
 @Public()
 @Controller("public")
 export class ProvisioningController {
-  constructor(private readonly provisioning: ProvisioningService) {}
+  constructor(
+    private readonly provisioning: ProvisioningService,
+    private readonly billing: BillingService,
+  ) {}
+
+  @Get("plans")
+  plans() {
+    return this.billing.listPublicPlans();
+  }
 
   @Post("signup")
   @UsePipes(new ZodValidationPipe(signupSchema))

@@ -9,6 +9,8 @@
 | 01  | [Business Flows](01-BUSINESS-FLOWS.md)         | CEO · PO · chủ trường     | Hiểu sản phẩm làm gì, hành trình người dùng, góp ý flow        |
 | 02  | [Roles & Permissions](02-ROLES-PERMISSIONS.md) | PO · đào tạo · onboarding | Từng vai trò làm được gì, thao tác ra sao, ma trận quyền       |
 | 03  | [Sales Playbook](03-SALES-PLAYBOOK.md)         | Nhân viên Sale            | Kịch bản nói chuyện khách (học thuộc), bảng giá, xử lý từ chối |
+| 04  | [SEO Content Playbook](seo-content/SEO-CONTENT-PLAYBOOK.md) | Marketing · CEO · AI agent | Cách chọn topic, viết bài SEO/AI Overview và phân phối đa kênh |
+| 05  | [Data 20 bài SEO B2B SaaS](seo-content/2026-B2B-SAAS-BLOG-DATA-20-POSTS.md) | Marketing · Content · Sale | Backlog 20 bài SEO có keyword, outline, CTA, ảnh và schema     |
 
 ## Tài liệu kỹ thuật liên quan (ở `kids-documentation/`)
 

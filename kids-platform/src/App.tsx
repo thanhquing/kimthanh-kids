@@ -11,6 +11,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { PublicInvoicePage } from "./pages/PublicInvoicePage";
 import { ObservabilityPage } from "./pages/ObservabilityPage";
 import { PlansPage } from "./pages/PlansPage";
+import { PostsPage } from "./pages/PostsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { SubscriptionsPage } from "./pages/SubscriptionsPage";
 import { TenantDetailPage } from "./pages/TenantDetailPage";
@@ -47,6 +48,7 @@ export function App() {
         <Route path="/invoices" element={<InvoicesPage />} />
         <Route path="/invoices/:id" element={<InvoiceDetailPage />} />
         <Route path="/plans" element={<PlansPage />} />
+        <Route path="/posts" element={<PostsPage />} />
         <Route path="/coupons" element={<CouponsPage />} />
         <Route path="/worklist" element={<WorklistPage />} />
         <Route path="/observability" element={<ObservabilityPage />} />

@@ -5,7 +5,8 @@ import { useT } from "@/i18n";
 
 /**
  * Ô tìm + chọn trường ở màn login (độc lập subdomain). Gõ ≥ 2 ký tự → debounce gọi
- * /public/tenants; item hiển thị logo (placeholder nếu thiếu), tên trường, mã trường, MST.
+ * /public/tenants (tìm được theo tên/mã trường/MST); item hiện logo (placeholder nếu thiếu),
+ * tên trường, mã trường. KHÔNG hiển thị MST trên item.
  */
 export function TenantSelect({
   value,
@@ -69,7 +70,7 @@ export function TenantSelect({
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold">{value.displayName}</span>
             <span className="block truncate text-xs text-slate-500">
-              {[value.code, value.taxCode].filter(Boolean).join(" · ") || value.slug}
+              {value.code || value.slug}
             </span>
           </span>
           <span className="text-xs font-medium text-[color:var(--primary)]">{t("auth.schoolChange")}</span>
@@ -109,12 +110,7 @@ export function TenantSelect({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{tenant.displayName}</span>
                   <span className="block truncate text-xs text-slate-500">
-                    {[
-                      tenant.code ? `${t("auth.schoolCodeShort")}: ${tenant.code}` : null,
-                      tenant.taxCode ? `${t("auth.taxShort")}: ${tenant.taxCode}` : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ") || tenant.slug}
+                    {tenant.code ? `${t("auth.schoolCodeShort")}: ${tenant.code}` : tenant.slug}
                   </span>
                 </span>
               </button>

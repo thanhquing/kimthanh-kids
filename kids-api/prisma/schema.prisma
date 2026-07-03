@@ -169,6 +169,12 @@ enum DiscountKind {
   FIXED_AMOUNT
 }
 
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 // ───────────────────── NHÓM 1: IDENTITY & TENANCY ─────────────────────
 
 model Tenant {
@@ -571,6 +577,31 @@ model PlatformConfig {
   updatedAt          DateTime @updatedAt
 
   @@map("platform_config")
+}
+
+// ──────────────── NỘI DUNG LANDING (platform-global) ────────────────
+
+model PlatformPost {
+  id              String     @id @default(uuid())
+  slug            String     @unique
+  title           String
+  excerpt         String?
+  contentMarkdown String
+  coverImageUrl   String?
+  category        String?
+  tags            String[]
+  status          PostStatus @default(DRAFT)
+  seoTitle        String?
+  seoDescription  String?
+  publishedAt     DateTime?
+  authorId        String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  deletedAt       DateTime?
+
+  @@index([status, publishedAt])
+  @@index([deletedAt])
+  @@map("platform_posts")
 }
 
 // ──────────────── NHÓM 5: ENTITLEMENT / USAGE / COUPON / CREDIT ────────────────

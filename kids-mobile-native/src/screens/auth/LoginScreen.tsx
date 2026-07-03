@@ -22,7 +22,7 @@ function TenantRow({ item, onPress }: { item: TenantOption; onPress: (tenant: Te
       </View>
       <View className="flex-1">
         <Text className="font-semibold text-ink">{item.displayName}</Text>
-        <Text className="text-xs text-muted">{[item.code, item.taxCode].filter(Boolean).join(" · ") || item.slug}</Text>
+        <Text className="text-xs text-muted">{item.code || item.slug}</Text>
       </View>
     </Pressable>
   );
@@ -108,7 +108,7 @@ export default function LoginScreen() {
         {tenant ? (
           <View className="rounded-sm bg-sand p-3">
             <Text className="font-semibold text-ink">{tenant.displayName}</Text>
-            <Text className="text-xs text-muted">{[tenant.code, tenant.taxCode].filter(Boolean).join(" · ")}</Text>
+            <Text className="text-xs text-muted">{tenant.code || tenant.slug}</Text>
           </View>
         ) : null}
         <View className="h-52 rounded-sm border border-line-soft px-3">

@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import {
+  BillingCurrency,
   BillingCycle,
   PlatformInvoiceStatus,
   Prisma,
@@ -24,7 +25,21 @@ export class BillingService {
     return this.prisma.system.plan.findMany({
       where: { isPublic: true, isActive: true, deletedAt: null },
       orderBy: { sortOrder: "asc" },
-      include: { prices: { where: { isActive: true } }, features: true, limits: true },
+      select: {
+        id: true,
+        code: true,
+        tier: true,
+        name: true,
+        description: true,
+        trialDays: true,
+        sortOrder: true,
+        prices: {
+          where: { isActive: true },
+          select: { billingCycle: true, currency: true, amount: true, isActive: true },
+        },
+        features: { select: { featureKey: true, enabled: true } },
+        limits: { select: { metric: true, limitValue: true, enforcement: true } },
+      },
     });
   }
 
@@ -156,6 +171,80 @@ export class BillingService {
     });
   }
 
+  /** Tạo hóa đơn nâng cấp sau signup: tenant vẫn đang dùng Free cho tới khi invoice PAID. */
+  async createSignupUpgradeInvoice(tenantId: string, planCode: string, billingCycle: BillingCycle) {
+    const sub = await this.prisma.system.subscription.findUnique({
+      where: { tenantId },
+      include: { tenant: true },
+    });
+    if (!sub) throw new NotFoundException({ code: "NO_SUBSCRIPTION", message: "Chưa có thuê bao" });
+
+    const plan = await this.prisma.system.plan.findFirst({
+      where: { code: planCode, isPublic: true, isActive: true, deletedAt: null },
+    });
+    if (!plan) throw new BadRequestException({ code: "INVALID_PLAN", message: "Gói không hợp lệ" });
+    if (plan.code === "free") {
+      throw new BadRequestException({
+        code: "FREE_PLAN",
+        message: "Gói Free không cần hóa đơn nâng cấp",
+      });
+    }
+
+    const price = await this.prisma.system.planPrice.findUnique({
+      where: {
+        planId_billingCycle_currency: {
+          planId: plan.id,
+          billingCycle,
+          currency: BillingCurrency.VND,
+        },
+      },
+    });
+    if (!price || !price.isActive || Number(price.amount) <= 0) {
+      throw new BadRequestException({
+        code: "NO_PUBLIC_PRICE",
+        message: "Gói này cần liên hệ tư vấn để báo giá",
+      });
+    }
+
+    const issuedAt = new Date();
+    const amount = price.amount;
+    const periodStart = issuedAt;
+    const periodEnd = new Date(issuedAt.getTime() + CYCLE_DAYS[billingCycle] * 86_400_000);
+    const invoiceNumber = await this.nextInvoiceNumber(sub.tenant.slug, plan.code, issuedAt);
+    return this.prisma.system.platformInvoice.create({
+      data: {
+        invoiceNumber,
+        tenantId,
+        subscriptionId: sub.id,
+        status: PlatformInvoiceStatus.OPEN,
+        currency: BillingCurrency.VND,
+        periodStart,
+        periodEnd,
+        subtotal: amount,
+        total: amount,
+        issuedAt,
+        dueAt: new Date(issuedAt.getTime() + 7 * 86_400_000),
+        metadata: {
+          type: "SIGNUP_UPGRADE",
+          targetPlanId: plan.id,
+          targetPlanCode: plan.code,
+          targetBillingCycle: billingCycle,
+        },
+        lines: {
+          create: {
+            kind: "SUBSCRIPTION",
+            label: `${plan.name} — ${billingCycle}`,
+            quantity: 1,
+            unitPrice: amount,
+            amount,
+            metadata: { targetPlanCode: plan.code, targetBillingCycle: billingCycle },
+          },
+        },
+      },
+      include: { lines: true },
+    });
+  }
+
   /** Đánh dấu hóa đơn đã thanh toán → reactivate + đẩy kỳ nếu là renew. Dùng bởi manual & webhook. */
   async markInvoicePaid(invoiceId: string, paidAmount: Prisma.Decimal | number) {
     const invoice = await this.prisma.system.platformInvoice.findUnique({
@@ -168,9 +257,81 @@ export class BillingService {
     // "Đánh dấu đã thu" thủ công (không truyền số tiền) = trả ĐỦ → amountPaid = total
     // (tránh trạng thái PAID nhưng amountDue vẫn > 0). Có truyền amount thì dùng đúng số đó.
     const paid = Number(paidAmount) > 0 ? paidAmount : invoice.total;
+    const paidData = {
+      status: PlatformInvoiceStatus.PAID,
+      amountPaid: paid,
+      paidAt: new Date(),
+    };
+
+    const metadata =
+      invoice.metadata && typeof invoice.metadata === "object" && !Array.isArray(invoice.metadata)
+        ? (invoice.metadata as Record<string, unknown>)
+        : {};
+    const isSignupUpgrade = metadata.type === "SIGNUP_UPGRADE";
+
+    // Signup upgrade: chỉ khi đã thu mới đổi từ Free sang gói đã chọn và reset kỳ tính phí.
+    if (isSignupUpgrade) {
+      const targetPlanId = typeof metadata.targetPlanId === "string" ? metadata.targetPlanId : null;
+      const targetBillingCycle =
+        typeof metadata.targetBillingCycle === "string"
+          ? (metadata.targetBillingCycle as BillingCycle)
+          : null;
+      // Validate TRƯỚC khi ghi PAID: tránh hóa đơn PAID nhưng gói không được nâng cấp.
+      if (!targetPlanId || !targetBillingCycle) {
+        throw new BadRequestException({
+          code: "INVALID_UPGRADE_INVOICE",
+          message: "Hóa đơn nâng cấp thiếu thông tin gói",
+        });
+      }
+      const sub = await this.prisma.system.subscription.findUnique({
+        where: { tenantId: invoice.tenantId },
+      });
+      // Không có thuê bao (bất thường): vẫn ghi nhận đã thu, không có gì để nâng cấp.
+      if (!sub) {
+        return this.prisma.system.platformInvoice.update({
+          where: { id: invoiceId },
+          data: paidData,
+        });
+      }
+      const now = new Date();
+      const newEnd = new Date(now.getTime() + CYCLE_DAYS[targetBillingCycle] * 86_400_000);
+      // Ghi PAID + đổi gói + log thay đổi trong CÙNG 1 transaction (nguyên tử).
+      const [updatedInvoice] = await this.prisma.system.$transaction([
+        this.prisma.system.platformInvoice.update({ where: { id: invoiceId }, data: paidData }),
+        this.prisma.system.subscription.update({
+          where: { tenantId: invoice.tenantId },
+          data: {
+            planId: targetPlanId,
+            billingCycle: targetBillingCycle,
+            status: SubscriptionStatus.ACTIVE,
+            currentPeriodStart: now,
+            currentPeriodEnd: newEnd,
+            entitlementsCache: Prisma.DbNull,
+            pastDueSince: null,
+            suspendedAt: null,
+          },
+        }),
+        this.prisma.system.subscriptionChange.create({
+          data: {
+            subscriptionId: sub.id,
+            type: SubscriptionChangeType.UPGRADE,
+            fromPlanId: sub.planId,
+            toPlanId: targetPlanId,
+            fromCycle: sub.billingCycle,
+            toCycle: targetBillingCycle,
+            effectiveAt: now,
+            reason: "signup_upgrade_paid",
+            metadata: { invoiceId },
+          },
+        }),
+      ]);
+      await this.lifecycle.syncTenantCache(invoice.tenantId);
+      return updatedInvoice;
+    }
+
     await this.prisma.system.platformInvoice.update({
       where: { id: invoiceId },
-      data: { status: PlatformInvoiceStatus.PAID, amountPaid: paid, paidAt: new Date() },
+      data: paidData,
     });
 
     // Reactivate subscription + đẩy kỳ mới.

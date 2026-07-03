@@ -28,10 +28,10 @@ kids-api/src/
 ├── tenancy/                 # TenantResolutionMiddleware (SILO → Host → x-tenant → JWT)
 ├── auth/                    # login/refresh/logout/me + TokenService + UserContextService
 ├── entitlement/             # EntitlementService (resolve features/limits + quota)
-├── provisioning/            # POST /public/signup + branding + availability + GET /public/tenants (discovery chọn trường, độc lập subdomain)
+├── provisioning/            # POST /public/signup + public plans + branding + availability + GET /public/tenants (discovery chọn trường, độc lập subdomain)
 ├── billing/                 # plan/subscription/invoice/payment/webhook/cron/lifecycle (grace dunning ← PlatformConfig)
 ├── platform-config/         # PlatformConfigService — config nền tảng singleton (NH VietQR + grace dunning); dùng chung billing + platform (tránh cycle)
-├── platform/                # platform-admin (tenants/subs/invoices/plans/coupons/audit/worklist/settings) + dashboard overview + MRR snapshot/cron + PublicInvoiceController (@Public link hóa đơn /public/platform-invoices/:token)
+├── platform/                # platform-admin (tenants/subs/invoices/plans/coupons/audit/worklist/settings/posts) + dashboard/MRR + PublicInvoiceController + PublicPostsController
 ├── tenant/                  # self-service (settings/white-label/schools/members/domains)
 │   ── Phase 1 (domain nghiệp vụ A→G) ──
 ├── students/ classrooms/    # B  hồ sơ học sinh + lớp + guardian
@@ -81,7 +81,8 @@ Request
 2. **Tenant 1..N School** — Tenant là đơn vị thuê/billing; School là cơ sở. Hỗ trợ chuỗi (tier ENTERPRISE).
 3. **Subscription là nguồn chân lý trạng thái**; `Tenant.status` là cache để guard đọc nhanh.
 4. **Tách 2 lớp billing**: platform (bạn ← trường) vs tuition (trường ← phụ huynh, thuộc Phase 1). Bảng platform có prefix `Platform*`.
-5. **`prisma.db` (auto-filter) vs `prisma.system` (raw)** — phân tách rõ để chống rò rỉ.
+5. **Content landing là platform-global:** `PlatformPost` phục vụ blog/SEO landing, quản lý bởi `kids-platform`, public đọc qua `/public/posts`. Bảng này **không tenant-scoped**, dùng `prisma.system`, không thêm vào `TENANT_KEY`. Cover blog là public asset của API (`/public/assets/blog/:file`, nguồn `kids-api/public/blog` hoặc storage/CDN sau này); landing chỉ render `coverImageUrl` API trả về, không giữ bộ ảnh blog production trong bundle FE.
+6. **`prisma.db` (auto-filter) vs `prisma.system` (raw)** — phân tách rõ để chống rò rỉ.
 
 ## Domain nghiệp vụ (Phase 1 — A→G)
 

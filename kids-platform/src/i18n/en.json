@@ -13,6 +13,7 @@
     "invoices": "Platform invoices",
     "coupons": "Coupons",
     "plans": "Plans",
+    "posts": "Posts",
     "settings": "Settings",
     "observability": "Observability",
     "logout": "Sign out",
@@ -22,6 +23,7 @@
   "navGroups": {
     "customers": "Customers",
     "revenue": "Revenue",
+    "content": "Content",
     "config": "Configuration",
     "operations": "Operations"
   },

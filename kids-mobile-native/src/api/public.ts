@@ -6,7 +6,6 @@ export type TenantOption = {
   code: string | null;
   slug: string;
   displayName: string;
-  taxCode: string | null;
   logoUrl: string | null;
   primaryDomain: string | null;
 };

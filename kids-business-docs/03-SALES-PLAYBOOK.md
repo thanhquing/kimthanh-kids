@@ -82,6 +82,12 @@
 
 **Mẹo nâng gói tự nhiên:** "Gói Free đủ để bắt đầu; khi trường đông hơn hoặc muốn **album ảnh / giáo án**, chỉ một cú nâng gói là có ngay, dữ liệu giữ nguyên."
 
+**Luồng đăng ký online / VietQR (nói đúng MVP):**
+- Trường có thể tự chọn gói trên landing và tạo tài khoản chủ trường.
+- Hệ thống luôn mở gói Free ngay để trường vào dùng được, không chờ thanh toán.
+- Nếu chọn gói Khởi đầu/Chuyên nghiệp, landing hiện hóa đơn + VietQR. Trường chuyển khoản với nội dung là **số hóa đơn**.
+- KimThanh Kids đối soát thủ công trong Platform Console; sau khi bấm **Đã thu**, hệ thống tự nâng gói. **Chưa hứa tự động đối soát ngân hàng.**
+
 ---
 
 ## 6. Xử lý từ chối
@@ -111,7 +117,7 @@
 *(Luôn chốt bằng hành động nhỏ, dễ "Yes")*
 
 - **Chốt mềm:** "Em **mở bản Miễn phí** cho trường mình ngay bây giờ nhé, anh/chị cho em **tên trường** thôi là 5 phút sau dùng được."
-- **Chốt theo quy mô:** "Với khoảng [N] bé thì gói **[Khởi đầu/Chuyên nghiệp]** là hợp nhất. Em set up giúp anh/chị, thanh toán theo **tháng hoặc năm** (năm rẻ hơn ~2 tháng)."
+- **Chốt theo quy mô:** "Với khoảng [N] bé thì gói **[Khởi đầu/Chuyên nghiệp]** là hợp nhất. Anh/chị có thể đăng ký trước, chuyển khoản VietQR theo hóa đơn, rồi KimThanh xác nhận để kích hoạt gói."
 - **Tạo cam kết:** "Em hẹn **buổi đào tạo 30 phút** cho giáo viên vào [thứ/ngày] nhé?"
 
 ---

@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable } from "@nestjs/common";
 import {
   BillingCycle,
+  BillingCurrency,
   SubscriptionStatus,
   TenantRole,
   TenantStatus,
@@ -8,6 +9,7 @@ import {
 } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
+import { BillingService } from "../billing/billing.service";
 import { isValidTaxCode, normalizeTaxCode } from "../common/validation/tax-code";
 import { EnvService } from "../config/env.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -38,6 +40,8 @@ export interface SignupInput {
   adminPassword: string;
   adminFullName: string;
   phone?: string;
+  planCode?: string;
+  billingCycle?: BillingCycle;
 }
 
 @Injectable()
@@ -45,6 +49,7 @@ export class ProvisioningService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly env: EnvService,
+    private readonly billing: BillingService,
   ) {}
 
   private hostFor(slug: string): string {
@@ -131,6 +136,26 @@ export class ProvisioningService {
         message: "Chưa cấu hình gói Miễn phí",
       });
 
+    const selectedPlanCode = (input.planCode ?? "free").trim().toLowerCase();
+    const selectedCycle = input.billingCycle ?? BillingCycle.MONTHLY;
+    const selectedPlan = await this.prisma.system.plan.findFirst({
+      where: { code: selectedPlanCode, isPublic: true, isActive: true, deletedAt: null },
+      include: { prices: { where: { isActive: true } } },
+    });
+    if (!selectedPlan) {
+      throw new BadRequestException({ code: "INVALID_PLAN", message: "Gói không hợp lệ" });
+    }
+    const selectedPrice = selectedPlan.prices.find(
+      (p) => p.billingCycle === selectedCycle && p.currency === BillingCurrency.VND,
+    );
+    const isPaidSignup = selectedPlan.code !== "free";
+    if (isPaidSignup && (!selectedPrice || Number(selectedPrice.amount) <= 0)) {
+      throw new BadRequestException({
+        code: "NO_PUBLIC_PRICE",
+        message: "Gói này cần liên hệ tư vấn để báo giá",
+      });
+    }
+
     const code = await this.resolveTenantCode(input.code, input.slug);
 
     const passwordHash = await bcrypt.hash(input.adminPassword, 10);
@@ -140,7 +165,7 @@ export class ProvisioningService {
     const host = this.hostFor(input.slug);
 
     try {
-      return await this.prisma.system.$transaction(async (tx) => {
+      const created = await this.prisma.system.$transaction(async (tx) => {
         const tenant = await tx.tenant.create({
           data: {
             slug: input.slug,
@@ -218,8 +243,35 @@ export class ProvisioningService {
           school: { id: school.id },
           admin: { id: admin.id, email: admin.email },
           subscription: { id: subscription.id, status: subscription.status },
+          selectedPlan: {
+            code: selectedPlan.code,
+            name: selectedPlan.name,
+            tier: selectedPlan.tier,
+            billingCycle: selectedCycle,
+            amount: selectedPrice ? Number(selectedPrice.amount) : 0,
+          },
         };
       });
+
+      if (!isPaidSignup) return created;
+
+      const invoice = await this.billing.createSignupUpgradeInvoice(
+        created.tenant.id,
+        selectedPlan.code,
+        selectedCycle,
+      );
+      return {
+        ...created,
+        upgradeInvoice: {
+          id: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          status: invoice.status,
+          total: Number(invoice.total),
+          amountDue: Number(invoice.total) - Number(invoice.amountPaid),
+          publicToken: invoice.publicToken,
+        },
+        publicInvoiceUrl: `/hoa-don/${invoice.publicToken}`,
+      };
     } catch (e) {
       if (e instanceof Error && "code" in e && (e as { code?: string }).code === "P2002") {
         throw new ConflictException({
@@ -261,7 +313,6 @@ export class ProvisioningService {
         code: true,
         slug: true,
         legalName: true,
-        taxCode: true,
         settings: { select: { displayName: true, logoUrl: true } },
         domains: {
           where: { status: "ACTIVE", isPrimary: true },
@@ -270,12 +321,13 @@ export class ProvisioningService {
         },
       },
     });
+    // Cho tìm theo MST (nằm trong OR filter) NHƯNG không trả MST ra payload — tránh thu thập
+    // hàng loạt qua endpoint công khai. Item chỉ hiện tên/mã trường/logo để chọn ở login.
     return tenants.map((t) => ({
       id: t.id,
       code: t.code,
       slug: t.slug,
       displayName: t.settings?.displayName ?? t.legalName,
-      taxCode: t.taxCode ?? null,
       logoUrl: t.settings?.logoUrl ?? null,
       primaryDomain: t.domains[0]?.host ?? null,
     }));

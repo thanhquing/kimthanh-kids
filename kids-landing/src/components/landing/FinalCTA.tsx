@@ -27,10 +27,10 @@ export function FinalCTA() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3 justify-center">
               <Link
-                to="/lien-he"
+                to="/dang-ky"
                 className="inline-flex items-center gap-2 rounded-full bg-card text-foreground px-7 py-4 text-sm sm:text-base font-bold hover:-translate-y-0.5 transition-all shadow-card"
               >
-                Dùng thử miễn phí ngay
+                Bắt đầu miễn phí ngay
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
@@ -41,7 +41,7 @@ export function FinalCTA() {
               </Link>
             </div>
             <p className="mt-6 text-xs text-primary-foreground/70">
-              Miễn phí 30 ngày · Không cần thẻ tín dụng · Hỗ trợ cài đặt tận nơi
+              Gói Free dùng được ngay · Không cần thẻ tín dụng · Hỗ trợ cài đặt khi nâng gói
             </p>
           </div>
         </Reveal>

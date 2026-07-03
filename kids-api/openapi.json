@@ -176,6 +176,20 @@
         ]
       }
     },
+    "/api/public/plans": {
+      "get": {
+        "operationId": "ProvisioningController_plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "public"
+        ]
+      }
+    },
     "/api/public/signup": {
       "post": {
         "operationId": "ProvisioningController_signup",
@@ -1017,6 +1031,203 @@
         "parameters": [
           {
             "name": "token",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/public/assets/blog/{file}": {
+      "get": {
+        "operationId": "PublicBlogAssetsController_getBlogAsset",
+        "parameters": [
+          {
+            "name": "file",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/platform/posts": {
+      "get": {
+        "operationId": "PlatformPostsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-posts"
+        ]
+      },
+      "post": {
+        "operationId": "PlatformPostsController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-posts"
+        ]
+      }
+    },
+    "/api/platform/posts/{id}": {
+      "get": {
+        "operationId": "PlatformPostsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-posts"
+        ]
+      },
+      "patch": {
+        "operationId": "PlatformPostsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-posts"
+        ]
+      },
+      "delete": {
+        "operationId": "PlatformPostsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-posts"
+        ]
+      }
+    },
+    "/api/platform/posts/{id}/publish": {
+      "post": {
+        "operationId": "PlatformPostsController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-posts"
+        ]
+      }
+    },
+    "/api/platform/posts/{id}/unpublish": {
+      "post": {
+        "operationId": "PlatformPostsController_unpublish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "platform-posts"
+        ]
+      }
+    },
+    "/api/public/posts": {
+      "get": {
+        "operationId": "PublicPostsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "public"
+        ]
+      }
+    },
+    "/api/public/posts/{slug}": {
+      "get": {
+        "operationId": "PublicPostsController_get",
+        "parameters": [
+          {
+            "name": "slug",
             "required": true,
             "in": "path",
             "schema": {
@@ -2042,24 +2253,7 @@
     "/api/pickup/authorizations": {
       "get": {
         "operationId": "PickupController_authorizations",
-        "parameters": [
-          {
-            "name": "studentId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "status",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": ""
@@ -2108,16 +2302,7 @@
     "/api/pickup/logs": {
       "get": {
         "operationId": "PickupController_logs",
-        "parameters": [
-          {
-            "name": "studentId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": ""

@@ -14,8 +14,12 @@ import { Route as TinTucRouteImport } from './routes/tin-tuc'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as LienHeRouteImport } from './routes/lien-he'
 import { Route as GiaiPhapRouteImport } from './routes/giai-phap'
+import { Route as DangKyRouteImport } from './routes/dang-ky'
 import { Route as BangGiaRouteImport } from './routes/bang-gia'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TinTucSlugRouteImport } from './routes/tin-tuc.$slug'
+import { Route as HoaDonTokenRouteImport } from './routes/hoa-don.$token'
+import { Route as DangKyThanhCongRouteImport } from './routes/dang-ky.thanh-cong'
 
 const TinhNangRoute = TinhNangRouteImport.update({
   id: '/tinh-nang',
@@ -42,6 +46,11 @@ const GiaiPhapRoute = GiaiPhapRouteImport.update({
   path: '/giai-phap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DangKyRoute = DangKyRouteImport.update({
+  id: '/dang-ky',
+  path: '/dang-ky',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BangGiaRoute = BangGiaRouteImport.update({
   id: '/bang-gia',
   path: '/bang-gia',
@@ -52,73 +61,114 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TinTucSlugRoute = TinTucSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => TinTucRoute,
+} as any)
+const HoaDonTokenRoute = HoaDonTokenRouteImport.update({
+  id: '/hoa-don/$token',
+  path: '/hoa-don/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DangKyThanhCongRoute = DangKyThanhCongRouteImport.update({
+  id: '/thanh-cong',
+  path: '/thanh-cong',
+  getParentRoute: () => DangKyRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/bang-gia': typeof BangGiaRoute
+  '/dang-ky': typeof DangKyRouteWithChildren
   '/giai-phap': typeof GiaiPhapRoute
   '/lien-he': typeof LienHeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/tin-tuc': typeof TinTucRoute
+  '/tin-tuc': typeof TinTucRouteWithChildren
   '/tinh-nang': typeof TinhNangRoute
+  '/dang-ky/thanh-cong': typeof DangKyThanhCongRoute
+  '/hoa-don/$token': typeof HoaDonTokenRoute
+  '/tin-tuc/$slug': typeof TinTucSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/bang-gia': typeof BangGiaRoute
+  '/dang-ky': typeof DangKyRouteWithChildren
   '/giai-phap': typeof GiaiPhapRoute
   '/lien-he': typeof LienHeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/tin-tuc': typeof TinTucRoute
+  '/tin-tuc': typeof TinTucRouteWithChildren
   '/tinh-nang': typeof TinhNangRoute
+  '/dang-ky/thanh-cong': typeof DangKyThanhCongRoute
+  '/hoa-don/$token': typeof HoaDonTokenRoute
+  '/tin-tuc/$slug': typeof TinTucSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/bang-gia': typeof BangGiaRoute
+  '/dang-ky': typeof DangKyRouteWithChildren
   '/giai-phap': typeof GiaiPhapRoute
   '/lien-he': typeof LienHeRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/tin-tuc': typeof TinTucRoute
+  '/tin-tuc': typeof TinTucRouteWithChildren
   '/tinh-nang': typeof TinhNangRoute
+  '/dang-ky/thanh-cong': typeof DangKyThanhCongRoute
+  '/hoa-don/$token': typeof HoaDonTokenRoute
+  '/tin-tuc/$slug': typeof TinTucSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/bang-gia'
+    | '/dang-ky'
     | '/giai-phap'
     | '/lien-he'
     | '/sitemap.xml'
     | '/tin-tuc'
     | '/tinh-nang'
+    | '/dang-ky/thanh-cong'
+    | '/hoa-don/$token'
+    | '/tin-tuc/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/bang-gia'
+    | '/dang-ky'
     | '/giai-phap'
     | '/lien-he'
     | '/sitemap.xml'
     | '/tin-tuc'
     | '/tinh-nang'
+    | '/dang-ky/thanh-cong'
+    | '/hoa-don/$token'
+    | '/tin-tuc/$slug'
   id:
     | '__root__'
     | '/'
     | '/bang-gia'
+    | '/dang-ky'
     | '/giai-phap'
     | '/lien-he'
     | '/sitemap.xml'
     | '/tin-tuc'
     | '/tinh-nang'
+    | '/dang-ky/thanh-cong'
+    | '/hoa-don/$token'
+    | '/tin-tuc/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BangGiaRoute: typeof BangGiaRoute
+  DangKyRoute: typeof DangKyRouteWithChildren
   GiaiPhapRoute: typeof GiaiPhapRoute
   LienHeRoute: typeof LienHeRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  TinTucRoute: typeof TinTucRoute
+  TinTucRoute: typeof TinTucRouteWithChildren
   TinhNangRoute: typeof TinhNangRoute
+  HoaDonTokenRoute: typeof HoaDonTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -158,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GiaiPhapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dang-ky': {
+      id: '/dang-ky'
+      path: '/dang-ky'
+      fullPath: '/dang-ky'
+      preLoaderRoute: typeof DangKyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bang-gia': {
       id: '/bang-gia'
       path: '/bang-gia'
@@ -172,17 +229,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tin-tuc/$slug': {
+      id: '/tin-tuc/$slug'
+      path: '/$slug'
+      fullPath: '/tin-tuc/$slug'
+      preLoaderRoute: typeof TinTucSlugRouteImport
+      parentRoute: typeof TinTucRoute
+    }
+    '/hoa-don/$token': {
+      id: '/hoa-don/$token'
+      path: '/hoa-don/$token'
+      fullPath: '/hoa-don/$token'
+      preLoaderRoute: typeof HoaDonTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dang-ky/thanh-cong': {
+      id: '/dang-ky/thanh-cong'
+      path: '/thanh-cong'
+      fullPath: '/dang-ky/thanh-cong'
+      preLoaderRoute: typeof DangKyThanhCongRouteImport
+      parentRoute: typeof DangKyRoute
+    }
   }
 }
+
+interface DangKyRouteChildren {
+  DangKyThanhCongRoute: typeof DangKyThanhCongRoute
+}
+
+const DangKyRouteChildren: DangKyRouteChildren = {
+  DangKyThanhCongRoute: DangKyThanhCongRoute,
+}
+
+const DangKyRouteWithChildren =
+  DangKyRoute._addFileChildren(DangKyRouteChildren)
+
+interface TinTucRouteChildren {
+  TinTucSlugRoute: typeof TinTucSlugRoute
+}
+
+const TinTucRouteChildren: TinTucRouteChildren = {
+  TinTucSlugRoute: TinTucSlugRoute,
+}
+
+const TinTucRouteWithChildren =
+  TinTucRoute._addFileChildren(TinTucRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BangGiaRoute: BangGiaRoute,
+  DangKyRoute: DangKyRouteWithChildren,
   GiaiPhapRoute: GiaiPhapRoute,
   LienHeRoute: LienHeRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  TinTucRoute: TinTucRoute,
+  TinTucRoute: TinTucRouteWithChildren,
   TinhNangRoute: TinhNangRoute,
+  HoaDonTokenRoute: HoaDonTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

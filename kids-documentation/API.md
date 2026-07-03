@@ -74,6 +74,7 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 | `PlatformPaymentProvider` | `VNPAY`, `MOMO`, `BANK_TRANSFER`, `MANUAL` |
 | `CouponDuration` | `ONCE`, `REPEATING`, `FOREVER` |
 | `DiscountKind` | `PERCENT`, `FIXED_AMOUNT` |
+| `PostStatus` | `DRAFT`, `PUBLISHED`, `ARCHIVED` |
 
 `Date` trong request body dùng chuỗi `YYYY-MM-DD`; `DateTime` dùng ISO string.
 
@@ -83,11 +84,15 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 
 | Method | Path | Body / Query | Data trả về |
 |---|---|---|---|
-| `POST` | `/public/signup` | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | `{ tenant, school, admin, subscription, host }`. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400) |
+| `GET` | `/public/plans` | - | danh sách gói public/active (`id/code/tier/name/description/trialDays/sortOrder`) + `prices[]`, `features[]`, `limits[]`; không trả counter/nội bộ/plan ẩn |
+| `POST` | `/public/signup` | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | luôn tạo tenant gói `free` ACTIVE. Nếu gửi `planCode` trả phí + `billingCycle`, trả thêm `selectedPlan`, `upgradeInvoice`, `publicInvoiceUrl`; gói trả phí chỉ kích hoạt sau khi platform admin mark-paid. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400), `NO_PUBLIC_PRICE` |
 | `GET` | `/public/availability?slug=` | Query `slug: string` | `{ available: boolean }` |
-| `GET` | `/public/tenants?q=` | Query `q?: string` (tùy chọn) | Danh sách trường để **chọn ở dropdown** login (độc lập subdomain). `q` rỗng → trả danh sách (sắp theo tên); có `q` → lọc theo tên/`code`/MST. Mảng item **chỉ field an toàn**: `{ id, code, slug, displayName, taxCode, logoUrl, primaryDomain }` (**cap 50**, ẩn tenant `SUSPENDED`/đã xoá; KHÔNG lộ gói/email/bank) |
+| `GET` | `/public/tenants?q=` | Query `q?: string` (tùy chọn) | Danh sách trường để **chọn ở dropdown** login (độc lập subdomain). `q` rỗng → trả danh sách (sắp theo tên); có `q` → lọc theo tên/`code`/**MST**. Mảng item **chỉ field an toàn**: `{ id, code, slug, displayName, logoUrl, primaryDomain }` (**cap 50**, ẩn tenant `SUSPENDED`/đã xoá). **Cho tìm theo MST nhưng KHÔNG trả `taxCode`** ra payload (tránh thu thập MST hàng loạt); cũng KHÔNG lộ gói/email/bank |
 | `GET` | `/public/branding?host=` | Query `host: string` | branding/settings theo host |
 | `GET` | `/public/platform-invoices/:token` | `token` = `PlatformInvoice.publicToken` (uuid khó đoán) | hóa đơn để xem + thanh toán VietQR **không cần đăng nhập** (link chia sẻ cho trường). Trả như `/platform/invoices/:id` nhưng **bỏ `id`/`publicToken`**; 404 nếu token sai |
+| `GET` | `/public/posts?page=&pageSize=&category=&tag=` | query optional | paginated bài `PUBLISHED`, `publishedAt <= now`, chưa xóa. Card fields: `slug/title/excerpt/coverImageUrl/category/tags/publishedAt`; `coverImageUrl` trả URL tuyệt đối từ API nếu là asset public nội bộ |
+| `GET` | `/public/posts/:slug` | slug | chi tiết bài public + `contentMarkdown`, SEO fields; draft/unpublished/archived trả 404; `coverImageUrl` cùng quy tắc URL public như list |
+| `GET` | `/public/assets/blog/:file` | `file` = `*.webp/*.jpg/*.png/*.avif` an toàn | raw image public cho cover blog/landing, serve từ `kids-api/public/blog`, cache `immutable`; 404 nếu file sai/không tồn tại |
 
 `SignupInput`:
 
@@ -101,10 +106,12 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
   adminPassword: string;   // min 8
   adminFullName: string;   // 2..120
   phone?: string;          // max 20
+  planCode?: string;       // default "free"; chỉ nhận plan public/active
+  billingCycle?: BillingCycle; // default MONTHLY
 }
 ```
 
-Ghi chú: signup tạo tenant gói `free` ở trạng thái `ACTIVE`, không trial.
+Ghi chú: signup luôn tạo tenant gói `free` ở trạng thái `ACTIVE`, không trial. `planCode` trả phí chỉ tạo hóa đơn nâng cấp OPEN; subscription vẫn là Free tới khi hóa đơn được đánh dấu PAID.
 
 ## Auth
 
@@ -233,10 +240,17 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 | `GET` | `/platform/invoices/stats` | - | KPI tiền: `{ paidThisMonth, openAmount (mọi HĐ chưa trả), overdueAmount (chưa trả + quá hạn theo ngày, subset), total }` — khớp Worklist/Tổng quan |
 | `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice — `invoiceNumber` định dạng **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`): slug trường + mã gói + ngày lập, để đối soát chuyển khoản (addInfo VietQR = số HĐ) |
 | `GET` | `/platform/invoices/:id` | - | chi tiết 1 hóa đơn (trang chi tiết/in): `{ invoiceNumber, status, lines[], subtotal/discount/tax/total/amountPaid/amountDue, buyer{name,taxCode,address}, seller{name}, bank{bin,accountNumber,accountName}, publicToken }` |
-| `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | đánh dấu đã thu — **không truyền `amount` = trả đủ** (`amountPaid=total`); reactivate subscription + đẩy kỳ |
+| `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | đánh dấu đã thu — **không truyền `amount` = trả đủ** (`amountPaid=total`). HĐ kỳ thường: reactivate + đẩy kỳ. HĐ `SIGNUP_UPGRADE`: đổi `Subscription.planId/billingCycle`, reset kỳ, clear entitlement cache, ghi `SubscriptionChange.UPGRADE` |
 | `GET` | `/platform/plans` | - | all plans (kèm `prices/features/limits/trialDays`) — mỗi gói **bổ sung** `tenantCount` (số thuê bao đang chạy: status TRIALING/ACTIVE/PAST_DUE) |
 | `POST` | `/platform/plans` | `CreatePlanInput` | created plan + nested config |
 | `PATCH` | `/platform/plans/:id` | `UpdatePlanInput` (name/description/isPublic/isActive/trialDays/sortOrder + upsert prices/features/limits theo unique key) | plan sau cập nhật; **không** đổi `code`/`tier`; thuê bao đang chạy giữ giá tới kỳ kế; 404 `PLAN_NOT_FOUND` nếu không thấy |
+| `GET` | `/platform/posts?page=&status=&q=` | `PLATFORM_SUPER_ADMIN`/`PLATFORM_SUPPORT` | paginated bài landing, lọc status/search title/slug/category |
+| `POST` | `/platform/posts` | `PlatformPostInput` | tạo bài nháp/published |
+| `GET` | `/platform/posts/:id` | - | chi tiết bài |
+| `PATCH` | `/platform/posts/:id` | `Partial<PlatformPostInput>` | cập nhật bài |
+| `POST` | `/platform/posts/:id/publish` | - | set `PUBLISHED`, `publishedAt=now` |
+| `POST` | `/platform/posts/:id/unpublish` | - | chuyển về `DRAFT` |
+| `DELETE` | `/platform/posts/:id` | - | soft-delete + `ARCHIVED` |
 | `GET` | `/platform/coupons?page=&isActive=` | `page?`, `isActive?: bool` | paginated coupons — mỗi dòng đủ field UI (`kind/amount/duration/durationCount/maxRedemptions/redeemedCount/validUntil/isActive`); `meta{page,pageSize,total}` |
 | `POST` | `/platform/coupons` | `CreateCouponInput` (`code` upper, `kind`, `amount`, `duration?`, `durationCount?`, `maxRedemptions?`, `validFrom?/validUntil?`, `isActive?`) | created coupon; 400 `VALIDATION_FAILED` (thiếu code / amount ≤ 0 / % > 100 / hạn sai) |
 | `GET` | `/platform/settings` | - | `PlatformConfig` (singleton): `bankBin/bankAccountNumber/bankAccountName` (VietQR) + `pastDueGraceDays/suspendedGraceDays`; tạo mặc định từ ENV nếu chưa có |

@@ -332,6 +332,39 @@ export type PlatformSettings = {
   suspendedGraceDays: number;
 };
 
+export type PlatformPostStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+export type PlatformPost = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  contentMarkdown: string;
+  coverImageUrl?: string | null;
+  category?: string | null;
+  tags: string[];
+  status: PlatformPostStatus;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PlatformPostInput = {
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  contentMarkdown: string;
+  coverImageUrl?: string | null;
+  category?: string | null;
+  tags?: string[];
+  status?: PlatformPostStatus;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  publishedAt?: string | null;
+};
+
 export type UpdatePlatformSettingsInput = {
   bankBin?: string | null;
   bankAccountNumber?: string | null;
@@ -406,6 +439,17 @@ export const platform = {
   getSettings: () => api.get<PlatformSettings>("/platform/settings"),
   updateSettings: (body: UpdatePlatformSettingsInput) =>
     api.patch<PlatformSettings>("/platform/settings", body),
+  listPosts: (page = 1, status?: string, q?: string) =>
+    api.getPage<PlatformPost>("/platform/posts", {
+      query: { page, status: status || undefined, q: q || undefined },
+    }),
+  createPost: (body: PlatformPostInput) => api.post<PlatformPost>("/platform/posts", body),
+  getPost: (id: string) => api.get<PlatformPost>(`/platform/posts/${id}`),
+  updatePost: (id: string, body: Partial<PlatformPostInput>) =>
+    api.patch<PlatformPost>(`/platform/posts/${id}`, body),
+  publishPost: (id: string) => api.post<PlatformPost>(`/platform/posts/${id}/publish`),
+  unpublishPost: (id: string) => api.post<PlatformPost>(`/platform/posts/${id}/unpublish`),
+  deletePost: (id: string) => api.delete<{ ok: true }>(`/platform/posts/${id}`),
   usageOverview: () => api.get<UsageOverview>("/platform/usage/overview"),
   listAudit: (page = 1, action?: string, tenantId?: string) =>
     api.getPage<AuditEntry>("/platform/audit", {

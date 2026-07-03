@@ -15,7 +15,7 @@ export const Route = createFileRoute("/lien-he")({
           "Để lại thông tin, đội ngũ KimThanh Kids sẽ liên hệ tư vấn miễn phí trong vòng 24 giờ.",
       },
       { property: "og:title", content: "Liên hệ — KimThanh Kids" },
-      { property: "og:description", content: "Dùng thử miễn phí 30 ngày, không cần thẻ tín dụng." },
+      { property: "og:description", content: "Tư vấn miễn phí, không cần thẻ tín dụng." },
     ],
   }),
 });
@@ -119,14 +119,13 @@ function ContactPage() {
                 <MessageCircle className="h-8 w-8" />
                 <h3 className="mt-3 font-display text-xl font-bold">Cần hỗ trợ nhanh?</h3>
                 <p className="mt-2 text-sm text-primary-foreground/90">
-                  Đội ngũ tư vấn KimThanh Kids luôn sẵn sàng trả lời câu hỏi của bạn trong vòng vài
-                  phút.
+                  Gọi hotline hoặc gửi email, đội ngũ KimThanh Kids sẽ phản hồi trong giờ làm việc.
                 </p>
                 <a
-                  href="#"
+                  href="mailto:hello@kimthanhkids.vn"
                   className="mt-5 inline-flex rounded-full bg-card text-foreground px-5 py-2.5 text-sm font-bold hover:-translate-y-0.5 transition"
                 >
-                  Chat ngay với chuyên gia
+                  Gửi email tư vấn
                 </a>
               </div>
             </div>

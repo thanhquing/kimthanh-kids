@@ -42,10 +42,10 @@ export function Hero() {
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/lien-he"
+              to="/dang-ky"
               className="inline-flex items-center gap-2 rounded-full bg-accent text-accent-foreground px-6 py-3.5 text-sm font-semibold shadow-glow hover:brightness-110 hover:-translate-y-0.5 transition-all"
             >
-              Đăng ký tư vấn
+              Bắt đầu miễn phí
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a

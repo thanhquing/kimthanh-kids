@@ -164,10 +164,7 @@ describe("Phase 1 — đón/trả (pickup handoff)", () => {
   });
 
   it("query status sai enum → 400 VALIDATION_FAILED (không phải 500)", async () => {
-    const res = await api()
-      .get("/api/pickup/authorizations?status=NOPE")
-      .set(auth(t))
-      .expect(400);
+    const res = await api().get("/api/pickup/authorizations?status=NOPE").set(auth(t)).expect(400);
     expect(res.body.error.code).toBe("VALIDATION_FAILED");
   });
 

@@ -66,10 +66,10 @@ export function SiteHeader() {
             Đăng nhập
           </Link>
           <Link
-            to="/lien-he"
+            to="/dang-ky"
             className="inline-flex items-center gap-2 rounded-full bg-accent text-accent-foreground px-5 py-2.5 text-sm font-semibold shadow-glow hover:brightness-110 hover:-translate-y-0.5 transition-all"
           >
-            Dùng thử miễn phí
+            Bắt đầu miễn phí
           </Link>
         </div>
 
@@ -96,11 +96,11 @@ export function SiteHeader() {
               </Link>
             ))}
             <Link
-              to="/lien-he"
+              to="/dang-ky"
               onClick={() => setOpen(false)}
               className="mt-2 inline-flex items-center justify-center rounded-full bg-accent text-accent-foreground px-5 py-3 text-sm font-semibold shadow-glow"
             >
-              Dùng thử miễn phí
+              Bắt đầu miễn phí
             </Link>
           </div>
         </div>

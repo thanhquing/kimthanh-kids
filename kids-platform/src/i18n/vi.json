@@ -13,6 +13,7 @@
     "invoices": "Hóa đơn nền tảng",
     "coupons": "Mã giảm giá",
     "plans": "Gói dịch vụ",
+    "posts": "Bài viết",
     "settings": "Cài đặt",
     "observability": "Theo dõi",
     "logout": "Đăng xuất",
@@ -22,6 +23,7 @@
   "navGroups": {
     "customers": "Khách hàng",
     "revenue": "Doanh thu",
+    "content": "Nội dung",
     "config": "Cấu hình",
     "operations": "Vận hành"
   },

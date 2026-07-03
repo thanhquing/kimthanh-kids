@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LogOut,
   MoreHorizontal,
+  Newspaper,
   Package,
   Receipt,
   Repeat,
@@ -39,6 +40,10 @@ const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
       { to: "/invoices", labelKey: "nav.invoices", icon: Receipt },
       { to: "/coupons", labelKey: "nav.coupons", icon: TicketPercent },
     ],
+  },
+  {
+    groupKey: "navGroups.content",
+    items: [{ to: "/posts", labelKey: "nav.posts", icon: Newspaper }],
   },
   {
     groupKey: "navGroups.config",

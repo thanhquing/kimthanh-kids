@@ -48,13 +48,22 @@ describe("Tenant discovery + x-tenant login (e2e)", () => {
     expect(found).toBeTruthy();
     expect(found.code).toBe(code);
     expect(found.displayName).toBe(schoolName);
-    expect(found.taxCode).toBe(taxCode);
     expect(found).toHaveProperty("logoUrl");
     expect(found.primaryDomain).toBe(`${slug}.${ROOT}`);
+    // Tìm được theo MST nhưng KHÔNG trả MST ra payload
+    expect(found).not.toHaveProperty("taxCode");
     // KHÔNG lộ field nội bộ
     expect(found).not.toHaveProperty("planTier");
     expect(found).not.toHaveProperty("status");
     expect(found).not.toHaveProperty("settings");
+  });
+
+  it("tìm được theo MST (query = mã số thuế) dù MST không hiện trên item", async () => {
+    const res = await request(app.getHttpServer())
+      .get("/api/public/tenants")
+      .query({ q: taxCode })
+      .expect(200);
+    expect(res.body.data.some((t: { id: string }) => t.id === tenantId)).toBe(true);
   });
 
   it("search theo tên trường (không phân biệt hoa thường)", async () => {
@@ -73,6 +82,8 @@ describe("Tenant discovery + x-tenant login (e2e)", () => {
     expect(Array.isArray(res.body.data)).toBe(true);
     expect(res.body.data.length).toBeGreaterThan(0);
     expect(res.body.data.length).toBeLessThanOrEqual(50);
+    // KHÔNG lộ MST trên bất kỳ item nào (dù liệt kê hay tìm kiếm).
+    expect(res.body.data.every((t: object) => !("taxCode" in t))).toBe(true);
   });
 
   it("login qua x-tenant (KHÔNG cần Host) → token gọi được endpoint đã auth", async () => {
