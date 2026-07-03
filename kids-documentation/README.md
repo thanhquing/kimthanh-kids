@@ -12,6 +12,8 @@ Tài liệu tham chiếu cho hệ thống SaaS quản lý mầm non **KimThanh K
 | [BILLING.md](./BILLING.md) | Gói cước, state machine subscription, hóa đơn/thanh toán, feature-gating, quota, cron |
 | [API.md](./API.md) | Danh mục endpoint **đầy đủ** (Tầng A + Phase 1 A→G): public/auth/tenant/billing/platform + domain nghiệp vụ |
 | [UI_API_FLOW_TEST.md](./UI_API_FLOW_TEST.md) | Ledger kiểm thử cURL theo mock UI: Platform tenant → CRM chủ trường → app nhỏ/mobile |
+| [SECURITY_AUDIT_CHECKLIST.md](./SECURITY_AUDIT_CHECKLIST.md) | Checklist audit bảo mật: multi-tenant isolation, RBAC, auth/session, API, FE/BE, DB/schema |
+| [SYSTEM_TEST_CHECKLIST.md](./SYSTEM_TEST_CHECKLIST.md) | Checklist kiểm thử hệ thống: load/stress/soak, regression, DB performance, FE/mobile, billing/webhook, backup/restore |
 
 > Tài liệu **nghiệp vụ/đào tạo/sale** (cho CEO, PO, chủ trường, Sale) ở thư mục riêng: [`kids-business-docs/`](../kids-business-docs).
 
