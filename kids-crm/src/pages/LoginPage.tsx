@@ -13,7 +13,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const { t } = useT();
   const [tenant, setTenant] = useState<TenantOption | null>(null);
-  const [identifier, setIdentifier] = useState("0909000001");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [forgotOpen, setForgotOpen] = useState(false);

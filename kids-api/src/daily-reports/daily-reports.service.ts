@@ -73,7 +73,12 @@ export class DailyReportsService {
       const uniqueIds = [...new Set(input.photoIds)];
       const media = uniqueIds.length
         ? await this.prisma.db.media.findMany({
-            where: { id: { in: uniqueIds } },
+            // school-scope: chỉ cho gắn ảnh thuộc school user quản (hoặc do chính user upload),
+            // tránh giáo viên school A gắn ảnh school B (cùng tenant) vào báo cáo.
+            where: {
+              id: { in: uniqueIds },
+              OR: [{ ...schoolWhere(user) }, { uploadedById: user.id }],
+            },
             select: { id: true },
           })
         : [];

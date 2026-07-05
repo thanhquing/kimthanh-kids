@@ -9,6 +9,13 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: false });
   const env = app.get(EnvService);
 
+  // Sau reverse proxy (nginx/LB): tin X-Forwarded-For để req.ip là IP client thật
+  // → rate-limit theo IP & audit-log IP chính xác. TRUST_PROXY=0 để tắt (dev không proxy).
+  const trustProxy = env.get("TRUST_PROXY");
+  if (trustProxy > 0) {
+    app.getHttpAdapter().getInstance().set("trust proxy", trustProxy);
+  }
+
   app.use(helmet());
   app.enableCors({ origin: env.corsOrigins, credentials: true });
   app.setGlobalPrefix(env.get("API_GLOBAL_PREFIX"));

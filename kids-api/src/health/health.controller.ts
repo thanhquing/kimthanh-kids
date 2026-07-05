@@ -21,12 +21,12 @@ const createSchema = z
     message: "Cần ít nhất một chỉ số (chiều cao/cân nặng/thân nhiệt)",
   });
 
+// FINANCE (kế toán) KHÔNG có quyền trên dữ liệu sức khỏe trẻ (least-privilege) — chỉ vận hành học phí.
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
   TenantRole.PRINCIPAL,
   TenantRole.TEACHER,
   TenantRole.NURSE,
-  TenantRole.FINANCE,
 ] as const;
 
 @ApiTags("health")

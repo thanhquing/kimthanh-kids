@@ -281,6 +281,9 @@ model User {
   passwordHash         String?
   fullName             String
   isActive             Boolean               @default(true)
+  tokenVersion         Int                   @default(0) // bump để vô hiệu access token đang lưu hành (reset mật khẩu)
+  failedLoginCount     Int                   @default(0) // đếm đăng nhập sai liên tiếp → khóa tạm
+  lockedUntil          DateTime? // khóa đăng nhập tới thời điểm này (account lockout)
   platformRole         PlatformRole? // chỉ set khi type=PLATFORM
   tenantId             String? // null nếu PLATFORM
   createdAt            DateTime              @default(now())
@@ -703,6 +706,7 @@ model RefreshToken {
   id        String    @id @default(uuid())
   userId    String
   tokenHash String    @unique
+  familyId  String? // nhóm token theo phiên login; dùng lại token đã revoke → revoke cả họ (reuse-detection)
   userAgent String?
   ipAddress String?
   expiresAt DateTime
@@ -710,6 +714,7 @@ model RefreshToken {
   createdAt DateTime  @default(now())
 
   @@index([userId])
+  @@index([familyId])
   @@map("refresh_tokens")
 }
 

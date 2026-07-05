@@ -32,6 +32,7 @@ export class UserContextService {
       phone: user.phone ?? null,
       roles,
       allowedSchoolIds,
+      tokenVersion: user.tokenVersion,
     };
   }
 }

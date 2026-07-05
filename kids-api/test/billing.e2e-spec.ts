@@ -100,6 +100,33 @@ describe("Phase 0 edge — billing / quota / entitlement / webhook", () => {
     expect(Number(inv.body.data.subtotal)).toBe(1_200_000);
   });
 
+  it("GET /billing/invoices: KHÔNG lộ publicToken (link no-login) + metadata nội bộ", async () => {
+    const t = await createTenant(app);
+    const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
+    const ptoken = await loginPlatform(app);
+    await api()
+      .post("/api/platform/invoices")
+      .set("Host", PLATFORM_HOST)
+      .set("Authorization", `Bearer ${ptoken}`)
+      .send({ tenantId: tenant!.id })
+      .expect(201);
+
+    const res = await api()
+      .get("/api/billing/invoices")
+      .set("Host", t.host)
+      .set("Authorization", `Bearer ${t.adminToken}`)
+      .expect(200);
+    const invoices = res.body.data as Record<string, unknown>[];
+    expect(invoices.length).toBeGreaterThan(0);
+    for (const inv of invoices) {
+      expect(inv.publicToken).toBeUndefined();
+      expect(inv.metadata).toBeUndefined();
+      for (const line of (inv.lines ?? []) as Record<string, unknown>[]) {
+        expect(line.metadata).toBeUndefined();
+      }
+    }
+  });
+
   // ─────────── WEBHOOK ───────────
   async function makeInvoiceAndPayment(t: { host: string; adminToken: string; slug: string }) {
     const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
@@ -130,6 +157,28 @@ describe("Phase 0 edge — billing / quota / entitlement / webhook", () => {
       .send({ gatewayRef, eventId: `e-${rnd()}`, success: true, signature: "wrong-sig" })
       .expect(400);
     expect(res.body.error.code).toBe("INVALID_SIGNATURE");
+    const inv = await prisma.system.platformInvoice.findUnique({ where: { id: invoiceId } });
+    expect(inv!.status).not.toBe("PAID");
+  });
+
+  it("provider chưa hỗ trợ bị chặn ở pay endpoint và webhook public", async () => {
+    const t = await createTenant(app);
+    const { invoiceId, gatewayRef } = await makeInvoiceAndPayment(t);
+
+    const pay = await api()
+      .post(`/api/billing/invoices/${invoiceId}/pay`)
+      .set("Host", t.host)
+      .set("Authorization", `Bearer ${t.adminToken}`)
+      .send({ provider: "MOMO" })
+      .expect(400);
+    expect(pay.body.error.code).toBe("VALIDATION_FAILED");
+
+    const forged = await api()
+      .post("/api/platform/webhooks/momo")
+      .send({ gatewayRef, eventId: `momo-${rnd()}`, success: true, signature: "anything" })
+      .expect(400);
+    expect(forged.body.error.code).toBe("UNSUPPORTED_PROVIDER");
+
     const inv = await prisma.system.platformInvoice.findUnique({ where: { id: invoiceId } });
     expect(inv!.status).not.toBe("PAID");
   });

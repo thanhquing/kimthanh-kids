@@ -5,7 +5,7 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { LimitMetric, TenantRole, UserType } from "@prisma/client";
-import * as bcrypt from "bcrypt";
+import { hashPassword } from "../common/crypto/password";
 import { randomBytes } from "node:crypto";
 import { AuditService } from "../audit/audit.service";
 import { EntitlementService } from "../entitlement/entitlement.service";
@@ -121,7 +121,7 @@ export class TenantService {
     const metric = quotaMetricForRole(input.role);
     if (metric) await this.entitlements.consumeQuota(tenantId, metric);
 
-    const passwordHash = await bcrypt.hash(input.password, 10);
+    const passwordHash = await hashPassword(input.password);
     try {
       const member = await this.prisma.system.user.create({
         data: {
@@ -223,8 +223,17 @@ export class TenantService {
     if (!user)
       throw new BadRequestException({ code: "NO_MEMBER", message: "Không tìm thấy thành viên" });
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    await this.prisma.system.user.update({ where: { id: userId }, data: { passwordHash } });
+    const passwordHash = await hashPassword(password);
+    // Đổi mật khẩu: bump tokenVersion để vô hiệu access token đang lưu hành + thu hồi refresh token.
+    await this.prisma.system.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash,
+        tokenVersion: { increment: 1 },
+        failedLoginCount: 0,
+        lockedUntil: null,
+      },
+    });
     await this.prisma.system.refreshToken.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },

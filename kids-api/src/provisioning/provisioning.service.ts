@@ -7,8 +7,8 @@ import {
   TenantStatus,
   UserType,
 } from "@prisma/client";
-import * as bcrypt from "bcrypt";
 import { randomBytes } from "node:crypto";
+import { hashPassword } from "../common/crypto/password";
 import { BillingService } from "../billing/billing.service";
 import { isValidTaxCode, normalizeTaxCode } from "../common/validation/tax-code";
 import { EnvService } from "../config/env.service";
@@ -158,7 +158,7 @@ export class ProvisioningService {
 
     const code = await this.resolveTenantCode(input.code, input.slug);
 
-    const passwordHash = await bcrypt.hash(input.adminPassword, 10);
+    const passwordHash = await hashPassword(input.adminPassword);
     const now = new Date();
     // Freemium: gói Miễn phí dùng vĩnh viễn (ACTIVE), không có hạn dùng thử.
     const periodEnd = new Date(now.getTime() + 100 * 365 * 86_400_000);

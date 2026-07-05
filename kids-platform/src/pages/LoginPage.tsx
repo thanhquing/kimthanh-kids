@@ -9,7 +9,7 @@ import { useT } from "@/i18n";
 export function LoginPage() {
   const navigate = useNavigate();
   const { t } = useT();
-  const [email, setEmail] = useState("admin@kimthanhkids.vn");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

@@ -4,9 +4,9 @@
 
 - **NestJS 10** (DI, guards, interceptors, modules)
 - **Prisma 5 + PostgreSQL 16** (ORM, migrations, client extension cho multi-tenant)
-- **JWT** access (15m) + refresh (30d, hash SHA-256, rotation) · **bcrypt**
+- **JWT** access HS256 (15m, claim `tv`=tokenVersion → vô hiệu khi reset mật khẩu) + refresh (30d, hash SHA-256, rotation theo `familyId` + **reuse-detection** revoke cả họ) · **bcrypt** (cost `BCRYPT_COST`, rehash-on-login) · **account lockout** (`failedLoginCount`/`lockedUntil`, ngưỡng `AUTH_LOCKOUT_*`)
 - **Zod** validate env + request body · **class-validator** (global ValidationPipe)
-- **@nestjs/schedule** (cron) · **@nestjs/throttler** (rate-limit 120/60s) · **helmet** · **Swagger** (`/docs`)
+- **@nestjs/schedule** (cron) · **@nestjs/throttler** (2 named throttler env-driven: `default` 120/60s mọi route + `auth` 5/60s cho `/auth/login`+`/auth/refresh` chống brute-force; cấu hình `THROTTLE_*`/`AUTH_THROTTLE_*`) · **helmet** · **trust proxy** (`TRUST_PROXY`) · **Swagger** (`/docs`)
 - Package manager: **pnpm** · Node ≥ 20
 
 ## Cấu trúc thư mục
@@ -50,7 +50,7 @@ kids-api/src/
 ```
 Request
  → TenantResolutionMiddleware   (set ALS: tenantId / platformScope từ Host)
- → ThrottlerGuard               (rate limit)
+ → ThrottlerGuard               (rate limit: default 120/60s · auth 5/60s cho login/refresh)
  → JwtAuthGuard                 (verify token → req.user → patch ALS)   [bỏ qua nếu @Public]
  → TenantGuard                  (khớp jwt.tenantId === host.tenantId)
  → SubscriptionGuard            (trạng thái thuê bao + @RequireFeature)

@@ -68,6 +68,20 @@ export class AuditService {
       where: { tenantId: user.tenantId, ...(opts.action ? { action: opts.action } : {}) },
       orderBy: { createdAt: "desc" },
       take: Math.min(opts.limit ?? 100, 500),
+      // Không passthrough metadata thô (có thể chứa dữ liệu nhạy cảm do writer thêm sau này).
+      // Prisma 5.22 chưa bật omit → select tường minh field an toàn (loại metadata).
+      select: {
+        id: true,
+        tenantId: true,
+        actorId: true,
+        actorType: true,
+        action: true,
+        targetType: true,
+        targetId: true,
+        ip: true,
+        userAgent: true,
+        createdAt: true,
+      },
     });
   }
 }

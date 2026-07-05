@@ -19,6 +19,10 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith("/api/") || event.request.headers.has("Authorization")) {
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
@@ -32,4 +36,3 @@ self.addEventListener("fetch", (event) => {
     }),
   );
 });
-

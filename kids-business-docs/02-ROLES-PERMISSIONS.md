@@ -127,7 +127,7 @@ Một người có thể được gán **nhiều vai trò** (vd vừa Hiệu tr�
 **Làm được gì & thao tác:**
 - **Học phí:** lập hóa đơn, **hủy** hóa đơn (khi chưa thanh toán), **ghi nhận thanh toán tiền mặt**, xem danh sách, **in chứng từ**, **xuất CSV**.
 - **Tự phục vụ billing trường** (cùng School Admin): xem gói/usage, đổi/hủy gói, trả hóa đơn nền tảng.
-- Xem lớp/học sinh; tải file media; nhận thông báo cá nhân.
+- Xem lớp/học sinh; nhận thông báo cá nhân.
 
 **Không được:** sửa hồ sơ học sinh; điểm danh/báo cáo; sức khỏe; thông báo/giáo án/album; dashboard KPI & audit log (thuộc Admin/HT).
 
@@ -170,7 +170,7 @@ Một người có thể được gán **nhiều vai trò** (vd vừa Hiệu tr�
 | Thông báo (soạn) | ✅ | ✅ | ✅ | 👁 | 👁 | 👁 |
 | Thực đơn tuần | ✅ | ✅ | 👁 | ✅ | 👁 | 👁 |
 | Giáo án 🔒 lesson_plan | ✅ | ✅ | ✅ | — | — | — |
-| Album ảnh 🔒 media_gallery | ✅ | ✅ | ✅ | 👁 | 👁 | 👁 con |
+| Album ảnh 🔒 media_gallery | ✅ | ✅ | ✅ | 👁 | — | 👁 con |
 | Lập/hủy hóa đơn, thu học phí | ✅ | ✅ | — | — | ✅ | 👁 + trả |
 | In chứng từ / xuất CSV | ✅ | ✅ | 👁 | 👁 | ✅ | 👁 con |
 | Dashboard KPI | ✅ | ✅ | — | — | — | — |

@@ -36,7 +36,7 @@ import {
   TuitionPaymentStatus,
   UserType,
 } from "@prisma/client";
-import * as bcrypt from "bcrypt";
+import { hashPassword } from "../src/common/crypto/password";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -70,7 +70,11 @@ async function createDemoImageMedia(
   tenantId: string,
   schoolId: string,
   uploadedById: string,
-  opts: { kind: "ALBUM" | "REPORT_PHOTO"; bg: { r: number; g: number; b: number }; originalName: string },
+  opts: {
+    kind: "ALBUM" | "REPORT_PHOTO";
+    bg: { r: number; g: number; b: number };
+    originalName: string;
+  },
 ) {
   const width = 640;
   const height = 428;
@@ -175,7 +179,7 @@ async function main() {
     if (wd >= 1 && wd <= 5) schoolDays.push(dateOnly(d));
   }
   const lastSchoolDay = schoolDays[schoolDays.length - 1] ?? today;
-  const passwordHash = await bcrypt.hash(PASSWORD, 10);
+  const passwordHash = await hashPassword(PASSWORD);
 
   // ─── Tenant + settings + domain + subscription (gói PRO) + school ───
   const tenant = await prisma.tenant.create({
@@ -479,7 +483,9 @@ async function main() {
           checkInAt:
             status === AttendanceStatus.ABSENT
               ? null
-              : new Date(`${date.toISOString().slice(0, 10)}T${status === AttendanceStatus.LATE ? "08:15" : "07:30"}:00.000Z`),
+              : new Date(
+                  `${date.toISOString().slice(0, 10)}T${status === AttendanceStatus.LATE ? "08:15" : "07:30"}:00.000Z`,
+                ),
         };
       }),
     ),
@@ -487,7 +493,12 @@ async function main() {
 
   // ─── Báo cáo hằng ngày cho lớp Mầm, mỗi ngày học trong 2 tháng ───
   const moods = [Mood.HAPPY, Mood.NEUTRAL, Mood.TIRED, Mood.HAPPY, Mood.FUSSY];
-  const mealNotes = ["Ăn hết suất", "Ăn khá, còn ít canh", "Ăn chậm, cần nhắc", "Ăn hết suất, xin thêm"];
+  const mealNotes = [
+    "Ăn hết suất",
+    "Ăn khá, còn ít canh",
+    "Ăn chậm, cần nhắc",
+    "Ăn hết suất, xin thêm",
+  ];
   const activityNotes = [
     "Vẽ tranh, hát, chơi ngoài trời",
     "Kể chuyện, xếp hình, vận động",
@@ -536,14 +547,32 @@ async function main() {
   if (mamReports[0]) {
     await prisma.dailyReportPhoto.createMany({
       data: [
-        { tenantId, reportId: mamReports[0].id, mediaId: reportMedia[0].id, caption: "Giờ vẽ tranh", sortOrder: 0 },
-        { tenantId, reportId: mamReports[0].id, mediaId: reportMedia[1].id, caption: "Chơi ngoài trời", sortOrder: 1 },
+        {
+          tenantId,
+          reportId: mamReports[0].id,
+          mediaId: reportMedia[0].id,
+          caption: "Giờ vẽ tranh",
+          sortOrder: 0,
+        },
+        {
+          tenantId,
+          reportId: mamReports[0].id,
+          mediaId: reportMedia[1].id,
+          caption: "Chơi ngoài trời",
+          sortOrder: 1,
+        },
       ],
     });
   }
   if (mamReports[1]) {
     await prisma.dailyReportPhoto.create({
-      data: { tenantId, reportId: mamReports[1].id, mediaId: reportMedia[2].id, caption: "Giờ ăn trưa", sortOrder: 0 },
+      data: {
+        tenantId,
+        reportId: mamReports[1].id,
+        mediaId: reportMedia[2].id,
+        caption: "Giờ ăn trưa",
+        sortOrder: 0,
+      },
     });
   }
 
@@ -670,7 +699,12 @@ async function main() {
   });
 
   // ─── Sức khỏe: chỉ số tăng trưởng theo tháng (đầu mỗi tháng trong lịch sử) + dị ứng + thuốc + sự cố ───
-  const healthDates = [HISTORY_START, dateOnly(addDays(HISTORY_START, 30)), dateOnly(addDays(HISTORY_START, 60)), today];
+  const healthDates = [
+    HISTORY_START,
+    dateOnly(addDays(HISTORY_START, 30)),
+    dateOnly(addDays(HISTORY_START, 60)),
+    today,
+  ];
   for (const [ki, k] of kids.slice(0, 4).entries()) {
     await prisma.healthRecord.createMany({
       data: healthDates.map((date, mi) => ({
@@ -903,8 +937,20 @@ async function main() {
           createdById: admin.id,
           items: {
             create: [
-              { tenantId, label: "Học phí tháng", quantity: 1, unitPrice: tuition, amount: tuition },
-              { tenantId, label: "Tiền ăn (22 buổi)", quantity: 22, unitPrice: 35_000, amount: meal },
+              {
+                tenantId,
+                label: "Học phí tháng",
+                quantity: 1,
+                unitPrice: tuition,
+                amount: tuition,
+              },
+              {
+                tenantId,
+                label: "Tiền ăn (22 buổi)",
+                quantity: 22,
+                unitPrice: 35_000,
+                amount: meal,
+              },
             ],
           },
         },

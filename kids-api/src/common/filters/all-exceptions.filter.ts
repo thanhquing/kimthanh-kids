@@ -42,7 +42,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         status = HttpStatus.CONFLICT;
         code = "UNIQUE_CONSTRAINT";
         message = "Dữ liệu đã tồn tại";
-        details = exception.meta;
+        // KHÔNG trả exception.meta ra client — lộ tên cột/constraint DB (schema disclosure).
       } else if (exception.code === "P2025") {
         status = HttpStatus.NOT_FOUND;
         code = "NOT_FOUND";

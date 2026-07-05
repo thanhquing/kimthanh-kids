@@ -100,6 +100,115 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .expect(401);
       expect(bad.body.error.code).toBe("INVALID_TOKEN");
     });
+
+    it("account lockout: sai mật khẩu đủ ngưỡng → khóa tạm, mật khẩu đúng cũng bị ACCOUNT_LOCKED", async () => {
+      const t = await createTenant(app);
+      // ngưỡng mặc định 10 (AUTH_LOCKOUT_THRESHOLD) → gửi 10 lần sai (throttle tắt trong e2e)
+      for (let i = 0; i < 10; i++) {
+        await api()
+          .post("/api/auth/login")
+          .set("Host", t.host)
+          .send({ email: t.email, password: "wrong-pass" })
+          .expect(401);
+      }
+      const locked = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .send({ email: t.email, password: t.password })
+        .expect(401);
+      expect(locked.body.error.code).toBe("ACCOUNT_LOCKED");
+    });
+
+    it("reset mật khẩu bump tokenVersion → access token cũ bị vô hiệu ngay", async () => {
+      const t = await createTenant(app);
+      const email = `gv-${rnd()}@x.vn`;
+      const created = await api()
+        .post("/api/tenant/members")
+        .set("Host", t.host)
+        .set("Authorization", `Bearer ${t.adminToken}`)
+        .send({ email, fullName: "GV Reset", role: "TEACHER", password: "Password123" })
+        .expect(201);
+      const memberId = created.body.data.id as string;
+
+      const login = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .send({ email, password: "Password123" })
+        .expect(201);
+      const memHead = { Host: t.host, Authorization: `Bearer ${login.body.data.accessToken}` };
+
+      // token còn dùng được trước khi reset
+      await api().get("/api/auth/me").set(memHead).expect(200);
+
+      await api()
+        .patch(`/api/tenant/members/${memberId}/password`)
+        .set("Host", t.host)
+        .set("Authorization", `Bearer ${t.adminToken}`)
+        .send({ password: "NewPass123" })
+        .expect(200);
+
+      // token cũ giờ bị vô hiệu do tokenVersion lệch
+      const after = await api().get("/api/auth/me").set(memHead).expect(401);
+      expect(after.body.error.code).toBe("INVALID_TOKEN");
+    });
+
+    it("refresh reuse-detection: dùng lại token đã rotate → revoke cả họ token", async () => {
+      const t = await createTenant(app);
+      const login = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .send({ email: t.email, password: t.password })
+        .expect(201);
+      const r1 = login.body.data.refreshToken as string;
+
+      const rot = await api().post("/api/auth/refresh").send({ refreshToken: r1 }).expect(201);
+      const r2 = rot.body.data.refreshToken as string;
+
+      // dùng lại r1 (đã revoke) → 401 và kích hoạt revoke cả họ
+      await api().post("/api/auth/refresh").send({ refreshToken: r1 }).expect(401);
+      // r2 (cùng họ) vì thế cũng bị vô hiệu
+      await api().post("/api/auth/refresh").send({ refreshToken: r2 }).expect(401);
+    });
+
+    it("refresh rotation: double-submit cùng token chỉ một request được cấp token mới", async () => {
+      const t = await createTenant(app);
+      const login = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .send({ email: t.email, password: t.password })
+        .expect(201);
+      const r1 = login.body.data.refreshToken as string;
+
+      const [a, b] = await Promise.all([
+        api().post("/api/auth/refresh").send({ refreshToken: r1 }),
+        api().post("/api/auth/refresh").send({ refreshToken: r1 }),
+      ]);
+      const statuses = [a.status, b.status].sort();
+      expect(statuses).toEqual([201, 401]);
+
+      const ok = a.status === 201 ? a : b;
+      const r2 = ok.body.data.refreshToken as string;
+      await api().post("/api/auth/refresh").send({ refreshToken: r2 }).expect(401);
+    });
+
+    it("account lockout: request sai song song vẫn tăng đủ bộ đếm", async () => {
+      const t = await createTenant(app);
+      const attempts = Array.from({ length: 10 }, () =>
+        api()
+          .post("/api/auth/login")
+          .set("Host", t.host)
+          .send({ email: t.email, password: "wrong-pass" }),
+      );
+      const results = await Promise.all(attempts);
+      expect(results.every((r) => r.status === 401)).toBe(true);
+
+      const locked = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .send({ email: t.email, password: t.password })
+        .expect(401);
+      expect(locked.body.error.code).toBe("ACCOUNT_LOCKED");
+    });
   });
 
   // ─────────── SIGNUP ───────────
@@ -228,6 +337,41 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .get("/api/tenant/settings")
         .set("Host", t.host)
         .set("Authorization", `Bearer ${ptoken}`)
+        .expect(403);
+    });
+
+    async function memberToken(t: { host: string; adminToken: string }, role: string) {
+      const email = `${role.toLowerCase()}-${rnd()}@x.vn`;
+      await api()
+        .post("/api/tenant/members")
+        .set("Host", t.host)
+        .set("Authorization", `Bearer ${t.adminToken}`)
+        .send({ email, fullName: role, role, password: "Password123" })
+        .expect(201);
+      const login = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .send({ email, password: "Password123" })
+        .expect(201);
+      return login.body.data.accessToken as string;
+    }
+
+    it("FINANCE không đọc dữ liệu sức khỏe trẻ (medicine/incidents) → 403 (least-privilege)", async () => {
+      const t = await createTenant(app);
+      const ftoken = await memberToken(t, "FINANCE");
+      const h = { Host: t.host, Authorization: `Bearer ${ftoken}` };
+      await api().get("/api/medicine").set(h).expect(403);
+      await api().get("/api/incidents").set(h).expect(403);
+    });
+
+    it("NURSE không thao tác học phí (tuition) → 403", async () => {
+      const t = await createTenant(app);
+      const ntoken = await memberToken(t, "NURSE");
+      const h = { Host: t.host, Authorization: `Bearer ${ntoken}` };
+      await api()
+        .post("/api/tuition/invoices")
+        .set(h)
+        .send({ studentId: "x", period: "2026-07", dueDate: "2026-07-31", items: [] })
         .expect(403);
     });
 

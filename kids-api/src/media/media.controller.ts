@@ -11,8 +11,10 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiTags } from "@nestjs/swagger";
 import { MediaKind, TenantRole } from "@prisma/client";
+import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { Roles } from "../common/decorators/roles.decorator";
+import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { MediaService, UploadFile } from "./media.service";
 
 const STAFF = [
@@ -21,6 +23,11 @@ const STAFF = [
   TenantRole.TEACHER,
   TenantRole.NURSE,
 ] as const;
+
+const uploadQuery = z.object({
+  kind: z.nativeEnum(MediaKind).optional(),
+  schoolId: z.string().uuid().optional(),
+});
 
 @ApiTags("media")
 @Controller("media")
@@ -33,10 +40,9 @@ export class MediaController {
   async upload(
     @CurrentUser() user: AuthUser,
     @UploadedFile() file: UploadFile,
-    @Query("kind") kind?: MediaKind,
-    @Query("schoolId") schoolId?: string,
+    @Query(new ZodValidationPipe(uploadQuery)) q: z.infer<typeof uploadQuery>,
   ) {
-    const m = await this.media.uploadImage(user, file, { kind, schoolId });
+    const m = await this.media.uploadImage(user, file, { kind: q.kind, schoolId: q.schoolId });
     return {
       id: m.id,
       url: `/api/media/${m.id}/file`,
@@ -47,7 +53,7 @@ export class MediaController {
     };
   }
 
-  @Roles(...STAFF, TenantRole.FINANCE, TenantRole.PARENT)
+  @Roles(...STAFF, TenantRole.PARENT)
   @Get(":id/file")
   async file(@CurrentUser() user: AuthUser, @Param("id") id: string): Promise<StreamableFile> {
     const { stream, mimeType } = await this.media.getReadable(user, id);

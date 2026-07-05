@@ -11,6 +11,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { assertSchoolAccess, isStaff } from "../common/scope/school-scope";
 import { EnvService } from "../config/env.service";
 import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -42,6 +43,17 @@ export class MediaService {
       throw new BadRequestException({ code: "NO_FILE", message: "Thiếu file" });
     if (!file.mimetype.startsWith("image/")) {
       throw new BadRequestException({ code: "NOT_IMAGE", message: "Chỉ nhận file ảnh" });
+    }
+
+    // Gắn media vào 1 school → user phải có quyền trên school đó và school phải thuộc tenant.
+    if (opts.schoolId) {
+      assertSchoolAccess(user, opts.schoolId);
+      const school = await this.prisma.db.school.findFirst({
+        where: { id: opts.schoolId },
+        select: { id: true },
+      });
+      if (!school)
+        throw new NotFoundException({ code: "NO_SCHOOL", message: "Không tìm thấy cơ sở" });
     }
 
     const maxDim = this.env.get("MEDIA_MAX_DIM");
@@ -82,12 +94,60 @@ export class MediaService {
     });
   }
 
-  /** Lấy thông tin + stream file (đã cô lập theo tenant qua prisma.db). */
+  /** Lấy thông tin + stream file, giới hạn theo tenant và quyền xem nội dung gắn với media. */
   async getReadable(user: AuthUser, id: string) {
-    const media = await this.prisma.db.media.findFirst({ where: { id } });
+    const media = await this.prisma.db.media.findFirst({
+      where: await this.readableWhere(user, id),
+    });
     if (!media) throw new NotFoundException({ code: "NO_MEDIA", message: "Không tìm thấy file" });
     const abs = join(this.root(), media.path);
     return { stream: createReadStream(abs), mimeType: media.mimeType };
+  }
+
+  private async readableWhere(user: AuthUser, id: string): Promise<object> {
+    if (isStaff(user)) {
+      if (user.allowedSchoolIds === null) return { id };
+      const schoolId = { in: user.allowedSchoolIds };
+      return {
+        id,
+        OR: [
+          { uploadedById: user.id },
+          { schoolId },
+          { reportPhotos: { some: { report: { schoolId } } } },
+          { albumPhotos: { some: { album: { schoolId } } } },
+        ],
+      };
+    }
+
+    const kids = await this.prisma.db.student.findMany({
+      where: { parents: { some: { parentId: user.id } } },
+      select: { schoolId: true, classroomId: true },
+    });
+    const schoolIds = [...new Set(kids.map((k) => k.schoolId))];
+    const classroomIds = kids.map((k) => k.classroomId).filter((c): c is string => !!c);
+
+    return {
+      id,
+      OR: [
+        {
+          reportPhotos: {
+            some: { report: { student: { parents: { some: { parentId: user.id } } } } },
+          },
+        },
+        {
+          albumPhotos: {
+            some: {
+              album: {
+                OR: [
+                  { classroomId: null, schoolId: { in: schoolIds } },
+                  { classroomId: { in: classroomIds } },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    };
   }
 
   private async assertStorageQuota(tenantId: string, addBytes: number) {

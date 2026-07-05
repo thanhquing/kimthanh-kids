@@ -13,12 +13,12 @@ const createSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
+// FINANCE (kế toán) KHÔNG có quyền trên dữ liệu sức khỏe trẻ (least-privilege) — chỉ vận hành học phí.
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
   TenantRole.PRINCIPAL,
   TenantRole.TEACHER,
   TenantRole.NURSE,
-  TenantRole.FINANCE,
 ] as const;
 const EDITORS = [
   TenantRole.SCHOOL_ADMIN,

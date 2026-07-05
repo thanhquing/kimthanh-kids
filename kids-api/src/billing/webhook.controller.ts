@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, Param, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Headers, Param, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { PlatformPaymentProvider } from "@prisma/client";
 import { Public } from "../common/decorators/public.decorator";
@@ -17,6 +17,12 @@ export class WebhookController {
     @Headers("x-signature") signature?: string,
   ) {
     const p = provider.toUpperCase() as PlatformPaymentProvider;
+    if (p !== PlatformPaymentProvider.VNPAY) {
+      throw new BadRequestException({
+        code: "UNSUPPORTED_PROVIDER",
+        message: "Nhà cung cấp thanh toán chưa được hỗ trợ",
+      });
+    }
     return this.payments.handleWebhook(p, payload, signature ?? (payload.signature as string));
   }
 }

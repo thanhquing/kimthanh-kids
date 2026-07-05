@@ -1,10 +1,20 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { PlatformRole } from "@prisma/client";
+import { LimitMetric, PlatformRole } from "@prisma/client";
+import { z } from "zod";
 import { BillingService } from "../billing/billing.service";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { PlatformRoles } from "../common/decorators/roles.decorator";
+import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { UpdatePlatformConfigInput } from "../platform-config/platform-config.service";
+
+const entitlementSchema = z.object({
+  featureKey: z.string().optional(),
+  enabled: z.boolean().optional(),
+  metric: z.nativeEnum(LimitMetric).optional(),
+  limitValue: z.number().int().nullable().optional(),
+  reason: z.string().optional(),
+});
 import { MrrSnapshotService } from "./mrr-snapshot.service";
 import {
   CreateCouponInput,
@@ -82,7 +92,10 @@ export class PlatformController {
   }
 
   @Post("tenants/:id/entitlements")
-  setEntitlement(@Param("id") id: string, @Body() body: Record<string, never>) {
+  setEntitlement(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(entitlementSchema)) body: z.infer<typeof entitlementSchema>,
+  ) {
     return this.platform.setEntitlementOverride(id, body);
   }
 

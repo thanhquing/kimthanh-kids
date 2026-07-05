@@ -25,7 +25,6 @@ const STAFF = [
   TenantRole.PRINCIPAL,
   TenantRole.TEACHER,
   TenantRole.NURSE,
-  TenantRole.FINANCE,
 ] as const;
 const EDITORS = [TenantRole.SCHOOL_ADMIN, TenantRole.PRINCIPAL, TenantRole.TEACHER] as const;
 const VIEWERS = [...STAFF, TenantRole.PARENT] as const;

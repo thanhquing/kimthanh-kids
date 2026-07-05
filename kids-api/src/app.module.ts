@@ -1,7 +1,8 @@
-import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { ExecutionContext, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from "@nestjs/core";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { EnvService } from "./config/env.service";
 import { AuthModule } from "./auth/auth.module";
 import { BillingModule } from "./billing/billing.module";
 import { AlbumsModule } from "./albums/albums.module";
@@ -48,7 +49,34 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     UsageModule,
     AuthModule,
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    ThrottlerModule.forRootAsync({
+      inject: [EnvService],
+      useFactory: (env: EnvService) => {
+        // Tắt rate-limit khi chạy e2e (jest login nhiều lần cùng IP sẽ chạm limit thật).
+        const underTest = !!process.env.JEST_WORKER_ID;
+        const isAuthRoute = (ctx: ExecutionContext): boolean => {
+          const req = ctx.switchToHttp().getRequest<{ originalUrl?: string; url?: string }>();
+          const path = req.originalUrl ?? req.url ?? "";
+          return path.includes("/auth/login") || path.includes("/auth/refresh");
+        };
+        return [
+          // Rate limit chung — áp mọi route TRỪ auth (auth có limiter riêng chặt hơn bên dưới).
+          {
+            name: "default",
+            ttl: env.get("THROTTLE_TTL_MS"),
+            limit: env.get("THROTTLE_LIMIT"),
+            skipIf: (ctx) => underTest || isAuthRoute(ctx),
+          },
+          // Rate limit chặt cho login/refresh → chống brute-force credential.
+          {
+            name: "auth",
+            ttl: env.get("AUTH_THROTTLE_TTL_MS"),
+            limit: env.get("AUTH_THROTTLE_LIMIT"),
+            skipIf: (ctx) => underTest || !isAuthRoute(ctx),
+          },
+        ];
+      },
+    }),
     ProvisioningModule,
     BillingModule,
     PlatformModule,

@@ -8,7 +8,7 @@ Mobile web/PWA của KimThanh Kids cho 2 role chính: phụ huynh và giáo viê
 - Tailwind CSS, token/component class port từ `kids-landing/public/mock-ui/shared.css`
 - `lucide-react` cho icon, `@fontsource/be-vietnam-pro` cho font offline
 - `cn` utility theo shadcn/ui convention (`clsx` + `tailwind-merge`)
-- SPA/PWA shell: `manifest.webmanifest`, service worker cache app shell khi build production
+- SPA/PWA shell: `manifest.webmanifest`, service worker cache app shell/static assets khi build production; bỏ qua `/api/*` và request có `Authorization` để không giữ dữ liệu nhạy cảm giữa tài khoản
 - Data: **gọi API thật kids-api** qua `src/api/*` (react-query, mirror `kids-platform`); `src/api/http.ts` xử lý envelope + refresh 401 + `x-language`. `src/mockData.ts` chỉ còn `assets` (ảnh tĩnh)
 - Đa ngôn ngữ VI/EN: `src/lib/language.ts` + `src/i18n` (`useT`), switcher ở Login/Profile
 

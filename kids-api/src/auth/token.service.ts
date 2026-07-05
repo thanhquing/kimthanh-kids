@@ -9,6 +9,8 @@ export interface AccessTokenPayload {
   type: UserType;
   tenantId: string | null;
   platformRole: PlatformRole | null;
+  /** tokenVersion của user tại thời điểm cấp; lệch với DB → token bị vô hiệu (reset mật khẩu). */
+  tv: number;
 }
 
 @Injectable()
@@ -22,12 +24,15 @@ export class TokenService {
     return this.jwt.signAsync(payload, {
       secret: this.env.get("JWT_ACCESS_SECRET"),
       expiresIn: this.env.get("JWT_ACCESS_TTL"),
+      algorithm: "HS256",
     });
   }
 
   async verifyAccess(token: string): Promise<AccessTokenPayload> {
+    // Pin thuật toán: chỉ chấp nhận HS256 → chặn algorithm-confusion (vd token `alg:none`).
     return this.jwt.verifyAsync<AccessTokenPayload>(token, {
       secret: this.env.get("JWT_ACCESS_SECRET"),
+      algorithms: ["HS256"],
     });
   }
 

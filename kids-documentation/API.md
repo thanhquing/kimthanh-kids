@@ -122,6 +122,12 @@ Ghi chú: signup luôn tạo tenant gói `free` ở trạng thái `ACTIVE`, khô
 | `POST` | `/auth/logout` | `{ refreshToken: string }` | `{ ok: true }` |
 | `GET` | `/auth/me` | Bearer | `{ id, type, tenantId, platformRole, fullName, phone, roles[], allowedSchoolIds }` |
 
+> **Rate limit:** `/auth/login` + `/auth/refresh` bị giới hạn chặt (mặc định **5 lần/60s/IP**, cấu hình `AUTH_THROTTLE_LIMIT`/`AUTH_THROTTLE_TTL_MS`) → vượt trả **429**. Các route khác dùng limit chung (`THROTTLE_LIMIT` mặc định 120/60s).
+>
+> **Account lockout:** sai mật khẩu ≥ `AUTH_LOCKOUT_THRESHOLD` (10) lần liên tiếp/tài khoản → khóa `AUTH_LOCKOUT_MINUTES` (15) phút, trả **401 `ACCOUNT_LOCKED`** (kể cả khi sau đó nhập đúng). Đăng nhập thành công reset bộ đếm.
+>
+> **Token:** access JWT ký **HS256**, TTL 15m, mang claim `tv` (tokenVersion) — reset mật khẩu bump `tokenVersion` → access token cũ **401 `INVALID_TOKEN`** ngay. Refresh token 48-byte ngẫu nhiên, hash SHA-256, **rotation** mỗi lần refresh theo `familyId`; dùng lại token đã rotate (reuse) → **revoke cả họ token** (401 `INVALID_REFRESH`).
+
 `LoginInput`:
 
 ```ts
@@ -212,7 +218,7 @@ Role: `AD`, `KT`. Host: tenant. Các endpoint có ghi Inactive-OK vẫn gọi đ
 | `GET` | `/billing/invoices` | Inactive-OK | `PlatformInvoice[]` + lines |
 | `POST` | `/billing/subscription/change` | `{ planId: uuid, billingCycle: BillingCycle }` | subscription sau đổi gói |
 | `POST` | `/billing/subscription/cancel` | `{ atPeriodEnd?: boolean }` | subscription sau cancel |
-| `POST` | `/billing/invoices/:id/pay` | `{ provider: PlatformPaymentProvider }` | `PlatformPayment` + `redirectUrl` nếu gateway |
+| `POST` | `/billing/invoices/:id/pay` | `{ provider: "VNPAY" }` | `PlatformPayment` + `redirectUrl` VNPay sandbox. `MOMO`/`BANK_TRANSFER`/`MANUAL` chưa hỗ trợ qua endpoint gateway này |
 
 ---
 
@@ -337,7 +343,7 @@ Webhook platform:
 
 | Method | Path | Body / Header | Data trả về |
 |---|---|---|---|
-| `POST` | `/platform/webhooks/:provider` | provider `vnpay`/`momo`/`bank_transfer`/`manual`; header `x-signature` hoặc `payload.signature` | `{ ok: true }`, `{ ok: true, deduped: true }`, hoặc error `INVALID_SIGNATURE` |
+| `POST` | `/platform/webhooks/:provider` | provider hiện hỗ trợ: `vnpay`; header `x-signature` hoặc `payload.signature` | `{ ok: true }`, `{ ok: true, deduped: true }`, hoặc error `INVALID_SIGNATURE`/`UNSUPPORTED_PROVIDER` |
 
 ---
 
@@ -495,14 +501,16 @@ type PickupLogCreate = {
 
 | Method | Path | Role | Body / Query | Data trả về |
 |---|---|---|---|---|
-| `POST` | `/media?kind=&schoolId=` | AD,HT,GV,YT | multipart field `file`; max 15MB | `{ id, url, mimeType, sizeBytes, width, height }` |
-| `GET` | `/media/:id/file` | STAFF,KT,PH | - | raw stream `image/webp`/mimeType tương ứng |
+| `POST` | `/media?kind=&schoolId=` | AD,HT,GV,YT | multipart field `file`; max 15MB. Query validate Zod (`kind` ∈ MediaKind, `schoolId` uuid) → sai kiểu trả `VALIDATION_FAILED` (không 500). Có `schoolId` → user phải có quyền trên school đó (`SCHOOL_FORBIDDEN` nếu không) và school phải thuộc tenant | `{ id, url, mimeType, sizeBytes, width, height }` |
+| `GET` | `/media/:id/file` | AD,HT,GV,YT,PH | - | raw stream `image/webp`/mimeType tương ứng; backend kiểm quyền theo tenant + school/ảnh đã upload hoặc quan hệ report/album mà người dùng được xem. KT không được tải media trẻ (least-privilege) |
 
 Ảnh upload được nén về WebP, cạnh dài tối đa `MEDIA_MAX_DIM` (default 1280), check quota `STORAGE_MB`.
 
 ---
 
 ## D — Sức Khỏe
+
+> **Least-privilege:** ở nhóm Sức Khỏe (health/medicine/incidents/allergies), `STAFF` = **AD/HT/GV/YT (KHÔNG gồm KT)** — kế toán không đọc/ghi dữ liệu sức khỏe trẻ. `KT` chỉ vận hành học phí/billing.
 
 ### Health Records
 
@@ -646,7 +654,7 @@ Unique `(staffId, weekday, shift)`. Lỗi thường gặp: `NO_STAFF`, `DUPLICAT
 | `POST` | `/tuition/invoices/:id/pay/manual` | AD,HT,KT | `ManualPaymentInput` | `TuitionPayment` |
 | `GET` | `/tuition/invoices/:id/vietqr` | AD,HT,KT,PH | - | `VietQrResponse` |
 | `POST` | `/tuition/invoices/:id/pay/gateway` | AD,HT,KT,PH | `{ method: "VNPAY" }` | `{ paymentId, gatewayRef, redirectUrl }` |
-| `POST` | `/tuition/webhooks/:method` | public | payload gateway + `x-signature?` | `{ ok: true }`, `ignored`, hoặc `deduped` |
+| `POST` | `/tuition/webhooks/:method` | public | `method` hiện hỗ trợ: `vnpay`; payload gateway + `x-signature?` | `{ ok: true }`, `ignored`, `deduped`, hoặc error `INVALID_SIGNATURE`/`UNSUPPORTED_PROVIDER` |
 
 ```ts
 type TuitionInvoiceCreate = {
@@ -720,8 +728,8 @@ type AnnouncementCreate = {
 | `DELETE` | `/lesson-plans/:id` | AD,HT,GV + feature | - | `{ ok: true }` |
 | `POST` | `/albums` | AD,HT,GV + feature `media_gallery` | `AlbumCreate` | `Album` |
 | `POST` | `/albums/:id/photos` | AD,HT,GV + feature | `AlbumPhotosInput` | created `AlbumPhoto[]` |
-| `GET` | `/albums?classroomId=` | STAFF,PH + feature | filter optional | `Album[]` |
-| `GET` | `/albums/:id` | STAFF,PH + feature | - | album + photos/media |
+| `GET` | `/albums?classroomId=` | AD,HT,GV,YT,PH + feature | filter optional | `Album[]` |
+| `GET` | `/albums/:id` | AD,HT,GV,YT,PH + feature | - | album + photos/media |
 | `DELETE` | `/albums/photos/:photoId` | AD,HT,GV + feature | - | `{ ok: true }` |
 | `DELETE` | `/albums/:id` | AD,HT,GV + feature | - | `{ ok: true }` |
 

@@ -91,9 +91,12 @@ erDiagram
     enum type "PLATFORM|TENANT"
     string email "nullable — định danh email HOẶC phone; UK (tenantId,email)"
     string phone "nullable; UK (tenantId,phone) — login bằng cả hai"
-    string passwordHash
+    string passwordHash "bcrypt cost BCRYPT_COST (12); rehash khi login nếu cost cũ"
     string fullName
     bool isActive "tắt → chặn đăng nhập"
+    int tokenVersion "bump khi reset mật khẩu → vô hiệu access token đang lưu hành"
+    int failedLoginCount "đếm login sai liên tiếp"
+    datetime lockedUntil "nullable — account lockout tới thời điểm này"
     enum platformRole "chỉ khi PLATFORM"
     uuid tenantId FK "null nếu PLATFORM"
     datetime deletedAt
@@ -112,6 +115,7 @@ erDiagram
     uuid id PK
     uuid userId FK
     string tokenHash UK "SHA-256"
+    uuid familyId "nullable — nhóm token theo phiên; reuse token đã revoke → revoke cả họ"
     datetime expiresAt
     datetime revokedAt
   }
@@ -396,7 +400,7 @@ erDiagram
   }
 ```
 
-**Media — lưu trữ nội bộ + nén:** ảnh được nén bằng `sharp` (resize cạnh ≤ `MEDIA_MAX_DIM`=1280px, **webp** quality `MEDIA_QUALITY`=72, xoá metadata) trước khi ghi xuống `MEDIA_ROOT/<tenantId>/<id>.webp` — đủ chất lượng cho phụ huynh xem, tiết kiệm dung lượng. Quota `STORAGE_MB` enforce theo tổng `sizeBytes` của tenant. Phục vụ qua `GET /api/media/:id/file` (StreamableFile, cô lập theo tenant). `DailyReportPhoto` nối ảnh đã upload vào báo cáo ngày theo `sortOrder`; album dùng `AlbumPhoto`. Xem `kids-api/src/media/`.
+**Media — lưu trữ nội bộ + nén:** ảnh được nén bằng `sharp` (resize cạnh ≤ `MEDIA_MAX_DIM`=1280px, **webp** quality `MEDIA_QUALITY`=72, xoá metadata) trước khi ghi xuống `MEDIA_ROOT/<tenantId>/<id>.webp` — đủ chất lượng cho phụ huynh xem, tiết kiệm dung lượng. Quota `STORAGE_MB` enforce theo tổng `sizeBytes` của tenant. Phục vụ qua `GET /api/media/:id/file` (StreamableFile, cô lập theo tenant + kiểm quyền school/owner/report/album trước khi stream). `DailyReportPhoto` nối ảnh đã upload vào báo cáo ngày theo `sortOrder`; album dùng `AlbumPhoto`. Xem `kids-api/src/media/`.
 
 ### D — Sức khỏe (Phase 1)
 

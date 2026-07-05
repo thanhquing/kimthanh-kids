@@ -13,6 +13,8 @@ export interface AuthUser {
   /** role trong tenant (gộp từ Membership), kèm school scope. */
   roles: TenantRole[];
   allowedSchoolIds: string[] | null; // null = toàn tenant
+  /** phiên bản token hiện tại của user; guard so với `tv` trong access token. */
+  tokenVersion: number;
 }
 
 export const CurrentUser = createParamDecorator(

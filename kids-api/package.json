@@ -34,7 +34,14 @@
       "bcrypt",
       "prisma",
       "sharp"
-    ]
+    ],
+    "//overrides": "Vá lỗ transitive an toàn (minor/patch). tar/file-type (major) + @nestjs/core (cần Nest 11) hoãn — xem SECURITY_AUDIT_CHECKLIST §3.",
+    "overrides": {
+      "multer": "^2.2.0",
+      "qs": "^6.15.2",
+      "uuid": "^11.1.1",
+      "js-yaml@^4.0.0": "^4.1.1"
+    }
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

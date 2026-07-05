@@ -196,11 +196,51 @@ describe("E — Học phí (hóa đơn, thanh toán, chứng từ in)", () => {
     const detail = await api().get(`/api/tuition/invoices/${inv.id}`).set(auth(t)).expect(200);
     expect(detail.body.data.status).toBe("PAID");
 
+    // Bảo mật: chi tiết hóa đơn (PH cũng xem được) KHÔNG lộ IPN thô/định danh cổng nội bộ.
+    const payments = detail.body.data.payments as Record<string, unknown>[];
+    expect(payments.length).toBeGreaterThan(0);
+    for (const p of payments) {
+      expect(p.rawPayload).toBeUndefined();
+      expect(p.gatewayRef).toBeUndefined();
+      expect(p.reference).toBeUndefined();
+      expect(p.recordedById).toBeUndefined();
+    }
+
     // gửi lại cùng giao dịch → không cộng kép
     const again = await api().post("/api/tuition/webhooks/vnpay").send(payload).expect(201);
     expect(again.body.data.deduped).toBe(true);
     const detail2 = await api().get(`/api/tuition/invoices/${inv.id}`).set(auth(t)).expect(200);
     expect(Number(detail2.body.data.amountPaid)).toBe(Number(inv.total));
+  });
+
+  it("provider chưa hỗ trợ bị chặn ở webhook tuition (parity với platform) → 400, không cộng tiền", async () => {
+    const t = await createTenant(app);
+    const school = await mainSchool(t);
+    const studentId = await makeStudent(t, school);
+    const inv = (
+      await api()
+        .post("/api/tuition/invoices")
+        .set(auth(t))
+        .send(invoiceBody(studentId))
+        .expect(201)
+    ).body.data;
+
+    const pay = await api()
+      .post(`/api/tuition/invoices/${inv.id}/pay/gateway`)
+      .set(auth(t))
+      .send({ method: "VNPAY" })
+      .expect(201);
+    const gatewayRef = pay.body.data.gatewayRef;
+
+    // Dù có gatewayRef hợp lệ + success:true + signature, provider lạ vẫn bị chặn ngay ở route.
+    const forged = await api()
+      .post("/api/tuition/webhooks/momo")
+      .send({ gatewayRef, eventId: `momo-${rnd()}`, success: true, signature: "anything" })
+      .expect(400);
+    expect(forged.body.error.code).toBe("UNSUPPORTED_PROVIDER");
+
+    const detail = await api().get(`/api/tuition/invoices/${inv.id}`).set(auth(t)).expect(200);
+    expect(detail.body.data.status).not.toBe("PAID");
   });
 
   it("bản in HTML chứng từ + xuất CSV", async () => {

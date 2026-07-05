@@ -3,6 +3,11 @@ dist
 dist-ssr
 *.local
 
+# env (không commit secret; giữ .env.example)
+.env
+.env.*
+!.env.example
+
 # build cache
 *.tsbuildinfo
 

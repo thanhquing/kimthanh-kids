@@ -23,7 +23,23 @@ export interface CreateInvoiceInput {
 
 const invoiceInclude = {
   items: true,
-  payments: { orderBy: { createdAt: "asc" as const } },
+  // Không lộ rawPayload (IPN thô)/gatewayRef/reference/recordedById cho phụ huynh xem hóa đơn.
+  // Prisma 5.22 chưa bật omit → dùng select tường minh (chỉ field an toàn), bỏ 4 field nhạy cảm.
+  payments: {
+    select: {
+      id: true,
+      tenantId: true,
+      schoolId: true,
+      invoiceId: true,
+      method: true,
+      status: true,
+      amount: true,
+      paidAt: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { createdAt: "asc" as const },
+  },
   student: { select: { id: true, fullName: true } },
 };
 

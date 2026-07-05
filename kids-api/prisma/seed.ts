@@ -6,7 +6,7 @@ import {
   PrismaClient,
   UserType,
 } from "@prisma/client";
-import * as bcrypt from "bcrypt";
+import { hashPassword } from "../src/common/crypto/password";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -443,7 +443,7 @@ async function main() {
   });
 
   // ─── Platform super-admin (staff của bạn) ───
-  const passwordHash = await bcrypt.hash("Admin@12345", 10);
+  const passwordHash = await hashPassword("Admin@12345");
   const existing = await prisma.user.findFirst({
     where: { email: "admin@kimthanhkids.vn", tenantId: null },
   });

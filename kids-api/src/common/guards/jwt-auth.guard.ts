@@ -47,6 +47,13 @@ export class JwtAuthGuard implements CanActivate {
         message: "Tài khoản không khả dụng",
       });
 
+    // tokenVersion lệch → token cấp trước khi đổi mật khẩu/khóa → vô hiệu ngay (không đợi hết hạn).
+    if (payload.tv !== user.tokenVersion)
+      throw new UnauthorizedException({
+        code: "INVALID_TOKEN",
+        message: "Token không hợp lệ hoặc hết hạn",
+      });
+
     (req as Request & { user?: unknown }).user = user;
 
     // Patch ALS: platform user → bypass filter; tenant user → giữ tenantId từ host hoặc fallback JWT.

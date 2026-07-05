@@ -15,7 +15,7 @@ const changeSchema = z.object({
   planId: z.string().uuid(),
   billingCycle: z.nativeEnum(BillingCycle),
 });
-const paySchema = z.object({ provider: z.nativeEnum(PlatformPaymentProvider) });
+const paySchema = z.object({ provider: z.literal(PlatformPaymentProvider.VNPAY) });
 
 @ApiTags("billing")
 @Roles(TenantRole.SCHOOL_ADMIN, TenantRole.FINANCE)
@@ -50,9 +50,45 @@ export class BillingController {
   @Get("invoices")
   invoices() {
     // prisma.db (đã filter theo tenant theo ALS) — chỉ thấy hóa đơn của mình.
+    // Không lộ publicToken (bí mật link no-login) + metadata nội bộ.
+    // Prisma 5.22 chưa bật omit → select tường minh (loại publicToken + metadata; lines loại metadata).
     return this.prisma.db.platformInvoice.findMany({
       orderBy: { createdAt: "desc" },
-      include: { lines: true },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        tenantId: true,
+        subscriptionId: true,
+        status: true,
+        currency: true,
+        periodStart: true,
+        periodEnd: true,
+        subtotal: true,
+        discount: true,
+        tax: true,
+        total: true,
+        amountPaid: true,
+        issuedAt: true,
+        dueAt: true,
+        paidAt: true,
+        voidedAt: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
+        lines: {
+          select: {
+            id: true,
+            invoiceId: true,
+            kind: true,
+            label: true,
+            quantity: true,
+            unitPrice: true,
+            amount: true,
+            createdAt: true,
+          },
+        },
+      },
     });
   }
 

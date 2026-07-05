@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from "@nes
 import { TuitionPaymentMethod, TuitionPaymentStatus } from "@prisma/client";
 import { createHmac, randomUUID } from "node:crypto";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { timingSafeEqualHex } from "../common/crypto/timing-safe";
 import { recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
 import { AuditService } from "../audit/audit.service";
 import { EnvService } from "../config/env.service";
@@ -187,7 +188,7 @@ export class TuitionPaymentService {
       .map((k) => `${k}=${String(payload[k])}`)
       .join("&");
     const expected = createHmac("sha512", secret).update(data).digest("hex");
-    return !!signature && signature.toLowerCase() === expected.toLowerCase();
+    return timingSafeEqualHex(signature, expected);
   }
 
   private buildVnpayUrl(gatewayRef: string, amount: number, orderInfo: string): string {

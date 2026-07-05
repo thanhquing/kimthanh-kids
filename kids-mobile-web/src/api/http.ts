@@ -127,6 +127,7 @@ async function send(method: string, path: string, opts: Options = {}): Promise<R
       res = await raw(method, path, opts, tokenStore.access);
     } else {
       tokenStore.clear();
+      tenantStore.clear(); // hết phiên → dọn cả tenant đã chọn (nhất quán với logout)
       onUnauthorized?.();
     }
   }

@@ -454,7 +454,7 @@ export class PlatformService {
         },
       },
       orderBy: { createdAt: "asc" },
-      select: { id: true, email: true, phone: true, fullName: true },
+      select: { id: true, email: true, phone: true, fullName: true, tokenVersion: true },
     });
     if (!admin) {
       throw new NotFoundException({
@@ -480,12 +480,14 @@ export class PlatformService {
       type: UserType.TENANT,
       tenantId,
       platformRole: null,
+      tv: admin.tokenVersion,
     });
 
     return {
       accessToken,
       tokenType: "Bearer",
-      user: admin,
+      // Không trả tokenVersion (counter nội bộ) ra client.
+      user: { id: admin.id, email: admin.email, phone: admin.phone, fullName: admin.fullName },
       tenant,
     };
   }
@@ -1192,8 +1194,17 @@ export class PlatformService {
     },
   ) {
     const sub = await this.prisma.system.subscription.findUnique({ where: { tenantId } });
+    // Pick tường minh (không spread `...override`) → chặn mass-assignment field lạ vào create.
     const created = await this.prisma.system.tenantEntitlement.create({
-      data: { tenantId, subscriptionId: sub?.id, ...override },
+      data: {
+        tenantId,
+        subscriptionId: sub?.id,
+        featureKey: override.featureKey,
+        enabled: override.enabled,
+        metric: override.metric,
+        limitValue: override.limitValue,
+        reason: override.reason,
+      },
     });
     // Xóa cache để lần resolve sau tính lại.
     if (sub)
