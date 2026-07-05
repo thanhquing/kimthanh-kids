@@ -199,6 +199,6 @@ export class TuitionPaymentService {
       vnp_OrderInfo: orderInfo,
       vnp_ReturnUrl: ret,
     });
-    return `https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?${params.toString()}`;
+    return `${this.env.get("VNPAY_PAY_URL")}?${params.toString()}`;
   }
 }

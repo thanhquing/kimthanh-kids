@@ -41,9 +41,15 @@ export const configSchema = z
     PAST_DUE_GRACE_DAYS: z.coerce.number().int().nonnegative().default(7),
     SUSPENDED_GRACE_DAYS: z.coerce.number().int().nonnegative().default(14),
 
-    VNPAY_TMN_CODE: z.string().optional().default(""),
-    VNPAY_HASH_SECRET: z.string().optional().default(""),
-    VNPAY_RETURN_URL: z.string().optional().default(""),
+    // VNPay là cấu hình NHẠY CẢM → KHÔNG default trong code. Thiếu ở prod = fail-fast lúc
+    // boot (superRefine bên dưới). Dev/test để trống → verifier bypass (chỉ non-prod).
+    VNPAY_TMN_CODE: z.string().optional(),
+    VNPAY_HASH_SECRET: z.string().optional(),
+    // URL cổng thanh toán (trang nhập thẻ) — BẮT BUỘC, không default: thiếu là app không boot.
+    // Dev copy giá trị sandbox từ .env.example; prod phải trỏ endpoint thật (superRefine chặn sandbox).
+    VNPAY_PAY_URL: z.string().url(),
+    // URL app hiển thị kết quả sau thanh toán; prod bắt buộc (superRefine).
+    VNPAY_RETURN_URL: z.string().optional(),
 
     // ─── Media (lưu trữ nội bộ + nén) ───
     MEDIA_ROOT: z.string().default("storage"),
@@ -60,11 +66,28 @@ export const configSchema = z
     }
     // Production BẮT BUỘC có secret verify webhook: nếu để trống, verifySignature sẽ
     // fail-closed (return false) và mọi webhook thanh toán bị chặn — fail-fast rõ ràng ở boot.
-    if (cfg.NODE_ENV === "production" && cfg.VNPAY_HASH_SECRET.trim() === "") {
+    if (cfg.NODE_ENV === "production" && (cfg.VNPAY_HASH_SECRET ?? "").trim() === "") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["VNPAY_HASH_SECRET"],
         message: "Production phải cấu hình VNPAY_HASH_SECRET để verify chữ ký webhook",
+      });
+    }
+    // Prod KHÔNG được để cổng thanh toán trỏ sandbox (default dev) → tránh vô tình
+    // đẩy giao dịch thật sang môi trường thử nghiệm.
+    if (cfg.NODE_ENV === "production" && /sandbox/i.test(cfg.VNPAY_PAY_URL)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["VNPAY_PAY_URL"],
+        message: "Production phải cấu hình VNPAY_PAY_URL trỏ cổng VNPay thật (không dùng sandbox)",
+      });
+    }
+    // Redirect sau thanh toán phải là URL app thật ở prod (không để rỗng → fallback sandbox).
+    if (cfg.NODE_ENV === "production" && (cfg.VNPAY_RETURN_URL ?? "").trim() === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["VNPAY_RETURN_URL"],
+        message: "Production phải cấu hình VNPAY_RETURN_URL (URL app hiển thị kết quả thanh toán)",
       });
     }
   });

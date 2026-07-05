@@ -185,14 +185,14 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 | Check | Hạng mục | Bằng chứng cần có | Trạng thái |
 | --- | --- | --- | --- |
 | [ ] | API contract trong [API.md](./API.md) khớp controller thực tế | endpoint diff/review | TODO |
-| [ ] | Swagger `/docs` không public ở production | config/test | TODO |
+| [x] | Swagger `/docs` không public ở production | config/test | PASS — `main.ts` chỉ `SwaggerModule.setup` khi `!env.isProd` (vòng 7 verify) |
 | [x] | CORS chỉ cho origin hợp lệ, không wildcard khi gửi credential | config review | PASS — `config.schema` fail-fast wildcard ở prod (vòng 1) |
-| [ ] | Header bảo mật từ Helmet có hiệu lực | response headers | TODO |
-| [ ] | Pagination có `pageSize` cap, tránh dump dữ liệu lớn | API test | TODO |
-| [ ] | Sort/filter/search validate allowlist field | DTO/service review | TODO |
+| [x] | Header bảo mật từ Helmet có hiệu lực | response headers | PASS — `main.ts` `app.use(helmet())` global (default headers: CSP mặc định off — xem §12 CSP reverse-proxy) |
+| [~] | Pagination có `pageSize` cap, tránh dump dữ liệu lớn | API test | PARTIAL — list platform/posts đã cap (`pageSize` max 50, default 20). List domain (tuition/students/…) trả full theo scope, CHƯA paginate → cần phối hợp FE (đổi response shape). Rủi ro giảm nhẹ vì đã cô lập tenant/school |
+| [ ] | Sort/filter/search validate allowlist field | DTO/service review | TODO — list domain nhận `status`/`studentId` cast enum; chưa allowlist sort field |
 | [x] | Public invoice token đủ khó đoán, không trả `id`/`publicToken` trong public payload | response sample | PASS — UUIDv4, strip `id`/`publicToken` |
-| [x] | Webhook VNPay xác minh chữ ký, idempotent, không tin amount/status từ client | code + replay test | PASS — platform + tuition hardened; amount lấy từ DB (vòng 1+2). Còn: timing-safe compare (LOW, mở) |
-| [ ] | Endpoint print/export không bỏ qua authz/scope | e2e negative test | TODO |
+| [x] | Webhook VNPay xác minh chữ ký, idempotent, không tin amount/status từ client | code + replay test | PASS — platform + tuition hardened; amount lấy từ DB; timing-safe compare (vòng 3) |
+| [x] | Endpoint print/export không bỏ qua authz/scope | e2e negative test | PASS — `tuition print`→`get()` dùng `recordScopeWhere`; `exportCsv` `schoolWhere` + `@Roles(...STAFF)` (vòng 7 verify) |
 | [x] | Media download kiểm tra quyền xem file tenant/school/owner | e2e media access | PASS — `getReadable` ACL + `media.e2e` (vòng 1+2) |
 | [x] | Upload giới hạn loại file, kích thước, extension, MIME sniffing và xử lý ảnh an toàn | upload test | PASS — max 15MB, MIME `image/*`, re-encode webp qua sharp; kind validate (vòng 2) |
 | [x] | Không có path traversal ở public assets/media routes | fuzz path test | PASS — media.path server-gen `<tenant>/<uuid>.webp`; blog assets regex-gated |
@@ -456,3 +456,19 @@ Migration `auth_hardening_lockout_tokenversion_refresh_family` thêm `User.token
 - 🔧 lint/CI-guard `prisma.system` thiếu `tenantId`/`deletedAt` (Phase 5) — hạ tầng CI.
 - 🏛️ Privacy policy (retention/export/erasure/consent/offboarding) — **cần PO quyết định**.
 - 🔩 Devops (§12: HTTPS/HSTS/CSP/monitoring/backup) — nhóm D, làm riêng.
+
+### Vòng 7 (2026-07-05) — §8 API hardening + env-completeness
+
+**ĐÃ FIX + verify:**
+
+- ✅ [MEDIUM — config leak/misconfig] **URL cổng VNPay hardcode `sandbox`** ở `billing/payment.service.ts` + `tuition/tuition-payment.service.ts` → đưa vào env `VNPAY_PAY_URL`. `config.schema` fail-fast ở prod nếu URL còn chứa `sandbox` hoặc `VNPAY_RETURN_URL` rỗng → **không thể vô tình đẩy giao dịch thật sang sandbox**.
+- ✅ [PRINCIPLE — env nhạy cảm KHÔNG default trong code] Rà `config.schema`: secret bắt buộc không có default (`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` → required; `VNPAY_HASH_SECRET`/`VNPAY_TMN_CODE` bỏ `.default("")`, prod-required qua superRefine); `VNPAY_PAY_URL` bắt buộc (`z.string().url()`, không default → thiếu là **app không boot**). Dev copy giá trị từ `.env.example`. `API_CORS_ORIGINS="*"` giữ default nhưng đã bị superRefine chặn ở prod.
+- ✅ [LOW — env drift] `MEDIA_ROOT`/`MEDIA_MAX_DIM`/`MEDIA_QUALITY` có trong `config.schema` nhưng thiếu ở `.env.example` → bổ sung đầy đủ (mọi biến code đọc đều được liệt kê + comment). `.env`/`.env.example` đồng bộ với schema.
+- ✅ [verify] Swagger `/docs` chỉ bật khi `!env.isProd` (§8) — đã đúng sẵn, tick.
+- ✅ [verify] Print/export tuition scope đúng: `print`→`get()` (`recordScopeWhere`), `exportCsv` (`schoolWhere` + `@Roles STAFF`) — không IDOR (§8), tick.
+- ✅ [verify] Helmet global (`app.use(helmet())`) — headers mặc định có hiệu lực (§8), tick.
+
+**CÒN MỞ (đưa lên CÒN LẠI):**
+
+- 🔧 [MEDIUM] Pagination cho list domain (tuition/students/…): hiện trả full theo scope, cần `pageSize` cap → **đổi response shape, phải phối hợp FE** (kids-crm/mobile-web). Rủi ro giảm nhẹ vì đã cô lập tenant/school.
+- 🔧 [LOW] Allowlist sort/filter field cho list domain (§8) — chưa làm.

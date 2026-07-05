@@ -135,6 +135,7 @@ export class PaymentService {
 
   private buildVnpayUrl(gatewayRef: string, amount: number): string {
     const ret = this.env.get("VNPAY_RETURN_URL") || "https://sandbox.vnpayment.vn/return";
-    return `https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_TxnRef=${gatewayRef}&vnp_Amount=${amount * 100}&vnp_ReturnUrl=${encodeURIComponent(ret)}`;
+    const payUrl = this.env.get("VNPAY_PAY_URL");
+    return `${payUrl}?vnp_TxnRef=${gatewayRef}&vnp_Amount=${amount * 100}&vnp_ReturnUrl=${encodeURIComponent(ret)}`;
   }
 }
