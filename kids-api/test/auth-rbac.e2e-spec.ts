@@ -3,6 +3,13 @@ import request from "supertest";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { PLATFORM_HOST, bootstrap, createTenant, genTaxCode, loginPlatform, rnd } from "./helpers";
 
+/** Refresh token giờ nằm trong cookie HttpOnly `kk_rt` (không còn ở body). */
+function refreshCookie(res: request.Response): string {
+  const set = (res.headers["set-cookie"] as unknown as string[]) ?? [];
+  const c = set.find((x) => x.startsWith("kk_rt="));
+  return c ? decodeURIComponent(c.split(";")[0].split("=")[1]) : "";
+}
+
 describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -62,7 +69,9 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .set("Host", t.host)
         .send({ email: t.email, password: t.password })
         .expect(201);
-      const oldRefresh = login.body.data.refreshToken;
+      const oldRefresh = refreshCookie(login);
+      expect(oldRefresh).not.toBe("");
+      expect(login.body.data.refreshToken).toBeUndefined(); // KHÔNG lộ refresh ra body
 
       await api().post("/api/auth/refresh").send({ refreshToken: oldRefresh }).expect(201);
       // dùng lại refresh cũ → bị từ chối
@@ -73,6 +82,22 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
       expect(reuse.body.error.code).toBe("INVALID_REFRESH");
     });
 
+    it("refresh qua cookie HttpOnly (không cần body) → cấp access mới", async () => {
+      const t = await createTenant(app);
+      const agent = request.agent(app.getHttpServer()); // giữ cookie kk_rt giữa các request
+      const login = await agent
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .send({ email: t.email, password: t.password })
+        .expect(201);
+      expect(login.body.data.accessToken).toBeDefined();
+      expect(login.body.data.refreshToken).toBeUndefined();
+      // KHÔNG gửi body → server đọc refresh từ cookie
+      const refreshed = await agent.post("/api/auth/refresh").expect(201);
+      expect(refreshed.body.data.accessToken).toBeDefined();
+      expect(refreshed.body.data.refreshToken).toBeUndefined();
+    });
+
     it("logout thu hồi refresh token", async () => {
       const t = await createTenant(app);
       const login = await api()
@@ -80,7 +105,8 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .set("Host", t.host)
         .send({ email: t.email, password: t.password })
         .expect(201);
-      const { accessToken, refreshToken } = login.body.data;
+      const accessToken = login.body.data.accessToken as string;
+      const refreshToken = refreshCookie(login);
       await api()
         .post("/api/auth/logout")
         .set("Host", t.host)
@@ -159,10 +185,10 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .set("Host", t.host)
         .send({ email: t.email, password: t.password })
         .expect(201);
-      const r1 = login.body.data.refreshToken as string;
+      const r1 = refreshCookie(login);
 
       const rot = await api().post("/api/auth/refresh").send({ refreshToken: r1 }).expect(201);
-      const r2 = rot.body.data.refreshToken as string;
+      const r2 = refreshCookie(rot);
 
       // dùng lại r1 (đã revoke) → 401 và kích hoạt revoke cả họ
       await api().post("/api/auth/refresh").send({ refreshToken: r1 }).expect(401);
@@ -177,7 +203,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .set("Host", t.host)
         .send({ email: t.email, password: t.password })
         .expect(201);
-      const r1 = login.body.data.refreshToken as string;
+      const r1 = refreshCookie(login);
 
       const [a, b] = await Promise.all([
         api().post("/api/auth/refresh").send({ refreshToken: r1 }),
@@ -187,7 +213,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
       expect(statuses).toEqual([201, 401]);
 
       const ok = a.status === 201 ? a : b;
-      const r2 = ok.body.data.refreshToken as string;
+      const r2 = refreshCookie(ok);
       await api().post("/api/auth/refresh").send({ refreshToken: r2 }).expect(401);
     });
 

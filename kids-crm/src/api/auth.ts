@@ -1,7 +1,8 @@
 import { api, tenantStore, tokenStore } from "./http";
 
 export type LoginInput = { identifier: string; password: string };
-export type LoginResult = { accessToken: string; refreshToken: string; userId: string };
+// refreshToken KHÔNG còn ở body — server đặt trong cookie HttpOnly.
+export type LoginResult = { accessToken: string; userId: string };
 export type Me = {
   id: string;
   type?: "PLATFORM" | "TENANT";
@@ -16,7 +17,7 @@ export async function login(input: LoginInput, tenantId: string): Promise<LoginR
   tenantStore.set(tenantId);
   try {
     const res = await api.post<LoginResult>("/auth/login", input, { auth: false });
-    tokenStore.set(res.accessToken, res.refreshToken);
+    tokenStore.set(res.accessToken);
     const profile = await me();
     if (profile.type !== "TENANT" || !profile.tenantId || profile.platformRole) {
       tokenStore.clear();
@@ -34,9 +35,11 @@ export function me(): Promise<Me> {
 }
 
 export async function logout(): Promise<void> {
-  const refreshToken = tokenStore.refresh;
   try {
-    if (refreshToken) await api.post("/auth/logout", { refreshToken });
+    // Không gửi body — server đọc refresh từ cookie rồi revoke + xóa cookie.
+    await api.post("/auth/logout");
+  } catch {
+    // best-effort: kể cả logout server lỗi vẫn dọn phiên phía client
   } finally {
     tokenStore.clear();
     tenantStore.clear();

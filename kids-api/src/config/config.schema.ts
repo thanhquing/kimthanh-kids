@@ -14,6 +14,9 @@ export const configSchema = z
     JWT_ACCESS_TTL: z.string().default("15m"),
     JWT_REFRESH_SECRET: z.string().min(32),
     JWT_REFRESH_TTL: z.string().default("30d"),
+    // Refresh token đặt trong cookie HttpOnly. Secure mặc định theo NODE_ENV=production;
+    // override "true"/"false" khi TLS kết thúc ở reverse proxy mà app nhận http.
+    AUTH_COOKIE_SECURE: z.enum(["true", "false"]).optional(),
 
     ROOT_DOMAIN: z.string().default("kimthanhkids.vn"),
     PLATFORM_HOST: z.string().default("admin.kimthanhkids.vn"),

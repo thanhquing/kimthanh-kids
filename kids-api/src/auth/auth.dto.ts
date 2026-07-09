@@ -14,7 +14,9 @@ export const loginSchema = z
   });
 export type LoginDto = z.infer<typeof loginSchema>;
 
+// refreshToken có thể tới từ cookie HttpOnly (web) → optional trong body.
+// Fallback body giữ cho client không dùng cookie (native sau này) + giai đoạn chuyển tiếp.
 export const refreshSchema = z.object({
-  refreshToken: z.string().min(1),
+  refreshToken: z.string().min(1).optional(),
 });
 export type RefreshDto = z.infer<typeof refreshSchema>;

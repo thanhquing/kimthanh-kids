@@ -124,9 +124,9 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 | [x]   | Tất cả controller domain có `@Roles` phù hợp, không chỉ dựa vào FE ẩn nút                                                 | controller review                                      | PASS — domain controller đều có `@Roles` ở class hoặc method; e2e RBAC phủ tenant/platform/Finance/Nurse negative cases                                                                             |
 | [x]   | Endpoint platform dùng `@PlatformRoles`, không lẫn với role tenant                                                        | controller review                                      | PASS — `platform`, `platform/posts`, `platform/usage` gated bằng `@PlatformRoles`; public invoice/assets tách controller `@Public`; tenant user gọi platform → 403 (`auth-rbac.e2e`)                |
 | [x]   | Endpoint có feature gating/quota dùng `@RequireFeature` hoặc service quota đúng nơi                                       | module review + e2e                                    | PASS — `albums` dùng `@RequireFeature("media_gallery")`, `lesson-plans` dùng `@RequireFeature("lesson_plan")`; quota ở students/classrooms/members/storage qua `EntitlementService.consumeQuota` |
-| [~]   | Query/body/path params dùng Zod DTO hoặc pipe tương đương                                                                 | DTO/controller review                                  | PARTIAL — body/query hầu hết dùng `ZodValidationPipe` + pagination chung; còn một số path param id/raw query đơn giản chưa ép UUID/enum ở boundary, cần audit tiếp khi đóng §8 sort/filter        |
-| [~]   | Không truyền object query raw vào Prisma nếu chưa validate kiểu                                                           | service review                                         | PARTIAL — list domain chính đã Zod/page cap và build `where` từ field allowlist; còn vài query đơn giản như export/status cần validate enum ở controller để đóng hẳn                              |
-| [~]   | Không dùng `prisma.system` trong tenant service nếu không filter `tenantId` tường minh                                    | `rg "prisma.system"` + code review                     | PARTIAL — các flow tenant-facing chính filter `tenantId` tường minh; `prisma.system` vẫn là foot-gun cho soft-delete/isolation, cần lint/CI guard như mục còn lại vòng 5                         |
+| [x]   | Query/body/path params dùng Zod DTO hoặc pipe tương đương                                                                 | DTO/controller review                                  | PASS — body/query dùng `ZodValidationPipe` (`nativeEnum`/`uuid`/pagination); platform list siết enum/uuid vòng 11. Path param `:id` KHÔNG cần ép UUID vì cột id là `text` (không `@db.Uuid`) → id sai chỉ 404, không P2023/500 |
+| [x]   | Không truyền object query raw vào Prisma nếu chưa validate kiểu                                                           | service review                                         | PASS — list domain build `where` từ field allowlist đã Zod-validate (enum/uuid); platform `tenants/subscriptions/invoices/coupons/audit` chuyển sang Zod query schema vòng 11 (bỏ cast `as never`) |
+| [~]   | Không dùng `prisma.system` trong tenant service nếu không filter `tenantId` tường minh                                    | `rg "prisma.system"` + ESLint guard                    | PARTIAL — flow tenant-facing đều filter `tenantId` tường minh (audit vòng 11: daily-reports/pickup/media/assignments OK). Vòng 11 thêm **ESLint guard** cấm `prisma.system` ở 12 module domain nhạy cảm (students/health/medicine/incidents/attendance/…) → khóa dùng `prisma.db` auto-filter. Các dir hệ thống (platform/billing/auth/tenant/…) vẫn dùng hợp lệ, chưa có guard toàn cục |
 | [x]   | `findUnique/update/delete` theo PK không gây IDOR; phải `findFirst` theo scope trước hoặc filter tenant/school tường minh | service review                                         | PASS — 19 điểm PK-mutation đều `findFirst`+scope trước (audit vòng 2) |
 | [x]   | Nested `create`, `upsert`, `createMany` set `tenantId`/`schoolId` tường minh                                              | service review                                         | PASS — audit vòng 10: nested domain writes (`Membership`, `TuitionInvoiceItem`, `MedicineStatusHistory`, `Attendance`, `DailyReportPhoto`, `Meal`, `Activity`, `AlbumPhoto`, `Notification*`) set `tenantId`; fix thêm `assertSchoolAccess` cho menu/album khi truyền `schoolId` trực tiếp |
 | [x]   | Raw SQL nếu có phải parameterized và có tenant/school filter                                                              | `rg "\\$queryRaw\\|\\$executeRaw"`                     | PASS — `rg "\\$queryRaw\\|\\$executeRaw\\|queryRawUnsafe\\|executeRawUnsafe" kids-api/src kids-api/prisma` không có kết quả                                                                        |
@@ -173,8 +173,8 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 | [x]   | Model tenant-scoped đã được thêm vào `TENANT_KEY`                             | review `prisma-tenant.extension.ts` | PASS — đối chiếu model-by-model, không model nào lọt khỏi TENANT_KEY                                                                                           |
 | [x]   | Unique constraint của dữ liệu tenant không vô tình unique toàn hệ thống       | schema review                       | PASS — unique scoped theo tenant/school (School/User/UsageCounter/TuitionInvoice...)                                                                           |
 | [x]   | Index hỗ trợ filter `tenantId`/`schoolId` để tránh full scan dữ liệu nhạy cảm | schema/index review                 | PASS — `@@index([tenantId])`/`schoolId`/`tokenHash`/`publicToken`/`familyId` đầy đủ                                                                            |
-| [~]   | Quan hệ cascade/delete không xóa dây chuyền ngoài phạm vi tenant              | relation review + test              | PARTIAL — thiếu `onDelete` ở cạnh Tenant/School/User/Student → hard-delete để orphan (giảm nhẹ vì soft-delete). Cần chốt deletion-contract                     |
-| [~]   | Soft delete nếu có được filter nhất quán ở list/detail                        | service review                      | PARTIAL — `prisma.db` auto-filter 8 model; `User`/`PlatformPost` ngoài SOFT_DELETE + mọi `prisma.system` phải filter tay (hiện làm đúng, nhưng không có guard) |
+| [x]   | Quan hệ cascade/delete không xóa dây chuyền ngoài phạm vi tenant              | relation review + test              | PASS — deletion-contract chốt (DATABASE_ERD §Deletion contract): cạnh top `tenantId`/`schoolId` = `ON DELETE RESTRICT` (chặn hard-delete Tenant/School còn con → không orphan, không xóa nhầm dây chuyền); cascade chỉ trong aggregate (Student→con); e2e `deletion-contract.e2e` khóa hành vi |
+| [~]   | Soft delete nếu có được filter nhất quán ở list/detail                        | service review                      | PARTIAL — `prisma.db` auto-filter 8 model soft-delete; ESLint guard (vòng 12) khóa 12 module domain nhạy cảm dùng `prisma.db`; `User`/`PlatformPost` + `prisma.system` ở dir hệ thống vẫn filter tay (đúng, chưa guard toàn cục) |
 | [ ]   | Migration không drop/rename dữ liệu nhạy cảm mà thiếu plan backup/rollback    | migration review                    | TODO — thuộc devops/ops                                                                                                                                        |
 | [x]   | Seed/demo không chứa secret production hoặc dữ liệu trẻ thật                  | seed review                         | PASS — seed dùng dữ liệu giả, secret placeholder                                                                                                               |
 | [ ]   | DB user production dùng quyền tối thiểu, không dùng superuser app runtime     | config review                       | TODO — devops (§12)                                                                                                                                            |
@@ -189,7 +189,7 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 | [x]   | CORS chỉ cho origin hợp lệ, không wildcard khi gửi credential                                    | config review        | PASS — `config.schema` fail-fast wildcard ở prod (vòng 1)                                                                                                         |
 | [x]   | Header bảo mật từ Helmet có hiệu lực                                                             | response headers     | PASS — `main.ts` `app.use(helmet())` global (default headers: CSP mặc định off — xem §12 CSP reverse-proxy)                                                       |
 | [x]   | Pagination có `pageSize` cap, tránh dump dữ liệu lớn                                             | API test             | PASS — platform/posts có cap riêng; tenant/domain list dùng `page/pageSize` hoặc alias `limit`, max 100, trả `meta{page,pageSize,total}`; e2e chặn `pageSize=101` |
-| [ ]   | Sort/filter/search validate allowlist field                                                      | DTO/service review   | TODO — list domain nhận `status`/`studentId` cast enum; chưa allowlist sort field                                                                                 |
+| [x]   | Sort/filter/search validate allowlist field                                                      | DTO/service review   | PASS — filter validate Zod (`nativeEnum`/`uuid`, search trim+cap); **sort `orderBy` hardcode server-side toàn bộ** (không có param `sortBy`/`sortDir` do client điều khiển) → không có bề mặt sort-injection; platform list vá enum/uuid vòng 11 |
 | [x]   | Public invoice token đủ khó đoán, không trả `id`/`publicToken` trong public payload              | response sample      | PASS — UUIDv4, strip `id`/`publicToken`                                                                                                                           |
 | [x]   | Webhook VNPay xác minh chữ ký, idempotent, không tin amount/status từ client                     | code + replay test   | PASS — platform + tuition hardened; amount lấy từ DB; timing-safe compare (vòng 3)                                                                                |
 | [x]   | Endpoint print/export không bỏ qua authz/scope                                                   | e2e negative test    | PASS — `tuition print`→`get()` dùng `recordScopeWhere`; `exportCsv` `schoolWhere` + `@Roles(...STAFF)` (vòng 7 verify)                                            |
@@ -204,7 +204,7 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 | Check | Hạng mục                                                                           | Bằng chứng cần có              | Trạng thái                                                                                                                                                                         |
 | ----- | ---------------------------------------------------------------------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [x]   | FE luôn gửi đúng `x-tenant` sau khi người dùng chọn trường ở login                 | network trace                  | PASS — `http.ts` gắn `x-tenant` từ tenantStore; verify login demo qua proxy                                                                                                        |
-| [~]   | Token storage được đánh giá rủi ro XSS; không log token ra console                 | code review                    | PARTIAL — 3 FE lưu access+refresh ở `localStorage` (rủi ro nếu có XSS); KHÔNG có XSS sink + KHÔNG log token. Khuyến nghị refresh token → cookie `HttpOnly` (mini-project, xem §14) |
+| [x]   | Token storage được đánh giá rủi ro XSS; không log token ra console                 | code review                    | PASS — vòng 14: refresh token chuyển sang cookie `HttpOnly` (`kk_rt`, SameSite=Lax, Path=/api/auth) → JS/XSS không đọc được credential dài hạn; access token giữ **in-memory** (không localStorage) + boot-refresh; KHÔNG log token |
 | [x]   | Route guard chỉ để UX, backend vẫn enforce quyền                                   | FE/BE review                   | PASS — BE JwtAuth/Tenant/Subscription/Roles guard đầy đủ (vòng 2)                                                                                                                  |
 | [x]   | Không render HTML/Markdown từ API bằng `dangerouslySetInnerHTML` nếu chưa sanitize | `rg "dangerouslySetInnerHTML"` | PASS — 0 kết quả; platform posts render qua JSX (auto-escape)                                                                                                                      |
 | [x]   | Link/file URL từ API được validate, không tạo open redirect hoặc script URL        | component review               | PASS — media URL nội bộ; crm bản in `document.write` HTML do BE sinh, BE escape đầy đủ (`tuition-print.ts` esc)                                                                    |
@@ -254,13 +254,13 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 
 | Check | Hạng mục                                                                         | Bằng chứng cần có   | Trạng thái |
 | ----- | -------------------------------------------------------------------------------- | ------------------- | ---------- |
-| [ ]   | Dữ liệu trẻ em và sức khỏe được phân loại là sensitive trong checklist vận hành  | data classification | TODO       |
-| [ ]   | Log production có mask/redaction cho PII/token/health note/payment reference     | log samples         | TODO       |
-| [ ]   | Audit log đủ thông tin truy vết nhưng không chứa secret                          | audit samples       | TODO       |
-| [ ]   | Chính sách retention cho ảnh, báo cáo ngày, thuốc, sự cố, học phí được xác định  | retention policy    | TODO       |
-| [ ]   | Export CSV/print invoice có kiểm soát quyền và có audit khi cần                  | e2e + audit         | TODO       |
-| [ ]   | Backup/restore tuân thủ quyền truy cập tối thiểu                                 | ops evidence        | TODO       |
-| [ ]   | Có quy trình xử lý sự cố rò rỉ dữ liệu: phát hiện, cô lập, thông báo, postmortem | incident runbook    | TODO       |
+| [x]   | Dữ liệu trẻ em và sức khỏe được phân loại là sensitive trong checklist vận hành  | data classification | PASS — `PRIVACY_RETENTION.md` §1 phân loại 🔴 nhạy cảm / 🟠 PII / 🟡 tài chính / 🟢 vận hành / ⚫ bí mật |
+| [~]   | Log production có mask/redaction cho PII/token/health note/payment reference     | log samples         | PARTIAL — chính sách chốt (`PRIVACY_RETENTION.md`); redaction/masking prod là pha ops (nhóm D §12) |
+| [~]   | Audit log đủ thông tin truy vết nhưng không chứa secret                          | audit samples       | PARTIAL — `AuditLog` ghi actor/action/tenant/target (không token/password); cần rà metadata payload không dính PII nhạy cảm để đóng PASS |
+| [x]   | Chính sách retention cho ảnh, báo cáo ngày, thuốc, sự cố, học phí được xác định  | retention policy    | PASS — `PRIVACY_RETENTION.md` §2 (hồ sơ trẻ enrolled+2y; tài chính ⚖️10y; audit ≥12th; notification 90d; soft-delete grace 30d). Job purge thuộc ops |
+| [x]   | Export CSV/print invoice có kiểm soát quyền và có audit khi cần                  | e2e + audit         | PASS — export/print `@Roles` STAFF/VIEWERS + school-scope; `status` validate enum (vòng 13, `tuition.e2e`); audit export khối lượng lớn = khuyến nghị future (`PRIVACY_RETENTION.md` §4) |
+| [ ]   | Backup/restore tuân thủ quyền truy cập tối thiểu                                 | ops evidence        | TODO — devops (§12)       |
+| [x]   | Có quy trình xử lý sự cố rò rỉ dữ liệu: phát hiện, cô lập, thông báo, postmortem | incident runbook    | PASS — `PRIVACY_RETENTION.md` §5 runbook 6 bước (phát hiện→cô lập→đánh giá→thông báo→khắc phục→postmortem) |
 
 ## 12. Infra & Deployment
 
@@ -529,3 +529,41 @@ Migration `auth_hardening_lockout_tokenversion_refresh_family` thêm `User.token
 Snapshot checklist sau vòng 11: **127 mục = 95 PASS, 14 PARTIAL, 18 TODO**.
 
 **Verify:** `pnpm test:e2e` (focused) `billing` 16/16, `mass-assignment` 3/3 PASS.
+
+### Vòng 12 (2026-07-09) — ESLint guard `prisma.system` + đóng query-validation
+
+**ĐÃ FIX/AUDIT:**
+
+- ✅ [MEDIUM] **ESLint guard chống rò cross-tenant**: `.eslintrc.cjs` thêm `overrides` cấm `prisma.system` ở 12 module domain nhạy cảm về dữ liệu trẻ/PH (`students`, `classrooms`, `health`, `medicine`, `incidents`, `attendance`, `announcements`, `menus`, `albums`, `lesson-plans`, `leave`, `notifications`) → khóa các module này luôn dùng `prisma.db` (extension auto-filter `tenantId`). Thêm mới `prisma.system` ở đây sẽ **fail lint** (đã verify rule fire). Các dir hệ thống (platform/billing/auth/tenant/provisioning/usage/entitlement/…) dùng `prisma.system` hợp lệ, không đụng.
+- ✅ Audit lại các `prisma.system` ở module domain biên: `daily-reports` (createMany/deleteMany set `tenantId`), `pickup`/`assignments` (findFirst filter `tenantId`), `media` (aggregate theo `tenantId`) — đều filter tenant tường minh, an toàn.
+- ✅ §4 đóng PASS có bằng chứng: query/body/path param (path `:id` cột `text` → id sai chỉ 404, không P2023/500 nên không cần ép UUID); không truyền query raw chưa validate; sort/filter allowlist (sort hardcode server-side, filter Zod enum/uuid).
+
+Snapshot checklist sau vòng 12: **127 mục = 98 PASS, 12 PARTIAL, 17 TODO**.
+
+**Verify:** `pnpm lint` xanh; guard fire khi inject `prisma.system` vào `students.service` (revert sạch).
+
+### Vòng 13 (2026-07-09) — deletion-contract + privacy/retention policy
+
+**ĐÃ FIX/AUDIT:**
+
+- ✅ [§10] **Deletion-contract chốt** (`DATABASE_ERD.md` §Deletion contract): xác nhận cạnh top `tenantId`/`schoolId` = `ON DELETE RESTRICT` (không thể hard-delete Tenant/School còn con → không orphan, không xóa nhầm dây chuyền); cascade chỉ trong aggregate (Student→con, Invoice→line/payment...). Ghi chú "orphan" cũ **không chính xác** — RESTRICT chặn xóa. Regression `test/deletion-contract.e2e-spec.ts` (3 case): cascade Student→Allergy; RESTRICT chặn xóa School/Tenant còn con.
+- ✅ [§11] **Privacy/retention policy** (`PRIVACY_RETENTION.md`, mới): phân loại dữ liệu (🔴/🟠/🟡/🟢/⚫); retention schedule (hồ sơ trẻ enrolled+2y, tài chính ⚖️10y, audit ≥12th, notification 90d, soft-delete grace 30d); right-to-erasure; incident runbook 6 bước; kiểm soát export. Đóng §11: data classification, retention, incident runbook, export permission (4 PASS); log-redaction + audit-metadata chuyển PARTIAL (impl thuộc ops).
+- ✅ [MEDIUM] Vá filter allowlist còn sót: `GET /tuition/invoices/export` chuyển `@Query("status")` thô → Zod `nativeEnum` (status sai → 400 thay vì 500). e2e `tuition.e2e` +2 assertion (HACK→400, UNPAID→200).
+
+Snapshot checklist sau vòng 13: **127 mục = 103 PASS, 13 PARTIAL, 11 TODO**.
+
+**Verify:** `deletion-contract.e2e` 3/3, `tuition.e2e` export case PASS; gate cuối `tsc`/`lint`/`test:e2e` (xem cuối task).
+
+### Vòng 14 (2026-07-09) — refresh token → cookie HttpOnly (mini-project FE token)
+
+**ĐÃ FIX:**
+
+- ✅ [HIGH] **Refresh token chuyển sang cookie `HttpOnly`** (chống XSS đọc cắp credential dài hạn 30 ngày):
+  - BE: `auth-cookie.ts` (mới) set/read/clear cookie `kk_rt` (`HttpOnly`, `SameSite=Lax`, `Path=/api/auth`, `Secure`=prod, host-only → mỗi subdomain tenant cô lập). `auth.controller` login set cookie + **bỏ refreshToken khỏi body**; refresh/logout đọc cookie (fallback body cho native). `refreshSchema.refreshToken` → optional. Env `AUTH_COOKIE_SECURE` optional override. Không thêm dependency (dùng `res.cookie` + parse header thủ công).
+  - FE (cả 3): access token giữ **in-memory** (bỏ localStorage) + `bootstrapAuth()` khôi phục phiên từ cookie khi reload (boot-gate ở `App.tsx`); `fetch` thêm `credentials: "include"`; refresh/logout không gửi body. Same-origin proxy nên cookie tự gửi kèm.
+  - CSRF: `SameSite=Lax` + refresh là `POST` ⇒ cookie không gửi trên cross-site POST.
+- ✅ [REGRESSION] `auth-rbac.e2e`: migrate lấy refresh từ Set-Cookie; thêm case refresh **qua cookie (không body)** + xác nhận login body KHÔNG lộ refreshToken. Rotation/reuse/logout/double-submit vẫn xanh (26/26).
+
+Snapshot checklist sau vòng 14: **127 mục = 104 PASS, 12 PARTIAL, 11 TODO**.
+
+**Verify:** BE `tsc`/`lint` xanh; `auth-rbac.e2e` 26/26; build 3 FE (mobile-web/crm/platform) xanh; full `test:e2e` (xem cuối task).

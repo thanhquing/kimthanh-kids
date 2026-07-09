@@ -8,24 +8,23 @@
  *  - 401 → thử refresh 1 lần → retry → nếu vẫn hỏng thì logout
  */
 const BASE = "/api";
-const ACCESS_KEY = "kk_access";
-const REFRESH_KEY = "kk_refresh";
 const LANGUAGE_KEY = "kk_platform_lang";
 
+/**
+ * Access token giữ TRONG BỘ NHỚ (không localStorage) → giảm bề mặt XSS đọc cắp token.
+ * Refresh token KHÔNG còn ở JS: nằm trong cookie `HttpOnly` do server set (xem kids-api auth-cookie).
+ * Reload trang mất access in-memory → gọi `bootstrapAuth()` để lấy access mới từ cookie.
+ */
+let accessToken: string | null = null;
 export const tokenStore = {
   get access() {
-    return localStorage.getItem(ACCESS_KEY);
+    return accessToken;
   },
-  get refresh() {
-    return localStorage.getItem(REFRESH_KEY);
-  },
-  set(access: string, refresh?: string) {
-    localStorage.setItem(ACCESS_KEY, access);
-    if (refresh) localStorage.setItem(REFRESH_KEY, refresh);
+  set(access: string) {
+    accessToken = access;
   },
   clear() {
-    localStorage.removeItem(ACCESS_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    accessToken = null;
   },
 };
 
@@ -71,22 +70,29 @@ async function raw(method: string, path: string, opts: Options, token: string | 
   return fetch(buildUrl(path, opts.query), {
     method,
     headers,
+    // Gửi kèm cookie HttpOnly (refresh token) — same-origin nên trình duyệt tự đính, "include" cho chắc.
+    credentials: "include",
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
 }
 
+/** Đổi refresh cookie lấy access token mới. Không gửi body — server đọc cookie `kk_rt`. */
 async function refreshTokens(): Promise<boolean> {
-  const refresh = tokenStore.refresh;
-  if (!refresh) return false;
-  const res = await raw("POST", "/auth/refresh", { body: { refreshToken: refresh }, auth: false }, null);
+  const res = await raw("POST", "/auth/refresh", { auth: false }, null);
   if (!res.ok) return false;
   const json = await res.json().catch(() => null);
   const data = json?.data ?? json;
   if (data?.accessToken) {
-    tokenStore.set(data.accessToken, data.refreshToken);
+    tokenStore.set(data.accessToken);
     return true;
   }
   return false;
+}
+
+/** Khôi phục phiên khi mở/reload app: đổi refresh cookie (nếu còn) lấy access in-memory. */
+export async function bootstrapAuth(): Promise<boolean> {
+  if (tokenStore.access) return true;
+  return refreshTokens();
 }
 
 async function parse<T>(res: Response): Promise<T> {

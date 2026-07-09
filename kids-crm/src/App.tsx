@@ -1,7 +1,7 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { isAuthed } from "./api/auth";
-import { setOnUnauthorized } from "./api/http";
+import { bootstrapAuth, setOnUnauthorized } from "./api/http";
 import { AppLayout } from "./components/AppLayout";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ClassroomsPage } from "./pages/ClassroomsPage";
@@ -33,9 +33,20 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 export function App() {
   const navigate = useNavigate();
+  // Access token in-memory mất khi reload → khôi phục phiên từ cookie refresh trước khi render route.
+  const [booting, setBooting] = useState(true);
+  useEffect(() => {
+    bootstrapAuth().finally(() => setBooting(false));
+  }, []);
   useEffect(() => {
     setOnUnauthorized(() => navigate("/login", { replace: true }));
   }, [navigate]);
+
+  if (booting) {
+    return (
+      <div className="flex h-screen items-center justify-center text-slate-400 text-sm">Đang tải…</div>
+    );
+  }
 
   return (
     <Routes>
