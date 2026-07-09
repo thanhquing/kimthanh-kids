@@ -276,4 +276,35 @@ describe("Phase 0 edge — billing / quota / entitlement / webhook", () => {
     const ent = await entitlements.resolve(tenant!.id);
     expect(ent.limits.STUDENTS?.limitValue).toBe(9999);
   });
+
+  // ─────────── FILTER ALLOWLIST (platform list) ───────────
+  // Enum/uuid filter phải validate ở biên → 400, KHÔNG để string thô lọt vào Prisma where (500).
+  const platformGet = (token: string, path: string) =>
+    api().get(path).set("Host", PLATFORM_HOST).set("Authorization", `Bearer ${token}`);
+
+  it("GET /platform/tenants: status/planTier enum sai → 400 (không 500)", async () => {
+    const tk = await loginPlatform(app);
+    await platformGet(tk, "/api/platform/tenants?status=HACK").expect(400);
+    await platformGet(tk, "/api/platform/tenants?planTier=HACK").expect(400);
+    // Enum hợp lệ vẫn chạy bình thường.
+    await platformGet(tk, "/api/platform/tenants?status=ACTIVE&planTier=PRO").expect(200);
+  });
+
+  it("GET /platform/subscriptions: status enum sai → 400", async () => {
+    const tk = await loginPlatform(app);
+    await platformGet(tk, "/api/platform/subscriptions?status=HACK").expect(400);
+    await platformGet(tk, "/api/platform/subscriptions?status=ACTIVE").expect(200);
+  });
+
+  it("GET /platform/invoices: tenantId không phải uuid + status sai → 400", async () => {
+    const tk = await loginPlatform(app);
+    await platformGet(tk, "/api/platform/invoices?tenantId=not-a-uuid").expect(400);
+    await platformGet(tk, "/api/platform/invoices?status=HACK").expect(400);
+    await platformGet(tk, "/api/platform/invoices?status=OPEN").expect(200);
+  });
+
+  it("GET /platform/audit: tenantId không phải uuid → 400", async () => {
+    const tk = await loginPlatform(app);
+    await platformGet(tk, "/api/platform/audit?tenantId=not-a-uuid").expect(400);
+  });
 });

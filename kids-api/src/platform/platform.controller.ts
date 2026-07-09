@@ -1,10 +1,18 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { LimitMetric, PlatformRole } from "@prisma/client";
+import {
+  LimitMetric,
+  PlanTier,
+  PlatformInvoiceStatus,
+  PlatformRole,
+  SubscriptionStatus,
+  TenantStatus,
+} from "@prisma/client";
 import { z } from "zod";
 import { BillingService } from "../billing/billing.service";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { PlatformRoles } from "../common/decorators/roles.decorator";
+import { MAX_PAGE } from "../common/http/pagination";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { UpdatePlatformConfigInput } from "../platform-config/platform-config.service";
 
@@ -14,6 +22,42 @@ const entitlementSchema = z.object({
   metric: z.nativeEnum(LimitMetric).optional(),
   limitValue: z.number().int().nullable().optional(),
   reason: z.string().optional(),
+});
+
+// Query filter cho các trang list nền tảng — validate enum/uuid ở biên để tránh 500
+// (Prisma nhận enum/uuid sai kiểu) và chặn filter tùy tiện; trả 400 khi sai.
+const pageField = z.coerce.number().int().min(1).max(MAX_PAGE).optional();
+const searchField = z.string().trim().min(1).max(120).optional();
+
+const listTenantsQuery = z.object({
+  page: pageField,
+  status: z.nativeEnum(TenantStatus).optional(),
+  q: searchField,
+  planTier: z.nativeEnum(PlanTier).optional(),
+  quota: z.enum(["at-risk"]).optional(),
+});
+
+const listSubscriptionsQuery = z.object({
+  page: pageField,
+  status: z.nativeEnum(SubscriptionStatus).optional(),
+});
+
+const listInvoicesQuery = z.object({
+  page: pageField,
+  tenantId: z.string().uuid().optional(),
+  status: z.nativeEnum(PlatformInvoiceStatus).optional(),
+  q: searchField,
+});
+
+const listCouponsQuery = z.object({
+  page: pageField,
+  isActive: z.enum(["true", "false"]).optional(),
+});
+
+const listAuditQuery = z.object({
+  page: pageField,
+  tenantId: z.string().uuid().optional(),
+  action: searchField,
 });
 import { MrrSnapshotService } from "./mrr-snapshot.service";
 import {
@@ -52,14 +96,8 @@ export class PlatformController {
   }
 
   @Get("tenants")
-  listTenants(
-    @Query("page") page?: string,
-    @Query("status") status?: string,
-    @Query("q") q?: string,
-    @Query("planTier") planTier?: string,
-    @Query("quota") quota?: string,
-  ) {
-    return this.platform.listTenants(Number(page) || 1, 20, status, q, planTier, quota);
+  listTenants(@Query(new ZodValidationPipe(listTenantsQuery)) q: z.infer<typeof listTenantsQuery>) {
+    return this.platform.listTenants(q.page ?? 1, 20, q.status, q.q, q.planTier, q.quota);
   }
 
   // Đặt TRƯỚC "tenants/:id" để route tĩnh không bị param ":id" nuốt.
@@ -111,8 +149,10 @@ export class PlatformController {
   }
 
   @Get("subscriptions")
-  listSubscriptions(@Query("page") page?: string, @Query("status") status?: string) {
-    return this.platform.listSubscriptions(Number(page) || 1, 20, status);
+  listSubscriptions(
+    @Query(new ZodValidationPipe(listSubscriptionsQuery)) q: z.infer<typeof listSubscriptionsQuery>,
+  ) {
+    return this.platform.listSubscriptions(q.page ?? 1, 20, q.status);
   }
 
   @Get("invoices/stats")
@@ -122,12 +162,9 @@ export class PlatformController {
 
   @Get("invoices")
   listInvoices(
-    @Query("page") page?: string,
-    @Query("tenantId") tenantId?: string,
-    @Query("status") status?: string,
-    @Query("q") q?: string,
+    @Query(new ZodValidationPipe(listInvoicesQuery)) q: z.infer<typeof listInvoicesQuery>,
   ) {
-    return this.platform.listInvoices(Number(page) || 1, 20, tenantId, status, q);
+    return this.platform.listInvoices(q.page ?? 1, 20, q.tenantId, q.status, q.q);
   }
 
   @Post("invoices")
@@ -162,8 +199,8 @@ export class PlatformController {
   }
 
   @Get("coupons")
-  listCoupons(@Query("page") page?: string, @Query("isActive") isActive?: string) {
-    return this.platform.listCoupons(Number(page) || 1, 20, isActive);
+  listCoupons(@Query(new ZodValidationPipe(listCouponsQuery)) q: z.infer<typeof listCouponsQuery>) {
+    return this.platform.listCoupons(q.page ?? 1, 20, q.isActive);
   }
 
   @Get("worklist")
@@ -188,12 +225,8 @@ export class PlatformController {
   }
 
   @Get("audit")
-  listAudit(
-    @Query("page") page?: string,
-    @Query("tenantId") tenantId?: string,
-    @Query("action") action?: string,
-  ) {
-    return this.platform.listAudit(Number(page) || 1, 30, tenantId, action);
+  listAudit(@Query(new ZodValidationPipe(listAuditQuery)) q: z.infer<typeof listAuditQuery>) {
+    return this.platform.listAudit(q.page ?? 1, 30, q.tenantId, q.action);
   }
 
   @Post("coupons")

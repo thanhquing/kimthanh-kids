@@ -304,7 +304,7 @@ Thêm hoặc chạy lại các test bảo mật sau nếu có thay đổi liên 
 | [x]   | Upload file `.php`, SVG script, ảnh quá lớn, MIME sai    | bị chặn                                  | PASS — MIME `NOT_IMAGE`; SVG re-encode qua sharp → webp; kind `VALIDATION_FAILED` (media e2e)                     |
 | [x]   | Media ID tenant khác                                     | 403/404                                  | PASS — cross-tenant 404 + same-tenant/cross-school ACL (media e2e)                                                |
 | [x]   | Query param sai kiểu ở list/detail                       | 400 validation, không 500                | PASS — `ZodValidationPipe` (media `kind` e2e vòng 2)                                                              |
-| [ ]   | Payload có `tenantId`/`role`/`status` tự gắn             | bị bỏ qua hoặc 400                       | TODO — chưa audit riêng vòng này                                                                                  |
+| [x]   | Payload có `tenantId`/`role`/`status` tự gắn             | bị bỏ qua hoặc 400                       | PASS — `mass-assignment.e2e` (student tenantId/id/status bỏ qua; member tenantId/platformRole/type bỏ qua; role ngoài TenantRole → 400) |
 
 ## 14. Báo Cáo Kết Quả Audit
 
@@ -487,7 +487,7 @@ Migration `auth_hardening_lockout_tokenversion_refresh_family` thêm `User.token
 
 **CÒN MỞ (đưa lên CÒN LẠI):**
 
-- 🔧 [LOW] Allowlist sort/filter field cho list domain (§8) — chưa làm.
+- 🔧 [LOW] Allowlist sort/filter field cho list domain (§8) — xử lý vòng 11 (xem dưới).
 
 ### Vòng 9 (2026-07-09) — sync checklist theo code latest
 
@@ -500,7 +500,7 @@ Migration `auth_hardening_lockout_tokenversion_refresh_family` thêm `User.token
 
 **CÒN MỞ SAU SYNC:**
 
-- Code/audit nhỏ: sort/filter allowlist, payload mass-assignment e2e riêng.
+- ~~Code/audit nhỏ: sort/filter allowlist, payload mass-assignment e2e riêng.~~ → XONG vòng 11.
 - Mini-project: FE token → cookie `HttpOnly` + access in-memory.
 - Product/legal: deletion contract, retention/export/erasure/consent/offboarding.
 - Devops: HTTPS/HSTS/CSP, DB firewall, non-root runtime, CI security scan, monitoring/alert, backup/rollback.
@@ -516,3 +516,16 @@ Migration `auth_hardening_lockout_tokenversion_refresh_family` thêm `User.token
 - Snapshot checklist sau vòng 10: **127 mục = 93 PASS, 14 PARTIAL, 20 TODO**.
 
 **Verify focused:** `pnpm test:e2e -- communication.e2e-spec.ts` PASS — 5 tests / 1 suite.
+
+### Vòng 11 (2026-07-09) — filter allowlist (platform) + mass-assignment e2e
+
+**ĐÃ FIX/AUDIT:**
+
+- ✅ [MEDIUM] Filter allowlist các list nền tảng: `platform.controller.ts` chuyển 5 endpoint (`tenants`, `subscriptions`, `invoices`, `coupons`, `audit`) từ `@Query("...")` string thô sang Zod query schema — `status`/`planTier`/`isActive` validate bằng `nativeEnum`/`enum`, `tenantId` bằng `uuid`, `page` coerce+min/max. Trước đây string thô cast `as never` chảy vào Prisma `where` → enum/uuid sai gây **500**; nay trả **400** đúng convention (không đổi route/method).
+- ✅ [REGRESSION TEST] `billing.e2e-spec.ts` +4 case: `/platform/tenants` status/planTier sai → 400 (enum đúng → 200); `/platform/subscriptions` status sai → 400; `/platform/invoices` tenantId không-uuid + status sai → 400 (`status=OPEN` → 200); `/platform/audit` tenantId không-uuid → 400.
+- ✅ [REGRESSION TEST] `mass-assignment.e2e-spec.ts` (mới, 3 case) đóng §13: `POST /students` client gắn `tenantId`/`id`/`status` → bị Zod strip + extension override (record thuộc tenant token, `status=ACTIVE`, id auto); `POST /tenant/members` client gắn `tenantId`/`platformRole`/`type`/`isActive` → bỏ qua (user `type=TENANT`, `platformRole=null`, tenant theo token); `role` ngoài `TenantRole` → 400.
+- 📌 Sort field: mọi `orderBy` domain đang **hardcode server-side** (không có param `sortBy`/`sortDir` do client điều khiển) → không có bề mặt sort-injection; allowlist sort chỉ cần khi thêm sort động sau này.
+
+Snapshot checklist sau vòng 11: **127 mục = 95 PASS, 14 PARTIAL, 18 TODO**.
+
+**Verify:** `pnpm test:e2e` (focused) `billing` 16/16, `mass-assignment` 3/3 PASS.
