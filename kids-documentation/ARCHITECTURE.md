@@ -4,7 +4,7 @@
 
 - **NestJS 10** (DI, guards, interceptors, modules)
 - **Prisma 5 + PostgreSQL 16** (ORM, migrations, client extension cho multi-tenant)
-- **JWT** access HS256 (15m, claim `tv`=tokenVersion → vô hiệu khi reset mật khẩu) + refresh (30d, hash SHA-256, rotation theo `familyId` + **reuse-detection** revoke cả họ) · **bcrypt** (cost `BCRYPT_COST`, rehash-on-login) · **account lockout** (`failedLoginCount`/`lockedUntil`, ngưỡng `AUTH_LOCKOUT_*`)
+- **JWT** access HS256 (15m, claim `tv`=tokenVersion → vô hiệu khi reset mật khẩu; web FE giữ **in-memory**) + refresh (30d, hash SHA-256, rotation theo `familyId` + **reuse-detection** revoke cả họ; trả qua **cookie `HttpOnly` `kk_rt`** — SameSite=Lax, Path bám global prefix, không lộ ra body/JS; fallback body cho client không dùng cookie) · **bcrypt** (cost `BCRYPT_COST`, rehash-on-login) · **account lockout** (`failedLoginCount`/`lockedUntil`, ngưỡng `AUTH_LOCKOUT_*`)
 - **Zod** validate env + request body · **class-validator** (global ValidationPipe)
 - **@nestjs/schedule** (cron) · **@nestjs/throttler** (2 named throttler env-driven: `default` 120/60s mọi route + `auth` 5/60s cho `/auth/login`+`/auth/refresh` chống brute-force; cấu hình `THROTTLE_*`/`AUTH_THROTTLE_*`) · **helmet** · **trust proxy** (`TRUST_PROXY`) · **Swagger** (`/docs`)
 - Package manager: **pnpm** · Node ≥ 20

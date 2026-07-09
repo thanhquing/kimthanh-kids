@@ -13,6 +13,7 @@ Tài liệu tham chiếu cho hệ thống SaaS quản lý mầm non **KimThanh K
 | [API.md](./API.md) | Danh mục endpoint **đầy đủ** (Tầng A + Phase 1 A→G): public/auth/tenant/billing/platform + domain nghiệp vụ |
 | [UI_API_FLOW_TEST.md](./UI_API_FLOW_TEST.md) | Ledger kiểm thử cURL theo mock UI: Platform tenant → CRM chủ trường → app nhỏ/mobile |
 | [SECURITY_AUDIT_CHECKLIST.md](./SECURITY_AUDIT_CHECKLIST.md) | Checklist audit bảo mật: multi-tenant isolation, RBAC, auth/session, API, FE/BE, DB/schema |
+| [PRIVACY_RETENTION.md](./PRIVACY_RETENTION.md) | Phân loại dữ liệu, chính sách retention, right-to-erasure, incident runbook, kiểm soát export |
 | [SYSTEM_TEST_CHECKLIST.md](./SYSTEM_TEST_CHECKLIST.md) | Checklist kiểm thử hệ thống: load/stress/soak, regression, DB performance, FE/mobile, billing/webhook, backup/restore |
 
 > Tài liệu **nghiệp vụ/đào tạo/sale** (cho CEO, PO, chủ trường, Sale) ở thư mục riêng: [`kids-business-docs/`](../kids-business-docs).
@@ -47,7 +48,7 @@ pnpm prisma:migrate        # tạo schema
 pnpm prisma:seed           # 5 gói (free/starter/pro/enterprise/dedicated) + platform super-admin
 pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # http://localhost:3000/api  · Swagger: /docs
-pnpm test:e2e              # 131 e2e / 15 suite
+pnpm test:e2e              # 164 e2e / 18 suite
 ```
 
 > Yêu cầu Node ≥ 20 (khuyến nghị 22). Tài khoản platform seed: `admin@kimthanhkids.vn` / `Admin@12345`.
