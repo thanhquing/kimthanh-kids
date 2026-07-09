@@ -1,5 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { contentScopeForKids, isStaff, schoolWhere } from "../common/scope/school-scope";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -101,16 +103,24 @@ export class AlbumsService {
     return contentScopeForKids(kids);
   }
 
-  async list(user: AuthUser, opts: { classroomId?: string } = {}) {
+  async list(user: AuthUser, opts: PaginationQuery & { classroomId?: string } = {}) {
+    const pg = page(opts);
     const base = isStaff(user) ? { ...schoolWhere(user) } : await this.parentScope(user);
-    return this.prisma.db.album.findMany({
-      where: { ...base, ...(opts.classroomId ? { classroomId: opts.classroomId } : {}) },
-      include: {
-        classroom: { select: { id: true, name: true } },
-        _count: { select: { photos: true } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const where = { ...base, ...(opts.classroomId ? { classroomId: opts.classroomId } : {}) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.album.findMany({
+        where,
+        include: {
+          classroom: { select: { id: true, name: true } },
+          _count: { select: { photos: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.album.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async get(user: AuthUser, id: string) {

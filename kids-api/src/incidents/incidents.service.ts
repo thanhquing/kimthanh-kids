@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { IncidentSeverity, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -54,21 +56,38 @@ export class IncidentsService {
   }
 
   /** Danh sách sự cố cho staff (school-scope, lọc theo học sinh nếu có). */
-  list(user: AuthUser, opts: { studentId?: string } = {}) {
-    return this.prisma.db.incident.findMany({
-      where: { ...schoolWhere(user), ...(opts.studentId ? { studentId: opts.studentId } : {}) },
-      include: { student: { select: { id: true, fullName: true } } },
-      orderBy: { date: "desc" },
-      take: 200,
-    });
+  async list(user: AuthUser, opts: PaginationQuery & { studentId?: string } = {}) {
+    const pg = page(opts);
+    const where = {
+      ...schoolWhere(user),
+      ...(opts.studentId ? { studentId: opts.studentId } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.incident.findMany({
+        where,
+        include: { student: { select: { id: true, fullName: true } } },
+        orderBy: { date: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.incident.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Sự cố của 1 học sinh — staff (school-scope) hoặc phụ huynh (con mình). */
-  studentFeed(user: AuthUser, studentId: string) {
-    return this.prisma.db.incident.findMany({
-      where: { studentId, ...recordScopeWhere(user) },
-      orderBy: { date: "desc" },
-      take: 100,
-    });
+  async studentFeed(user: AuthUser, studentId: string, query: PaginationQuery = {}) {
+    const pg = page(query);
+    const where = { studentId, ...recordScopeWhere(user) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.incident.findMany({
+        where,
+        orderBy: { date: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.incident.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 }

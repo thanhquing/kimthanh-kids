@@ -161,7 +161,14 @@
     "markRead": "Mark read",
     "markAllRead": "Mark all read",
     "upload": "Upload photo",
-    "errorGeneric": "Something went wrong, please try again."
+    "errorGeneric": "Something went wrong, please try again.",
+    "loadMore": "Load more",
+    "noMore": "No more",
+    "prev": "Prev",
+    "next": "Next",
+    "pageInfo": "Page {page}/{pages}",
+    "totalItems": "{total} items",
+    "exporting": "Exporting…"
   },
   "feature": {
     "assignmentsTitle": "Weekly assignments",

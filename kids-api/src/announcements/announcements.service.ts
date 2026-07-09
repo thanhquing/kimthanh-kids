@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { AnnouncementAudience, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import {
   STAFF_ROLE_LIST,
   assertSchoolAccess,
@@ -128,12 +130,20 @@ export class AnnouncementsService {
   }
 
   /** Danh sách cho staff (school-scope, gồm cả nháp). */
-  list(user: AuthUser, opts: { audience?: AnnouncementAudience } = {}) {
-    return this.prisma.db.announcement.findMany({
-      where: { ...schoolWhere(user), ...(opts.audience ? { audience: opts.audience } : {}) },
-      include: { classroom: { select: { id: true, name: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+  async list(user: AuthUser, opts: PaginationQuery & { audience?: AnnouncementAudience } = {}) {
+    const pg = page(opts);
+    const where = { ...schoolWhere(user), ...(opts.audience ? { audience: opts.audience } : {}) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.announcement.findMany({
+        where,
+        include: { classroom: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.announcement.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** WHERE hiển thị cho phụ huynh: đã đăng + (toàn trường/PH của trường con) hoặc (lớp của con). */
@@ -157,16 +167,22 @@ export class AnnouncementsService {
   }
 
   /** Feed đã đăng — staff thấy mọi thông báo trong cơ sở; PH lọc theo con. */
-  async feed(user: AuthUser) {
+  async feed(user: AuthUser, query: PaginationQuery = {}) {
+    const pg = page(query);
     const where = isStaff(user)
       ? { publishedAt: { not: null }, ...schoolWhere(user) }
       : await this.parentVisibilityWhere(user);
-    return this.prisma.db.announcement.findMany({
-      where,
-      include: { classroom: { select: { id: true, name: true } } },
-      orderBy: { publishedAt: "desc" },
-      take: 100,
-    });
+    const [items, total] = await Promise.all([
+      this.prisma.db.announcement.findMany({
+        where,
+        include: { classroom: { select: { id: true, name: true } } },
+        orderBy: { publishedAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.announcement.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async get(user: AuthUser, id: string) {

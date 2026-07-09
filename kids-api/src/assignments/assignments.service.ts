@@ -6,6 +6,8 @@ import {
 } from "@nestjs/common";
 import { Prisma, Shift, TenantRole } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { assertSchoolAccess, schoolWhere } from "../common/scope/school-scope";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -89,29 +91,48 @@ export class AssignmentsService {
   }
 
   /** Lịch phân công của tôi (nhân sự đang đăng nhập) — app GV hiển thị. */
-  myschedule(user: AuthUser) {
-    return this.prisma.db.staffAssignment.findMany({
-      where: { staffId: user.id },
-      include: { classroom: { select: { id: true, name: true } } },
-      orderBy: [{ weekday: "asc" }, { shift: "asc" }],
-    });
+  async myschedule(user: AuthUser, opts: PaginationQuery = {}) {
+    const pg = page(opts);
+    const where = { staffId: user.id };
+    const [items, total] = await Promise.all([
+      this.prisma.db.staffAssignment.findMany({
+        where,
+        include: { classroom: { select: { id: true, name: true } } },
+        orderBy: [{ weekday: "asc" }, { shift: "asc" }],
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.staffAssignment.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Admin/HT xem phân công (lọc theo nhân sự/lớp/thứ), school-scope. */
-  list(user: AuthUser, opts: { staffId?: string; classroomId?: string; weekday?: number } = {}) {
-    return this.prisma.db.staffAssignment.findMany({
-      where: {
-        ...schoolWhere(user),
-        ...(opts.staffId ? { staffId: opts.staffId } : {}),
-        ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
-        ...(opts.weekday ? { weekday: opts.weekday } : {}),
-      },
-      include: {
-        staff: { select: { id: true, fullName: true } },
-        classroom: { select: { id: true, name: true } },
-      },
-      orderBy: [{ weekday: "asc" }, { shift: "asc" }],
-    });
+  async list(
+    user: AuthUser,
+    opts: { staffId?: string; classroomId?: string; weekday?: number } & PaginationQuery = {},
+  ) {
+    const pg = page(opts);
+    const where = {
+      ...schoolWhere(user),
+      ...(opts.staffId ? { staffId: opts.staffId } : {}),
+      ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
+      ...(opts.weekday ? { weekday: opts.weekday } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.staffAssignment.findMany({
+        where,
+        include: {
+          staff: { select: { id: true, fullName: true } },
+          classroom: { select: { id: true, name: true } },
+        },
+        orderBy: [{ weekday: "asc" }, { shift: "asc" }],
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.staffAssignment.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   private async getOwned(user: AuthUser, id: string) {

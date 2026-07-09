@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { leaveKeys, useCreateLeaveRequest, useMyLeaveRequests, type LeaveType } from "@/api/leave";
+import { leaveKeys, listMyLeaveRequestsPage, useCreateLeaveRequest, type LeaveType } from "@/api/leave";
 import { useMyChildren } from "@/api/students";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { StatusBadge } from "@/components/mobile/Primitives";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Field, TextAreaField } from "@/components/ui/Field";
+import { LoadMore } from "@/components/ui/LoadMore";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { toDateInputValue } from "@/lib/date";
 import { formatInvoiceDate } from "@/lib/tuitionDisplay";
@@ -18,7 +20,7 @@ export function LeaveRequestPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const children = useMyChildren();
-  const requestsQuery = useMyLeaveRequests();
+  const requestsQuery = useLoadMore(leaveKeys.mine(), listMyLeaveRequestsPage);
   const createMutation = useCreateLeaveRequest();
   const [studentId, setStudentId] = useState("");
   const [leaveType, setLeaveType] = useState<LeaveType>("SICK");
@@ -81,10 +83,10 @@ export function LeaveRequestPage() {
       <div className="space-y-2">
         {requestsQuery.isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
         {requestsQuery.isError ? <div className="card p-4 text-sm text-red-600">{t("leave.listError")}</div> : null}
-        {!requestsQuery.isLoading && !requestsQuery.isError && (requestsQuery.data ?? []).length === 0 ? (
+        {!requestsQuery.isLoading && !requestsQuery.isError && requestsQuery.items.length === 0 ? (
           <div className="card p-4 text-sm text-slate-500">{t("leave.empty")}</div>
         ) : null}
-        {(requestsQuery.data ?? []).map((request) => (
+        {requestsQuery.items.map((request) => (
           <div key={request.id} className="card p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-semibold">{request.student?.fullName ?? t("medicine.student")}</div>
@@ -97,6 +99,11 @@ export function LeaveRequestPage() {
           </div>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!requestsQuery.hasNextPage}
+        loading={requestsQuery.isFetchingNextPage}
+        onMore={() => void requestsQuery.fetchNextPage()}
+      />
       <BottomSheet open={confirmOpen} title={t("leave.confirmTitle")} onClose={() => setConfirmOpen(false)}>
         <div className="text-sm text-slate-600">
           {t("leave.confirmBody")}

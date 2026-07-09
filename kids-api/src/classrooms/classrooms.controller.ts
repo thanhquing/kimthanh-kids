@@ -4,6 +4,7 @@ import { TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { CheckQuota } from "../common/decorators/entitlement.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { ClassroomsService } from "./classrooms.service";
@@ -22,6 +23,9 @@ const updateSchema = z.object({
   homeroomTeacherId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().optional(),
 });
+const listQuery = paginationQuerySchema.extend({
+  schoolId: z.string().uuid().optional(),
+});
 
 @ApiTags("classrooms")
 @Controller("classrooms")
@@ -36,8 +40,11 @@ export class ClassroomsController {
     TenantRole.FINANCE,
   )
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query("schoolId") schoolId?: string) {
-    return this.classrooms.list(user, schoolId);
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(listQuery)) q: z.infer<typeof listQuery>,
+  ) {
+    return this.classrooms.list(user, q);
   }
 
   @Roles(

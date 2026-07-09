@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { Shift, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { AssignmentsService } from "./assignments.service";
@@ -23,6 +24,12 @@ const updateSchema = z.object({
   duty: z.string().min(1).max(100).optional(),
   note: z.string().max(300).optional(),
 });
+const mineQuery = paginationQuerySchema;
+const listQuery = paginationQuerySchema.extend({
+  staffId: z.string().uuid().optional(),
+  classroomId: z.string().uuid().optional(),
+  weekday: z.coerce.number().int().min(1).max(7).optional(),
+});
 
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
@@ -41,23 +48,20 @@ export class AssignmentsController {
   // Lịch phân công của chính nhân sự đang đăng nhập (app GV).
   @Roles(...STAFF)
   @Get("mine")
-  mine(@CurrentUser() user: AuthUser) {
-    return this.assignments.myschedule(user);
+  mine(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(mineQuery)) q: z.infer<typeof mineQuery>,
+  ) {
+    return this.assignments.myschedule(user, q);
   }
 
   @Roles(...MANAGERS)
   @Get()
   list(
     @CurrentUser() user: AuthUser,
-    @Query("staffId") staffId?: string,
-    @Query("classroomId") classroomId?: string,
-    @Query("weekday") weekday?: string,
+    @Query(new ZodValidationPipe(listQuery)) q: z.infer<typeof listQuery>,
   ) {
-    return this.assignments.list(user, {
-      staffId,
-      classroomId,
-      weekday: weekday ? Number(weekday) : undefined,
-    });
+    return this.assignments.list(user, q);
   }
 
   @Roles(...MANAGERS)

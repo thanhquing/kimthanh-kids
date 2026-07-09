@@ -126,6 +126,7 @@ export class TuitionPaymentService {
       throw new BadRequestException({ code: "NOTHING_DUE", message: "Hóa đơn không còn nợ" });
 
     const gatewayRef = randomUUID();
+    const vnpayConfig = this.getVnpayConfig();
     const payment = await this.prisma.db.tuitionPayment.create({
       data: {
         schoolId: inv.schoolId,
@@ -136,7 +137,7 @@ export class TuitionPaymentService {
         gatewayRef,
       } as never,
     });
-    const redirectUrl = this.buildVnpayUrl(gatewayRef, remaining, inv.invoiceNumber);
+    const redirectUrl = this.buildVnpayUrl(vnpayConfig, gatewayRef, remaining, inv.invoiceNumber);
     return { paymentId: payment.id, gatewayRef, redirectUrl };
   }
 
@@ -191,14 +192,29 @@ export class TuitionPaymentService {
     return timingSafeEqualHex(signature, expected);
   }
 
-  private buildVnpayUrl(gatewayRef: string, amount: number, orderInfo: string): string {
-    const ret = this.env.get("VNPAY_RETURN_URL") || "https://sandbox.vnpayment.vn/return";
+  private getVnpayConfig(): { payUrl: string; returnUrl: string } {
+    const payUrl = this.env.get("VNPAY_PAY_URL");
+    const returnUrl = this.env.get("VNPAY_RETURN_URL");
+    if (!payUrl || !returnUrl)
+      throw new BadRequestException({
+        code: "VNPAY_NOT_CONFIGURED",
+        message: "Chưa cấu hình cổng thanh toán VNPay",
+      });
+    return { payUrl, returnUrl };
+  }
+
+  private buildVnpayUrl(
+    config: { payUrl: string; returnUrl: string },
+    gatewayRef: string,
+    amount: number,
+    orderInfo: string,
+  ): string {
     const params = new URLSearchParams({
       vnp_TxnRef: gatewayRef,
       vnp_Amount: String(Math.round(amount) * 100), // VNPay tính theo xu
       vnp_OrderInfo: orderInfo,
-      vnp_ReturnUrl: ret,
+      vnp_ReturnUrl: config.returnUrl,
     });
-    return `${this.env.get("VNPAY_PAY_URL")}?${params.toString()}`;
+    return `${config.payUrl}?${params.toString()}`;
   }
 }

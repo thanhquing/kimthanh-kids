@@ -4,6 +4,7 @@ import { TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { RequireFeature } from "../common/decorators/entitlement.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { AlbumsService } from "./albums.service";
@@ -18,6 +19,9 @@ const photosSchema = z.object({
   photos: z
     .array(z.object({ mediaId: z.string().uuid(), caption: z.string().max(200).optional() }))
     .min(1),
+});
+const listQuery = paginationQuerySchema.extend({
+  classroomId: z.string().uuid().optional(),
 });
 
 const STAFF = [
@@ -56,8 +60,11 @@ export class AlbumsController {
 
   @Roles(...VIEWERS)
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query("classroomId") classroomId?: string) {
-    return this.albums.list(user, { classroomId });
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(listQuery)) query: z.infer<typeof listQuery>,
+  ) {
+    return this.albums.list(user, query);
   }
 
   @Roles(...VIEWERS)

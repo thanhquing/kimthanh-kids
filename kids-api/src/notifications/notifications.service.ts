@@ -1,6 +1,8 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { page, PaginationQuery } from "../common/http/pagination";
+import { paginated } from "../common/http/api-response";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface NotifyPayload {
@@ -69,12 +71,19 @@ export class NotificationsService {
     }
   }
 
-  feed(user: AuthUser, opts: { unreadOnly?: boolean } = {}) {
-    return this.prisma.db.notification.findMany({
-      where: { userId: user.id, ...(opts.unreadOnly ? { readAt: null } : {}) },
-      orderBy: { createdAt: "desc" },
-      take: 100,
-    });
+  async feed(user: AuthUser, opts: { unreadOnly?: boolean } & PaginationQuery = {}) {
+    const pg = page(opts);
+    const where = { userId: user.id, ...(opts.unreadOnly ? { readAt: null } : {}) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.notification.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async unreadCount(user: AuthUser) {

@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { NotificationType, TuitionInvoiceStatus } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { page, PaginationQuery } from "../common/http/pagination";
+import { paginated } from "../common/http/api-response";
 import { recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
 import { AuditService } from "../audit/audit.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -118,25 +120,57 @@ export class TuitionService {
   }
 
   /** Danh sách hóa đơn cho staff (school-scope, lọc trạng thái/học sinh). */
-  list(user: AuthUser, opts: { status?: TuitionInvoiceStatus; studentId?: string } = {}) {
-    return this.prisma.db.tuitionInvoice.findMany({
-      where: {
-        ...schoolWhere(user),
-        ...(opts.status ? { status: opts.status } : {}),
-        ...(opts.studentId ? { studentId: opts.studentId } : {}),
-      },
-      include: { student: { select: { id: true, fullName: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+  async list(
+    user: AuthUser,
+    opts: {
+      status?: TuitionInvoiceStatus;
+      studentId?: string;
+      search?: string;
+    } & PaginationQuery = {},
+  ) {
+    const pg = page(opts);
+    const search = opts.search?.trim();
+    const where = {
+      ...schoolWhere(user),
+      ...(opts.status ? { status: opts.status } : {}),
+      ...(opts.studentId ? { studentId: opts.studentId } : {}),
+      ...(search
+        ? {
+            OR: [
+              { invoiceNumber: { contains: search, mode: "insensitive" as const } },
+              { student: { fullName: { contains: search, mode: "insensitive" as const } } },
+            ],
+          }
+        : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.tuitionInvoice.findMany({
+        where,
+        include: { student: { select: { id: true, fullName: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.tuitionInvoice.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Hóa đơn của các con phụ huynh đang đăng nhập. */
-  myInvoices(user: AuthUser) {
-    return this.prisma.db.tuitionInvoice.findMany({
-      where: { student: { parents: { some: { parentId: user.id } } } },
-      include: { student: { select: { id: true, fullName: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+  async myInvoices(user: AuthUser, opts: PaginationQuery = {}) {
+    const pg = page(opts);
+    const where = { student: { parents: { some: { parentId: user.id } } } };
+    const [items, total] = await Promise.all([
+      this.prisma.db.tuitionInvoice.findMany({
+        where,
+        include: { student: { select: { id: true, fullName: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.tuitionInvoice.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Chi tiết — staff (school-scope) hoặc phụ huynh sở hữu. */

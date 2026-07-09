@@ -5,14 +5,17 @@ import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useDebounced } from "@/hooks/useDebounced";
+import { usePaged } from "@/hooks/usePaged";
 import { useT } from "@/i18n";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { formatDate } from "@/lib/labels";
 import { ROLE } from "@/lib/people";
 import { cn, downloadCsv, initials } from "@/lib/utils";
 
 const ROLES: TenantRole[] = ["SCHOOL_ADMIN", "PRINCIPAL", "TEACHER", "NURSE", "FINANCE", "PARENT"];
-const PAGE_SIZE = 10;
 
 function CreateMemberModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useT();
@@ -186,32 +189,30 @@ export function MembersPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [viewing, setViewing] = useState<Member | null>(null);
   const [toggling, setToggling] = useState<Member | null>(null);
   const [resetting, setResetting] = useState<Member | null>(null);
 
-  const members = useQuery({ queryKey: ["members"], queryFn: () => crm.members.list() });
+  const debouncedSearch = useDebounced(search, 300);
+  const role = roleFilter ? (roleFilter as TenantRole) : undefined;
+  const listFilters = {
+    role,
+    search: debouncedSearch.trim() || undefined,
+  };
+  const members = usePaged(
+    ["members", listFilters],
+    (pg) => crm.members.page({ ...listFilters, ...pg }),
+  );
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (members.data ?? []).filter((m) => {
-      const statusOk =
-        !statusFilter || (statusFilter === "active" ? m.user.isActive : !m.user.isActive);
-      const searchOk =
-        !q ||
-        m.user.fullName.toLowerCase().includes(q) ||
-        (m.user.phone ?? "").toLowerCase().includes(q) ||
-        (m.user.email ?? "").toLowerCase().includes(q);
-      return (!roleFilter || m.role === roleFilter) && statusOk && searchOk;
-    });
-  }, [members.data, roleFilter, statusFilter, search]);
-
-  const total = filtered.length;
-  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount - 1);
-  const pageRows = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+  // Lọc trạng thái active/inactive KHÔNG có tham số server → lọc trên TRANG hiện tại.
+  const pageRows = useMemo(
+    () =>
+      members.items.filter(
+        (m) => !statusFilter || (statusFilter === "active" ? m.user.isActive : !m.user.isActive),
+      ),
+    [members.items, statusFilter],
+  );
 
   const setStatus = useMutation({
     mutationFn: (m: Member) => crm.members.setStatus(m.user.id, !m.user.isActive),
@@ -223,24 +224,38 @@ export function MembersPage() {
     onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
   });
 
-  function exportCsv() {
-    const header = [
-      t("members.colName"),
-      t("members.colPhone"),
-      t("members.fEmail"),
-      t("members.colRole"),
-      t("members.colStatus"),
-      t("members.colCreated"),
-    ];
-    const rows = filtered.map((m) => [
-      m.user.fullName,
-      m.user.phone ?? "",
-      m.user.email ?? "",
-      t(ROLE[m.role].key),
-      t(m.user.isActive ? "members.statusActive" : "members.statusInactive"),
-      formatDate(m.createdAt),
-    ]);
-    downloadCsv("members.csv", [header, ...rows]);
+  const [exporting, setExporting] = useState(false);
+  async function exportCsv() {
+    setExporting(true);
+    try {
+      // Xuất TẤT CẢ thành viên khớp filter hiện tại (role + search), lọc status client-side.
+      const all = await fetchAllPages((pg) => crm.members.page({ ...listFilters, ...pg }));
+      const rows = all
+        .filter(
+          (m) => !statusFilter || (statusFilter === "active" ? m.user.isActive : !m.user.isActive),
+        )
+        .map((m) => [
+          m.user.fullName,
+          m.user.phone ?? "",
+          m.user.email ?? "",
+          t(ROLE[m.role].key),
+          t(m.user.isActive ? "members.statusActive" : "members.statusInactive"),
+          formatDate(m.createdAt),
+        ]);
+      const header = [
+        t("members.colName"),
+        t("members.colPhone"),
+        t("members.fEmail"),
+        t("members.colRole"),
+        t("members.colStatus"),
+        t("members.colCreated"),
+      ];
+      downloadCsv("members.csv", [header, ...rows]);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error");
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -251,10 +266,7 @@ export function MembersPage() {
           <select
             className="field !w-auto !py-1.5"
             value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => setRoleFilter(e.target.value)}
           >
             <option value="">{t("roles.any")}</option>
             {ROLES.map((r) => (
@@ -266,10 +278,7 @@ export function MembersPage() {
           <select
             className="field !w-auto !py-1.5"
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="">{t("members.statusAll")}</option>
             <option value="active">{t("members.statusActive")}</option>
@@ -279,14 +288,15 @@ export function MembersPage() {
             className="field !w-72 !py-1.5"
             placeholder={t("members.searchName")}
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
+            onChange={(e) => setSearch(e.target.value)}
           />
           <div className="ml-auto flex gap-2">
-            <button className="btn-soft text-sm" onClick={exportCsv} disabled={!total}>
-              {t("common.exportCsv")}
+            <button
+              className="btn-soft text-sm"
+              onClick={exportCsv}
+              disabled={exporting || !members.total}
+            >
+              {exporting ? t("common.exporting") : t("common.exportCsv")}
             </button>
             <button className="btn-primary text-sm" onClick={() => setCreateOpen(true)}>
               {t("members.create")}
@@ -296,7 +306,7 @@ export function MembersPage() {
 
         {members.isLoading ? (
           <div className="text-sm text-muted py-12 text-center">{t("common.loading")}</div>
-        ) : total === 0 ? (
+        ) : members.total === 0 ? (
           <div className="card p-12 text-center text-sm text-muted">{t("members.empty")}</div>
         ) : (
           <>
@@ -358,31 +368,13 @@ export function MembersPage() {
               </tbody>
             </table>
 
-            <div className="flex justify-between items-center mt-4 text-sm text-slate-500">
-              <div>
-                {t("members.showing", {
-                  from: total === 0 ? 0 : safePage * PAGE_SIZE + 1,
-                  to: Math.min(total, safePage * PAGE_SIZE + PAGE_SIZE),
-                  total,
-                })}
-              </div>
-              {pageCount > 1 && (
-                <div className="flex gap-1">
-                  {Array.from({ length: pageCount }, (_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i)}
-                      className={cn(
-                        "w-8 h-8 rounded-lg",
-                        i === safePage ? "bg-[color:var(--primary)] text-white" : "bg-white",
-                      )}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <Pagination
+              page={members.page}
+              pages={members.pages}
+              total={members.total}
+              onPage={members.setPage}
+              busy={members.isFetching}
+            />
           </>
         )}
       </main>

@@ -4,6 +4,7 @@ import { TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { RequireFeature } from "../common/decorators/entitlement.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { LessonPlansService } from "./lesson-plans.service";
@@ -23,6 +24,10 @@ const createSchema = z.object({
       }),
     )
     .optional(),
+});
+const listQuery = paginationQuerySchema.extend({
+  classroomId: z.string().uuid().optional(),
+  week: z.string().min(1).max(40).optional(),
 });
 
 const EDITORS = [TenantRole.SCHOOL_ADMIN, TenantRole.PRINCIPAL, TenantRole.TEACHER] as const;
@@ -45,10 +50,9 @@ export class LessonPlansController {
   @Get()
   list(
     @CurrentUser() user: AuthUser,
-    @Query("classroomId") classroomId?: string,
-    @Query("week") week?: string,
+    @Query(new ZodValidationPipe(listQuery)) query: z.infer<typeof listQuery>,
   ) {
-    return this.plans.list(user, { classroomId, week });
+    return this.plans.list(user, query);
   }
 
   @Get(":id")

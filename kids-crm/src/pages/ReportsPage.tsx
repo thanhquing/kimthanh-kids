@@ -4,7 +4,9 @@ import { crm, type CreateReport, type Mood, type Student } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey } from "@/i18n";
 import { formatDate } from "@/lib/labels";
 import { cn, initials } from "@/lib/utils";
@@ -108,11 +110,11 @@ export function ReportsPage() {
   const [composeOpen, setComposeOpen] = useState(false);
 
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
-  const roster = useQuery({
-    queryKey: ["students", { classroomId }],
-    queryFn: () => crm.students.list({ classroomId }),
-    enabled: !!classroomId,
-  });
+  const roster = usePaged(
+    ["students", { classroomId }],
+    (pg) => crm.students.page({ classroomId, ...pg }),
+    { enabled: !!classroomId },
+  );
   const reports = useQuery({
     queryKey: ["reports", "student", selected?.id],
     queryFn: () => crm.reports.byStudent(selected!.id),
@@ -146,7 +148,7 @@ export function ReportsPage() {
         ) : (
           <div className="grid lg:grid-cols-3 gap-5">
             <div className="card p-3 max-h-[70vh] overflow-y-auto">
-              {(roster.data ?? []).map((s) => (
+              {roster.items.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => setSelected(s)}
@@ -159,9 +161,16 @@ export function ReportsPage() {
                   <span className="flex-1 truncate font-medium">{s.fullName}</span>
                 </button>
               ))}
-              {(roster.data ?? []).length === 0 && (
+              {roster.items.length === 0 && (
                 <div className="py-8 text-center text-sm text-muted">{t("attendance.noStudents")}</div>
               )}
+              <Pagination
+                page={roster.page}
+                pages={roster.pages}
+                total={roster.total}
+                onPage={roster.setPage}
+                busy={roster.isFetching}
+              />
             </div>
 
             <div className="lg:col-span-2">

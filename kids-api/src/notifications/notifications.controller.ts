@@ -3,11 +3,14 @@ import { ApiTags } from "@nestjs/swagger";
 import { NotificationType, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { NotificationsService } from "./notifications.service";
 
-const feedQuery = z.object({ unreadOnly: z.enum(["true", "false"]).optional() });
+const feedQuery = paginationQuerySchema.extend({
+  unreadOnly: z.enum(["true", "false"]).optional(),
+});
 const prefSchema = z.object({
   type: z.nativeEnum(NotificationType),
   enabled: z.boolean(),
@@ -26,7 +29,7 @@ export class NotificationsController {
     @CurrentUser() user: AuthUser,
     @Query(new ZodValidationPipe(feedQuery)) q: z.infer<typeof feedQuery>,
   ) {
-    return this.notifications.feed(user, { unreadOnly: q.unreadOnly === "true" });
+    return this.notifications.feed(user, { ...q, unreadOnly: q.unreadOnly === "true" });
   }
 
   @Get("unread-count")

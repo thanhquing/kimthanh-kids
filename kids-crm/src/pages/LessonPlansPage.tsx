@@ -5,7 +5,9 @@ import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey } from "@/i18n";
 
 const blankActivity = { dayOfWeek: 1, startTime: "", title: "", materials: "" };
@@ -98,7 +100,11 @@ export function LessonPlansPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [removing, setRemoving] = useState<LessonPlan | null>(null);
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
-  const lessons = useQuery({ queryKey: ["lessons", classroomId], queryFn: () => crm.lessons.list({ classroomId }) });
+  const lessons = usePaged(
+    ["lessons", { classroomId }],
+    (pg) => crm.lessons.page({ classroomId, ...pg }),
+    { pageSize: 50, enabled: !!classroomId },
+  );
   const selected = useQuery({ queryKey: ["lesson", selectedId], queryFn: () => crm.lessons.get(selectedId!), enabled: !!selectedId });
   const remove = useMutation({
     mutationFn: (id: string) => crm.lessons.remove(id),
@@ -117,17 +123,30 @@ export function LessonPlansPage() {
         <section className="space-y-3">
           <div className="flex gap-2">
             <select className="field !py-1.5" value={classroomId} onChange={(e) => setClassroomId(e.target.value)}>
-              <option value="">{t("common.all")}</option>
+              <option value="">{t("attendance.pickClass")}</option>
               {(classrooms.data ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             <button className="btn-primary text-sm" onClick={() => setCreateOpen(true)}>{t("common.create")}</button>
           </div>
-          {(lessons.data ?? []).map((l) => (
-            <button key={l.id} className="card w-full p-4 text-left hover:border-orange-200" onClick={() => setSelectedId(l.id)}>
-              <div className="font-bold">{l.theme}</div>
-              <div className="text-sm text-slate-500">{l.week} · {l.classroom?.name}</div>
-            </button>
-          ))}
+          {!classroomId ? (
+            <div className="card p-8 text-center text-sm text-slate-400">{t("attendance.pickClass")}</div>
+          ) : (
+            <>
+              {lessons.items.map((l) => (
+                <button key={l.id} className="card w-full p-4 text-left hover:border-orange-200" onClick={() => setSelectedId(l.id)}>
+                  <div className="font-bold">{l.theme}</div>
+                  <div className="text-sm text-slate-500">{l.week} · {l.classroom?.name}</div>
+                </button>
+              ))}
+              <Pagination
+                page={lessons.page}
+                pages={lessons.pages}
+                total={lessons.total}
+                onPage={lessons.setPage}
+                busy={lessons.isFetching}
+              />
+            </>
+          )}
         </section>
         <section className="card p-5">
           {!selected.data ? (

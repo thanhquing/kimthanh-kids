@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { MedicineStatus, NotificationType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { ownedStudentWhere, recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -62,21 +64,37 @@ export class MedicineService {
   }
 
   /** Yêu cầu của các con phụ huynh đang đăng nhập. */
-  listMine(user: AuthUser) {
-    return this.prisma.db.medicineRequest.findMany({
-      where: { student: { parents: { some: { parentId: user.id } } } },
-      include: { student: { select: { id: true, fullName: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+  async listMine(user: AuthUser, query: PaginationQuery = {}) {
+    const pg = page(query);
+    const where = { student: { parents: { some: { parentId: user.id } } } };
+    const [items, total] = await Promise.all([
+      this.prisma.db.medicineRequest.findMany({
+        where,
+        include: { student: { select: { id: true, fullName: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.medicineRequest.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Danh sách cho staff (lọc theo trạng thái); mặc định PENDING để duyệt. */
-  listForStaff(user: AuthUser, status?: MedicineStatus) {
-    return this.prisma.db.medicineRequest.findMany({
-      where: { ...schoolWhere(user), ...(status ? { status } : {}) },
-      include: { student: { select: { id: true, fullName: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+  async listForStaff(user: AuthUser, opts: PaginationQuery & { status?: MedicineStatus } = {}) {
+    const pg = page(opts);
+    const where = { ...schoolWhere(user), ...(opts.status ? { status: opts.status } : {}) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.medicineRequest.findMany({
+        where,
+        include: { student: { select: { id: true, fullName: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.medicineRequest.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Chi tiết + timeline — staff (school-scope) hoặc phụ huynh sở hữu. */

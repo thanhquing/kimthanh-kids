@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { MealType, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { MenusService } from "./menus.service";
@@ -25,7 +26,7 @@ const createSchema = z.object({
     .min(1),
 });
 
-const listQuery = z.object({
+const listQuery = paginationQuerySchema.extend({
   weekStart: DATE.optional(),
   classroomId: z.string().uuid().optional(),
 });

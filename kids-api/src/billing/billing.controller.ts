@@ -1,8 +1,10 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { BillingCycle, PlatformPaymentProvider, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { AllowInactive } from "../common/decorators/subscription.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
@@ -48,48 +50,58 @@ export class BillingController {
 
   @AllowInactive()
   @Get("invoices")
-  invoices() {
+  async invoices(
+    @Query(new ZodValidationPipe(paginationQuerySchema))
+    query: z.infer<typeof paginationQuerySchema>,
+  ) {
+    const pg = page(query);
     // prisma.db (đã filter theo tenant theo ALS) — chỉ thấy hóa đơn của mình.
     // Không lộ publicToken (bí mật link no-login) + metadata nội bộ.
     // Prisma 5.22 chưa bật omit → select tường minh (loại publicToken + metadata; lines loại metadata).
-    return this.prisma.db.platformInvoice.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        invoiceNumber: true,
-        tenantId: true,
-        subscriptionId: true,
-        status: true,
-        currency: true,
-        periodStart: true,
-        periodEnd: true,
-        subtotal: true,
-        discount: true,
-        tax: true,
-        total: true,
-        amountPaid: true,
-        issuedAt: true,
-        dueAt: true,
-        paidAt: true,
-        voidedAt: true,
-        notes: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        lines: {
-          select: {
-            id: true,
-            invoiceId: true,
-            kind: true,
-            label: true,
-            quantity: true,
-            unitPrice: true,
-            amount: true,
-            createdAt: true,
+    const [items, total] = await Promise.all([
+      this.prisma.db.platformInvoice.findMany({
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+        select: {
+          id: true,
+          invoiceNumber: true,
+          tenantId: true,
+          subscriptionId: true,
+          status: true,
+          currency: true,
+          periodStart: true,
+          periodEnd: true,
+          subtotal: true,
+          discount: true,
+          tax: true,
+          total: true,
+          amountPaid: true,
+          issuedAt: true,
+          dueAt: true,
+          paidAt: true,
+          voidedAt: true,
+          notes: true,
+          createdAt: true,
+          updatedAt: true,
+          deletedAt: true,
+          lines: {
+            select: {
+              id: true,
+              invoiceId: true,
+              kind: true,
+              label: true,
+              quantity: true,
+              unitPrice: true,
+              amount: true,
+              createdAt: true,
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.db.platformInvoice.count(),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   @Post("subscription/change")

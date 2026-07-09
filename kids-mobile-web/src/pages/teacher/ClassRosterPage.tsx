@@ -1,9 +1,11 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { useClassrooms, useStudents } from "@/api/students";
+import { listStudentsPage, studentKeys, useClassrooms } from "@/api/students";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { Avatar, Kpi, StatusBadge } from "@/components/mobile/Primitives";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { initialsFromName, studentStatusLabel } from "@/lib/studentDisplay";
 
@@ -13,8 +15,12 @@ export function ClassRosterPage() {
   const { data: classrooms = [], isError: classroomsError, isLoading: classroomsLoading } = useClassrooms();
   const activeClassrooms = useMemo(() => classrooms.filter((classroom) => classroom.isActive), [classrooms]);
   const currentClassroom = activeClassrooms.find((classroom) => classroom.id === classroomId) ?? activeClassrooms[0];
-  const studentsQuery = useStudents({ classroomId: currentClassroom?.id });
-  const students = studentsQuery.data ?? [];
+  const studentsQuery = useLoadMore(
+    studentKeys.list({ classroomId: currentClassroom?.id }),
+    (params) => listStudentsPage({ classroomId: currentClassroom?.id }, params),
+    { enabled: Boolean(currentClassroom?.id) },
+  );
+  const students = studentsQuery.items;
   const activeStudents = students.filter((student) => student.status === "ACTIVE").length;
   const needsReview = students.length - activeStudents;
 
@@ -40,7 +46,7 @@ export function ClassRosterPage() {
         </div>
       ) : null}
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <Kpi num={String(students.length)} label={t("students.totalStudents")} />
+        <Kpi num={String(studentsQuery.total || students.length)} label={t("students.totalStudents")} />
         <Kpi num={String(activeStudents)} label={t("students.activeStudents")} />
         <Kpi num={String(needsReview)} label={t("students.needsReview")} />
       </div>
@@ -69,6 +75,11 @@ export function ClassRosterPage() {
           </NavLink>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!studentsQuery.hasNextPage}
+        loading={studentsQuery.isFetchingNextPage}
+        onMore={() => void studentsQuery.fetchNextPage()}
+      />
       <div className="mt-4 grid grid-cols-2 gap-2">
         <NavLink to="/teacher/lesson-plan" className="btn-soft text-center">{t("students.lessonPlan")}</NavLink>
         <NavLink to="/teacher/medicine/approve" className="btn-soft text-center">{t("students.approveMedicine")}</NavLink>

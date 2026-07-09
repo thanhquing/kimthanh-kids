@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -40,11 +42,19 @@ export class AllergiesService {
   }
 
   /** Dị ứng của 1 học sinh — staff (school-scope) hoặc phụ huynh (con mình). */
-  listByStudent(user: AuthUser, studentId: string) {
-    return this.prisma.db.allergy.findMany({
-      where: { studentId, ...recordScopeWhere(user) },
-      orderBy: { createdAt: "asc" },
-    });
+  async listByStudent(user: AuthUser, studentId: string, query: PaginationQuery = {}) {
+    const pg = page(query);
+    const where = { studentId, ...recordScopeWhere(user) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.allergy.findMany({
+        where,
+        orderBy: { createdAt: "asc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.allergy.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Staff xoá khai báo dị ứng. */

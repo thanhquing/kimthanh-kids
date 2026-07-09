@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { Gender, LimitMetric, StudentStatus } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { page, PaginationQuery } from "../common/http/pagination";
+import { paginated } from "../common/http/api-response";
 import { assertSchoolAccess, schoolWhere } from "../common/scope/school-scope";
 import { AuditService } from "../audit/audit.service";
 import { EntitlementService } from "../entitlement/entitlement.service";
@@ -46,16 +48,42 @@ export class StudentsService {
     private readonly audit: AuditService,
   ) {}
 
-  list(user: AuthUser, opts: { classroomId?: string; schoolId?: string } = {}) {
-    return this.prisma.db.student.findMany({
-      where: {
-        ...schoolWhere(user),
-        ...(opts.schoolId ? { schoolId: opts.schoolId } : {}),
-        ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
-      },
-      orderBy: { fullName: "asc" },
-      include: studentInclude,
-    });
+  async list(
+    user: AuthUser,
+    opts: {
+      classroomId?: string;
+      schoolId?: string;
+      gender?: Gender;
+      search?: string;
+    } & PaginationQuery = {},
+  ) {
+    const pg = page(opts);
+    const search = opts.search?.trim();
+    const where = {
+      ...schoolWhere(user),
+      ...(opts.schoolId ? { schoolId: opts.schoolId } : {}),
+      ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
+      ...(opts.gender ? { gender: opts.gender } : {}),
+      ...(search
+        ? {
+            OR: [
+              { fullName: { contains: search, mode: "insensitive" as const } },
+              { nickname: { contains: search, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.student.findMany({
+        where,
+        orderBy: { fullName: "asc" },
+        include: studentInclude,
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.student.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async get(user: AuthUser, id: string) {
@@ -140,11 +168,19 @@ export class StudentsService {
   }
 
   /** Học sinh là con của phụ huynh đang đăng nhập. */
-  myChildren(user: AuthUser) {
-    return this.prisma.db.student.findMany({
-      where: { parents: { some: { parentId: user.id } } },
-      include: { classroom: { select: { id: true, name: true } } },
-      orderBy: { fullName: "asc" },
-    });
+  async myChildren(user: AuthUser, opts: PaginationQuery = {}) {
+    const pg = page(opts);
+    const where = { parents: { some: { parentId: user.id } } };
+    const [items, total] = await Promise.all([
+      this.prisma.db.student.findMany({
+        where,
+        include: { classroom: { select: { id: true, name: true } } },
+        orderBy: { fullName: "asc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.student.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 }

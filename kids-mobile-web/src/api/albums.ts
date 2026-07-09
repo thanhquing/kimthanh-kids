@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type AlbumMedia = {
   id: string;
@@ -33,6 +33,10 @@ export const albumKeys = {
 
 export function listAlbums(classroomId?: string) {
   return api.get<Album[]>("/albums", { query: { classroomId } });
+}
+
+export function listAlbumsPage(classroomId: string | undefined, params: PageParams) {
+  return api.getPage<Album>("/albums", { query: { ...params, classroomId } });
 }
 
 export function getAlbum(id: string): Promise<Album> {

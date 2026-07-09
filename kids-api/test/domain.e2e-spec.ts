@@ -83,6 +83,67 @@ describe("Phase 1 — domain (classrooms / students / guardians)", () => {
     expect(students.body.data[0].classroom.name).toBe("Lớp Mầm A");
   });
 
+  it("list endpoint có phân trang + chặn pageSize > 100", async () => {
+    const t = await createTenant(app);
+    const school = await mainSchool(t);
+    await api()
+      .post("/api/classrooms")
+      .set(auth(t))
+      .send({ schoolId: school, name: "Lớp 1" })
+      .expect(201);
+    await api()
+      .post("/api/classrooms")
+      .set(auth(t))
+      .send({ schoolId: school, name: "Lớp 2" })
+      .expect(201);
+
+    const page = await api().get("/api/classrooms?page=1&pageSize=1").set(auth(t)).expect(200);
+    expect(page.body.data.length).toBe(1);
+    expect(page.body.meta).toMatchObject({ page: 1, pageSize: 1, total: 2 });
+
+    await api().get("/api/classrooms?pageSize=101").set(auth(t)).expect(400);
+    await api().get("/api/classrooms?page=10001").set(auth(t)).expect(400);
+  });
+
+  it("students: search theo tên/nickname (server-side, kèm phân trang)", async () => {
+    const t = await createTenant(app);
+    const school = await mainSchool(t);
+    await createStudent(t, school, "Trần Bảo An", { nickname: "Bon" }).expect(201);
+    await createStudent(t, school, "Lê Thu Hà", { nickname: "Ha" }).expect(201);
+
+    const byName = await api().get("/api/students?search=bảo").set(auth(t)).expect(200);
+    expect(byName.body.data.length).toBe(1);
+    expect(byName.body.data[0].fullName).toBe("Trần Bảo An");
+    expect(byName.body.meta.total).toBe(1);
+
+    const byNick = await api().get("/api/students?search=bon").set(auth(t)).expect(200);
+    expect(byNick.body.data.map((s: { nickname: string }) => s.nickname)).toContain("Bon");
+
+    // gender filter server-side
+    await createStudent(t, school, "Phạm Nữ", { gender: "FEMALE" }).expect(201);
+    const females = await api().get("/api/students?gender=FEMALE").set(auth(t)).expect(200);
+    expect(females.body.data.length).toBeGreaterThanOrEqual(1);
+    expect(females.body.data.every((s: { gender: string }) => s.gender === "FEMALE")).toBe(true);
+  });
+
+  it("members: search theo tên/email (server-side, kèm phân trang)", async () => {
+    const t = await createTenant(app);
+    await invite(t, "TEACHER");
+
+    const all = await api().get("/api/tenant/members").set(auth(t)).expect(200);
+    const total = all.body.meta.total as number;
+    expect(total).toBeGreaterThanOrEqual(2); // admin seed + teacher vừa mời
+
+    const hit = await api().get("/api/tenant/members?search=TEACHER").set(auth(t)).expect(200);
+    expect(hit.body.data.length).toBeGreaterThanOrEqual(1);
+    expect(hit.body.meta.total).toBeLessThan(total);
+
+    // role filter server-side
+    const teachers = await api().get("/api/tenant/members?role=TEACHER").set(auth(t)).expect(200);
+    expect(teachers.body.data.length).toBeGreaterThanOrEqual(1);
+    expect(teachers.body.data.every((m: { role: string }) => m.role === "TEACHER")).toBe(true);
+  });
+
   it("cô lập: tenant A không thấy học sinh của tenant B", async () => {
     const A = await createTenant(app);
     const B = await createTenant(app);

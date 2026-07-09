@@ -5,7 +5,9 @@ import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey } from "@/i18n";
 import { formatDateTime } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -120,15 +122,16 @@ export function AnnouncementsPage() {
   const [deleting, setDeleting] = useState<Announcement | null>(null);
 
   const schools = useQuery({ queryKey: ["schools"], queryFn: () => crm.schools() });
-  const announcements = useQuery({
-    queryKey: ["announcements", audienceFilter],
-    queryFn: () => crm.announcements.list((audienceFilter || undefined) as AnnouncementAudience | undefined),
-  });
+  const audience = (audienceFilter || undefined) as AnnouncementAudience | undefined;
+  const announcements = usePaged(
+    ["announcements", { audience }],
+    (pg) => crm.announcements.page({ audience, ...pg }),
+  );
 
   const list = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (announcements.data ?? []).filter((a) => !q || a.title.toLowerCase().includes(q));
-  }, [announcements.data, search]);
+    return announcements.items.filter((a) => !q || a.title.toLowerCase().includes(q));
+  }, [announcements.items, search]);
 
   const selected = list.find((a) => a.id === selectedId) ?? null;
 
@@ -184,6 +187,7 @@ export function AnnouncementsPage() {
             ) : list.length === 0 ? (
               <div className="card p-12 text-center text-sm text-muted">{t("announcements.empty")}</div>
             ) : (
+              <>
               <div className="space-y-3">
                 {list.map((a) => (
                   <button
@@ -207,6 +211,14 @@ export function AnnouncementsPage() {
                   </button>
                 ))}
               </div>
+              <Pagination
+                page={announcements.page}
+                pages={announcements.pages}
+                total={announcements.total}
+                onPage={announcements.setPage}
+                busy={announcements.isFetching}
+              />
+              </>
             )}
           </div>
 

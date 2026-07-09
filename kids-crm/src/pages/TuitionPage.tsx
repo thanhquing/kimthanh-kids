@@ -4,9 +4,14 @@ import { Link } from "react-router-dom";
 import { crm, type CreateInvoice, type Invoice, type TuitionInvoiceStatus } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
+import { EntitySelect } from "@/components/ui/EntitySelect";
 import { Field, Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useDebounced } from "@/hooks/useDebounced";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey, type Translator } from "@/i18n";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { formatDate } from "@/lib/labels";
 import { cn, formatVnd } from "@/lib/utils";
 
@@ -56,7 +61,6 @@ function CreateInvoiceModal({ onClose }: { onClose: () => void }) {
   const { t } = useT();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const students = useQuery({ queryKey: ["students"], queryFn: () => crm.students.list() });
   const [studentId, setStudentId] = useState("");
   const [period, setPeriod] = useState("");
   const [issueDate, setIssueDate] = useState(todayIso());
@@ -118,14 +122,13 @@ function CreateInvoiceModal({ onClose }: { onClose: () => void }) {
       }
     >
       <Field label={t("tuition.fStudent")}>
-        <select className="field" value={studentId} onChange={(e) => setStudentId(e.target.value)}>
-          <option value="">—</option>
-          {(students.data ?? []).map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.fullName}
-            </option>
-          ))}
-        </select>
+        <EntitySelect
+          value={studentId}
+          fetchPage={(s) => crm.students.page({ search: s, pageSize: 20 })}
+          labelOf={(st) => st.fullName}
+          onChange={(id) => setStudentId(id)}
+          queryKey={["students-select"]}
+        />
       </Field>
       <div className="grid grid-cols-3 gap-3">
         <Field label={t("tuition.fPeriod")}>
@@ -200,8 +203,21 @@ export function TuitionPage() {
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
 
-  const invoices = useQuery({ queryKey: ["tuition-invoices"], queryFn: () => crm.tuition.list() });
-  const all = invoices.data ?? [];
+  // KPI + tab Thanh toán cần TỔNG HỢP toàn bộ hóa đơn (mọi trang), nên tải đủ qua fetchAllPages.
+  const allInvoices = useQuery({
+    queryKey: ["tuition-invoices", "all"],
+    queryFn: () => fetchAllPages((pg) => crm.tuition.page(pg)),
+  });
+  const all = useMemo(() => allInvoices.data ?? [], [allInvoices.data]);
+
+  // Danh sách hóa đơn hiển thị: phân trang server-side theo status + search.
+  const status = statusFilter ? (statusFilter as TuitionInvoiceStatus) : undefined;
+  const debouncedSearch = useDebounced(search, 300);
+  const listFilters = { status, search: debouncedSearch.trim() || undefined };
+  const invoices = usePaged(
+    ["tuition-invoices", listFilters],
+    (pg) => crm.tuition.page({ ...listFilters, ...pg }),
+  );
 
   const kpi = useMemo(() => {
     let total = 0, paid = 0, outstanding = 0, overdue = 0;
@@ -215,15 +231,6 @@ export function TuitionPage() {
     }
     return { total, paid, outstanding, overdue };
   }, [all]);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return all.filter(
-      (inv) =>
-        (!statusFilter || invoiceDisplay(inv) === statusFilter) &&
-        (!q || inv.student.fullName.toLowerCase().includes(q) || inv.invoiceNumber.toLowerCase().includes(q)),
-    );
-  }, [all, statusFilter, search]);
 
   const collected = useMemo(() => all.filter((inv) => inv.amountPaid > 0 && inv.status !== "CANCELED"), [all]);
 
@@ -271,7 +278,7 @@ export function TuitionPage() {
 
             {invoices.isLoading ? (
               <div className="text-sm text-muted py-12 text-center">{t("common.loading")}</div>
-            ) : filtered.length === 0 ? (
+            ) : invoices.items.length === 0 ? (
               <div className="card p-12 text-center text-sm text-muted">{t("tuition.empty")}</div>
             ) : (
               <table className="table">
@@ -287,7 +294,7 @@ export function TuitionPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((inv) => {
+                  {invoices.items.map((inv) => {
                     const ds = invoiceDisplay(inv);
                     return (
                       <tr key={inv.id}>
@@ -316,6 +323,13 @@ export function TuitionPage() {
                 </tbody>
               </table>
             )}
+            <Pagination
+              page={invoices.page}
+              pages={invoices.pages}
+              total={invoices.total}
+              onPage={invoices.setPage}
+              busy={invoices.isFetching}
+            />
           </>
         ) : (
           <>

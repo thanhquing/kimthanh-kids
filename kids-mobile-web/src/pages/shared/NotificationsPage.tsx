@@ -3,28 +3,30 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   notificationKeys,
+  listNotificationsPage,
   useMarkAllNotificationsRead,
   useNotificationPreferences,
-  useNotifications,
   useSetNotificationPreference,
 } from "@/api/notifications";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { LoadMore } from "@/components/ui/LoadMore";
 import { useToast } from "@/components/ui/Toast";
 import { useT } from "@/i18n";
 import { formatShortDate } from "@/lib/date";
 import { notificationTypeLabel } from "@/lib/notificationDisplay";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 export function NotificationsPage() {
   const { t, lang } = useT();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const notificationsQuery = useNotifications();
+  const notificationsQuery = useLoadMore(notificationKeys.feed(), listNotificationsPage);
   const preferencesQuery = useNotificationPreferences();
   const setPreference = useSetNotificationPreference();
   const markAllRead = useMarkAllNotificationsRead();
-  const notifications = notificationsQuery.data ?? [];
+  const notifications = notificationsQuery.items;
   const unread = notifications.filter((item) => !item.readAt).length;
 
   async function onMarkAllRead() {
@@ -62,6 +64,11 @@ export function NotificationsPage() {
           </div>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!notificationsQuery.hasNextPage}
+        loading={notificationsQuery.isFetchingNextPage}
+        onMore={() => void notificationsQuery.fetchNextPage()}
+      />
       <BottomSheet open={settingsOpen} title={t("notifications.settings")} onClose={() => setSettingsOpen(false)}>
         <div className="space-y-3">
           {preferencesQuery.isLoading ? <div className="text-sm text-slate-500">{t("common.loading")}</div> : null}

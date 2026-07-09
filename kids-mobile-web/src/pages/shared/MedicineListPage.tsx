@@ -1,9 +1,11 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useMedicineList, type MedicineStatus } from "@/api/medicine";
+import { listMedicinePage, medicineKeys, type MedicineStatus } from "@/api/medicine";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { StatusBadge } from "@/components/mobile/Primitives";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { formatDateRange, medicineStatusFilters, medicineStatusLabel } from "@/lib/medicineDisplay";
 import { useMobileState } from "@/lib/mobileState";
@@ -16,10 +18,12 @@ export function MedicineListPage() {
   const appRole = role === "teacher" ? "teacher" : "parent";
   const base = roleBase(role);
   const [status, setStatus] = useState<MedicineStatus | "ALL">("ALL");
-  const { data: requests = [], isLoading, isError } = useMedicineList(
-    appRole,
-    appRole === "teacher" && status !== "ALL" ? status : undefined,
+  const serverStatus = appRole === "teacher" && status !== "ALL" ? status : undefined;
+  const query = useLoadMore(
+    medicineKeys.list(appRole, serverStatus),
+    (params) => listMedicinePage(appRole, serverStatus, params),
   );
+  const requests = query.items;
   const visibleRequests =
     appRole === "parent" && status !== "ALL" ? requests.filter((item) => item.status === status) : requests;
 
@@ -38,9 +42,9 @@ export function MedicineListPage() {
           </button>
         ))}
       </div>
-      {isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
-      {isError ? <div className="card p-4 text-sm text-red-600">{t("medicine.listError")}</div> : null}
-      {!isLoading && !isError && visibleRequests.length === 0 ? (
+      {query.isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
+      {query.isError ? <div className="card p-4 text-sm text-red-600">{t("medicine.listError")}</div> : null}
+      {!query.isLoading && !query.isError && visibleRequests.length === 0 ? (
         <div className="card p-4 text-sm text-slate-500">{t("medicine.listEmpty")}</div>
       ) : null}
       <div className="space-y-2">
@@ -55,6 +59,11 @@ export function MedicineListPage() {
           </NavLink>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!query.hasNextPage}
+        loading={query.isFetchingNextPage}
+        onMore={() => void query.fetchNextPage()}
+      />
       {role === "teacher" ? <NavLink to="/teacher/medicine/approve" className="btn-primary mt-4 block w-full text-center">{t("medicine.approvePending")}</NavLink> : null}
     </>
   );

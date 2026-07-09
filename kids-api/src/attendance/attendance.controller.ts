@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { AttendanceStatus, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { AttendanceService } from "./attendance.service";
@@ -22,6 +23,11 @@ const markSchema = z.object({
     )
     .min(1),
 });
+const byClassQuery = paginationQuerySchema.extend({
+  classroomId: z.string().uuid(),
+  date: DATE,
+});
+const historyQuery = paginationQuerySchema;
 
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
@@ -49,15 +55,18 @@ export class AttendanceController {
   @Get()
   byClass(
     @CurrentUser() user: AuthUser,
-    @Query("classroomId") classroomId: string,
-    @Query("date") date: string,
+    @Query(new ZodValidationPipe(byClassQuery)) q: z.infer<typeof byClassQuery>,
   ) {
-    return this.attendance.listByClass(user, classroomId, date);
+    return this.attendance.listByClass(user, q);
   }
 
   @Roles(...STAFF, TenantRole.PARENT)
   @Get("student/:studentId")
-  history(@CurrentUser() user: AuthUser, @Param("studentId") studentId: string) {
-    return this.attendance.studentHistory(user, studentId);
+  history(
+    @CurrentUser() user: AuthUser,
+    @Param("studentId") studentId: string,
+    @Query(new ZodValidationPipe(historyQuery)) q: z.infer<typeof historyQuery>,
+  ) {
+    return this.attendance.studentHistory(user, studentId, q);
   }
 }

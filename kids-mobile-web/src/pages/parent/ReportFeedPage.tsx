@@ -5,15 +5,21 @@ import { useT } from "@/i18n";
 import { formatShortDate } from "@/lib/date";
 import { useMobileState } from "@/lib/mobileState";
 import { useMyChildren } from "@/api/students";
-import { useStudentReports } from "@/api/reports";
+import { listReportsByStudentPage, reportKeys } from "@/api/reports";
 import { moodIcon } from "@/lib/reportDisplay";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 export function ReportFeedPage() {
   const { t, lang } = useT();
   const { selectedStudentId } = useMobileState();
   const children = useMyChildren();
   const student = children.data?.find((item) => item.id === selectedStudentId) ?? children.data?.[0];
-  const reportsQuery = useStudentReports(student?.id);
+  const reportsQuery = useLoadMore(
+    reportKeys.byStudent(student?.id),
+    (params) => listReportsByStudentPage(student!.id, params),
+    { enabled: Boolean(student?.id) },
+  );
 
   return (
     <>
@@ -28,10 +34,10 @@ export function ReportFeedPage() {
         {children.isError || reportsQuery.isError ? (
           <div className="card p-4 text-sm text-red-600">{t("reports.feedError")}</div>
         ) : null}
-        {!reportsQuery.isLoading && !reportsQuery.isError && (reportsQuery.data ?? []).length === 0 ? (
+        {!reportsQuery.isLoading && !reportsQuery.isError && reportsQuery.items.length === 0 ? (
           <div className="card p-4 text-sm text-slate-500">{t("reports.feedEmpty")}</div>
         ) : null}
-        {(reportsQuery.data ?? []).map((report) => (
+        {reportsQuery.items.map((report) => (
           <div key={report.id} className="card p-4">
             <div className="mb-2 flex items-center justify-between">
               <div className="text-sm font-bold">{formatShortDate(report.date, lang)}</div>
@@ -58,6 +64,11 @@ export function ReportFeedPage() {
           </div>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!reportsQuery.hasNextPage}
+        loading={reportsQuery.isFetchingNextPage}
+        onMore={() => void reportsQuery.fetchNextPage()}
+      />
     </>
   );
 }

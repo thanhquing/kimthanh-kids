@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { Mood, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { DailyReportsService } from "./daily-reports.service";
@@ -18,6 +19,11 @@ const upsertSchema = z.object({
   note: z.string().max(1000).optional(),
   photoIds: z.array(z.string().uuid()).max(12).optional(),
 });
+const byClassQuery = paginationQuerySchema.extend({
+  classroomId: z.string().uuid(),
+  date: DATE,
+});
+const feedQuery = paginationQuerySchema;
 
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
@@ -45,15 +51,18 @@ export class DailyReportsController {
   @Get()
   byClass(
     @CurrentUser() user: AuthUser,
-    @Query("classroomId") classroomId: string,
-    @Query("date") date: string,
+    @Query(new ZodValidationPipe(byClassQuery)) q: z.infer<typeof byClassQuery>,
   ) {
-    return this.reports.listByClass(user, classroomId, date);
+    return this.reports.listByClass(user, q);
   }
 
   @Roles(...STAFF, TenantRole.PARENT)
   @Get("student/:studentId")
-  feed(@CurrentUser() user: AuthUser, @Param("studentId") studentId: string) {
-    return this.reports.studentFeed(user, studentId);
+  feed(
+    @CurrentUser() user: AuthUser,
+    @Param("studentId") studentId: string,
+    @Query(new ZodValidationPipe(feedQuery)) q: z.infer<typeof feedQuery>,
+  ) {
+    return this.reports.studentFeed(user, studentId, q);
   }
 }

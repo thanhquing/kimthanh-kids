@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { crm, type Assignment, type CreateAssignment, type Shift } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EntitySelect } from "@/components/ui/EntitySelect";
 import { Field, Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey } from "@/i18n";
 
 const SHIFTS: Shift[] = ["MORNING", "AFTERNOON", "FULL_DAY"];
@@ -21,8 +24,7 @@ function CreateAssignmentModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient();
   const schools = useQuery({ queryKey: ["schools"], queryFn: () => crm.schools() });
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
-  const members = useQuery({ queryKey: ["members"], queryFn: () => crm.members.list() });
-  const staff = (members.data ?? []).filter((m) => m.role !== "PARENT" && m.user.isActive);
+  const [staffLabel, setStaffLabel] = useState("");
   const [form, setForm] = useState<CreateAssignment>({
     staffId: "",
     schoolId: "",
@@ -68,14 +70,20 @@ function CreateAssignmentModal({ onClose }: { onClose: () => void }) {
       }
     >
       <Field label={t("feature.staff")}>
-        <select className="field" value={form.staffId} onChange={(e) => setForm((f) => ({ ...f, staffId: e.target.value }))}>
-          <option value="">—</option>
-          {staff.map((m) => (
-            <option key={m.user.id} value={m.user.id}>
-              {m.user.fullName}
-            </option>
-          ))}
-        </select>
+        <EntitySelect
+          value={form.staffId}
+          selectedLabel={staffLabel}
+          fetchPage={(s) =>
+            crm.members.page({ search: s || undefined, staffOnly: true, isActive: true, pageSize: 20 })
+          }
+          labelOf={(m) => m.user.fullName}
+          idOf={(m) => m.user.id}
+          onChange={(id, m) => {
+            setForm((f) => ({ ...f, staffId: id }));
+            setStaffLabel(m ? m.user.fullName : "");
+          }}
+          queryKey={["members", "assignment-form"]}
+        />
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label={t("classrooms.title")}>
@@ -136,17 +144,21 @@ export function AssignmentsPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [staffId, setStaffId] = useState("");
+  const [staffLabel, setStaffLabel] = useState("");
   const [classroomId, setClassroomId] = useState("");
   const [weekday, setWeekday] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [removing, setRemoving] = useState<Assignment | null>(null);
-  const members = useQuery({ queryKey: ["members"], queryFn: () => crm.members.list() });
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
-  const assignments = useQuery({
-    queryKey: ["assignments", staffId, classroomId, weekday],
-    queryFn: () => crm.assignments.list({ staffId, classroomId, weekday: weekday ? Number(weekday) : undefined }),
-  });
-  const staff = useMemo(() => (members.data ?? []).filter((m) => m.role !== "PARENT"), [members.data]);
+  const listFilters = {
+    staffId: staffId || undefined,
+    classroomId: classroomId || undefined,
+    weekday: weekday ? Number(weekday) : undefined,
+  };
+  const assignments = usePaged(
+    ["assignments", listFilters],
+    (pg) => crm.assignments.page({ ...listFilters, ...pg }),
+  );
   const remove = useMutation({
     mutationFn: (id: string) => crm.assignments.remove(id),
     onSuccess: () => {
@@ -162,14 +174,23 @@ export function AssignmentsPage() {
       <PageHeader title={t("feature.assignmentsTitle")} section={t("feature.assignmentsSection")} />
       <main className="p-6 space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <select className="field !w-auto !py-1.5" value={staffId} onChange={(e) => setStaffId(e.target.value)}>
-            <option value="">{t("feature.staff")}</option>
-            {staff.map((m) => (
-              <option key={m.user.id} value={m.user.id}>
-                {m.user.fullName}
-              </option>
-            ))}
-          </select>
+          <div className="w-48">
+            <EntitySelect
+              value={staffId}
+              selectedLabel={staffLabel}
+              fetchPage={(s) =>
+                crm.members.page({ search: s || undefined, staffOnly: true, isActive: true, pageSize: 20 })
+              }
+              labelOf={(m) => m.user.fullName}
+              idOf={(m) => m.user.id}
+              onChange={(id, m) => {
+                setStaffId(id);
+                setStaffLabel(m ? m.user.fullName : "");
+              }}
+              queryKey={["members", "assignment-filter"]}
+              placeholder={t("feature.staff")}
+            />
+          </div>
           <select className="field !w-auto !py-1.5" value={classroomId} onChange={(e) => setClassroomId(e.target.value)}>
             <option value="">{t("classrooms.title")}</option>
             {(classrooms.data ?? []).map((c) => (
@@ -205,7 +226,7 @@ export function AssignmentsPage() {
             <tbody>
               {assignments.isLoading ? (
                 <tr><td className="p-4 text-slate-400" colSpan={6}>{t("common.loading")}</td></tr>
-              ) : (assignments.data ?? []).map((a) => (
+              ) : assignments.items.map((a) => (
                 <tr key={a.id} className="border-t border-slate-100">
                   <td className="p-4 font-semibold">{t(`weekdays.${a.weekday}` as TKey)}</td>
                   <td>{t(SHIFT_KEY[a.shift])}</td>
@@ -223,6 +244,13 @@ export function AssignmentsPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={assignments.page}
+          pages={assignments.pages}
+          total={assignments.total}
+          onPage={assignments.setPage}
+          busy={assignments.isFetching}
+        />
       </main>
       {createOpen && <CreateAssignmentModal onClose={() => setCreateOpen(false)} />}
       <ConfirmDialog

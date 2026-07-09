@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { LimitMetric } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { assertSchoolAccess, schoolWhere } from "../common/scope/school-scope";
 import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -27,15 +29,23 @@ export class ClassroomsService {
     private readonly entitlements: EntitlementService,
   ) {}
 
-  list(user: AuthUser, schoolId?: string) {
-    return this.prisma.db.classroom.findMany({
-      where: { ...schoolWhere(user), ...(schoolId ? { schoolId } : {}) },
-      orderBy: { name: "asc" },
-      include: {
-        homeroomTeacher: { select: { id: true, fullName: true } },
-        _count: { select: { students: true } },
-      },
-    });
+  async list(user: AuthUser, opts: { schoolId?: string } & PaginationQuery = {}) {
+    const pg = page(opts);
+    const where = { ...schoolWhere(user), ...(opts.schoolId ? { schoolId: opts.schoolId } : {}) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.classroom.findMany({
+        where,
+        orderBy: { name: "asc" },
+        include: {
+          homeroomTeacher: { select: { id: true, fullName: true } },
+          _count: { select: { students: true } },
+        },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.classroom.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async get(user: AuthUser, id: string) {

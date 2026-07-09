@@ -2,7 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { crm, type AuditLog } from "@/api/crm";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePaged } from "@/hooks/usePaged";
 import { useT } from "@/i18n";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { formatDateTime } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 
@@ -26,8 +29,11 @@ export function AuditPage() {
   const { t } = useT();
   const [prefix, setPrefix] = useState("");
 
-  const logs = useQuery({ queryKey: ["audit-logs"], queryFn: () => crm.audit.list({ limit: 200 }) });
-  const members = useQuery({ queryKey: ["members"], queryFn: () => crm.members.list() });
+  const logs = usePaged(["audit-logs"], (pg) => crm.audit.page(pg), { pageSize: 50 });
+  const members = useQuery({
+    queryKey: ["members", "all-for-audit"],
+    queryFn: () => fetchAllPages((pg) => crm.members.page(pg)),
+  });
 
   const actorName = useMemo(() => {
     const map = new Map<string, string>();
@@ -36,8 +42,8 @@ export function AuditPage() {
   }, [members.data]);
 
   const filtered = useMemo(
-    () => (logs.data ?? []).filter((l: AuditLog) => !prefix || l.action.startsWith(prefix)),
-    [logs.data, prefix],
+    () => logs.items.filter((l: AuditLog) => !prefix || l.action.startsWith(prefix)),
+    [logs.items, prefix],
   );
 
   return (
@@ -94,6 +100,13 @@ export function AuditPage() {
             </tbody>
           </table>
         )}
+        <Pagination
+          page={logs.page}
+          pages={logs.pages}
+          total={logs.total}
+          onPage={logs.setPage}
+          busy={logs.isFetching}
+        />
       </main>
     </>
   );

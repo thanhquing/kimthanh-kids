@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { PickupAuthorizationStatus, PickupEventType, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { PickupService } from "./pickup.service";
@@ -16,12 +17,12 @@ const createAuthorizationSchema = z.object({
   note: z.string().max(500).optional(),
 });
 
-const listAuthorizationsQuerySchema = z.object({
+const listAuthorizationsQuerySchema = paginationQuerySchema.extend({
   studentId: z.string().uuid().optional(),
   status: z.nativeEnum(PickupAuthorizationStatus).optional(),
 });
 
-const listLogsQuerySchema = z.object({
+const listLogsQuerySchema = paginationQuerySchema.extend({
   studentId: z.string().uuid().optional(),
 });
 

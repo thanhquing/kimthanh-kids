@@ -1,8 +1,10 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAnnouncements, type AnnouncementAudience } from "@/api/announcements";
+import { announcementKeys, listAnnouncementsPage, type AnnouncementAudience } from "@/api/announcements";
 import { TopBar } from "@/components/mobile/MobileShell";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { announcementAudienceLabel, announcementFilters } from "@/lib/announcementDisplay";
 import { formatShortDate } from "@/lib/date";
@@ -15,11 +17,15 @@ export function AnnouncementsPage() {
   const { role } = useMobileState();
   const appRole = role === "teacher" ? "teacher" : "parent";
   const [filter, setFilter] = useState<AnnouncementAudience | "ALL_VISIBLE">("ALL_VISIBLE");
-  const query = useAnnouncements(appRole, appRole === "teacher" && filter !== "ALL_VISIBLE" ? filter : undefined);
+  const audience = appRole === "teacher" && filter !== "ALL_VISIBLE" ? filter : undefined;
+  const query = useLoadMore(
+    appRole === "parent" ? announcementKeys.feed(appRole) : announcementKeys.list(audience),
+    (params) => listAnnouncementsPage(appRole, audience, params),
+  );
   const announcements =
     appRole === "parent" && filter !== "ALL_VISIBLE"
-      ? (query.data ?? []).filter((item) => item.audience === filter)
-      : query.data ?? [];
+      ? query.items.filter((item) => item.audience === filter)
+      : query.items;
 
   return (
     <>
@@ -59,6 +65,11 @@ export function AnnouncementsPage() {
           </div>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!query.hasNextPage}
+        loading={query.isFetchingNextPage}
+        onMore={() => void query.fetchNextPage()}
+      />
     </>
   );
 }

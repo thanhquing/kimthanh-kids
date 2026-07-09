@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { MealType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import {
   contentScopeForKids,
   isStaff,
@@ -66,17 +68,28 @@ export class MenusService {
   }
 
   /** Danh sách thực đơn — staff (school-scope) hoặc PH (trường/lớp của con). */
-  async list(user: AuthUser, opts: { weekStart?: string; classroomId?: string } = {}) {
+  async list(
+    user: AuthUser,
+    opts: PaginationQuery & { weekStart?: string; classroomId?: string } = {},
+  ) {
+    const pg = page(opts);
     const base = isStaff(user) ? { ...schoolWhere(user) } : await this.parentScope(user);
-    return this.prisma.db.weeklyMenu.findMany({
-      where: {
-        ...base,
-        ...(opts.weekStart ? { weekStart: new Date(opts.weekStart) } : {}),
-        ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
-      },
-      include: { classroom: { select: { id: true, name: true } } },
-      orderBy: { weekStart: "desc" },
-    });
+    const where = {
+      ...base,
+      ...(opts.weekStart ? { weekStart: new Date(opts.weekStart) } : {}),
+      ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.weeklyMenu.findMany({
+        where,
+        include: { classroom: { select: { id: true, name: true } } },
+        orderBy: { weekStart: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.weeklyMenu.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   private async parentScope(user: AuthUser) {

@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { AllergiesService } from "./allergies.service";
@@ -43,8 +44,13 @@ export class AllergiesController {
 
   @Roles(...STAFF, TenantRole.PARENT)
   @Get("student/:studentId")
-  byStudent(@CurrentUser() user: AuthUser, @Param("studentId") studentId: string) {
-    return this.allergies.listByStudent(user, studentId);
+  byStudent(
+    @CurrentUser() user: AuthUser,
+    @Param("studentId") studentId: string,
+    @Query(new ZodValidationPipe(paginationQuerySchema))
+    query: z.infer<typeof paginationQuerySchema>,
+  ) {
+    return this.allergies.listByStudent(user, studentId, query);
   }
 
   @Roles(...EDITORS)

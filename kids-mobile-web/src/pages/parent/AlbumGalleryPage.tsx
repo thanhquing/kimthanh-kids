@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { useAlbumDetail, useAlbums } from "@/api/albums";
+import { albumKeys, listAlbumsPage, useAlbumDetail } from "@/api/albums";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { AuthImage } from "@/components/ui/AuthImage";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useMobileState } from "@/lib/mobileState";
@@ -11,7 +13,10 @@ export function AlbumGalleryPage() {
   const { t } = useT();
   const { role } = useMobileState();
   const base = roleBase(role);
-  const { data: albums = [], isError, isLoading } = useAlbums();
+  const albumsQuery = useLoadMore(albumKeys.list(undefined), (params) =>
+    listAlbumsPage(undefined, params),
+  );
+  const albums = albumsQuery.items;
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
   const activeId = selectedId ?? albums[0]?.id;
   const { data: album, isLoading: albumLoading, isError: albumError } = useAlbumDetail(activeId);
@@ -20,9 +25,9 @@ export function AlbumGalleryPage() {
   return (
     <>
       <TopBar title={t("album.title")} backTo={base} />
-      {isLoading ? <div className="card mt-3 p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
-      {isError ? <div className="card mt-3 p-4 text-sm text-red-600">{t("album.loadError")}</div> : null}
-      {!isLoading && !isError && albums.length === 0 ? (
+      {albumsQuery.isLoading ? <div className="card mt-3 p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
+      {albumsQuery.isError ? <div className="card mt-3 p-4 text-sm text-red-600">{t("album.loadError")}</div> : null}
+      {!albumsQuery.isLoading && !albumsQuery.isError && albums.length === 0 ? (
         <div className="card mt-3 p-4 text-sm text-slate-500">{t("album.empty")}</div>
       ) : null}
 
@@ -43,6 +48,11 @@ export function AlbumGalleryPage() {
           ))}
         </div>
       ) : null}
+      <LoadMore
+        hasMore={!!albumsQuery.hasNextPage}
+        loading={albumsQuery.isFetchingNextPage}
+        onMore={() => void albumsQuery.fetchNextPage()}
+      />
 
       {activeId && albumLoading ? <div className="card mt-3 p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
       {activeId && albumError ? <div className="card mt-3 p-4 text-sm text-red-600">{t("album.loadError")}</div> : null}

@@ -28,6 +28,7 @@ export class PaymentService {
     }
 
     const gatewayRef = randomUUID();
+    const vnpayConfig = provider === PlatformPaymentProvider.VNPAY ? this.getVnpayConfig() : null;
     const payment = await this.prisma.system.platformPayment.create({
       data: {
         invoiceId,
@@ -43,7 +44,7 @@ export class PaymentService {
 
     const redirectUrl =
       provider === PlatformPaymentProvider.VNPAY
-        ? this.buildVnpayUrl(gatewayRef, Number(invoice.total))
+        ? this.buildVnpayUrl(vnpayConfig!, gatewayRef, Number(invoice.total))
         : null;
 
     return { paymentId: payment.id, gatewayRef, redirectUrl };
@@ -133,9 +134,22 @@ export class PaymentService {
       .join("&");
   }
 
-  private buildVnpayUrl(gatewayRef: string, amount: number): string {
-    const ret = this.env.get("VNPAY_RETURN_URL") || "https://sandbox.vnpayment.vn/return";
+  private getVnpayConfig(): { payUrl: string; returnUrl: string } {
     const payUrl = this.env.get("VNPAY_PAY_URL");
-    return `${payUrl}?vnp_TxnRef=${gatewayRef}&vnp_Amount=${amount * 100}&vnp_ReturnUrl=${encodeURIComponent(ret)}`;
+    const returnUrl = this.env.get("VNPAY_RETURN_URL");
+    if (!payUrl || !returnUrl)
+      throw new BadRequestException({
+        code: "VNPAY_NOT_CONFIGURED",
+        message: "Chưa cấu hình cổng thanh toán VNPay",
+      });
+    return { payUrl, returnUrl };
+  }
+
+  private buildVnpayUrl(
+    config: { payUrl: string; returnUrl: string },
+    gatewayRef: string,
+    amount: number,
+  ): string {
+    return `${config.payUrl}?vnp_TxnRef=${gatewayRef}&vnp_Amount=${amount * 100}&vnp_ReturnUrl=${encodeURIComponent(config.returnUrl)}`;
   }
 }

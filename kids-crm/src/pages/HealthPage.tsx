@@ -11,8 +11,12 @@ import {
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EntitySelect } from "@/components/ui/EntitySelect";
 import { Field, Modal } from "@/components/ui/Modal";
+import { LoadMore, Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey } from "@/i18n";
 import { formatDate } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -50,8 +54,10 @@ function MedicineTab() {
   const [handling, setHandling] = useState<{ req: MedicineRequest; status: MedicineStatus } | null>(null);
   const [note, setNote] = useState("");
 
-  const medicine = useQuery({ queryKey: ["medicine"], queryFn: () => crm.medicine.list() });
-  const list = (medicine.data ?? []).filter((m) => !filter || m.status === filter);
+  const medicine = usePaged(
+    ["medicine", filter],
+    (pg) => crm.medicine.page({ status: filter || undefined, ...pg }),
+  );
 
   const handle = useMutation({
     mutationFn: () => crm.medicine.handle(handling!.req.id, { status: handling!.status, note: note || undefined }),
@@ -76,7 +82,7 @@ function MedicineTab() {
       </div>
       {medicine.isLoading ? (
         <div className="text-sm text-muted py-12 text-center">{t("common.loading")}</div>
-      ) : list.length === 0 ? (
+      ) : medicine.items.length === 0 ? (
         <div className="card p-12 text-center text-sm text-muted">{t("health.medEmpty")}</div>
       ) : (
         <table className="table">
@@ -93,7 +99,7 @@ function MedicineTab() {
             </tr>
           </thead>
           <tbody>
-            {list.map((m) => (
+            {medicine.items.map((m) => (
               <tr key={m.id}>
                 <td>{m.student.fullName}</td>
                 <td>{m.medicineName}</td>
@@ -126,6 +132,13 @@ function MedicineTab() {
           </tbody>
         </table>
       )}
+      <Pagination
+        page={medicine.page}
+        pages={medicine.pages}
+        total={medicine.total}
+        onPage={medicine.setPage}
+        busy={medicine.isFetching}
+      />
 
       {handling && (
         <Modal
@@ -163,8 +176,7 @@ function IncidentsTab() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const incidents = useQuery({ queryKey: ["incidents"], queryFn: () => crm.incidents.list() });
-  const students = useQuery({ queryKey: ["students"], queryFn: () => crm.students.list() });
+  const incidents = useLoadMore(["incidents"], (pg) => crm.incidents.page(pg));
   const [form, setForm] = useState<CreateIncident>({
     studentId: "",
     date: todayIso(),
@@ -195,11 +207,11 @@ function IncidentsTab() {
       </div>
       {incidents.isLoading ? (
         <div className="text-sm text-muted py-12 text-center">{t("common.loading")}</div>
-      ) : (incidents.data ?? []).length === 0 ? (
+      ) : incidents.items.length === 0 ? (
         <div className="card p-12 text-center text-sm text-muted">{t("health.incEmpty")}</div>
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
-          {(incidents.data ?? []).map((inc) => (
+          {incidents.items.map((inc) => (
             <div key={inc.id} className="card p-5">
               <div className="flex items-center justify-between mb-1">
                 <div className="font-bold">{inc.type}</div>
@@ -218,6 +230,11 @@ function IncidentsTab() {
           ))}
         </div>
       )}
+      <LoadMore
+        hasMore={incidents.hasNextPage}
+        loading={incidents.isFetchingNextPage}
+        onMore={() => incidents.fetchNextPage()}
+      />
 
       {open && (
         <Modal
@@ -240,14 +257,14 @@ function IncidentsTab() {
           }
         >
           <Field label={t("health.medStudent")}>
-            <select className="field" value={form.studentId} onChange={(e) => setForm((f) => ({ ...f, studentId: e.target.value }))}>
-              <option value="">—</option>
-              {(students.data ?? []).map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.fullName}
-                </option>
-              ))}
-            </select>
+            <EntitySelect
+              value={form.studentId}
+              fetchPage={(search) => crm.students.page({ search: search || undefined, pageSize: 20 })}
+              labelOf={(s) => s.fullName}
+              onChange={(id) => setForm((f) => ({ ...f, studentId: id }))}
+              queryKey={["students-select", "incidents"]}
+              placeholder="—"
+            />
           </Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label={t("health.incType")}>
@@ -281,16 +298,17 @@ function IncidentsTab() {
 // ─── Hồ sơ đo lường ───
 function StudentSelect({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   const { t } = useT();
-  const students = useQuery({ queryKey: ["students"], queryFn: () => crm.students.list() });
   return (
-    <select className="field !w-auto !py-1.5 mb-4" value={value} onChange={(e) => onChange(e.target.value)}>
-      <option value="">{t("health.pickStudent")}</option>
-      {(students.data ?? []).map((s) => (
-        <option key={s.id} value={s.id}>
-          {s.fullName}
-        </option>
-      ))}
-    </select>
+    <div className="mb-4 w-72 max-w-full">
+      <EntitySelect
+        value={value}
+        fetchPage={(search) => crm.students.page({ search: search || undefined, pageSize: 20 })}
+        labelOf={(s) => s.fullName}
+        onChange={onChange}
+        queryKey={["students-select", "health"]}
+        placeholder={t("health.pickStudent")}
+      />
+    </div>
   );
 }
 

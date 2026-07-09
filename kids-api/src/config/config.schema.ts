@@ -41,14 +41,14 @@ export const configSchema = z
     PAST_DUE_GRACE_DAYS: z.coerce.number().int().nonnegative().default(7),
     SUSPENDED_GRACE_DAYS: z.coerce.number().int().nonnegative().default(14),
 
-    // VNPay là cấu hình NHẠY CẢM → KHÔNG default trong code. Thiếu ở prod = fail-fast lúc
-    // boot (superRefine bên dưới). Dev/test để trống → verifier bypass (chỉ non-prod).
+    // VNPay là cấu hình NHẠY CẢM → KHÔNG default trong code. Deploy không dùng VNPay có thể
+    // để trống; nếu bật/config VNPay ở prod thì superRefine bắt đủ secret + URL.
     VNPAY_TMN_CODE: z.string().optional(),
     VNPAY_HASH_SECRET: z.string().optional(),
-    // URL cổng thanh toán (trang nhập thẻ) — BẮT BUỘC, không default: thiếu là app không boot.
-    // Dev copy giá trị sandbox từ .env.example; prod phải trỏ endpoint thật (superRefine chặn sandbox).
-    VNPAY_PAY_URL: z.string().url(),
-    // URL app hiển thị kết quả sau thanh toán; prod bắt buộc (superRefine).
+    // URL cổng thanh toán (trang nhập thẻ). Không default trong code; chỉ bắt buộc khi gọi
+    // flow VNPay hoặc ở production có cấu hình VNPay secret.
+    VNPAY_PAY_URL: z.string().url().optional(),
+    // URL app hiển thị kết quả sau thanh toán. Không default trong code; bắt buộc khi gọi VNPay.
     VNPAY_RETURN_URL: z.string().optional(),
 
     // ─── Media (lưu trữ nội bộ + nén) ───
@@ -64,30 +64,41 @@ export const configSchema = z
         message: "Không dùng wildcard CORS trong production khi API bật credentials",
       });
     }
-    // Production BẮT BUỘC có secret verify webhook: nếu để trống, verifySignature sẽ
-    // fail-closed (return false) và mọi webhook thanh toán bị chặn — fail-fast rõ ràng ở boot.
-    if (cfg.NODE_ENV === "production" && (cfg.VNPAY_HASH_SECRET ?? "").trim() === "") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["VNPAY_HASH_SECRET"],
-        message: "Production phải cấu hình VNPAY_HASH_SECRET để verify chữ ký webhook",
-      });
+    const usesVnpay =
+      (cfg.VNPAY_TMN_CODE ?? "").trim() !== "" ||
+      (cfg.VNPAY_HASH_SECRET ?? "").trim() !== "" ||
+      (cfg.VNPAY_PAY_URL ?? "").trim() !== "" ||
+      (cfg.VNPAY_RETURN_URL ?? "").trim() !== "";
+    if (cfg.NODE_ENV === "production" && usesVnpay) {
+      if ((cfg.VNPAY_HASH_SECRET ?? "").trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["VNPAY_HASH_SECRET"],
+          message: "Production dùng VNPay phải cấu hình VNPAY_HASH_SECRET",
+        });
+      }
+      if ((cfg.VNPAY_PAY_URL ?? "").trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["VNPAY_PAY_URL"],
+          message: "Production dùng VNPay phải cấu hình VNPAY_PAY_URL",
+        });
+      }
+      if ((cfg.VNPAY_RETURN_URL ?? "").trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["VNPAY_RETURN_URL"],
+          message: "Production dùng VNPay phải cấu hình VNPAY_RETURN_URL",
+        });
+      }
     }
-    // Prod KHÔNG được để cổng thanh toán trỏ sandbox (default dev) → tránh vô tình
-    // đẩy giao dịch thật sang môi trường thử nghiệm.
-    if (cfg.NODE_ENV === "production" && /sandbox/i.test(cfg.VNPAY_PAY_URL)) {
+    // Prod KHÔNG được để cổng thanh toán trỏ sandbox → tránh vô tình đẩy giao dịch thật
+    // sang môi trường thử nghiệm.
+    if (cfg.NODE_ENV === "production" && /sandbox/i.test(cfg.VNPAY_PAY_URL ?? "")) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["VNPAY_PAY_URL"],
         message: "Production phải cấu hình VNPAY_PAY_URL trỏ cổng VNPay thật (không dùng sandbox)",
-      });
-    }
-    // Redirect sau thanh toán phải là URL app thật ở prod (không để rỗng → fallback sandbox).
-    if (cfg.NODE_ENV === "production" && (cfg.VNPAY_RETURN_URL ?? "").trim() === "") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["VNPAY_RETURN_URL"],
-        message: "Production phải cấu hình VNPAY_RETURN_URL (URL app hiển thị kết quả thanh toán)",
       });
     }
   });

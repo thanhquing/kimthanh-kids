@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type Gender = "MALE" | "FEMALE" | "OTHER";
 export type StudentStatus = "ACTIVE" | "INACTIVE" | "GRADUATED" | "WITHDRAWN";
@@ -62,12 +62,23 @@ export function listStudents(filters: { classroomId?: string; schoolId?: string 
   return api.get<Student[]>("/students", { query: filters });
 }
 
+export function listStudentsPage(
+  filters: { classroomId?: string; schoolId?: string; search?: string } = {},
+  params: PageParams,
+) {
+  return api.getPage<Student>("/students", { query: { ...params, ...filters } });
+}
+
 export function getStudent(id: string): Promise<Student> {
   return api.get<Student>(`/students/${id}`);
 }
 
 export function listClassrooms(filters: { schoolId?: string } = {}) {
   return api.get<Classroom[]>("/classrooms", { query: filters });
+}
+
+export function listClassroomsPage(filters: { schoolId?: string } = {}, params: PageParams) {
+  return api.getPage<Classroom>("/classrooms", { query: { ...params, ...filters } });
 }
 
 export function useMyChildren() {
@@ -99,4 +110,3 @@ export function useClassrooms() {
     queryFn: () => listClassrooms(),
   });
 }
-

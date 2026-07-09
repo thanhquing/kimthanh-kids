@@ -1,14 +1,17 @@
 import { Camera } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { uploadImage } from "@/api/media";
-import { reportKeys, useReportsByClass, useUpsertDailyReport, type Mood } from "@/api/reports";
-import { useClassrooms, useStudents } from "@/api/students";
+import { listReportsByClassPage, reportKeys, useUpsertDailyReport, type Mood } from "@/api/reports";
+import { listStudentsPage, studentKeys, useClassrooms } from "@/api/students";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { TextAreaField, Field } from "@/components/ui/Field";
+import { LoadMore } from "@/components/ui/LoadMore";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { toDateInputValue } from "@/lib/date";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { moodOptions } from "@/lib/reportDisplay";
 import { cn } from "@/lib/utils";
 
@@ -28,9 +31,17 @@ export function ReportComposePage() {
   const { data: classrooms = [], isLoading: classroomsLoading, isError: classroomsError } = useClassrooms();
   const activeClassrooms = useMemo(() => classrooms.filter((classroom) => classroom.isActive), [classrooms]);
   const currentClassroom = activeClassrooms.find((classroom) => classroom.id === classroomId) ?? activeClassrooms[0];
-  const studentsQuery = useStudents({ classroomId: currentClassroom?.id });
-  const students = studentsQuery.data ?? [];
-  const reportsQuery = useReportsByClass(currentClassroom?.id, date);
+  const studentsQuery = useLoadMore(
+    studentKeys.list({ classroomId: currentClassroom?.id }),
+    (params) => listStudentsPage({ classroomId: currentClassroom?.id }, params),
+    { enabled: Boolean(currentClassroom?.id) },
+  );
+  const students = studentsQuery.items;
+  const reportsQuery = useQuery({
+    queryKey: [...reportKeys.byClass(currentClassroom?.id, date), "all"],
+    queryFn: () => fetchAllPages((pg) => listReportsByClassPage(currentClassroom!.id, date, pg)),
+    enabled: Boolean(currentClassroom?.id && date),
+  });
   const existingReport = reportsQuery.data?.find((report) => report.studentId === studentId);
   const upsertMutation = useUpsertDailyReport();
 
@@ -101,6 +112,11 @@ export function ReportComposePage() {
           <select className="field" value={studentId ?? ""} onChange={(event) => setStudentId(event.target.value || undefined)}>
             {students.map((student) => <option key={student.id} value={student.id}>{student.fullName}</option>)}
           </select>
+          <LoadMore
+            hasMore={!!studentsQuery.hasNextPage}
+            loading={studentsQuery.isFetchingNextPage}
+            onMore={() => void studentsQuery.fetchNextPage()}
+          />
         </Field>
         <Field label={t("reports.mood")}>
           <div className="grid grid-cols-4 gap-2 text-sm font-semibold">

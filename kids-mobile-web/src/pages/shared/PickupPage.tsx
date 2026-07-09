@@ -2,10 +2,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
+  listPickupAuthorizationsPage,
+  listPickupLogsPage,
   pickupKeys,
   useCreatePickupLog,
-  usePickupAuthorizations,
-  usePickupLogs,
   type PickupAuthorization,
   type PickupEventType,
 } from "@/api/pickup";
@@ -13,7 +13,9 @@ import { TopBar } from "@/components/mobile/MobileShell";
 import { InfoLine, StatusBadge } from "@/components/mobile/Primitives";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { TextAreaField } from "@/components/ui/Field";
+import { LoadMore } from "@/components/ui/LoadMore";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type TKey } from "@/i18n";
 import { formatShortDate } from "@/lib/date";
 import { useMobileState } from "@/lib/mobileState";
@@ -34,17 +36,25 @@ export function PickupPage() {
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
   const studentId = params.get("studentId") ?? undefined;
-  const authorizations = usePickupAuthorizations(studentId);
-  const logs = usePickupLogs(studentId);
+  const authorizations = useLoadMore(
+    pickupKeys.authorizations(studentId),
+    (pageParams) => listPickupAuthorizationsPage(studentId, pageParams),
+    { enabled: Boolean(studentId) },
+  );
+  const logs = useLoadMore(
+    pickupKeys.logs(studentId),
+    (pageParams) => listPickupLogsPage(studentId, pageParams),
+    { enabled: Boolean(studentId) },
+  );
   const createLog = useCreatePickupLog();
   const [sheet, setSheet] = useState<{ auth: PickupAuthorization; eventType: PickupEventType } | null>(null);
   const [note, setNote] = useState("");
-  const activeAuthorizations = authorizations.data ?? [];
+  const activeAuthorizations = authorizations.items;
   const canRecord = role === "teacher";
   const title = t("pickup.title");
   const backTo = role === "teacher" ? "/teacher/class" : "/parent/children";
 
-  const groupedLogs = useMemo(() => logs.data ?? [], [logs.data]);
+  const groupedLogs = useMemo(() => logs.items, [logs.items]);
 
   async function submitLog() {
     if (!sheet) return;
@@ -103,6 +113,11 @@ export function PickupPage() {
           </div>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!authorizations.hasNextPage}
+        loading={authorizations.isFetchingNextPage}
+        onMore={() => void authorizations.fetchNextPage()}
+      />
 
       <div className="section-title">{t("pickup.history")}</div>
       {logs.isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
@@ -122,6 +137,11 @@ export function PickupPage() {
           </div>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!logs.hasNextPage}
+        loading={logs.isFetchingNextPage}
+        onMore={() => void logs.fetchNextPage()}
+      />
 
       <BottomSheet open={!!sheet} title={sheet ? t(EVENT_KEY[sheet.eventType]) : title} onClose={() => setSheet(null)}>
         {sheet ? (

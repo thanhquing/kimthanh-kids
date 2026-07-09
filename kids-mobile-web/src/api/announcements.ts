@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type AnnouncementAudience = "ALL" | "PARENTS" | "TEACHERS" | "CLASS";
 
@@ -35,6 +35,15 @@ export function listAnnouncements(role: "parent" | "teacher", audience?: Announc
   return api.get<Announcement[]>("/announcements", { query: { audience } });
 }
 
+export function listAnnouncementsPage(
+  role: "parent" | "teacher",
+  audience: AnnouncementAudience | undefined,
+  params: PageParams,
+) {
+  if (role === "parent") return api.getPage<Announcement>("/announcements/feed", { query: params });
+  return api.getPage<Announcement>("/announcements", { query: { ...params, audience } });
+}
+
 export function createAnnouncement(input: CreateAnnouncementInput) {
   return api.post<Announcement>("/announcements", input);
 }
@@ -51,4 +60,3 @@ export function useCreateAnnouncement() {
     mutationFn: createAnnouncement,
   });
 }
-

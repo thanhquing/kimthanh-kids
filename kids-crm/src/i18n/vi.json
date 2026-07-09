@@ -161,7 +161,14 @@
     "markRead": "Đánh dấu đã đọc",
     "markAllRead": "Đánh dấu tất cả đã đọc",
     "upload": "Tải ảnh",
-    "errorGeneric": "Có lỗi xảy ra, vui lòng thử lại."
+    "errorGeneric": "Có lỗi xảy ra, vui lòng thử lại.",
+    "loadMore": "Xem thêm",
+    "noMore": "Đã hết",
+    "prev": "Trước",
+    "next": "Sau",
+    "pageInfo": "Trang {page}/{pages}",
+    "totalItems": "{total} mục",
+    "exporting": "Đang xuất…"
   },
   "feature": {
     "assignmentsTitle": "Phân công tuần",

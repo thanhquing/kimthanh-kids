@@ -3,13 +3,13 @@ import { ApiTags } from "@nestjs/swagger";
 import { TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { AuditService } from "./audit.service";
 
-const listQuery = z.object({
+const listQuery = paginationQuerySchema.extend({
   action: z.string().max(100).optional(),
-  limit: z.coerce.number().int().min(1).max(500).optional(),
 });
 
 @ApiTags("audit")

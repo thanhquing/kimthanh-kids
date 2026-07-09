@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type AttendanceStatus = "PRESENT" | "LATE" | "ABSENT" | "EXCUSED";
 
@@ -39,6 +39,10 @@ export function listAttendanceByClass(classroomId: string, date: string): Promis
   return api.get<Attendance[]>("/attendance", { query: { classroomId, date } });
 }
 
+export function listAttendanceByClassPage(classroomId: string, date: string, params: PageParams) {
+  return api.getPage<Attendance>("/attendance", { query: { ...params, classroomId, date } });
+}
+
 export function listAttendanceByStudent(studentId: string): Promise<Attendance[]> {
   return api.get<Attendance[]>(`/attendance/student/${studentId}`);
 }
@@ -68,4 +72,3 @@ export function useMarkAttendance() {
     mutationFn: markAttendance,
   });
 }
-

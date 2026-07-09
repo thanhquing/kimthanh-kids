@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { MedicineStatus, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { MedicineService } from "./medicine.service";
@@ -20,6 +21,9 @@ const createSchema = z.object({
 const handleSchema = z.object({
   status: z.nativeEnum(MedicineStatus),
   note: z.string().max(500).optional(),
+});
+const listQuery = paginationQuerySchema.extend({
+  status: z.nativeEnum(MedicineStatus).optional(),
 });
 
 // FINANCE (kế toán) KHÔNG có quyền trên dữ liệu thuốc/sức khỏe trẻ (least-privilege) — chỉ vận hành học phí.
@@ -52,14 +56,21 @@ export class MedicineController {
 
   @Roles(TenantRole.PARENT)
   @Get("mine")
-  mine(@CurrentUser() user: AuthUser) {
-    return this.medicine.listMine(user);
+  mine(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(paginationQuerySchema))
+    query: z.infer<typeof paginationQuerySchema>,
+  ) {
+    return this.medicine.listMine(user, query);
   }
 
   @Roles(...STAFF)
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query("status") status?: MedicineStatus) {
-    return this.medicine.listForStaff(user, status);
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(listQuery)) query: z.infer<typeof listQuery>,
+  ) {
+    return this.medicine.listForStaff(user, query);
   }
 
   @Roles(...STAFF, TenantRole.PARENT)

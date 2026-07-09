@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type TuitionInvoiceStatus = "UNPAID" | "PARTIAL" | "PAID" | "OVERDUE" | "CANCELED";
 
@@ -43,6 +43,10 @@ export const tuitionKeys = {
 
 export function listMyInvoices() {
   return api.get<TuitionInvoice[]>("/tuition/invoices/mine");
+}
+
+export function listMyInvoicesPage(params: PageParams) {
+  return api.getPage<TuitionInvoice>("/tuition/invoices/mine", { query: params });
 }
 
 export function getInvoice(id: string) {
@@ -90,4 +94,3 @@ export function useCreateGatewayPayment() {
 export function invoiceRemaining(invoice: Pick<TuitionInvoice, "total" | "amountPaid">) {
   return Number(invoice.total) - Number(invoice.amountPaid);
 }
-

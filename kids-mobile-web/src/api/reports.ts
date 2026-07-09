@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type Mood = "HAPPY" | "NEUTRAL" | "TIRED" | "FUSSY";
 
@@ -45,8 +45,16 @@ export function listReportsByClass(classroomId: string, date: string): Promise<D
   return api.get<DailyReport[]>("/daily-reports", { query: { classroomId, date } });
 }
 
+export function listReportsByClassPage(classroomId: string, date: string, params: PageParams) {
+  return api.getPage<DailyReport>("/daily-reports", { query: { ...params, classroomId, date } });
+}
+
 export function listReportsByStudent(studentId: string): Promise<DailyReport[]> {
   return api.get<DailyReport[]>(`/daily-reports/student/${studentId}`);
+}
+
+export function listReportsByStudentPage(studentId: string, params: PageParams) {
+  return api.getPage<DailyReport>(`/daily-reports/student/${studentId}`, { query: params });
 }
 
 export function upsertDailyReport(input: UpsertDailyReportInput) {

@@ -5,9 +5,11 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { LimitMetric, TenantRole, UserType } from "@prisma/client";
-import { hashPassword } from "../common/crypto/password";
 import { randomBytes } from "node:crypto";
 import { AuditService } from "../audit/audit.service";
+import { hashPassword } from "../common/crypto/password";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -66,8 +68,17 @@ export class TenantService {
   }
 
   /** Dùng prisma.db (auto-filter theo tenant) — minh hoạ cô lập dữ liệu. */
-  listSchools() {
-    return this.prisma.db.school.findMany({ orderBy: { createdAt: "asc" } });
+  async listSchools(query: PaginationQuery = {}) {
+    const pg = page(query);
+    const [items, total] = await Promise.all([
+      this.prisma.db.school.findMany({
+        orderBy: { createdAt: "asc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.school.count(),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   createSchool(input: { name: string; code: string; address?: string; phone?: string }) {
@@ -75,15 +86,53 @@ export class TenantService {
     return this.prisma.db.school.create({ data: input as never });
   }
 
-  listMembers(tenantId: string) {
-    return this.prisma.system.membership.findMany({
-      where: { tenantId, deletedAt: null },
-      include: {
-        user: { select: { id: true, email: true, phone: true, fullName: true, isActive: true } },
-        school: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  async listMembers(
+    tenantId: string,
+    query: {
+      search?: string;
+      role?: TenantRole;
+      isActive?: boolean;
+      staffOnly?: boolean;
+    } & PaginationQuery = {},
+  ) {
+    const pg = page(query);
+    const search = query.search?.trim();
+    const userWhere = {
+      ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
+      ...(search
+        ? {
+            OR: [
+              { fullName: { contains: search, mode: "insensitive" as const } },
+              { email: { contains: search, mode: "insensitive" as const } },
+              { phone: { contains: search, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
+    const where = {
+      tenantId,
+      deletedAt: null,
+      ...(query.role
+        ? { role: query.role }
+        : query.staffOnly
+          ? { role: { not: TenantRole.PARENT } }
+          : {}),
+      ...(Object.keys(userWhere).length ? { user: userWhere } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.system.membership.findMany({
+        where,
+        include: {
+          user: { select: { id: true, email: true, phone: true, fullName: true, isActive: true } },
+          school: true,
+        },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.system.membership.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /**
@@ -248,8 +297,14 @@ export class TenantService {
     return { id: userId, passwordReset: true };
   }
 
-  listDomains(tenantId: string) {
-    return this.prisma.system.tenantDomain.findMany({ where: { tenantId } });
+  async listDomains(tenantId: string, query: PaginationQuery = {}) {
+    const pg = page(query);
+    const where = { tenantId };
+    const [items, total] = await Promise.all([
+      this.prisma.system.tenantDomain.findMany({ where, skip: pg.skip, take: pg.take }),
+      this.prisma.system.tenantDomain.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async addCustomDomain(tenantId: string, host: string) {

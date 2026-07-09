@@ -1,13 +1,13 @@
 import { Calendar, FileText } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   attendanceKeys,
-  useAttendanceByClass,
+  listAttendanceByClassPage,
   useMarkAttendance,
   type AttendanceStatus,
 } from "@/api/attendance";
-import { useClassrooms, useStudents, type Student } from "@/api/students";
+import { listStudentsPage, studentKeys, useClassrooms, type Student } from "@/api/students";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { Avatar } from "@/components/mobile/Primitives";
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -16,6 +16,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useT } from "@/i18n";
 import { attendanceStatusLabel, attendanceStatusOptions } from "@/lib/attendanceDisplay";
 import { toDateInputValue } from "@/lib/date";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { initialsFromName } from "@/lib/studentDisplay";
 import { cn } from "@/lib/utils";
 
@@ -35,8 +36,16 @@ export function AttendanceMarkPage() {
   const { data: classrooms = [], isLoading: classroomsLoading } = useClassrooms();
   const activeClassrooms = useMemo(() => classrooms.filter((classroom) => classroom.isActive), [classrooms]);
   const currentClassroom = activeClassrooms.find((classroom) => classroom.id === classroomId) ?? activeClassrooms[0];
-  const studentsQuery = useStudents({ classroomId: currentClassroom?.id });
-  const attendanceQuery = useAttendanceByClass(currentClassroom?.id, date);
+  const studentsQuery = useQuery({
+    queryKey: [...studentKeys.list({ classroomId: currentClassroom?.id }), "attendance-all"],
+    queryFn: () => fetchAllPages((pg) => listStudentsPage({ classroomId: currentClassroom!.id }, pg)),
+    enabled: Boolean(currentClassroom?.id),
+  });
+  const attendanceQuery = useQuery({
+    queryKey: [...attendanceKeys.byClass(currentClassroom?.id, date), "all"],
+    queryFn: () => fetchAllPages((pg) => listAttendanceByClassPage(currentClassroom!.id, date, pg)),
+    enabled: Boolean(currentClassroom?.id && date),
+  });
   const markMutation = useMarkAttendance();
   const students = studentsQuery.data ?? NO_STUDENTS;
   const noteStudent = students.find((student) => student.id === noteStudentId);

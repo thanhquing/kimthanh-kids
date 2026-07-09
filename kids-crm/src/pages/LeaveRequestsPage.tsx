@@ -1,10 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { crm, type LeaveRequest, type LeaveStatus, type LeaveType } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
+import { LoadMore } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type TKey } from "@/i18n";
 import { formatDate } from "@/lib/labels";
 
@@ -76,10 +78,7 @@ export function LeaveRequestsPage() {
   const { t } = useT();
   const [status, setStatus] = useState<LeaveStatus | "">("PENDING");
   const [deciding, setDeciding] = useState<{ request: LeaveRequest; status: Exclude<LeaveStatus, "PENDING"> } | null>(null);
-  const leave = useQuery({
-    queryKey: ["leave", status],
-    queryFn: () => crm.leave.list(status || undefined),
-  });
+  const leave = useLoadMore(["leave", status], (pg) => crm.leave.page({ status: status || undefined, ...pg }));
 
   return (
     <>
@@ -96,7 +95,7 @@ export function LeaveRequestsPage() {
         <div className="grid gap-3">
           {leave.isLoading ? (
             <div className="card p-4 text-sm text-slate-400">{t("common.loading")}</div>
-          ) : (leave.data ?? []).map((r) => (
+          ) : leave.items.map((r) => (
             <div key={r.id} className="card p-4">
               <div className="flex flex-wrap items-start gap-3">
                 <div className="min-w-0 flex-1">
@@ -124,6 +123,11 @@ export function LeaveRequestsPage() {
             </div>
           ))}
         </div>
+        <LoadMore
+          hasMore={leave.hasNextPage}
+          loading={leave.isFetchingNextPage}
+          onMore={() => leave.fetchNextPage()}
+        />
       </main>
       {deciding && (
         <DecideModal

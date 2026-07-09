@@ -1,9 +1,11 @@
 import { Calendar } from "lucide-react";
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { invoiceRemaining, useMyInvoices } from "@/api/tuition";
+import { invoiceRemaining, listMyInvoicesPage, tuitionKeys } from "@/api/tuition";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { StatusBadge } from "@/components/mobile/Primitives";
+import { LoadMore } from "@/components/ui/LoadMore";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { formatInvoiceDate, isDueStatus, tuitionFilters, tuitionStatusLabel } from "@/lib/tuitionDisplay";
 import { formatVnd } from "@/lib/utils";
@@ -12,7 +14,8 @@ import type { TuitionInvoiceStatus } from "@/api/tuition";
 export function InvoicesPage() {
   const { t, lang } = useT();
   const [filter, setFilter] = useState<TuitionInvoiceStatus | "DUE" | "ALL">("DUE");
-  const { data: invoices = [], isLoading, isError } = useMyInvoices();
+  const invoicesQuery = useLoadMore(tuitionKeys.mine(), listMyInvoicesPage);
+  const invoices = invoicesQuery.items;
   const visibleInvoices = invoices.filter((invoice) => {
     if (filter === "ALL") return true;
     if (filter === "DUE") return isDueStatus(invoice.status);
@@ -35,9 +38,9 @@ export function InvoicesPage() {
           </button>
         ))}
       </div>
-      {isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
-      {isError ? <div className="card p-4 text-sm text-red-600">{t("tuition.listError")}</div> : null}
-      {!isLoading && !isError && visibleInvoices.length === 0 ? (
+      {invoicesQuery.isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
+      {invoicesQuery.isError ? <div className="card p-4 text-sm text-red-600">{t("tuition.listError")}</div> : null}
+      {!invoicesQuery.isLoading && !invoicesQuery.isError && visibleInvoices.length === 0 ? (
         <div className="card p-4 text-sm text-slate-500">{t("tuition.listEmpty")}</div>
       ) : null}
       <div className="space-y-3">
@@ -61,6 +64,11 @@ export function InvoicesPage() {
           );
         })}
       </div>
+      <LoadMore
+        hasMore={!!invoicesQuery.hasNextPage}
+        loading={invoicesQuery.isFetchingNextPage}
+        onMore={() => void invoicesQuery.fetchNextPage()}
+      />
     </>
   );
 }

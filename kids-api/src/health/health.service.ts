@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { ownedStudentWhere, recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -40,12 +42,19 @@ export class HealthService {
   }
 
   /** Lịch sử chỉ số của 1 học sinh — staff (school-scope) hoặc phụ huynh (con mình). */
-  studentRecords(user: AuthUser, studentId: string) {
-    return this.prisma.db.healthRecord.findMany({
-      where: { studentId, ...recordScopeWhere(user) },
-      orderBy: { date: "desc" },
-      take: 120,
-    });
+  async studentRecords(user: AuthUser, studentId: string, query: PaginationQuery = {}) {
+    const pg = page(query);
+    const where = { studentId, ...recordScopeWhere(user) };
+    const [items, total] = await Promise.all([
+      this.prisma.db.healthRecord.findMany({
+        where,
+        orderBy: { date: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.healthRecord.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Dữ liệu biểu đồ tăng trưởng (chiều cao/cân nặng theo thời gian, tăng dần). */

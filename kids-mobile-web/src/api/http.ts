@@ -140,6 +140,7 @@ async function request<T>(method: string, path: string, opts: Options = {}): Pro
 
 export type Meta = { page?: number; pageSize?: number; total?: number; [k: string]: unknown };
 export type Page<T> = { items: T[]; meta: Meta };
+export type PageParams = { page?: number; pageSize?: number; limit?: number };
 
 /** GET danh sách phân trang: trả cả `items` lẫn `meta` (envelope `{ data, meta }`). */
 async function getPage<T>(path: string, opts: Options = {}): Promise<Page<T>> {

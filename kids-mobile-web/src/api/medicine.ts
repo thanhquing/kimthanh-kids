@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type MedicineStatus = "PENDING" | "APPROVED" | "ADMINISTERED" | "REJECTED";
 
@@ -53,6 +53,11 @@ export function listMedicine(role: "parent" | "teacher", status?: MedicineStatus
   return api.get<MedicineRequest[]>("/medicine", { query: { status } });
 }
 
+export function listMedicinePage(role: "parent" | "teacher", status: MedicineStatus | undefined, params: PageParams) {
+  if (role === "parent") return api.getPage<MedicineRequest>("/medicine/mine", { query: params });
+  return api.getPage<MedicineRequest>("/medicine", { query: { ...params, status } });
+}
+
 export function getMedicine(id: string) {
   return api.get<MedicineRequest>(`/medicine/${id}`);
 }
@@ -90,4 +95,3 @@ export function useCreateMedicine() {
 export function useHandleMedicine() {
   return useMutation({ mutationFn: handleMedicine });
 }
-

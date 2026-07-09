@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { crm } from "@/api/crm";
 import { PageHeader } from "@/components/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey } from "@/i18n";
 import { formatDate } from "@/lib/labels";
 import { GENDER_KEY, guardiansSummary, STUDENT_STATUS } from "@/lib/people";
@@ -32,14 +34,14 @@ export function ClassroomDetailPage() {
     queryFn: () => crm.classrooms.get(id),
     enabled: !!id,
   });
-  const roster = useQuery({
-    queryKey: ["students", { classroomId: id }],
-    queryFn: () => crm.students.list({ classroomId: id }),
-    enabled: !!id,
-  });
+  const roster = usePaged(
+    ["students", { classroomId: id }],
+    (pg) => crm.students.page({ classroomId: id, ...pg }),
+    { enabled: !!id },
+  );
 
   const c = classroom.data;
-  const enrolled = c?._count?.students ?? roster.data?.length ?? 0;
+  const enrolled = c?._count?.students ?? roster.total;
   const free = c ? Math.max(0, c.capacity - enrolled) : 0;
 
   return (
@@ -93,46 +95,55 @@ export function ClassroomDetailPage() {
           <div className="card p-12 text-center text-sm text-muted">{t("classrooms.comingSoon")}</div>
         ) : roster.isLoading ? (
           <div className="text-sm text-muted py-12 text-center">{t("common.loading")}</div>
-        ) : (roster.data ?? []).length === 0 ? (
+        ) : roster.items.length === 0 ? (
           <div className="card p-12 text-center text-sm text-muted">{t("classrooms.rosterEmpty")}</div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>{t("students.colName")}</th>
-                <th>{t("students.colNickname")}</th>
-                <th>{t("students.colDob")}</th>
-                <th>{t("students.colGender")}</th>
-                <th>{t("students.colGuardians")}</th>
-                <th>{t("students.fStatus")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(roster.data ?? []).map((s) => {
-                const status = STUDENT_STATUS[s.status];
-                return (
-                  <tr key={s.id}>
-                    <td>
-                      <Link
-                        to={`/students/${s.id}`}
-                        className="flex items-center gap-2 text-[color:var(--primary)] font-semibold"
-                      >
-                        <div className="avatar !w-8 !h-8 text-xs">{initials(s.fullName)}</div>
-                        {s.fullName}
-                      </Link>
-                    </td>
-                    <td>{s.nickname || "—"}</td>
-                    <td>{formatDate(s.dateOfBirth)}</td>
-                    <td>{t(GENDER_KEY[s.gender])}</td>
-                    <td>{guardiansSummary(s.parents) || "—"}</td>
-                    <td>
-                      <span className={`badge ${status.badge}`}>{t(status.key)}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>{t("students.colName")}</th>
+                  <th>{t("students.colNickname")}</th>
+                  <th>{t("students.colDob")}</th>
+                  <th>{t("students.colGender")}</th>
+                  <th>{t("students.colGuardians")}</th>
+                  <th>{t("students.fStatus")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roster.items.map((s) => {
+                  const status = STUDENT_STATUS[s.status];
+                  return (
+                    <tr key={s.id}>
+                      <td>
+                        <Link
+                          to={`/students/${s.id}`}
+                          className="flex items-center gap-2 text-[color:var(--primary)] font-semibold"
+                        >
+                          <div className="avatar !w-8 !h-8 text-xs">{initials(s.fullName)}</div>
+                          {s.fullName}
+                        </Link>
+                      </td>
+                      <td>{s.nickname || "—"}</td>
+                      <td>{formatDate(s.dateOfBirth)}</td>
+                      <td>{t(GENDER_KEY[s.gender])}</td>
+                      <td>{guardiansSummary(s.parents) || "—"}</td>
+                      <td>
+                        <span className={`badge ${status.badge}`}>{t(status.key)}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <Pagination
+              page={roster.page}
+              pages={roster.pages}
+              total={roster.total}
+              onPage={roster.setPage}
+              busy={roster.isFetching}
+            />
+          </>
         )}
       </main>
     </>

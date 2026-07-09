@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { TenantService } from "./tenant.service";
@@ -43,6 +44,12 @@ const createMemberSchema = z
     message: "Cần email hoặc số điện thoại",
     path: ["email"],
   });
+const membersQuery = paginationQuerySchema.extend({
+  search: z.string().trim().min(1).max(120).optional(),
+  role: z.nativeEnum(TenantRole).optional(),
+  isActive: z.enum(["true", "false"]).optional(),
+  staffOnly: z.enum(["true", "false"]).optional(),
+});
 const memberStatusSchema = z.object({ isActive: z.boolean() });
 const resetPasswordSchema = z.object({ password: z.string().min(8) });
 const schoolSchema = z.object({
@@ -72,8 +79,11 @@ export class TenantController {
   }
 
   @Get("schools")
-  schools() {
-    return this.tenant.listSchools();
+  schools(
+    @Query(new ZodValidationPipe(paginationQuerySchema))
+    query: z.infer<typeof paginationQuerySchema>,
+  ) {
+    return this.tenant.listSchools(query);
   }
 
   @Post("schools")
@@ -82,8 +92,15 @@ export class TenantController {
   }
 
   @Get("members")
-  members(@CurrentUser() user: AuthUser) {
-    return this.tenant.listMembers(user.tenantId!);
+  members(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(membersQuery)) query: z.infer<typeof membersQuery>,
+  ) {
+    return this.tenant.listMembers(user.tenantId!, {
+      ...query,
+      isActive: query.isActive === undefined ? undefined : query.isActive === "true",
+      staffOnly: query.staffOnly === undefined ? undefined : query.staffOnly === "true",
+    });
   }
 
   // Tạo tài khoản thành viên (GV/PH/y tá/nhân viên). Chỉ SCHOOL_ADMIN/PRINCIPAL (theo @Roles cấp class).
@@ -116,8 +133,12 @@ export class TenantController {
   }
 
   @Get("domains")
-  domains(@CurrentUser() user: AuthUser) {
-    return this.tenant.listDomains(user.tenantId!);
+  domains(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(paginationQuerySchema))
+    query: z.infer<typeof paginationQuerySchema>,
+  ) {
+    return this.tenant.listDomains(user.tenantId!, query);
   }
 
   @Post("domains")

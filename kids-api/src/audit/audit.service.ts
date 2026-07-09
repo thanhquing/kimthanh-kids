@@ -1,6 +1,8 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { Prisma, UserType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { page, PaginationQuery } from "../common/http/pagination";
+import { paginated } from "../common/http/api-response";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface AuditInput {
@@ -63,25 +65,32 @@ export class AuditService {
   }
 
   /** Nhật ký của tenant hiện tại (admin/HT xem). */
-  list(user: AuthUser, opts: { action?: string; limit?: number } = {}) {
-    return this.prisma.system.auditLog.findMany({
-      where: { tenantId: user.tenantId, ...(opts.action ? { action: opts.action } : {}) },
-      orderBy: { createdAt: "desc" },
-      take: Math.min(opts.limit ?? 100, 500),
-      // Không passthrough metadata thô (có thể chứa dữ liệu nhạy cảm do writer thêm sau này).
-      // Prisma 5.22 chưa bật omit → select tường minh field an toàn (loại metadata).
-      select: {
-        id: true,
-        tenantId: true,
-        actorId: true,
-        actorType: true,
-        action: true,
-        targetType: true,
-        targetId: true,
-        ip: true,
-        userAgent: true,
-        createdAt: true,
-      },
-    });
+  async list(user: AuthUser, opts: { action?: string } & PaginationQuery = {}) {
+    const pg = page(opts);
+    const where = { tenantId: user.tenantId, ...(opts.action ? { action: opts.action } : {}) };
+    const [items, total] = await Promise.all([
+      this.prisma.system.auditLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+        // Không passthrough metadata thô (có thể chứa dữ liệu nhạy cảm do writer thêm sau này).
+        // Prisma 5.22 chưa bật omit → select tường minh field an toàn (loại metadata).
+        select: {
+          id: true,
+          tenantId: true,
+          actorId: true,
+          actorType: true,
+          action: true,
+          targetType: true,
+          targetId: true,
+          ip: true,
+          userAgent: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.system.auditLog.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 }

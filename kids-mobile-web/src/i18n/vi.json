@@ -4,7 +4,8 @@
   },
   "common": {
     "back": "Quay lại",
-    "loading": "Đang tải dữ liệu…"
+    "loading": "Đang tải dữ liệu…",
+    "loadMore": "Xem thêm"
   },
   "auth": {
     "welcome": "Chào mừng trở lại",

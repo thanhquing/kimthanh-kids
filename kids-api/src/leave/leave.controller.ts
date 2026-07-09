@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { LeaveStatus, LeaveType, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { LeaveService } from "./leave.service";
@@ -19,6 +20,9 @@ const createSchema = z.object({
 const decideSchema = z.object({
   status: z.nativeEnum(LeaveStatus),
   note: z.string().max(500).optional(),
+});
+const listQuery = paginationQuerySchema.extend({
+  status: z.nativeEnum(LeaveStatus).optional(),
 });
 
 const STAFF = [
@@ -46,14 +50,21 @@ export class LeaveController {
 
   @Roles(TenantRole.PARENT)
   @Get("mine")
-  mine(@CurrentUser() user: AuthUser) {
-    return this.leave.listMine(user);
+  mine(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(paginationQuerySchema))
+    query: z.infer<typeof paginationQuerySchema>,
+  ) {
+    return this.leave.listMine(user, query);
   }
 
   @Roles(...STAFF)
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query("status") status?: LeaveStatus) {
-    return this.leave.listForStaff(user, status);
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(listQuery)) query: z.infer<typeof listQuery>,
+  ) {
+    return this.leave.listForStaff(user, query);
   }
 
   @Roles(...STAFF, TenantRole.PARENT)

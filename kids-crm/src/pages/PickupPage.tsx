@@ -1,11 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { crm, type PickupAuthorization, type PickupEventType } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EntitySelect } from "@/components/ui/EntitySelect";
 import { Field, Modal } from "@/components/ui/Modal";
+import { LoadMore } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type TKey } from "@/i18n";
 import { formatDateTime } from "@/lib/labels";
 
@@ -18,7 +21,6 @@ function AuthorizationModal({ onClose }: { onClose: () => void }) {
   const { t } = useT();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const students = useQuery({ queryKey: ["students"], queryFn: () => crm.students.list() });
   const [form, setForm] = useState({
     studentId: "",
     guardianName: "",
@@ -58,10 +60,14 @@ function AuthorizationModal({ onClose }: { onClose: () => void }) {
       }
     >
       <Field label={t("students.title")}>
-        <select className="field" value={form.studentId} onChange={(e) => setForm((f) => ({ ...f, studentId: e.target.value }))}>
-          <option value="">—</option>
-          {(students.data ?? []).map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
-        </select>
+        <EntitySelect
+          value={form.studentId}
+          fetchPage={(search) => crm.students.page({ search: search || undefined, pageSize: 20 })}
+          labelOf={(s) => s.fullName}
+          onChange={(id) => setForm((f) => ({ ...f, studentId: id }))}
+          queryKey={["students-select", "pickup"]}
+          placeholder="—"
+        />
       </Field>
       <Field label={t("feature.guardian")}>
         <input className="field" value={form.guardianName} onChange={(e) => setForm((f) => ({ ...f, guardianName: e.target.value }))} autoFocus />
@@ -147,11 +153,10 @@ export function PickupPage() {
   const [authOpen, setAuthOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [revoking, setRevoking] = useState<PickupAuthorization | null>(null);
-  const authorizations = useQuery({
-    queryKey: ["pickup-authorizations"],
-    queryFn: () => crm.pickup.authorizations({ status: "ACTIVE" }),
-  });
-  const logs = useQuery({ queryKey: ["pickup-logs"], queryFn: () => crm.pickup.logs() });
+  const authorizations = useLoadMore(["pickup-authorizations"], (pg) =>
+    crm.pickup.authorizationsPage({ status: "ACTIVE", ...pg }),
+  );
+  const logs = useLoadMore(["pickup-logs"], (pg) => crm.pickup.logsPage(pg));
   const revoke = useMutation({
     mutationFn: (id: string) => crm.pickup.revokeAuthorization(id),
     onSuccess: () => {
@@ -174,7 +179,7 @@ export function PickupPage() {
           <div className="divide-y divide-slate-100">
             {authorizations.isLoading ? (
               <div className="p-4 text-sm text-slate-400">{t("common.loading")}</div>
-            ) : (authorizations.data ?? []).map((a) => (
+            ) : authorizations.items.map((a) => (
               <div key={a.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -187,6 +192,13 @@ export function PickupPage() {
               </div>
             ))}
           </div>
+          <div className="p-4">
+            <LoadMore
+              hasMore={authorizations.hasNextPage}
+              loading={authorizations.isFetchingNextPage}
+              onMore={() => authorizations.fetchNextPage()}
+            />
+          </div>
         </section>
         <section className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-100 p-4">
@@ -196,7 +208,7 @@ export function PickupPage() {
           <div className="divide-y divide-slate-100">
             {logs.isLoading ? (
               <div className="p-4 text-sm text-slate-400">{t("common.loading")}</div>
-            ) : (logs.data ?? []).map((l) => (
+            ) : logs.items.map((l) => (
               <div key={l.id} className="p-4">
                 <div className="flex items-start gap-3">
                   <span className="badge b-blue h-fit">{t(EVENT_KEY[l.eventType])}</span>
@@ -209,10 +221,17 @@ export function PickupPage() {
               </div>
             ))}
           </div>
+          <div className="p-4">
+            <LoadMore
+              hasMore={logs.hasNextPage}
+              loading={logs.isFetchingNextPage}
+              onMore={() => logs.fetchNextPage()}
+            />
+          </div>
         </section>
       </main>
       {authOpen && <AuthorizationModal onClose={() => setAuthOpen(false)} />}
-      {logOpen && <LogModal authorizations={authorizations.data ?? []} onClose={() => setLogOpen(false)} />}
+      {logOpen && <LogModal authorizations={authorizations.items} onClose={() => setLogOpen(false)} />}
       <ConfirmDialog
         open={!!revoking}
         title={t("feature.revoke")}

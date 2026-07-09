@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { IncidentSeverity, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { IncidentsService } from "./incidents.service";
@@ -15,6 +16,9 @@ const createSchema = z.object({
   severity: z.nativeEnum(IncidentSeverity).optional(),
   description: z.string().min(1).max(2000),
   actionTaken: z.string().max(2000).optional(),
+});
+const listQuery = paginationQuerySchema.extend({
+  studentId: z.string().uuid().optional(),
 });
 
 // FINANCE (kế toán) KHÔNG có quyền trên dữ liệu sức khỏe/sự cố trẻ (least-privilege) — chỉ vận hành học phí.
@@ -47,13 +51,21 @@ export class IncidentsController {
 
   @Roles(...STAFF)
   @Get()
-  list(@CurrentUser() user: AuthUser, @Query("studentId") studentId?: string) {
-    return this.incidents.list(user, { studentId });
+  list(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(listQuery)) query: z.infer<typeof listQuery>,
+  ) {
+    return this.incidents.list(user, query);
   }
 
   @Roles(...STAFF, TenantRole.PARENT)
   @Get("student/:studentId")
-  studentFeed(@CurrentUser() user: AuthUser, @Param("studentId") studentId: string) {
-    return this.incidents.studentFeed(user, studentId);
+  studentFeed(
+    @CurrentUser() user: AuthUser,
+    @Param("studentId") studentId: string,
+    @Query(new ZodValidationPipe(paginationQuerySchema))
+    query: z.infer<typeof paginationQuerySchema>,
+  ) {
+    return this.incidents.studentFeed(user, studentId, query);
   }
 }

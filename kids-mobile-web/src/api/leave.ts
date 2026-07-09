@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type LeaveType = "SICK" | "FAMILY" | "OTHER";
 export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
@@ -34,8 +34,16 @@ export function listMyLeaveRequests() {
   return api.get<LeaveRequest[]>("/leave/mine");
 }
 
+export function listMyLeaveRequestsPage(params: PageParams) {
+  return api.getPage<LeaveRequest>("/leave/mine", { query: params });
+}
+
 export function listLeaveRequests(status?: LeaveStatus) {
   return api.get<LeaveRequest[]>("/leave", { query: { status } });
+}
+
+export function listLeaveRequestsPage(status: LeaveStatus | undefined, params: PageParams) {
+  return api.getPage<LeaveRequest>("/leave", { query: { ...params, status } });
 }
 
 export function createLeaveRequest(input: CreateLeaveInput) {

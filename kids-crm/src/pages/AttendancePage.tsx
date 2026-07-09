@@ -5,6 +5,7 @@ import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ui/Toast";
 import { useT, type TKey } from "@/i18n";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { cn, initials } from "@/lib/utils";
 
 const STATUSES: { id: AttendanceStatus; key: TKey; active: string }[] = [
@@ -27,13 +28,13 @@ export function AttendancePage() {
 
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
   const roster = useQuery({
-    queryKey: ["students", { classroomId }],
-    queryFn: () => crm.students.list({ classroomId }),
+    queryKey: ["students", { classroomId }, "attendance-all"],
+    queryFn: () => fetchAllPages((pg) => crm.students.page({ classroomId, ...pg })),
     enabled: !!classroomId,
   });
   const existing = useQuery({
-    queryKey: ["attendance", classroomId, date],
-    queryFn: () => crm.attendance.list(classroomId, date),
+    queryKey: ["attendance", classroomId, date, "all"],
+    queryFn: () => fetchAllPages((pg) => crm.attendance.page({ classroomId, date, ...pg })),
     enabled: !!classroomId && !!date,
   });
 

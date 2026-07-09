@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { medicineKeys, useHandleMedicine, useMedicineList } from "@/api/medicine";
+import { listMedicinePage, medicineKeys, useHandleMedicine } from "@/api/medicine";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { StatusBadge } from "@/components/mobile/Primitives";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { TextAreaField } from "@/components/ui/Field";
+import { LoadMore } from "@/components/ui/LoadMore";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { medicineStatusLabel } from "@/lib/medicineDisplay";
 
@@ -15,7 +17,10 @@ export function MedicineApprovePage() {
   const [rejectNote, setRejectNote] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { data: pending = [], isLoading, isError } = useMedicineList("teacher", "PENDING");
+  const pendingQuery = useLoadMore(medicineKeys.list("teacher", "PENDING"), (params) =>
+    listMedicinePage("teacher", "PENDING", params),
+  );
+  const pending = pendingQuery.items;
   const handleMutation = useHandleMedicine();
 
   async function handle(id: string, status: "APPROVED" | "REJECTED", note?: string) {
@@ -32,9 +37,9 @@ export function MedicineApprovePage() {
     <>
       <TopBar title={t("medicine.approveTitle")} backTo="/teacher" />
       <div className="mt-3 space-y-3">
-        {isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
-        {isError ? <div className="card p-4 text-sm text-red-600">{t("medicine.listError")}</div> : null}
-        {!isLoading && !isError && pending.length === 0 ? (
+        {pendingQuery.isLoading ? <div className="card p-4 text-sm text-slate-500">{t("common.loading")}</div> : null}
+        {pendingQuery.isError ? <div className="card p-4 text-sm text-red-600">{t("medicine.listError")}</div> : null}
+        {!pendingQuery.isLoading && !pendingQuery.isError && pending.length === 0 ? (
           <div className="card p-4 text-sm text-slate-500">{t("medicine.pendingEmpty")}</div>
         ) : null}
         {pending.map((medicine) => (
@@ -52,6 +57,11 @@ export function MedicineApprovePage() {
           </div>
         ))}
       </div>
+      <LoadMore
+        hasMore={!!pendingQuery.hasNextPage}
+        loading={pendingQuery.isFetchingNextPage}
+        onMore={() => void pendingQuery.fetchNextPage()}
+      />
       <BottomSheet open={!!rejectId} title={t("medicine.rejectTitle")} onClose={() => setRejectId(null)}>
         <div className="space-y-3">
           <TextAreaField label={t("medicine.rejectReason")} value={rejectNote} onChange={setRejectNote} />

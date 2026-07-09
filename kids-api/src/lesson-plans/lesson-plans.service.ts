@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { schoolWhere } from "../common/scope/school-scope";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -52,16 +54,24 @@ export class LessonPlansService {
     });
   }
 
-  list(user: AuthUser, opts: { classroomId?: string; week?: string } = {}) {
-    return this.prisma.db.lessonPlan.findMany({
-      where: {
-        ...schoolWhere(user),
-        ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
-        ...(opts.week ? { week: opts.week } : {}),
-      },
-      include: { classroom: { select: { id: true, name: true } } },
-      orderBy: { createdAt: "desc" },
-    });
+  async list(user: AuthUser, opts: PaginationQuery & { classroomId?: string; week?: string } = {}) {
+    const pg = page(opts);
+    const where = {
+      ...schoolWhere(user),
+      ...(opts.classroomId ? { classroomId: opts.classroomId } : {}),
+      ...(opts.week ? { week: opts.week } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.lessonPlan.findMany({
+        where,
+        include: { classroom: { select: { id: true, name: true } } },
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.lessonPlan.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async get(user: AuthUser, id: string) {

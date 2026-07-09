@@ -1,14 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { crm, type CreateStudent, type Gender, type Student } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
+import { Pagination } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useDebounced } from "@/hooks/useDebounced";
+import { usePaged } from "@/hooks/usePaged";
 import { useT, type Translator } from "@/i18n";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { formatDate } from "@/lib/labels";
 import { GENDER_KEY, guardiansSummary } from "@/lib/people";
 import { ageFrom, downloadCsv, initials, toDateInput } from "@/lib/utils";
@@ -211,17 +215,19 @@ export function StudentsPage() {
   const schools = useQuery({ queryKey: ["schools"], queryFn: () => crm.schools() });
   const schoolId = schools.data?.[0]?.id;
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
-  const students = useQuery({ queryKey: ["students"], queryFn: () => crm.students.list() });
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return (students.data ?? []).filter(
-      (s) =>
-        (!classFilter || s.classroomId === classFilter) &&
-        (!genderFilter || s.gender === genderFilter) &&
-        (!q || s.fullName.toLowerCase().includes(q) || (s.nickname ?? "").toLowerCase().includes(q)),
-    );
-  }, [students.data, classFilter, genderFilter, search]);
+  const debouncedSearch = useDebounced(search, 300);
+  const gender = genderFilter ? (genderFilter as Gender) : undefined;
+  const listFilters = {
+    classroomId: classFilter || undefined,
+    gender,
+    search: debouncedSearch.trim() || undefined,
+  };
+  const students = usePaged(
+    ["students", listFilters],
+    (pg) => crm.students.page({ ...listFilters, ...pg }),
+  );
+  const items = students.items;
 
   const remove = useMutation({
     mutationFn: (id: string) => crm.students.remove(id),
@@ -234,26 +240,36 @@ export function StudentsPage() {
     onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
   });
 
-  function exportCsv() {
-    const header = [
-      t("students.colName"),
-      t("students.colNickname"),
-      t("students.colDob"),
-      t("students.colAge"),
-      t("students.colGender"),
-      t("students.colClass"),
-      t("students.colGuardians"),
-    ];
-    const rows = filtered.map((s) => [
-      s.fullName,
-      s.nickname ?? "",
-      formatDate(s.dateOfBirth),
-      ageFrom(s.dateOfBirth) ?? "",
-      t(GENDER_KEY[s.gender]),
-      s.classroom?.name ?? "",
-      guardiansSummary(s.parents),
-    ]);
-    downloadCsv("students.csv", [header, ...rows]);
+  const [exporting, setExporting] = useState(false);
+  async function exportCsv() {
+    setExporting(true);
+    try {
+      // Xuất TẤT CẢ học sinh khớp filter hiện tại (không chỉ trang đang xem).
+      const all = await fetchAllPages((pg) => crm.students.page({ ...listFilters, ...pg }));
+      const header = [
+        t("students.colName"),
+        t("students.colNickname"),
+        t("students.colDob"),
+        t("students.colAge"),
+        t("students.colGender"),
+        t("students.colClass"),
+        t("students.colGuardians"),
+      ];
+      const rows = all.map((s) => [
+        s.fullName,
+        s.nickname ?? "",
+        formatDate(s.dateOfBirth),
+        ageFrom(s.dateOfBirth) ?? "",
+        t(GENDER_KEY[s.gender]),
+        s.classroom?.name ?? "",
+        guardiansSummary(s.parents),
+      ]);
+      downloadCsv("students.csv", [header, ...rows]);
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error");
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -292,8 +308,12 @@ export function StudentsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="ml-auto flex gap-2">
-            <button className="btn-soft text-sm" onClick={exportCsv} disabled={!filtered.length}>
-              {t("common.exportCsv")}
+            <button
+              className="btn-soft text-sm"
+              onClick={exportCsv}
+              disabled={exporting || !students.total}
+            >
+              {exporting ? t("common.exporting") : t("common.exportCsv")}
             </button>
             <button
               className="btn-primary text-sm"
@@ -309,7 +329,7 @@ export function StudentsPage() {
 
         {students.isLoading ? (
           <div className="text-sm text-muted py-12 text-center">{t("common.loading")}</div>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="card p-12 text-center text-sm text-muted">{t("students.empty")}</div>
         ) : (
           <table className="table">
@@ -326,7 +346,7 @@ export function StudentsPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((s) => (
+              {items.map((s) => (
                 <tr key={s.id}>
                   <td>
                     <Link
@@ -364,6 +384,13 @@ export function StudentsPage() {
             </tbody>
           </table>
         )}
+        <Pagination
+          page={students.page}
+          pages={students.pages}
+          total={students.total}
+          onPage={students.setPage}
+          busy={students.isFetching}
+        />
       </main>
 
       {formOpen && (

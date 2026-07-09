@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { crm, type CreateWeeklyMenu, type MealType, type WeeklyMenu } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EntitySelect } from "@/components/ui/EntitySelect";
 import { Field, Modal } from "@/components/ui/Modal";
+import { LoadMore } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type TKey } from "@/i18n";
 import { formatDate } from "@/lib/labels";
 
@@ -123,8 +126,9 @@ export function MenusPage() {
   const [removing, setRemoving] = useState<WeeklyMenu | null>(null);
   const [studentId, setStudentId] = useState("");
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
-  const students = useQuery({ queryKey: ["students"], queryFn: () => crm.students.list() });
-  const menus = useQuery({ queryKey: ["menus", classroomId], queryFn: () => crm.menus.list({ classroomId }) });
+  const menus = useLoadMore(["menus", classroomId], (pg) =>
+    crm.menus.page({ classroomId: classroomId || undefined, ...pg }),
+  );
   const selected = useQuery({
     queryKey: ["menu", selectedId],
     queryFn: () => crm.menus.get(selectedId!),
@@ -145,7 +149,6 @@ export function MenusPage() {
     },
     onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
   });
-  const selectedStudents = useMemo(() => (students.data ?? []).filter((s) => !selected.data?.classroomId || s.classroomId === selected.data.classroomId), [students.data, selected.data?.classroomId]);
 
   return (
     <>
@@ -159,12 +162,17 @@ export function MenusPage() {
             </select>
             <button className="btn-primary text-sm" onClick={() => setCreateOpen(true)}>{t("common.create")}</button>
           </div>
-          {(menus.data ?? []).map((m) => (
+          {menus.items.map((m) => (
             <button key={m.id} className="card w-full p-4 text-left hover:border-orange-200" onClick={() => setSelectedId(m.id)}>
               <div className="font-bold">{formatDate(m.weekStart)}</div>
               <div className="text-sm text-slate-500">{m.classroom?.name ?? t("audience.ALL")}</div>
             </button>
           ))}
+          <LoadMore
+            hasMore={menus.hasNextPage}
+            loading={menus.isFetchingNextPage}
+            onMore={() => menus.fetchNextPage()}
+          />
         </section>
         <section className="card p-5">
           {!selected.data ? (
@@ -189,10 +197,20 @@ export function MenusPage() {
               </div>
               <div className="rounded-lg bg-amber-50 p-3">
                 <div className="mb-2 text-sm font-semibold">{t("feature.allergyCheck")}</div>
-                <select className="field !bg-white" value={studentId} onChange={(e) => setStudentId(e.target.value)}>
-                  <option value="">—</option>
-                  {selectedStudents.map((s) => <option key={s.id} value={s.id}>{s.fullName}</option>)}
-                </select>
+                <EntitySelect
+                  value={studentId}
+                  fetchPage={(search) =>
+                    crm.students.page({
+                      classroomId: selected.data.classroomId ?? undefined,
+                      search: search || undefined,
+                      pageSize: 20,
+                    })
+                  }
+                  labelOf={(s) => s.fullName}
+                  onChange={setStudentId}
+                  queryKey={["students-select", "menu-warning", selected.data.classroomId]}
+                  placeholder="—"
+                />
                 {studentId && (
                   <div className="mt-2 text-sm">
                     {(warnings.data?.warnings.length ?? 0) === 0

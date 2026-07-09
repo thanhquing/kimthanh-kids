@@ -4,6 +4,7 @@ import { Gender, StudentStatus, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
 import { CheckQuota } from "../common/decorators/entitlement.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { StudentsService } from "./students.service";
@@ -33,6 +34,13 @@ const updateSchema = z.object({
   avatarUrl: z.string().url().optional(),
   status: z.nativeEnum(StudentStatus).optional(),
 });
+const mineQuery = paginationQuerySchema;
+const listQuery = paginationQuerySchema.extend({
+  classroomId: z.string().uuid().optional(),
+  schoolId: z.string().uuid().optional(),
+  gender: z.nativeEnum(Gender).optional(),
+  search: z.string().trim().min(1).max(120).optional(),
+});
 
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
@@ -50,18 +58,20 @@ export class StudentsController {
 
   @Roles(TenantRole.PARENT)
   @Get("mine")
-  mine(@CurrentUser() user: AuthUser) {
-    return this.students.myChildren(user);
+  mine(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(mineQuery)) q: z.infer<typeof mineQuery>,
+  ) {
+    return this.students.myChildren(user, q);
   }
 
   @Roles(...STAFF)
   @Get()
   list(
     @CurrentUser() user: AuthUser,
-    @Query("classroomId") classroomId?: string,
-    @Query("schoolId") schoolId?: string,
+    @Query(new ZodValidationPipe(listQuery)) q: z.infer<typeof listQuery>,
   ) {
-    return this.students.list(user, { classroomId, schoolId });
+    return this.students.list(user, q);
   }
 
   @Roles(...STAFF)

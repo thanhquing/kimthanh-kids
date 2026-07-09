@@ -22,8 +22,14 @@ Response JSON được `TransformInterceptor` bọc:
 Response phân trang:
 
 ```json
-{ "success": true, "data": [], "meta": { "page": 1, "pageSize": 20, "total": 42 } }
+{
+  "success": true,
+  "data": [],
+  "meta": { "page": 1, "pageSize": 20, "total": 42 }
+}
 ```
+
+Các list endpoint tenant/domain dùng `page` + `pageSize` (hoặc alias cũ `limit`) với `page <= 10000` và `pageSize/limit <= 100`; thiếu query thì mặc định tối đa 100 item/trang, trừ endpoint ghi cap riêng.
 
 Error:
 
@@ -44,37 +50,37 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 
 ## Enum dùng trong API
 
-| Enum | Values |
-|---|---|
-| `TenantRole` | `SCHOOL_ADMIN`, `PRINCIPAL`, `TEACHER`, `NURSE`, `FINANCE`, `PARENT` |
-| `TenantStatus` | `TRIAL`, `ACTIVE`, `PAST_DUE`, `SUSPENDED`, `CANCELLED` |
-| `SubscriptionStatus` | `TRIALING`, `ACTIVE`, `PAST_DUE`, `SUSPENDED`, `CANCELED`, `EXPIRED` |
-| `PlanTier` | `FREE`, `STARTER`, `PRO`, `ENTERPRISE`, `CUSTOM` |
-| `Gender` | `MALE`, `FEMALE`, `OTHER` |
-| `StudentStatus` | `ACTIVE`, `INACTIVE`, `GRADUATED`, `WITHDRAWN` |
-| `AttendanceStatus` | `PRESENT`, `LATE`, `ABSENT`, `EXCUSED` |
-| `PickupAuthorizationStatus` | `ACTIVE`, `REVOKED` |
-| `PickupEventType` | `CHECK_IN`, `CHECK_OUT` |
-| `Mood` | `HAPPY`, `NEUTRAL`, `TIRED`, `FUSSY` |
-| `MediaKind` | `REPORT_PHOTO`, `ALBUM`, `AVATAR`, `DOCUMENT`, `OTHER` |
-| `MedicineStatus` | `PENDING`, `APPROVED`, `ADMINISTERED`, `REJECTED` |
-| `IncidentSeverity` | `LOW`, `MEDIUM`, `HIGH` |
-| `LeaveType` | `SICK`, `FAMILY`, `OTHER` |
-| `LeaveStatus` | `PENDING`, `APPROVED`, `REJECTED` |
-| `Shift` | `MORNING`, `AFTERNOON`, `FULL_DAY` |
-| `TuitionInvoiceStatus` | `UNPAID`, `PARTIAL`, `PAID`, `OVERDUE`, `CANCELED` |
-| `TuitionPaymentMethod` | `CASH`, `BANK_TRANSFER`, `VNPAY` |
-| `AnnouncementAudience` | `ALL`, `PARENTS`, `TEACHERS`, `CLASS` |
-| `MealType` | `BREAKFAST`, `LUNCH`, `SNACK`, `DINNER` |
-| `NotificationType` | `ATTENDANCE`, `DAILY_REPORT`, `ANNOUNCEMENT`, `INVOICE`, `MEDICINE`, `LEAVE`, `INCIDENT` |
-| `BillingCycle` | `MONTHLY`, `QUARTERLY`, `ANNUAL` |
-| `BillingCurrency` | `VND`, `USD` |
-| `LimitMetric` | `STUDENTS`, `TEACHERS`, `CLASSROOMS`, `SCHOOLS`, `STORAGE_MB`, `PUSH_PER_MONTH`, `ADMIN_USERS` |
-| `LimitEnforcement` | `HARD`, `SOFT` |
-| `PlatformPaymentProvider` | `VNPAY`, `MOMO`, `BANK_TRANSFER`, `MANUAL` |
-| `CouponDuration` | `ONCE`, `REPEATING`, `FOREVER` |
-| `DiscountKind` | `PERCENT`, `FIXED_AMOUNT` |
-| `PostStatus` | `DRAFT`, `PUBLISHED`, `ARCHIVED` |
+| Enum                        | Values                                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------------------- |
+| `TenantRole`                | `SCHOOL_ADMIN`, `PRINCIPAL`, `TEACHER`, `NURSE`, `FINANCE`, `PARENT`                           |
+| `TenantStatus`              | `TRIAL`, `ACTIVE`, `PAST_DUE`, `SUSPENDED`, `CANCELLED`                                        |
+| `SubscriptionStatus`        | `TRIALING`, `ACTIVE`, `PAST_DUE`, `SUSPENDED`, `CANCELED`, `EXPIRED`                           |
+| `PlanTier`                  | `FREE`, `STARTER`, `PRO`, `ENTERPRISE`, `CUSTOM`                                               |
+| `Gender`                    | `MALE`, `FEMALE`, `OTHER`                                                                      |
+| `StudentStatus`             | `ACTIVE`, `INACTIVE`, `GRADUATED`, `WITHDRAWN`                                                 |
+| `AttendanceStatus`          | `PRESENT`, `LATE`, `ABSENT`, `EXCUSED`                                                         |
+| `PickupAuthorizationStatus` | `ACTIVE`, `REVOKED`                                                                            |
+| `PickupEventType`           | `CHECK_IN`, `CHECK_OUT`                                                                        |
+| `Mood`                      | `HAPPY`, `NEUTRAL`, `TIRED`, `FUSSY`                                                           |
+| `MediaKind`                 | `REPORT_PHOTO`, `ALBUM`, `AVATAR`, `DOCUMENT`, `OTHER`                                         |
+| `MedicineStatus`            | `PENDING`, `APPROVED`, `ADMINISTERED`, `REJECTED`                                              |
+| `IncidentSeverity`          | `LOW`, `MEDIUM`, `HIGH`                                                                        |
+| `LeaveType`                 | `SICK`, `FAMILY`, `OTHER`                                                                      |
+| `LeaveStatus`               | `PENDING`, `APPROVED`, `REJECTED`                                                              |
+| `Shift`                     | `MORNING`, `AFTERNOON`, `FULL_DAY`                                                             |
+| `TuitionInvoiceStatus`      | `UNPAID`, `PARTIAL`, `PAID`, `OVERDUE`, `CANCELED`                                             |
+| `TuitionPaymentMethod`      | `CASH`, `BANK_TRANSFER`, `VNPAY`                                                               |
+| `AnnouncementAudience`      | `ALL`, `PARENTS`, `TEACHERS`, `CLASS`                                                          |
+| `MealType`                  | `BREAKFAST`, `LUNCH`, `SNACK`, `DINNER`                                                        |
+| `NotificationType`          | `ATTENDANCE`, `DAILY_REPORT`, `ANNOUNCEMENT`, `INVOICE`, `MEDICINE`, `LEAVE`, `INCIDENT`       |
+| `BillingCycle`              | `MONTHLY`, `QUARTERLY`, `ANNUAL`                                                               |
+| `BillingCurrency`           | `VND`, `USD`                                                                                   |
+| `LimitMetric`               | `STUDENTS`, `TEACHERS`, `CLASSROOMS`, `SCHOOLS`, `STORAGE_MB`, `PUSH_PER_MONTH`, `ADMIN_USERS` |
+| `LimitEnforcement`          | `HARD`, `SOFT`                                                                                 |
+| `PlatformPaymentProvider`   | `VNPAY`, `MOMO`, `BANK_TRANSFER`, `MANUAL`                                                     |
+| `CouponDuration`            | `ONCE`, `REPEATING`, `FOREVER`                                                                 |
+| `DiscountKind`              | `PERCENT`, `FIXED_AMOUNT`                                                                      |
+| `PostStatus`                | `DRAFT`, `PUBLISHED`, `ARCHIVED`                                                               |
 
 `Date` trong request body dùng chuỗi `YYYY-MM-DD`; `DateTime` dùng ISO string.
 
@@ -82,17 +88,17 @@ Ký hiệu role: `AD` = SCHOOL_ADMIN, `HT` = PRINCIPAL, `GV` = TEACHER, `YT` = N
 
 ## Public
 
-| Method | Path | Body / Query | Data trả về |
-|---|---|---|---|
-| `GET` | `/public/plans` | - | danh sách gói public/active (`id/code/tier/name/description/trialDays/sortOrder`) + `prices[]`, `features[]`, `limits[]`; không trả counter/nội bộ/plan ẩn |
-| `POST` | `/public/signup` | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | luôn tạo tenant gói `free` ACTIVE. Nếu gửi `planCode` trả phí + `billingCycle`, trả thêm `selectedPlan`, `upgradeInvoice`, `publicInvoiceUrl`; gói trả phí chỉ kích hoạt sau khi platform admin mark-paid. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400), `NO_PUBLIC_PRICE` |
-| `GET` | `/public/availability?slug=` | Query `slug: string` | `{ available: boolean }` |
-| `GET` | `/public/tenants?q=` | Query `q?: string` (tùy chọn) | Danh sách trường để **chọn ở dropdown** login (độc lập subdomain). `q` rỗng → trả danh sách (sắp theo tên); có `q` → lọc theo tên/`code`/**MST**. Mảng item **chỉ field an toàn**: `{ id, code, slug, displayName, logoUrl, primaryDomain }` (**cap 50**, ẩn tenant `SUSPENDED`/đã xoá). **Cho tìm theo MST nhưng KHÔNG trả `taxCode`** ra payload (tránh thu thập MST hàng loạt); cũng KHÔNG lộ gói/email/bank |
-| `GET` | `/public/branding?host=` | Query `host: string` | branding/settings theo host |
-| `GET` | `/public/platform-invoices/:token` | `token` = `PlatformInvoice.publicToken` (uuid khó đoán) | hóa đơn để xem + thanh toán VietQR **không cần đăng nhập** (link chia sẻ cho trường). Trả như `/platform/invoices/:id` nhưng **bỏ `id`/`publicToken`**; 404 nếu token sai |
-| `GET` | `/public/posts?page=&pageSize=&category=&tag=` | query optional | paginated bài `PUBLISHED`, `publishedAt <= now`, chưa xóa. Card fields: `slug/title/excerpt/coverImageUrl/category/tags/publishedAt`; `coverImageUrl` trả URL tuyệt đối từ API nếu là asset public nội bộ |
-| `GET` | `/public/posts/:slug` | slug | chi tiết bài public + `contentMarkdown`, SEO fields; draft/unpublished/archived trả 404; `coverImageUrl` cùng quy tắc URL public như list |
-| `GET` | `/public/assets/blog/:file` | `file` = `*.webp/*.jpg/*.png/*.avif` an toàn | raw image public cho cover blog/landing, serve từ `kids-api/public/blog`, cache `immutable`; 404 nếu file sai/không tồn tại |
+| Method | Path                                           | Body / Query                                                                  | Data trả về                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------ | ---------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`  | `/public/plans`                                | -                                                                             | danh sách gói public/active (`id/code/tier/name/description/trialDays/sortOrder`) + `prices[]`, `features[]`, `limits[]`; không trả counter/nội bộ/plan ẩn                                                                                                                                                                                                                                                      |
+| `POST` | `/public/signup`                               | Body `SignupInput` (gồm `taxCode` **bắt buộc** — MST 10/13 số, đúng checksum) | luôn tạo tenant gói `free` ACTIVE. Nếu gửi `planCode` trả phí + `billingCycle`, trả thêm `selectedPlan`, `upgradeInvoice`, `publicInvoiceUrl`; gói trả phí chỉ kích hoạt sau khi platform admin mark-paid. Lỗi: `INVALID_TAX_CODE`/`VALIDATION_FAILED` (400), `TAX_CODE_TAKEN` (409 — 1 MST = 1 trường), `SLUG_UNAVAILABLE` (400), `NO_PUBLIC_PRICE`                                                            |
+| `GET`  | `/public/availability?slug=`                   | Query `slug: string`                                                          | `{ available: boolean }`                                                                                                                                                                                                                                                                                                                                                                                        |
+| `GET`  | `/public/tenants?q=`                           | Query `q?: string` (tùy chọn)                                                 | Danh sách trường để **chọn ở dropdown** login (độc lập subdomain). `q` rỗng → trả danh sách (sắp theo tên); có `q` → lọc theo tên/`code`/**MST**. Mảng item **chỉ field an toàn**: `{ id, code, slug, displayName, logoUrl, primaryDomain }` (**cap 50**, ẩn tenant `SUSPENDED`/đã xoá). **Cho tìm theo MST nhưng KHÔNG trả `taxCode`** ra payload (tránh thu thập MST hàng loạt); cũng KHÔNG lộ gói/email/bank |
+| `GET`  | `/public/branding?host=`                       | Query `host: string`                                                          | branding/settings theo host                                                                                                                                                                                                                                                                                                                                                                                     |
+| `GET`  | `/public/platform-invoices/:token`             | `token` = `PlatformInvoice.publicToken` (uuid khó đoán)                       | hóa đơn để xem + thanh toán VietQR **không cần đăng nhập** (link chia sẻ cho trường). Trả như `/platform/invoices/:id` nhưng **bỏ `id`/`publicToken`**; 404 nếu token sai                                                                                                                                                                                                                                       |
+| `GET`  | `/public/posts?page=&pageSize=&category=&tag=` | query optional                                                                | paginated bài `PUBLISHED`, `publishedAt <= now`, chưa xóa. Card fields: `slug/title/excerpt/coverImageUrl/category/tags/publishedAt`; `coverImageUrl` trả URL tuyệt đối từ API nếu là asset public nội bộ                                                                                                                                                                                                       |
+| `GET`  | `/public/posts/:slug`                          | slug                                                                          | chi tiết bài public + `contentMarkdown`, SEO fields; draft/unpublished/archived trả 404; `coverImageUrl` cùng quy tắc URL public như list                                                                                                                                                                                                                                                                       |
+| `GET`  | `/public/assets/blog/:file`                    | `file` = `*.webp/*.jpg/*.png/*.avif` an toàn                                  | raw image public cho cover blog/landing, serve từ `kids-api/public/blog`, cache `immutable`; 404 nếu file sai/không tồn tại                                                                                                                                                                                                                                                                                     |
 
 `SignupInput`:
 
@@ -115,12 +121,12 @@ Ghi chú: signup luôn tạo tenant gói `free` ở trạng thái `ACTIVE`, khô
 
 ## Auth
 
-| Method | Path | Body | Data trả về |
-|---|---|---|---|
-| `POST` | `/auth/login` | `LoginInput` | `{ user, accessToken, refreshToken }` |
-| `POST` | `/auth/refresh` | `{ refreshToken: string }` | `{ accessToken, refreshToken }` mới |
-| `POST` | `/auth/logout` | `{ refreshToken: string }` | `{ ok: true }` |
-| `GET` | `/auth/me` | Bearer | `{ id, type, tenantId, platformRole, fullName, phone, roles[], allowedSchoolIds }` |
+| Method | Path            | Body                       | Data trả về                                                                        |
+| ------ | --------------- | -------------------------- | ---------------------------------------------------------------------------------- |
+| `POST` | `/auth/login`   | `LoginInput`               | `{ user, accessToken, refreshToken }`                                              |
+| `POST` | `/auth/refresh` | `{ refreshToken: string }` | `{ accessToken, refreshToken }` mới                                                |
+| `POST` | `/auth/logout`  | `{ refreshToken: string }` | `{ ok: true }`                                                                     |
+| `GET`  | `/auth/me`      | Bearer                     | `{ id, type, tenantId, platformRole, fullName, phone, roles[], allowedSchoolIds }` |
 
 > **Rate limit:** `/auth/login` + `/auth/refresh` bị giới hạn chặt (mặc định **5 lần/60s/IP**, cấu hình `AUTH_THROTTLE_LIMIT`/`AUTH_THROTTLE_TTL_MS`) → vượt trả **429**. Các route khác dùng limit chung (`THROTTLE_LIMIT` mặc định 120/60s).
 >
@@ -140,7 +146,7 @@ Ghi chú: signup luôn tạo tenant gói `free` ở trạng thái `ACTIVE`, khô
 
 Cần có `identifier` hoặc `email`. Với tenant user, host phải khớp tenant của token; sai host trả `TENANT_MISMATCH`.
 
-**Xác định tenant (độc lập subdomain).** Thứ tự resolve ở `TenantResolutionMiddleware`: `SILO env → Host(domain) → header x-tenant → JWT`. Header **`x-tenant: <tenantId>`** cho phép client (app native/web không qua subdomain) chọn trường ở login: chọn từ `/public/tenants` rồi gửi `x-tenant` khi `POST /auth/login`. Bảo mật: `x-tenant` chỉ *seed* ctx **trước auth**; sau khi có token, `tenantId` trong token là nguồn sự thật và `TenantGuard` chặn nếu `x-tenant` ≠ tenant của token (`TENANT_MISMATCH`) → không thể vượt tenant. Request đã đăng nhập **không cần** gửi `x-tenant`. Thiếu cả Host lẫn `x-tenant` khi login tenant → `TENANT_REQUIRED`.
+**Xác định tenant (độc lập subdomain).** Thứ tự resolve ở `TenantResolutionMiddleware`: `SILO env → Host(domain) → header x-tenant → JWT`. Header **`x-tenant: <tenantId>`** cho phép client (app native/web không qua subdomain) chọn trường ở login: chọn từ `/public/tenants` rồi gửi `x-tenant` khi `POST /auth/login`. Bảo mật: `x-tenant` chỉ _seed_ ctx **trước auth**; sau khi có token, `tenantId` trong token là nguồn sự thật và `TenantGuard` chặn nếu `x-tenant` ≠ tenant của token (`TENANT_MISMATCH`) → không thể vượt tenant. Request đã đăng nhập **không cần** gửi `x-tenant`. Thiếu cả Host lẫn `x-tenant` khi login tenant → `TENANT_REQUIRED`.
 
 ---
 
@@ -148,19 +154,19 @@ Cần có `identifier` hoặc `email`. Với tenant user, host phải khớp ten
 
 Role: `AD`, `HT`. Host: tenant.
 
-| Method | Path | Body / Query | Data trả về |
-|---|---|---|---|
-| `GET` | `/tenant/settings` | - | `TenantSettings` |
-| `PATCH` | `/tenant/settings` | `TenantSettingsPatch` | `TenantSettings` sau cập nhật |
-| `GET` | `/tenant/schools` | - | `School[]` |
-| `POST` | `/tenant/schools` | `SchoolInput` | `School` |
-| `GET` | `/tenant/members` | - | users (id,email,phone,fullName,isActive) + memberships, mới nhất trước |
-| `POST` | `/tenant/members` | `CreateMemberInput` | user mới + membership |
-| `PATCH` | `/tenant/members/:userId/status` | `{ isActive: boolean }` | user sau cập nhật |
-| `PATCH` | `/tenant/members/:userId/password` | `{ password: string }` | `{ id, passwordReset: true }` — đặt lại mật khẩu, revoke refresh token hiện có, ghi audit |
-| `GET` | `/tenant/domains` | - | `TenantDomain[]` |
-| `POST` | `/tenant/domains` | `{ host: string }` | domain PENDING + `verifyToken` |
-| `POST` | `/tenant/domains/:id/verify` | - | domain ACTIVE nếu verify OK |
+| Method  | Path                               | Body / Query            | Data trả về                                                                               |
+| ------- | ---------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------- |
+| `GET`   | `/tenant/settings`                 | -                       | `TenantSettings`                                                                          |
+| `PATCH` | `/tenant/settings`                 | `TenantSettingsPatch`   | `TenantSettings` sau cập nhật                                                             |
+| `GET`   | `/tenant/schools?page=&pageSize=`  | optional                | paginated `School[]`                                                                      |
+| `POST`  | `/tenant/schools`                  | `SchoolInput`           | `School`                                                                                  |
+| `GET`   | `/tenant/members?page=&pageSize=&search=&role=&isActive=&staffOnly=`  | `search?` (fullName/email/phone, contains, insensitive); `role?: TenantRole`; `isActive?: true\|false`; `staffOnly?: true\|false` (loại `PARENT`) | paginated users (id,email,phone,fullName,isActive) + memberships, mới nhất trước          |
+| `POST`  | `/tenant/members`                  | `CreateMemberInput`     | user mới + membership                                                                     |
+| `PATCH` | `/tenant/members/:userId/status`   | `{ isActive: boolean }` | user sau cập nhật                                                                         |
+| `PATCH` | `/tenant/members/:userId/password` | `{ password: string }`  | `{ id, passwordReset: true }` — đặt lại mật khẩu, revoke refresh token hiện có, ghi audit |
+| `GET`   | `/tenant/domains?page=&pageSize=`  | optional                | paginated `TenantDomain[]`                                                                |
+| `POST`  | `/tenant/domains`                  | `{ host: string }`      | domain PENDING + `verifyToken`                                                            |
+| `POST`  | `/tenant/domains/:id/verify`       | -                       | domain ACTIVE nếu verify OK                                                               |
 
 `TenantSettingsPatch`:
 
@@ -210,15 +216,15 @@ Cần `email` hoặc `phone`. Tạo GV/HS có thể vướng quota theo gói. L�
 
 Role: `AD`, `KT`. Host: tenant. Các endpoint có ghi Inactive-OK vẫn gọi được khi subscription đang inactive/suspended.
 
-| Method | Path | Body / Query | Data trả về |
-|---|---|---|---|
-| `GET` | `/billing/plans` | Inactive-OK | public plans + prices/features/limits |
-| `GET` | `/billing/subscription` | Inactive-OK | subscription + plan + entitlements |
-| `GET` | `/billing/usage` | Inactive-OK | usage counters/quota hiện tại |
-| `GET` | `/billing/invoices` | Inactive-OK | `PlatformInvoice[]` + lines |
-| `POST` | `/billing/subscription/change` | `{ planId: uuid, billingCycle: BillingCycle }` | subscription sau đổi gói |
-| `POST` | `/billing/subscription/cancel` | `{ atPeriodEnd?: boolean }` | subscription sau cancel |
-| `POST` | `/billing/invoices/:id/pay` | `{ provider: "VNPAY" }` | `PlatformPayment` + `redirectUrl` VNPay sandbox. `MOMO`/`BANK_TRANSFER`/`MANUAL` chưa hỗ trợ qua endpoint gateway này |
+| Method | Path                                | Body / Query                                   | Data trả về                                                                                                                                                                                            |
+| ------ | ----------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET`  | `/billing/plans`                    | Inactive-OK                                    | public plans + prices/features/limits                                                                                                                                                                  |
+| `GET`  | `/billing/subscription`             | Inactive-OK                                    | subscription + plan + entitlements                                                                                                                                                                     |
+| `GET`  | `/billing/usage`                    | Inactive-OK                                    | usage counters/quota hiện tại                                                                                                                                                                          |
+| `GET`  | `/billing/invoices?page=&pageSize=` | Inactive-OK                                    | paginated `PlatformInvoice[]` + lines                                                                                                                                                                  |
+| `POST` | `/billing/subscription/change`      | `{ planId: uuid, billingCycle: BillingCycle }` | subscription sau đổi gói                                                                                                                                                                               |
+| `POST` | `/billing/subscription/cancel`      | `{ atPeriodEnd?: boolean }`                    | subscription sau cancel                                                                                                                                                                                |
+| `POST` | `/billing/invoices/:id/pay`         | `{ provider: "VNPAY" }`                        | `PlatformPayment` + `redirectUrl` VNPay theo env (`VNPAY_PAY_URL`/`VNPAY_RETURN_URL`); thiếu cấu hình trả `VNPAY_NOT_CONFIGURED`. `MOMO`/`BANK_TRANSFER`/`MANUAL` chưa hỗ trợ qua endpoint gateway này |
 
 ---
 
@@ -226,44 +232,44 @@ Role: `AD`, `KT`. Host: tenant. Các endpoint có ghi Inactive-OK vẫn gọi đ
 
 Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BILLING`.
 
-| Method | Path | Body / Query | Data trả về |
-|---|---|---|---|
-| `GET` | `/platform/overview` | - | dashboard console: `{ kpis{tenants,activeTenants,trialTenants,overdueInvoices,suspendedTenants,mrr}, mrrSeries[12], mrrGrowthPct, planDistribution[], recentTenants[], recentOverdue[] }`. `overdueInvoices`/`recentOverdue` = HĐ **chưa trả & quá hạn theo ngày** (OPEN/OVERDUE, dueAt<now, còn nợ) — **khớp worklist**, không chờ cron |
-| `GET` | `/platform/revenue?months=` | `months?: 1..24` (mặc định 12, kẹp ≤24) | `{ months, series:[{period,month,value,source}], growthPct }` — chuỗi MRR theo tháng (`source`: `CRON` số thực \| `BACKFILL` \| `DERIVED` suy ngược) |
-| `POST` | `/platform/mrr/backfill?months=` | `months?: number` (mặc định 24); **chỉ `PLATFORM_SUPER_ADMIN`** | `{ ok, written }` — backfill snapshot các tháng còn thiếu (không đè số thực) |
-| `GET` | `/platform/tenants?page=&status=&q=&planTier=&quota=` | `page?`, `status?: TenantStatus`, `q?` (slug/legalName/displayName), `planTier?: PlanTier` (lọc theo gói qua subscription.plan.tier), `quota?` (`at-risk` = lọc trường dùng >=80% một hạn mức hữu hạn, theo usage thật) | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng) + `quota[]` (used/limit của `STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB` cho cột "Hạn mức"; limit `null`=∞); `meta{page,pageSize,total}` |
-| `GET` | `/platform/search?q=` | `q?: string` | tìm nhanh (ô search Tổng quan): `{ tenants:[{id,slug,name,status}], invoices:[{id,invoiceNumber,tenantId,tenantName,status,total}] }` — top 5 mỗi loại |
-| `GET` | `/platform/tenants/stats` | - | đếm tenant theo trạng thái: `{ total, ACTIVE, TRIAL, PAST_DUE, SUSPENDED }` (cho chip lọc) |
-| `POST` | `/platform/tenants` | `PlatformCreateTenantInput` | `{ tenant, school, admin, subscription }` |
-| `GET` | `/platform/tenants/:id` | - | tenant detail + settings/domains/subscription/invoices; **bổ sung**: `mrr`, `studentCount`, `quota[{metric,used,limit,enforcement}]` (STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB), `schools[]` kèm `_count{students,classrooms}` |
-| `POST` | `/platform/tenants/:id/suspend` | - | `{ ok: true }` |
-| `POST` | `/platform/tenants/:id/reactivate` | - | `{ ok: true }` |
-| `POST` | `/platform/tenants/:id/entitlements` | `EntitlementOverrideInput` | `TenantEntitlement` |
-| `POST` | `/platform/tenants/:id/impersonate` | - | tenant admin access token, no refresh token |
-| `GET` | `/platform/subscriptions?page=&status=` | `page?: number`, `status?: SubscriptionStatus` | paginated subscriptions — mỗi dòng kèm `tenantName`, `tenantSlug`, `billingCycle`, `autoRenew` (=`!cancelAtPeriodEnd`), `mrr` (VND/tháng); `meta{page,pageSize,total}` |
-| `GET` | `/platform/subscriptions/stats` | - | đếm thuê bao theo trạng thái: `{ total, TRIALING, ACTIVE, PAST_DUE, SUSPENDED, CANCELED, EXPIRED }` |
-| `GET` | `/platform/invoices?page=&tenantId=&status=&q=` | `status`: **`OPEN`=mọi HĐ chưa trả (OPEN/OVERDUE)**, **`OVERDUE`=chưa trả + quá hạn theo NGÀY** (dueAt<now, không chờ cron), `PAID`/`VOID`=đúng status; `q` tìm `invoiceNumber` | paginated — mỗi dòng kèm `tenantName`, `period`, `dueDate`, `amountDue` |
-| `GET` | `/platform/invoices/stats` | - | KPI tiền: `{ paidThisMonth, openAmount (mọi HĐ chưa trả), overdueAmount (chưa trả + quá hạn theo ngày, subset), total }` — khớp Worklist/Tổng quan |
-| `POST` | `/platform/invoices` | `{ tenantId: string }` | created platform invoice — `invoiceNumber` định dạng **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`): slug trường + mã gói + ngày lập, để đối soát chuyển khoản (addInfo VietQR = số HĐ) |
-| `GET` | `/platform/invoices/:id` | - | chi tiết 1 hóa đơn (trang chi tiết/in): `{ invoiceNumber, status, lines[], subtotal/discount/tax/total/amountPaid/amountDue, buyer{name,taxCode,address}, seller{name}, bank{bin,accountNumber,accountName}, publicToken }` |
-| `POST` | `/platform/invoices/:id/mark-paid` | `{ amount?: number }` | đánh dấu đã thu — **không truyền `amount` = trả đủ** (`amountPaid=total`). HĐ kỳ thường: reactivate + đẩy kỳ. HĐ `SIGNUP_UPGRADE`: đổi `Subscription.planId/billingCycle`, reset kỳ, clear entitlement cache, ghi `SubscriptionChange.UPGRADE` |
-| `GET` | `/platform/plans` | - | all plans (kèm `prices/features/limits/trialDays`) — mỗi gói **bổ sung** `tenantCount` (số thuê bao đang chạy: status TRIALING/ACTIVE/PAST_DUE) |
-| `POST` | `/platform/plans` | `CreatePlanInput` | created plan + nested config |
-| `PATCH` | `/platform/plans/:id` | `UpdatePlanInput` (name/description/isPublic/isActive/trialDays/sortOrder + upsert prices/features/limits theo unique key) | plan sau cập nhật; **không** đổi `code`/`tier`; thuê bao đang chạy giữ giá tới kỳ kế; 404 `PLAN_NOT_FOUND` nếu không thấy |
-| `GET` | `/platform/posts?page=&status=&q=` | `PLATFORM_SUPER_ADMIN`/`PLATFORM_SUPPORT` | paginated bài landing, lọc status/search title/slug/category |
-| `POST` | `/platform/posts` | `PlatformPostInput` | tạo bài nháp/published |
-| `GET` | `/platform/posts/:id` | - | chi tiết bài |
-| `PATCH` | `/platform/posts/:id` | `Partial<PlatformPostInput>` | cập nhật bài |
-| `POST` | `/platform/posts/:id/publish` | - | set `PUBLISHED`, `publishedAt=now` |
-| `POST` | `/platform/posts/:id/unpublish` | - | chuyển về `DRAFT` |
-| `DELETE` | `/platform/posts/:id` | - | soft-delete + `ARCHIVED` |
-| `GET` | `/platform/coupons?page=&isActive=` | `page?`, `isActive?: bool` | paginated coupons — mỗi dòng đủ field UI (`kind/amount/duration/durationCount/maxRedemptions/redeemedCount/validUntil/isActive`); `meta{page,pageSize,total}` |
-| `POST` | `/platform/coupons` | `CreateCouponInput` (`code` upper, `kind`, `amount`, `duration?`, `durationCount?`, `maxRedemptions?`, `validFrom?/validUntil?`, `isActive?`) | created coupon; 400 `VALIDATION_FAILED` (thiếu code / amount ≤ 0 / % > 100 / hạn sai) |
-| `GET` | `/platform/settings` | - | `PlatformConfig` (singleton): `bankBin/bankAccountNumber/bankAccountName` (VietQR) + `pastDueGraceDays/suspendedGraceDays`; tạo mặc định từ ENV nếu chưa có |
-| `PATCH` | `/platform/settings` | scalar fields; **chỉ `PLATFORM_SUPER_ADMIN`** | `PlatformConfig` sau cập nhật — grace days là **nguồn sự thật** cho `billing-jobs` dunning (ENV chỉ là giá trị khởi tạo) |
-| `GET` | `/platform/worklist` | - | `{ trial:{active,expiringSoon,endedTotal,converted,conversionRate,items[]}, quota:{thresholdPct,atRisk,tenants}, dunning:{overdueCount,overdueAmount,atRiskSuspend,suspended,items[]} }` — trang **Cần hành động**: phễu trial (TRIALING + conversion = trial kết thúc KHÔNG thành EXPIRED) + KPI quota (số dòng tenant×metric >=80% `atRisk` / số trường distinct `tenants`, theo usage thật `STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB` — **KHÔNG tính SCHOOLS** vì gói 1 cơ sở luôn 100%) + công nợ (HĐ OPEN/OVERDUE quá hạn còn nợ, resolve tenantName + subStatus). **Quota chỉ trả KPI** (payload nhẹ) — bấm KPI mở danh sách ở `/platform/tenants?quota=at-risk`; engine dunning vẫn ở `billing-jobs` |
-| `GET` | `/platform/usage/overview` | - | `{ tenants, activeTenants, users, dau, wau, mau, topEvents }` — KPI hoạt động cho trang **Theo dõi vận hành**; `dau/wau/mau` = user riêng biệt có `login` trong 1/7/30 ngày |
-| `GET` | `/platform/audit?page=&tenantId=&action=` | `page?`, `tenantId?`, `action?` (contains, insensitive) | paginated AuditLog — mỗi dòng resolve `tenantName` + `actorName/actorEmail`, kèm `actorType/action/targetType/targetId/ip/createdAt`; `meta{page,pageSize,total}` |
+| Method   | Path                                                  | Body / Query                                                                                                                                                                                                            | Data trả về                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| -------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/platform/overview`                                  | -                                                                                                                                                                                                                       | dashboard console: `{ kpis{tenants,activeTenants,trialTenants,overdueInvoices,suspendedTenants,mrr}, mrrSeries[12], mrrGrowthPct, planDistribution[], recentTenants[], recentOverdue[] }`. `overdueInvoices`/`recentOverdue` = HĐ **chưa trả & quá hạn theo ngày** (OPEN/OVERDUE, dueAt<now, còn nợ) — **khớp worklist**, không chờ cron                                                                                                                                                                                                                                                                                                                                                                   |
+| `GET`    | `/platform/revenue?months=`                           | `months?: 1..24` (mặc định 12, kẹp ≤24)                                                                                                                                                                                 | `{ months, series:[{period,month,value,source}], growthPct }` — chuỗi MRR theo tháng (`source`: `CRON` số thực \| `BACKFILL` \| `DERIVED` suy ngược)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `POST`   | `/platform/mrr/backfill?months=`                      | `months?: number` (mặc định 24); **chỉ `PLATFORM_SUPER_ADMIN`**                                                                                                                                                         | `{ ok, written }` — backfill snapshot các tháng còn thiếu (không đè số thực)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `GET`    | `/platform/tenants?page=&status=&q=&planTier=&quota=` | `page?`, `status?: TenantStatus`, `q?` (slug/legalName/displayName), `planTier?: PlanTier` (lọc theo gói qua subscription.plan.tier), `quota?` (`at-risk` = lọc trường dùng >=80% một hạn mức hữu hạn, theo usage thật) | paginated tenant list — mỗi dòng kèm `planTier`, `billingCycle`, `studentCount` (HS active), `mrr` (VND/tháng) + `quota[]` (used/limit của `STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB` cho cột "Hạn mức"; limit `null`=∞); `meta{page,pageSize,total}`                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `GET`    | `/platform/search?q=`                                 | `q?: string`                                                                                                                                                                                                            | tìm nhanh (ô search Tổng quan): `{ tenants:[{id,slug,name,status}], invoices:[{id,invoiceNumber,tenantId,tenantName,status,total}] }` — top 5 mỗi loại                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `GET`    | `/platform/tenants/stats`                             | -                                                                                                                                                                                                                       | đếm tenant theo trạng thái: `{ total, ACTIVE, TRIAL, PAST_DUE, SUSPENDED }` (cho chip lọc)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `POST`   | `/platform/tenants`                                   | `PlatformCreateTenantInput`                                                                                                                                                                                             | `{ tenant, school, admin, subscription }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `GET`    | `/platform/tenants/:id`                               | -                                                                                                                                                                                                                       | tenant detail + settings/domains/subscription/invoices; **bổ sung**: `mrr`, `studentCount`, `quota[{metric,used,limit,enforcement}]` (STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB), `schools[]` kèm `_count{students,classrooms}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `POST`   | `/platform/tenants/:id/suspend`                       | -                                                                                                                                                                                                                       | `{ ok: true }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `POST`   | `/platform/tenants/:id/reactivate`                    | -                                                                                                                                                                                                                       | `{ ok: true }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `POST`   | `/platform/tenants/:id/entitlements`                  | `EntitlementOverrideInput`                                                                                                                                                                                              | `TenantEntitlement`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `POST`   | `/platform/tenants/:id/impersonate`                   | -                                                                                                                                                                                                                       | tenant admin access token, no refresh token                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `GET`    | `/platform/subscriptions?page=&status=`               | `page?: number`, `status?: SubscriptionStatus`                                                                                                                                                                          | paginated subscriptions — mỗi dòng kèm `tenantName`, `tenantSlug`, `billingCycle`, `autoRenew` (=`!cancelAtPeriodEnd`), `mrr` (VND/tháng); `meta{page,pageSize,total}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `GET`    | `/platform/subscriptions/stats`                       | -                                                                                                                                                                                                                       | đếm thuê bao theo trạng thái: `{ total, TRIALING, ACTIVE, PAST_DUE, SUSPENDED, CANCELED, EXPIRED }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `GET`    | `/platform/invoices?page=&tenantId=&status=&q=`       | `status`: **`OPEN`=mọi HĐ chưa trả (OPEN/OVERDUE)**, **`OVERDUE`=chưa trả + quá hạn theo NGÀY** (dueAt<now, không chờ cron), `PAID`/`VOID`=đúng status; `q` tìm `invoiceNumber`                                         | paginated — mỗi dòng kèm `tenantName`, `period`, `dueDate`, `amountDue`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `GET`    | `/platform/invoices/stats`                            | -                                                                                                                                                                                                                       | KPI tiền: `{ paidThisMonth, openAmount (mọi HĐ chưa trả), overdueAmount (chưa trả + quá hạn theo ngày, subset), total }` — khớp Worklist/Tổng quan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `POST`   | `/platform/invoices`                                  | `{ tenantId: string }`                                                                                                                                                                                                  | created platform invoice — `invoiceNumber` định dạng **`{SLUG}-{MÃ_GÓI}-{YYYYMMDD}-{NN}`** (vd `DEMO-PRO-20260625-01`): slug trường + mã gói + ngày lập, để đối soát chuyển khoản (addInfo VietQR = số HĐ)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `GET`    | `/platform/invoices/:id`                              | -                                                                                                                                                                                                                       | chi tiết 1 hóa đơn (trang chi tiết/in): `{ invoiceNumber, status, lines[], subtotal/discount/tax/total/amountPaid/amountDue, buyer{name,taxCode,address}, seller{name}, bank{bin,accountNumber,accountName}, publicToken }`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `POST`   | `/platform/invoices/:id/mark-paid`                    | `{ amount?: number }`                                                                                                                                                                                                   | đánh dấu đã thu — **không truyền `amount` = trả đủ** (`amountPaid=total`). HĐ kỳ thường: reactivate + đẩy kỳ. HĐ `SIGNUP_UPGRADE`: đổi `Subscription.planId/billingCycle`, reset kỳ, clear entitlement cache, ghi `SubscriptionChange.UPGRADE`                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `GET`    | `/platform/plans`                                     | -                                                                                                                                                                                                                       | all plans (kèm `prices/features/limits/trialDays`) — mỗi gói **bổ sung** `tenantCount` (số thuê bao đang chạy: status TRIALING/ACTIVE/PAST_DUE)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `POST`   | `/platform/plans`                                     | `CreatePlanInput`                                                                                                                                                                                                       | created plan + nested config                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `PATCH`  | `/platform/plans/:id`                                 | `UpdatePlanInput` (name/description/isPublic/isActive/trialDays/sortOrder + upsert prices/features/limits theo unique key)                                                                                              | plan sau cập nhật; **không** đổi `code`/`tier`; thuê bao đang chạy giữ giá tới kỳ kế; 404 `PLAN_NOT_FOUND` nếu không thấy                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `GET`    | `/platform/posts?page=&status=&q=`                    | `PLATFORM_SUPER_ADMIN`/`PLATFORM_SUPPORT`                                                                                                                                                                               | paginated bài landing, lọc status/search title/slug/category                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `POST`   | `/platform/posts`                                     | `PlatformPostInput`                                                                                                                                                                                                     | tạo bài nháp/published                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `GET`    | `/platform/posts/:id`                                 | -                                                                                                                                                                                                                       | chi tiết bài                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `PATCH`  | `/platform/posts/:id`                                 | `Partial<PlatformPostInput>`                                                                                                                                                                                            | cập nhật bài                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `POST`   | `/platform/posts/:id/publish`                         | -                                                                                                                                                                                                                       | set `PUBLISHED`, `publishedAt=now`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `POST`   | `/platform/posts/:id/unpublish`                       | -                                                                                                                                                                                                                       | chuyển về `DRAFT`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `DELETE` | `/platform/posts/:id`                                 | -                                                                                                                                                                                                                       | soft-delete + `ARCHIVED`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `GET`    | `/platform/coupons?page=&isActive=`                   | `page?`, `isActive?: bool`                                                                                                                                                                                              | paginated coupons — mỗi dòng đủ field UI (`kind/amount/duration/durationCount/maxRedemptions/redeemedCount/validUntil/isActive`); `meta{page,pageSize,total}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `POST`   | `/platform/coupons`                                   | `CreateCouponInput` (`code` upper, `kind`, `amount`, `duration?`, `durationCount?`, `maxRedemptions?`, `validFrom?/validUntil?`, `isActive?`)                                                                           | created coupon; 400 `VALIDATION_FAILED` (thiếu code / amount ≤ 0 / % > 100 / hạn sai)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `GET`    | `/platform/settings`                                  | -                                                                                                                                                                                                                       | `PlatformConfig` (singleton): `bankBin/bankAccountNumber/bankAccountName` (VietQR) + `pastDueGraceDays/suspendedGraceDays`; tạo mặc định từ ENV nếu chưa có                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `PATCH`  | `/platform/settings`                                  | scalar fields; **chỉ `PLATFORM_SUPER_ADMIN`**                                                                                                                                                                           | `PlatformConfig` sau cập nhật — grace days là **nguồn sự thật** cho `billing-jobs` dunning (ENV chỉ là giá trị khởi tạo)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `GET`    | `/platform/worklist`                                  | -                                                                                                                                                                                                                       | `{ trial:{active,expiringSoon,endedTotal,converted,conversionRate,items[]}, quota:{thresholdPct,atRisk,tenants}, dunning:{overdueCount,overdueAmount,atRiskSuspend,suspended,items[]} }` — trang **Cần hành động**: phễu trial (TRIALING + conversion = trial kết thúc KHÔNG thành EXPIRED) + KPI quota (số dòng tenant×metric >=80% `atRisk` / số trường distinct `tenants`, theo usage thật `STUDENTS/TEACHERS/CLASSROOMS/STORAGE_MB` — **KHÔNG tính SCHOOLS** vì gói 1 cơ sở luôn 100%) + công nợ (HĐ OPEN/OVERDUE quá hạn còn nợ, resolve tenantName + subStatus). **Quota chỉ trả KPI** (payload nhẹ) — bấm KPI mở danh sách ở `/platform/tenants?quota=at-risk`; engine dunning vẫn ở `billing-jobs` |
+| `GET`    | `/platform/usage/overview`                            | -                                                                                                                                                                                                                       | `{ tenants, activeTenants, users, dau, wau, mau, topEvents }` — KPI hoạt động cho trang **Theo dõi vận hành**; `dau/wau/mau` = user riêng biệt có `login` trong 1/7/30 ngày                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `GET`    | `/platform/audit?page=&tenantId=&action=`             | `page?`, `tenantId?`, `action?` (contains, insensitive)                                                                                                                                                                 | paginated AuditLog — mỗi dòng resolve `tenantName` + `actorName/actorEmail`, kèm `actorType/action/targetType/targetId/ip/createdAt`; `meta{page,pageSize,total}`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 `PlatformCreateTenantInput` dùng cùng schema với `SignupInput` nhưng chỉ dành cho platform console:
 
@@ -341,8 +347,8 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 
 Webhook platform:
 
-| Method | Path | Body / Header | Data trả về |
-|---|---|---|---|
+| Method | Path                           | Body / Header                                                                | Data trả về                                                                                          |
+| ------ | ------------------------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | `POST` | `/platform/webhooks/:provider` | provider hiện hỗ trợ: `vnpay`; header `x-signature` hoặc `payload.signature` | `{ ok: true }`, `{ ok: true, deduped: true }`, hoặc error `INVALID_SIGNATURE`/`UNSUPPORTED_PROVIDER` |
 
 ---
@@ -351,20 +357,20 @@ Webhook platform:
 
 ### Classrooms
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `GET` | `/classrooms?schoolId=` | STAFF | `schoolId?: uuid` | `Classroom[]` scoped |
-| `GET` | `/classrooms/:id` | STAFF | - | `Classroom` |
-| `POST` | `/classrooms` | AD,HT | `ClassroomCreate` | `Classroom` |
-| `PATCH` | `/classrooms/:id` | AD,HT | `ClassroomPatch` | `Classroom` |
-| `DELETE` | `/classrooms/:id` | AD,HT | - | `{ ok: true }` |
+| Method   | Path                                    | Role  | Body / Query      | Data trả về                    |
+| -------- | --------------------------------------- | ----- | ----------------- | ------------------------------ |
+| `GET`    | `/classrooms?page=&pageSize=&schoolId=` | STAFF | `schoolId?: uuid` | paginated `Classroom[]` scoped |
+| `GET`    | `/classrooms/:id`                       | STAFF | -                 | `Classroom`                    |
+| `POST`   | `/classrooms`                           | AD,HT | `ClassroomCreate` | `Classroom`                    |
+| `PATCH`  | `/classrooms/:id`                       | AD,HT | `ClassroomPatch`  | `Classroom`                    |
+| `DELETE` | `/classrooms/:id`                       | AD,HT | -                 | `{ ok: true }`                 |
 
 ```ts
 type ClassroomCreate = {
   schoolId: string;
-  name: string;              // 1..120
-  ageGroup?: string;         // max 40
-  capacity?: number;         // 1..200
+  name: string; // 1..120
+  ageGroup?: string; // max 40
+  capacity?: number; // 1..200
   homeroomTeacherId?: string;
 };
 type ClassroomPatch = Partial<Omit<ClassroomCreate, "schoolId">> & {
@@ -377,16 +383,16 @@ Create check quota `CLASSROOMS`. Delete là soft-delete.
 
 ### Students
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `GET` | `/students/mine` | PH | - | children của PH |
-| `GET` | `/students?classroomId=&schoolId=` | STAFF | filters optional | `Student[]` (+ parents/classroom) |
-| `GET` | `/students/:id` | STAFF | - | `Student` + parents/classroom |
-| `POST` | `/students` | AD,HT,GV | `StudentCreate` | `Student` |
-| `PATCH` | `/students/:id` | AD,HT,GV | `StudentPatch` | `Student` |
-| `DELETE` | `/students/:id` | AD,HT,GV | - | `{ ok: true }` |
-| `POST` | `/students/:id/guardians` | AD,HT,GV | `GuardianInput` | `StudentParent` |
-| `DELETE` | `/students/:id/guardians/:parentId` | AD,HT,GV | - | `{ ok: true }` |
+| Method   | Path                                               | Role     | Body / Query     | Data trả về                                 |
+| -------- | -------------------------------------------------- | -------- | ---------------- | ------------------------------------------- |
+| `GET`    | `/students/mine?page=&pageSize=`                   | PH       | optional         | paginated children của PH                   |
+| `GET`    | `/students?page=&pageSize=&classroomId=&schoolId=&gender=&search=` | STAFF    | `gender?: Gender`; `search?` (fullName/nickname, contains, insensitive) | paginated `Student[]` (+ parents/classroom) |
+| `GET`    | `/students/:id`                                    | STAFF    | -                | `Student` + parents/classroom               |
+| `POST`   | `/students`                                        | AD,HT,GV | `StudentCreate`  | `Student`                                   |
+| `PATCH`  | `/students/:id`                                    | AD,HT,GV | `StudentPatch`   | `Student`                                   |
+| `DELETE` | `/students/:id`                                    | AD,HT,GV | -                | `{ ok: true }`                              |
+| `POST`   | `/students/:id/guardians`                          | AD,HT,GV | `GuardianInput`  | `StudentParent`                             |
+| `DELETE` | `/students/:id/guardians/:parentId`                | AD,HT,GV | -                | `{ ok: true }`                              |
 
 ```ts
 type GuardianInput = {
@@ -397,9 +403,9 @@ type GuardianInput = {
 type StudentCreate = {
   schoolId: string;
   classroomId?: string;
-  fullName: string;       // 1..120
-  nickname?: string;      // max 60
-  dateOfBirth: string;    // YYYY-MM-DD
+  fullName: string; // 1..120
+  nickname?: string; // max 60
+  dateOfBirth: string; // YYYY-MM-DD
   gender: Gender;
   avatarUrl?: string;
   guardians?: GuardianInput[];
@@ -423,11 +429,11 @@ Create check quota `STUDENTS`. PH chỉ truy cập con mình qua các endpoint c
 
 ### Attendance
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/attendance/mark` | AD,HT,GV | `AttendanceMarkInput` | `Attendance[]` upsert theo học sinh/ngày |
-| `GET` | `/attendance?classroomId=&date=` | STAFF | required query | `Attendance[]` |
-| `GET` | `/attendance/student/:studentId` | STAFF,PH | - | history của học sinh |
+| Method | Path                                             | Role     | Body / Query          | Data trả về                              |
+| ------ | ------------------------------------------------ | -------- | --------------------- | ---------------------------------------- |
+| `POST` | `/attendance/mark`                               | AD,HT,GV | `AttendanceMarkInput` | `Attendance[]` upsert theo học sinh/ngày |
+| `GET`  | `/attendance?page=&pageSize=&classroomId=&date=` | STAFF    | required query        | paginated `Attendance[]`                 |
+| `GET`  | `/attendance/student/:studentId?page=&pageSize=` | STAFF,PH | optional              | paginated history của học sinh           |
 
 ```ts
 type AttendanceMarkInput = {
@@ -437,28 +443,28 @@ type AttendanceMarkInput = {
     studentId: string;
     status: AttendanceStatus;
     checkInAt?: string; // DateTime
-    note?: string;      // max 300
+    note?: string; // max 300
   }>;
 };
 ```
 
 ### Daily Reports
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/daily-reports` | AD,HT,GV | `DailyReportUpsertInput` | `DailyReport` |
-| `GET` | `/daily-reports?classroomId=&date=` | STAFF | required query | `DailyReport[]` |
-| `GET` | `/daily-reports/student/:studentId` | STAFF,PH | - | report feed của học sinh |
+| Method | Path                                                | Role     | Body / Query             | Data trả về                        |
+| ------ | --------------------------------------------------- | -------- | ------------------------ | ---------------------------------- |
+| `POST` | `/daily-reports`                                    | AD,HT,GV | `DailyReportUpsertInput` | `DailyReport`                      |
+| `GET`  | `/daily-reports?page=&pageSize=&classroomId=&date=` | STAFF    | required query           | paginated `DailyReport[]`          |
+| `GET`  | `/daily-reports/student/:studentId?page=&pageSize=` | STAFF,PH | optional                 | paginated report feed của học sinh |
 
 ```ts
 type DailyReportUpsertInput = {
   studentId: string;
   date: string; // YYYY-MM-DD
   mood?: Mood;
-  meals?: string;      // max 500
-  nap?: string;        // max 500
+  meals?: string; // max 500
+  nap?: string; // max 500
   activities?: string; // max 500
-  note?: string;       // max 1000
+  note?: string; // max 1000
   photoIds?: string[]; // max 12 Media id, ảnh đã upload qua POST /media
 };
 ```
@@ -469,13 +475,13 @@ Upsert unique theo `(studentId, date)`. Nếu truyền `photoIds`, backend thay 
 
 Role: `STAFF` xem/ghi; `PH` xem dữ liệu của con mình.
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `GET` | `/pickup/authorizations?studentId=&status=` | STAFF,PH | filters optional | `PickupAuthorization[]` |
-| `POST` | `/pickup/authorizations` | AD,HT,GV,YT | `PickupAuthorizationCreate` | `PickupAuthorization` |
-| `PATCH` | `/pickup/authorizations/:id/revoke` | AD,HT,GV,YT | - | authorization status `REVOKED` |
-| `GET` | `/pickup/logs?studentId=` | STAFF,PH | filter optional | `PickupLog[]` |
-| `POST` | `/pickup/logs` | AD,HT,GV,YT | `PickupLogCreate` | `PickupLog` |
+| Method  | Path                                                        | Role        | Body / Query                | Data trả về                       |
+| ------- | ----------------------------------------------------------- | ----------- | --------------------------- | --------------------------------- |
+| `GET`   | `/pickup/authorizations?page=&pageSize=&studentId=&status=` | STAFF,PH    | filters optional            | paginated `PickupAuthorization[]` |
+| `POST`  | `/pickup/authorizations`                                    | AD,HT,GV,YT | `PickupAuthorizationCreate` | `PickupAuthorization`             |
+| `PATCH` | `/pickup/authorizations/:id/revoke`                         | AD,HT,GV,YT | -                           | authorization status `REVOKED`    |
+| `GET`   | `/pickup/logs?page=&pageSize=&studentId=`                   | STAFF,PH    | filter optional             | paginated `PickupLog[]`           |
+| `POST`  | `/pickup/logs`                                              | AD,HT,GV,YT | `PickupLogCreate`           | `PickupLog`                       |
 
 ```ts
 type PickupAuthorizationCreate = {
@@ -499,10 +505,10 @@ type PickupLogCreate = {
 
 ### Media
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/media?kind=&schoolId=` | AD,HT,GV,YT | multipart field `file`; max 15MB. Query validate Zod (`kind` ∈ MediaKind, `schoolId` uuid) → sai kiểu trả `VALIDATION_FAILED` (không 500). Có `schoolId` → user phải có quyền trên school đó (`SCHOOL_FORBIDDEN` nếu không) và school phải thuộc tenant | `{ id, url, mimeType, sizeBytes, width, height }` |
-| `GET` | `/media/:id/file` | AD,HT,GV,YT,PH | - | raw stream `image/webp`/mimeType tương ứng; backend kiểm quyền theo tenant + school/ảnh đã upload hoặc quan hệ report/album mà người dùng được xem. KT không được tải media trẻ (least-privilege) |
+| Method | Path                     | Role           | Body / Query                                                                                                                                                                                                                                            | Data trả về                                                                                                                                                                                       |
+| ------ | ------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/media?kind=&schoolId=` | AD,HT,GV,YT    | multipart field `file`; max 15MB. Query validate Zod (`kind` ∈ MediaKind, `schoolId` uuid) → sai kiểu trả `VALIDATION_FAILED` (không 500). Có `schoolId` → user phải có quyền trên school đó (`SCHOOL_FORBIDDEN` nếu không) và school phải thuộc tenant | `{ id, url, mimeType, sizeBytes, width, height }`                                                                                                                                                 |
+| `GET`  | `/media/:id/file`        | AD,HT,GV,YT,PH | -                                                                                                                                                                                                                                                       | raw stream `image/webp`/mimeType tương ứng; backend kiểm quyền theo tenant + school/ảnh đã upload hoặc quan hệ report/album mà người dùng được xem. KT không được tải media trẻ (least-privilege) |
 
 Ảnh upload được nén về WebP, cạnh dài tối đa `MEDIA_MAX_DIM` (default 1280), check quota `STORAGE_MB`.
 
@@ -514,20 +520,20 @@ type PickupLogCreate = {
 
 ### Health Records
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/health` | AD,HT,YT,GV | `HealthRecordInput` | `HealthRecord` |
-| `GET` | `/health/student/:studentId` | STAFF,PH | - | `HealthRecord[]` |
-| `GET` | `/health/student/:studentId/growth` | STAFF,PH | - | `{ height: Point[], weight: Point[] }` |
+| Method | Path                                         | Role        | Body / Query        | Data trả về                            |
+| ------ | -------------------------------------------- | ----------- | ------------------- | -------------------------------------- |
+| `POST` | `/health`                                    | AD,HT,YT,GV | `HealthRecordInput` | `HealthRecord`                         |
+| `GET`  | `/health/student/:studentId?page=&pageSize=` | STAFF,PH    | optional            | paginated `HealthRecord[]`             |
+| `GET`  | `/health/student/:studentId/growth`          | STAFF,PH    | -                   | `{ height: Point[], weight: Point[] }` |
 
 ```ts
 type HealthRecordInput = {
   studentId: string;
   date: string; // YYYY-MM-DD
-  heightCm?: number;     // >0, <=250
-  weightKg?: number;     // >0, <=150
+  heightCm?: number; // >0, <=250
+  weightKg?: number; // >0, <=150
   temperatureC?: number; // 30..45
-  note?: string;         // max 500
+  note?: string; // max 500
 };
 ```
 
@@ -535,71 +541,71 @@ Cần ít nhất một chỉ số trong `heightCm`, `weightKg`, `temperatureC`.
 
 ### Medicine
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/medicine` | STAFF,PH | `MedicineCreate` | `MedicineRequest` PENDING |
-| `GET` | `/medicine/mine` | PH | - | requests của con mình |
-| `GET` | `/medicine?status=` | STAFF | `status?: MedicineStatus` | `MedicineRequest[]` |
-| `GET` | `/medicine/:id` | STAFF,PH | - | request + status history |
-| `POST` | `/medicine/:id/handle` | AD,HT,YT,GV | `MedicineHandle` | updated request |
+| Method | Path                                | Role        | Body / Query              | Data trả về                     |
+| ------ | ----------------------------------- | ----------- | ------------------------- | ------------------------------- |
+| `POST` | `/medicine`                         | STAFF,PH    | `MedicineCreate`          | `MedicineRequest` PENDING       |
+| `GET`  | `/medicine/mine?page=&pageSize=`    | PH          | optional                  | paginated requests của con mình |
+| `GET`  | `/medicine?page=&pageSize=&status=` | STAFF       | `status?: MedicineStatus` | paginated `MedicineRequest[]`   |
+| `GET`  | `/medicine/:id`                     | STAFF,PH    | -                         | request + status history        |
+| `POST` | `/medicine/:id/handle`              | AD,HT,YT,GV | `MedicineHandle`          | updated request                 |
 
 ```ts
 type MedicineCreate = {
   studentId: string;
   medicineName: string; // 1..200
-  dosage: string;       // 1..200
-  schedule: string;     // 1..200
-  startDate: string;    // YYYY-MM-DD
-  endDate: string;      // YYYY-MM-DD
-  reason?: string;      // max 500
+  dosage: string; // 1..200
+  schedule: string; // 1..200
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  reason?: string; // max 500
 };
 type MedicineHandle = {
   status: MedicineStatus; // APPROVED, ADMINISTERED, REJECTED...
-  note?: string;          // max 500
+  note?: string; // max 500
 };
 ```
 
 ### Incidents & Allergies & Leave
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/incidents` | AD,HT,GV,YT | `IncidentCreate` | `Incident` |
-| `GET` | `/incidents?studentId=` | STAFF | filter optional | `Incident[]` |
-| `GET` | `/incidents/student/:studentId` | STAFF,PH | - | `Incident[]` |
-| `POST` | `/allergies` | AD,HT,YT,GV | `AllergyCreate` | `Allergy` |
-| `GET` | `/allergies/student/:studentId` | STAFF,PH | - | `Allergy[]` |
-| `DELETE` | `/allergies/:id` | AD,HT,YT,GV | - | `{ ok: true }` |
-| `POST` | `/leave` | STAFF,PH | `LeaveCreate` | `LeaveRequest` PENDING |
-| `GET` | `/leave/mine` | PH | - | requests của con mình |
-| `GET` | `/leave?status=` | STAFF | `status?: LeaveStatus` | `LeaveRequest[]` |
-| `GET` | `/leave/:id` | STAFF,PH | - | `LeaveRequest` |
-| `POST` | `/leave/:id/decide` | AD,HT,GV | `LeaveDecision` | updated request |
+| Method   | Path                                            | Role        | Body / Query           | Data trả về                     |
+| -------- | ----------------------------------------------- | ----------- | ---------------------- | ------------------------------- |
+| `POST`   | `/incidents`                                    | AD,HT,GV,YT | `IncidentCreate`       | `Incident`                      |
+| `GET`    | `/incidents?page=&pageSize=&studentId=`         | STAFF       | filter optional        | paginated `Incident[]`          |
+| `GET`    | `/incidents/student/:studentId?page=&pageSize=` | STAFF,PH    | optional               | paginated `Incident[]`          |
+| `POST`   | `/allergies`                                    | AD,HT,YT,GV | `AllergyCreate`        | `Allergy`                       |
+| `GET`    | `/allergies/student/:studentId?page=&pageSize=` | STAFF,PH    | optional               | paginated `Allergy[]`           |
+| `DELETE` | `/allergies/:id`                                | AD,HT,YT,GV | -                      | `{ ok: true }`                  |
+| `POST`   | `/leave`                                        | STAFF,PH    | `LeaveCreate`          | `LeaveRequest` PENDING          |
+| `GET`    | `/leave/mine?page=&pageSize=`                   | PH          | optional               | paginated requests của con mình |
+| `GET`    | `/leave?page=&pageSize=&status=`                | STAFF       | `status?: LeaveStatus` | paginated `LeaveRequest[]`      |
+| `GET`    | `/leave/:id`                                    | STAFF,PH    | -                      | `LeaveRequest`                  |
+| `POST`   | `/leave/:id/decide`                             | AD,HT,GV    | `LeaveDecision`        | updated request                 |
 
 ```ts
 type IncidentCreate = {
   studentId: string;
   date: string;
-  type: string;             // 1..100
+  type: string; // 1..100
   severity?: IncidentSeverity;
-  description: string;      // 1..2000
-  actionTaken?: string;     // max 2000
+  description: string; // 1..2000
+  actionTaken?: string; // max 2000
 };
 type AllergyCreate = {
   studentId: string;
   allergen: string; // 1..200
-  note?: string;    // max 500
+  note?: string; // max 500
 };
 type LeaveCreate = {
   studentId: string;
   leaveType: LeaveType;
   startDate: string;
   endDate: string;
-  reason?: string;        // max 1000
+  reason?: string; // max 1000
   attachmentUrl?: string; // url, max 500
 };
 type LeaveDecision = {
   status: LeaveStatus; // APPROVED hoặc REJECTED trong nghiệp vụ
-  note?: string;       // max 500
+  note?: string; // max 500
 };
 ```
 
@@ -609,13 +615,13 @@ Lỗi thường gặp: `NO_STUDENT`, `NO_REQUEST`, `ALREADY_DECIDED`, `DUPLICATE
 
 ## B3 — Phân Công Nhân Sự
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `GET` | `/assignments/mine` | STAFF | - | lịch của user hiện tại |
-| `GET` | `/assignments?staffId=&classroomId=&weekday=` | AD,HT | filters optional | `StaffAssignment[]` |
-| `POST` | `/assignments` | AD,HT | `AssignmentCreate` | `StaffAssignment` |
-| `PATCH` | `/assignments/:id` | AD,HT | `AssignmentPatch` | `StaffAssignment` |
-| `DELETE` | `/assignments/:id` | AD,HT | - | `{ ok: true }` |
+| Method   | Path                                                          | Role  | Body / Query       | Data trả về                      |
+| -------- | ------------------------------------------------------------- | ----- | ------------------ | -------------------------------- |
+| `GET`    | `/assignments/mine?page=&pageSize=`                           | STAFF | optional           | paginated lịch của user hiện tại |
+| `GET`    | `/assignments?page=&pageSize=&staffId=&classroomId=&weekday=` | AD,HT | filters optional   | paginated `StaffAssignment[]`    |
+| `POST`   | `/assignments`                                                | AD,HT | `AssignmentCreate` | `StaffAssignment`                |
+| `PATCH`  | `/assignments/:id`                                            | AD,HT | `AssignmentPatch`  | `StaffAssignment`                |
+| `DELETE` | `/assignments/:id`                                            | AD,HT | -                  | `{ ok: true }`                   |
 
 ```ts
 type AssignmentCreate = {
@@ -624,8 +630,8 @@ type AssignmentCreate = {
   schoolId?: string;
   weekday: number; // 1..7, 1 = Thứ 2
   shift: Shift;
-  duty: string;    // 1..100
-  note?: string;   // max 300
+  duty: string; // 1..100
+  note?: string; // max 300
 };
 type AssignmentPatch = {
   classroomId?: string | null;
@@ -642,46 +648,46 @@ Unique `(staffId, weekday, shift)`. Lỗi thường gặp: `NO_STAFF`, `DUPLICAT
 
 ## E — Học Phí
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/tuition/invoices` | AD,HT,KT | `TuitionInvoiceCreate` | invoice + items |
-| `GET` | `/tuition/invoices/mine` | PH | - | invoices của con mình |
-| `GET` | `/tuition/invoices?status=&studentId=` | STAFF | filters optional | `TuitionInvoice[]` |
-| `GET` | `/tuition/invoices/export?status=` | STAFF | `status?: TuitionInvoiceStatus` | raw CSV |
-| `GET` | `/tuition/invoices/:id` | AD,HT,KT,PH | - | invoice + student/items/payments |
-| `GET` | `/tuition/invoices/:id/print` | AD,HT,KT,PH | - | raw HTML chứng từ |
-| `POST` | `/tuition/invoices/:id/cancel` | AD,HT,KT | - | invoice status `CANCELED` |
-| `POST` | `/tuition/invoices/:id/pay/manual` | AD,HT,KT | `ManualPaymentInput` | `TuitionPayment` |
-| `GET` | `/tuition/invoices/:id/vietqr` | AD,HT,KT,PH | - | `VietQrResponse` |
-| `POST` | `/tuition/invoices/:id/pay/gateway` | AD,HT,KT,PH | `{ method: "VNPAY" }` | `{ paymentId, gatewayRef, redirectUrl }` |
-| `POST` | `/tuition/webhooks/:method` | public | `method` hiện hỗ trợ: `vnpay`; payload gateway + `x-signature?` | `{ ok: true }`, `ignored`, `deduped`, hoặc error `INVALID_SIGNATURE`/`UNSUPPORTED_PROVIDER` |
+| Method | Path                                                   | Role        | Body / Query                                                    | Data trả về                                                                                                   |
+| ------ | ------------------------------------------------------ | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/tuition/invoices`                                    | AD,HT,KT    | `TuitionInvoiceCreate`                                          | invoice + items                                                                                               |
+| `GET`  | `/tuition/invoices/mine?page=&pageSize=`               | PH          | optional                                                        | paginated invoices của con mình                                                                               |
+| `GET`  | `/tuition/invoices?page=&pageSize=&status=&studentId=&search=` | STAFF       | filters optional; `search?` (invoiceNumber/student.fullName, contains, insensitive) | paginated `TuitionInvoice[]`                                                                                  |
+| `GET`  | `/tuition/invoices/export?status=`                     | STAFF       | `status?: TuitionInvoiceStatus`                                 | raw CSV                                                                                                       |
+| `GET`  | `/tuition/invoices/:id`                                | AD,HT,KT,PH | -                                                               | invoice + student/items/payments                                                                              |
+| `GET`  | `/tuition/invoices/:id/print`                          | AD,HT,KT,PH | -                                                               | raw HTML chứng từ                                                                                             |
+| `POST` | `/tuition/invoices/:id/cancel`                         | AD,HT,KT    | -                                                               | invoice status `CANCELED`                                                                                     |
+| `POST` | `/tuition/invoices/:id/pay/manual`                     | AD,HT,KT    | `ManualPaymentInput`                                            | `TuitionPayment`                                                                                              |
+| `GET`  | `/tuition/invoices/:id/vietqr`                         | AD,HT,KT,PH | -                                                               | `VietQrResponse`                                                                                              |
+| `POST` | `/tuition/invoices/:id/pay/gateway`                    | AD,HT,KT,PH | `{ method: "VNPAY" }`                                           | `{ paymentId, gatewayRef, redirectUrl }`; thiếu `VNPAY_PAY_URL`/`VNPAY_RETURN_URL` trả `VNPAY_NOT_CONFIGURED` |
+| `POST` | `/tuition/webhooks/:method`                            | public      | `method` hiện hỗ trợ: `vnpay`; payload gateway + `x-signature?` | `{ ok: true }`, `ignored`, `deduped`, hoặc error `INVALID_SIGNATURE`/`UNSUPPORTED_PROVIDER`                   |
 
 ```ts
 type TuitionInvoiceCreate = {
   studentId: string;
-  period: string;    // 1..40, vd "2026-06"
+  period: string; // 1..40, vd "2026-06"
   issueDate?: string;
   dueDate: string;
   discount?: number; // >=0
-  note?: string;     // max 500
+  note?: string; // max 500
   items: Array<{
-    label: string;       // 1..120
-    quantity?: number;   // 1..999, default service-side
-    unitPrice: number;   // >=0
+    label: string; // 1..120
+    quantity?: number; // 1..999, default service-side
+    unitPrice: number; // >=0
   }>;
 };
 type ManualPaymentInput = {
   method: "CASH" | "BANK_TRANSFER";
-  amount?: number;    // default = remaining
+  amount?: number; // default = remaining
   reference?: string; // max 120
 };
 type VietQrResponse = {
-  payload: string;       // EMVCo string
+  payload: string; // EMVCo string
   bankBin: string;
   accountNumber: string;
   accountName?: string;
   amount: number;
-  addInfo: string;       // invoiceNumber sanitized
+  addInfo: string; // invoiceNumber sanitized
 };
 ```
 
@@ -693,75 +699,75 @@ Lỗi thường gặp: `NO_INVOICE`, `NO_STUDENT`, `BAD_AMOUNT`, `ALREADY_PAID`,
 
 ### Announcements
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/announcements` | AD,HT,GV | `AnnouncementCreate` | `Announcement` |
-| `GET` | `/announcements/feed` | STAFF,PH | - | feed theo audience/quyền xem |
-| `GET` | `/announcements?audience=` | STAFF | `audience?: AnnouncementAudience` | `Announcement[]` |
-| `GET` | `/announcements/:id` | STAFF,PH | - | `Announcement` |
-| `POST` | `/announcements/:id/publish` | AD,HT,GV | - | `Announcement` published |
-| `DELETE` | `/announcements/:id` | AD,HT,GV | - | `{ ok: true }` |
+| Method   | Path                                       | Role     | Body / Query                      | Data trả về                            |
+| -------- | ------------------------------------------ | -------- | --------------------------------- | -------------------------------------- |
+| `POST`   | `/announcements`                           | AD,HT,GV | `AnnouncementCreate`              | `Announcement`                         |
+| `GET`    | `/announcements/feed?page=&pageSize=`      | STAFF,PH | optional                          | paginated feed theo audience/quyền xem |
+| `GET`    | `/announcements?page=&pageSize=&audience=` | STAFF    | `audience?: AnnouncementAudience` | paginated `Announcement[]`             |
+| `GET`    | `/announcements/:id`                       | STAFF,PH | -                                 | `Announcement`                         |
+| `POST`   | `/announcements/:id/publish`               | AD,HT,GV | -                                 | `Announcement` published               |
+| `DELETE` | `/announcements/:id`                       | AD,HT,GV | -                                 | `{ ok: true }`                         |
 
 ```ts
 type AnnouncementCreate = {
   audience: AnnouncementAudience;
   schoolId?: string;
   classroomId?: string; // bắt buộc khi audience=CLASS
-  title: string;        // 1..200
-  body: string;         // 1..5000
+  title: string; // 1..200
+  body: string; // 1..5000
   publish?: boolean;
 };
 ```
 
 ### Menus, Lesson Plans, Albums
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `POST` | `/menus` | AD,HT,YT | `MenuCreate` | menu + meals |
-| `GET` | `/menus?weekStart=&classroomId=` | STAFF,PH | filters optional | `WeeklyMenu[]` |
-| `GET` | `/menus/:id` | STAFF,PH | - | menu + meals |
-| `GET` | `/menus/:id/allergy-warnings?studentId=` | STAFF,PH | required studentId | allergy warning list |
-| `DELETE` | `/menus/:id` | AD,HT,YT | - | `{ ok: true }` |
-| `POST` | `/lesson-plans` | AD,HT,GV + feature `lesson_plan` | `LessonPlanCreate` | plan + activities |
-| `GET` | `/lesson-plans?classroomId=&week=` | AD,HT,GV + feature | filters optional | `LessonPlan[]` |
-| `GET` | `/lesson-plans/:id` | AD,HT,GV + feature | - | plan + activities |
-| `DELETE` | `/lesson-plans/:id` | AD,HT,GV + feature | - | `{ ok: true }` |
-| `POST` | `/albums` | AD,HT,GV + feature `media_gallery` | `AlbumCreate` | `Album` |
-| `POST` | `/albums/:id/photos` | AD,HT,GV + feature | `AlbumPhotosInput` | created `AlbumPhoto[]` |
-| `GET` | `/albums?classroomId=` | AD,HT,GV,YT,PH + feature | filter optional | `Album[]` |
-| `GET` | `/albums/:id` | AD,HT,GV,YT,PH + feature | - | album + photos/media |
-| `DELETE` | `/albums/photos/:photoId` | AD,HT,GV + feature | - | `{ ok: true }` |
-| `DELETE` | `/albums/:id` | AD,HT,GV + feature | - | `{ ok: true }` |
+| Method   | Path                                               | Role                               | Body / Query       | Data trả về              |
+| -------- | -------------------------------------------------- | ---------------------------------- | ------------------ | ------------------------ |
+| `POST`   | `/menus`                                           | AD,HT,YT                           | `MenuCreate`       | menu + meals             |
+| `GET`    | `/menus?page=&pageSize=&weekStart=&classroomId=`   | STAFF,PH                           | filters optional   | paginated `WeeklyMenu[]` |
+| `GET`    | `/menus/:id`                                       | STAFF,PH                           | -                  | menu + meals             |
+| `GET`    | `/menus/:id/allergy-warnings?studentId=`           | STAFF,PH                           | required studentId | allergy warning list     |
+| `DELETE` | `/menus/:id`                                       | AD,HT,YT                           | -                  | `{ ok: true }`           |
+| `POST`   | `/lesson-plans`                                    | AD,HT,GV + feature `lesson_plan`   | `LessonPlanCreate` | plan + activities        |
+| `GET`    | `/lesson-plans?page=&pageSize=&classroomId=&week=` | AD,HT,GV + feature                 | filters optional   | paginated `LessonPlan[]` |
+| `GET`    | `/lesson-plans/:id`                                | AD,HT,GV + feature                 | -                  | plan + activities        |
+| `DELETE` | `/lesson-plans/:id`                                | AD,HT,GV + feature                 | -                  | `{ ok: true }`           |
+| `POST`   | `/albums`                                          | AD,HT,GV + feature `media_gallery` | `AlbumCreate`      | `Album`                  |
+| `POST`   | `/albums/:id/photos`                               | AD,HT,GV + feature                 | `AlbumPhotosInput` | created `AlbumPhoto[]`   |
+| `GET`    | `/albums?page=&pageSize=&classroomId=`             | AD,HT,GV,YT,PH + feature           | filter optional    | paginated `Album[]`      |
+| `GET`    | `/albums/:id`                                      | AD,HT,GV,YT,PH + feature           | -                  | album + photos/media     |
+| `DELETE` | `/albums/photos/:photoId`                          | AD,HT,GV + feature                 | -                  | `{ ok: true }`           |
+| `DELETE` | `/albums/:id`                                      | AD,HT,GV + feature                 | -                  | `{ ok: true }`           |
 
 ```ts
 type MenuCreate = {
   weekStart: string; // YYYY-MM-DD
   schoolId?: string;
   classroomId?: string;
-  note?: string;     // max 500
+  note?: string; // max 500
   meals: Array<{
     weekday: number; // 1..7
     mealType: MealType;
-    name: string;       // 1..300
+    name: string; // 1..300
     ingredients?: string; // max 500
   }>;
 };
 type LessonPlanCreate = {
   classroomId: string;
-  week: string;     // 1..40, vd "2026-W27"
-  theme: string;    // 1..200
-  note?: string;    // max 1000
+  week: string; // 1..40, vd "2026-W27"
+  theme: string; // 1..200
+  note?: string; // max 1000
   activities?: Array<{
     dayOfWeek: number; // 1..7
     startTime?: string; // max 10
-    title: string;      // 1..200
+    title: string; // 1..200
     materials?: string; // max 500
   }>;
 };
 type AlbumCreate = {
   classroomId?: string;
   schoolId?: string;
-  title: string;        // 1..200
+  title: string; // 1..200
   description?: string; // max 1000
 };
 type AlbumPhotosInput = {
@@ -775,16 +781,16 @@ Lỗi thường gặp: `FEATURE_NOT_AVAILABLE`, `NO_MENU`, `NO_PLAN`, `NO_ALBUM`
 
 ## G — Notifications, Dashboard, Audit
 
-| Method | Path | Role | Body / Query | Data trả về |
-|---|---|---|---|---|
-| `GET` | `/notifications?unreadOnly=true|false` | mọi tenant role | optional | `Notification[]` của user hiện tại |
-| `GET` | `/notifications/unread-count` | mọi tenant role | - | `{ count: number }` |
-| `GET` | `/notifications/preferences` | mọi tenant role | - | preferences cho đủ `NotificationType` |
-| `PATCH` | `/notifications/preferences` | mọi tenant role | `{ type: NotificationType, enabled: boolean }` | `NotificationPreference` |
-| `POST` | `/notifications/read-all` | mọi tenant role | - | batch update result |
-| `POST` | `/notifications/:id/read` | mọi tenant role | - | `Notification` với `readAt` |
-| `GET` | `/dashboard/summary` | AD,HT | - | dashboard summary |
-| `GET` | `/audit-logs?action=&limit=` | AD,HT | `action?: string`, `limit?: 1..500` | `AuditLog[]` newest first |
+| Method  | Path                                            | Role            | Body / Query                                   | Data trả về                           |
+| ------- | ----------------------------------------------- | --------------- | ---------------------------------------------- | ------------------------------------- | -------------------------------------------- |
+| `GET`   | `/notifications?page=&pageSize=&unreadOnly=true | false`          | mọi tenant role                                | optional                              | paginated `Notification[]` của user hiện tại |
+| `GET`   | `/notifications/unread-count`                   | mọi tenant role | -                                              | `{ count: number }`                   |
+| `GET`   | `/notifications/preferences`                    | mọi tenant role | -                                              | preferences cho đủ `NotificationType` |
+| `PATCH` | `/notifications/preferences`                    | mọi tenant role | `{ type: NotificationType, enabled: boolean }` | `NotificationPreference`              |
+| `POST`  | `/notifications/read-all`                       | mọi tenant role | -                                              | batch update result                   |
+| `POST`  | `/notifications/:id/read`                       | mọi tenant role | -                                              | `Notification` với `readAt`           |
+| `GET`   | `/dashboard/summary`                            | AD,HT           | -                                              | dashboard summary                     |
+| `GET`   | `/audit-logs?page=&pageSize=&action=&limit=`    | AD,HT           | `action?: string`, `pageSize/limit?: 1..100`   | paginated `AuditLog[]` newest first   |
 
 `DashboardSummary`:
 
@@ -820,18 +826,18 @@ Notification phát từ 6 sự kiện hiện có: tạo daily report, publish an
 
 ## Mã Lỗi Chung
 
-| Code | Nghĩa |
-|---|---|
-| `VALIDATION_FAILED` | Body/query không đúng Zod schema |
-| `UNAUTHORIZED`, `INVALID_TOKEN` | Thiếu/sai token |
-| `NO_TENANT`, `TENANT_MISMATCH` | Host không resolve được tenant hoặc token dùng sai host |
-| `FORBIDDEN` | Role không đủ quyền |
-| `SUBSCRIPTION_SUSPENDED`, `SUBSCRIPTION_INACTIVE` | Subscription chặn route thường |
-| `FEATURE_NOT_AVAILABLE` | Gói không bật feature yêu cầu |
-| `QUOTA_EXCEEDED`, `STORAGE_EXCEEDED` | Vượt quota gói |
-| `SLUG_UNAVAILABLE`, `MEMBER_EXISTS` | Trùng slug/thành viên |
-| `NOT_FOUND`, `NO_*` | Không tìm thấy tài nguyên trong scope tenant/school/parent |
-| `INVALID_SIGNATURE` | Webhook signature không hợp lệ |
+| Code                                              | Nghĩa                                                      |
+| ------------------------------------------------- | ---------------------------------------------------------- |
+| `VALIDATION_FAILED`                               | Body/query không đúng Zod schema                           |
+| `UNAUTHORIZED`, `INVALID_TOKEN`                   | Thiếu/sai token                                            |
+| `NO_TENANT`, `TENANT_MISMATCH`                    | Host không resolve được tenant hoặc token dùng sai host    |
+| `FORBIDDEN`                                       | Role không đủ quyền                                        |
+| `SUBSCRIPTION_SUSPENDED`, `SUBSCRIPTION_INACTIVE` | Subscription chặn route thường                             |
+| `FEATURE_NOT_AVAILABLE`                           | Gói không bật feature yêu cầu                              |
+| `QUOTA_EXCEEDED`, `STORAGE_EXCEEDED`              | Vượt quota gói                                             |
+| `SLUG_UNAVAILABLE`, `MEMBER_EXISTS`               | Trùng slug/thành viên                                      |
+| `NOT_FOUND`, `NO_*`                               | Không tìm thấy tài nguyên trong scope tenant/school/parent |
+| `INVALID_SIGNATURE`                               | Webhook signature không hợp lệ                             |
 
 ## Demo Data
 
@@ -839,11 +845,11 @@ Sau khi chạy `pnpm prisma:seed && pnpm prisma:seed:demo`, tenant demo có host
 
 Tài khoản demo, mật khẩu `Password123`:
 
-| Role | Login |
-|---|---|
-| AD | `admin@hoasen.edu.vn` |
-| HT | `hieutruong@hoasen.edu.vn` |
-| GV | `co.mai@hoasen.edu.vn`, `co.lan@hoasen.edu.vn` |
-| YT | `yta.hoa@hoasen.edu.vn` |
-| KT | `ketoan@hoasen.edu.vn` |
-| PH | `ph01@gmail.com` ... `ph12@gmail.com` |
+| Role | Login                                          |
+| ---- | ---------------------------------------------- |
+| AD   | `admin@hoasen.edu.vn`                          |
+| HT   | `hieutruong@hoasen.edu.vn`                     |
+| GV   | `co.mai@hoasen.edu.vn`, `co.lan@hoasen.edu.vn` |
+| YT   | `yta.hoa@hoasen.edu.vn`                        |
+| KT   | `ketoan@hoasen.edu.vn`                         |
+| PH   | `ph01@gmail.com` ... `ph12@gmail.com`          |

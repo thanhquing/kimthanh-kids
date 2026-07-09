@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PickupAuthorizationStatus, PickupEventType, TenantRole, UserType } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { ownedStudentWhere, recordScopeWhere, schoolWhere } from "../common/scope/school-scope";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -55,17 +57,24 @@ export class PickupService {
 
   listAuthorizations(
     user: AuthUser,
-    opts: { studentId?: string; status?: PickupAuthorizationStatus } = {},
+    opts: PaginationQuery & { studentId?: string; status?: PickupAuthorizationStatus } = {},
   ) {
-    return this.prisma.db.pickupAuthorization.findMany({
-      where: {
-        ...recordScopeWhere(user),
-        ...(opts.studentId ? { studentId: opts.studentId } : {}),
-        ...(opts.status ? { status: opts.status } : {}),
-      },
-      include: authorizationInclude,
-      orderBy: { createdAt: "desc" },
-    });
+    const pg = page(opts);
+    const where = {
+      ...recordScopeWhere(user),
+      ...(opts.studentId ? { studentId: opts.studentId } : {}),
+      ...(opts.status ? { status: opts.status } : {}),
+    };
+    return Promise.all([
+      this.prisma.db.pickupAuthorization.findMany({
+        where,
+        include: authorizationInclude,
+        orderBy: { createdAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.pickupAuthorization.count({ where }),
+    ]).then(([items, total]) => paginated(items, { page: pg.page, pageSize: pg.pageSize, total }));
   }
 
   async createAuthorization(user: AuthUser, input: CreatePickupAuthorizationInput) {
@@ -126,16 +135,23 @@ export class PickupService {
     });
   }
 
-  listLogs(user: AuthUser, opts: { studentId?: string } = {}) {
-    return this.prisma.db.pickupLog.findMany({
-      where: {
-        ...recordScopeWhere(user),
-        ...(opts.studentId ? { studentId: opts.studentId } : {}),
-      },
-      include: logInclude,
-      orderBy: { occurredAt: "desc" },
-      take: 200,
-    });
+  async listLogs(user: AuthUser, opts: PaginationQuery & { studentId?: string } = {}) {
+    const pg = page(opts);
+    const where = {
+      ...recordScopeWhere(user),
+      ...(opts.studentId ? { studentId: opts.studentId } : {}),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.pickupLog.findMany({
+        where,
+        include: logInclude,
+        orderBy: { occurredAt: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.pickupLog.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   async createLog(user: AuthUser, input: CreatePickupLogInput) {

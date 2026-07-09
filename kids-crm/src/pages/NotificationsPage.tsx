@@ -2,7 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { crm, type NotificationType } from "@/api/crm";
 import { ApiError } from "@/api/http";
 import { PageHeader } from "@/components/PageHeader";
+import { LoadMore } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type TKey } from "@/i18n";
 import { formatDateTime } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -21,7 +23,7 @@ export function NotificationsPage() {
   const { t } = useT();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const feed = useQuery({ queryKey: ["notifications"], queryFn: () => crm.notifications.feed() });
+  const feed = useLoadMore(["notifications"], (pg) => crm.notifications.feedPage(pg));
   const prefs = useQuery({ queryKey: ["notification-prefs"], queryFn: () => crm.notifications.preferences() });
   const markRead = useMutation({
     mutationFn: (id: string) => crm.notifications.markRead(id),
@@ -64,7 +66,7 @@ export function NotificationsPage() {
           <div className="divide-y divide-slate-100">
             {feed.isLoading ? (
               <div className="p-4 text-sm text-slate-400">{t("common.loading")}</div>
-            ) : (feed.data ?? []).map((n) => (
+            ) : feed.items.map((n) => (
               <div key={n.id} className={cn("p-4", !n.readAt && "bg-orange-50/60")}>
                 <div className="flex gap-3">
                   <span className="badge b-peach h-fit">{t(TYPE_KEY[n.type])}</span>
@@ -81,6 +83,13 @@ export function NotificationsPage() {
                 </div>
               </div>
             ))}
+          </div>
+          <div className="p-4">
+            <LoadMore
+              hasMore={feed.hasNextPage}
+              loading={feed.isFetchingNextPage}
+              onMore={() => feed.fetchNextPage()}
+            />
           </div>
         </section>
         <aside className="card h-fit p-4">

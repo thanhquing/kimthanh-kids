@@ -4,13 +4,13 @@
 
 ## Gói cước (seed mặc định — `prisma/seed.ts`)
 
-| code | tier | Giá | HS / GV / Lớp / Lưu trữ | Tính năng bật |
-|---|---|---|---|---|
-| `free` | FREE | 0đ — **vĩnh viễn** | 20 / 2 / 2 / 1GB | — |
-| `starter` | STARTER | 490k/th · 4.9tr/năm | 100 / 8 / 8 / 5GB | media_gallery |
-| `pro` | PRO | 1.2tr/th · 3.24tr/quý · 12.24tr/năm | 300 / 25 / 20 / 20GB | media_gallery, lesson_plan, analytics |
-| `enterprise` | ENTERPRISE | thỏa thuận | ∞ | tất cả + api_access |
-| `dedicated` | CUSTOM | thỏa thuận (ẩn) | ∞ | tất cả; deploy riêng |
+| code         | tier       | Giá                                 | HS / GV / Lớp / Lưu trữ | Tính năng bật                         |
+| ------------ | ---------- | ----------------------------------- | ----------------------- | ------------------------------------- |
+| `free`       | FREE       | 0đ — **vĩnh viễn**                  | 20 / 2 / 2 / 1GB        | —                                     |
+| `starter`    | STARTER    | 490k/th · 4.9tr/năm                 | 100 / 8 / 8 / 5GB       | media_gallery                         |
+| `pro`        | PRO        | 1.2tr/th · 3.24tr/quý · 12.24tr/năm | 300 / 25 / 20 / 20GB    | media_gallery, lesson_plan, analytics |
+| `enterprise` | ENTERPRISE | thỏa thuận                          | ∞                       | tất cả + api_access                   |
+| `dedicated`  | CUSTOM     | thỏa thuận (ẩn)                     | ∞                       | tất cả; deploy riêng                  |
 
 > **Freemium:** `POST /public/signup` luôn gắn gói **`free` ở trạng thái ACTIVE vĩnh viễn** (`trialEndsAt=null`, `currentPeriodEnd ≈ +100 năm`) — **không qua TRIAL**. Tất cả gói seed hiện đặt `trialDays=0`; state `TRIALING` + cron `expireTrials` chỉ kích hoạt nếu cấu hình gói có `trialDays>0`.
 > **Signup trả phí:** landing có thể gửi `planCode` + `billingCycle`. Backend vẫn tạo tenant Free ACTIVE trước, sau đó tạo `PlatformInvoice` OPEN metadata `{ type: "SIGNUP_UPGRADE", targetPlanId, targetPlanCode, targetBillingCycle }`. Chỉ khi platform admin bấm **Đã thu** thì subscription mới nâng sang gói đã chọn.
@@ -43,12 +43,12 @@ stateDiagram-v2
 
 ## SubscriptionGuard — enforce theo trạng thái
 
-| Trạng thái | Hành vi |
-|---|---|
-| `TRIALING` / `ACTIVE` | Full quyền |
-| `PAST_DUE` | Full + header `X-Subscription-Status: PAST_DUE` (chỉ nhắc nợ, KHÔNG khóa) |
-| `SUSPENDED` | Chỉ đọc (GET) hoặc route `@AllowInactive` (billing) |
-| `CANCELED` / `EXPIRED` | Chặn, trừ `@AllowInactive` (auth + billing self-service) |
+| Trạng thái             | Hành vi                                                                   |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `TRIALING` / `ACTIVE`  | Full quyền                                                                |
+| `PAST_DUE`             | Full + header `X-Subscription-Status: PAST_DUE` (chỉ nhắc nợ, KHÔNG khóa) |
+| `SUSPENDED`            | Chỉ đọc (GET) hoặc route `@AllowInactive` (billing)                       |
+| `CANCELED` / `EXPIRED` | Chặn, trừ `@AllowInactive` (auth + billing self-service)                  |
 
 ## Feature-gating & Quota
 
@@ -64,19 +64,19 @@ stateDiagram-v2
 - `BillingService.markInvoicePaid(...)`:
   - HĐ thường: đánh dấu PAID, reactivate subscription và đẩy kỳ hiện tại như trước.
   - HĐ `SIGNUP_UPGRADE`: cập nhật `Subscription.planId/billingCycle`, set kỳ mới từ thời điểm thu tiền, clear `entitlementsCache`, `LifecycleService.syncTenantCache`, ghi `SubscriptionChange.UPGRADE`.
-- Thanh toán gateway MVP: `PaymentService.createPayment` hiện chỉ nhận `provider="VNPAY"` → `PlatformPayment` PENDING + `redirectUrl` VNPay sandbox. Webhook `POST /platform/webhooks/vnpay` → verify chữ ký (HMAC-SHA512), **dedupe** theo `(provider,eventId)`, **idempotent** theo `(provider,gatewayRef)` → invoice PAID → reactivate + đẩy kỳ. Provider khác trả `UNSUPPORTED_PROVIDER` cho tới khi có verifier riêng.
-- **Hardening chữ ký webhook (áp cho cả platform billing lẫn học phí `POST /tuition/webhooks/vnpay`):** verifier fail-closed — thiếu `VNPAY_HASH_SECRET` ở production → luôn từ chối; provider ≠ VNPAY bị chặn ngay ở route (`UNSUPPORTED_PROVIDER`). Ở dev/test khi chưa cấu hình secret thì bỏ qua verify cho tiện. **`VNPAY_HASH_SECRET` bắt buộc khi `NODE_ENV=production`** (config fail-fast lúc boot) để không vô tình nhận webhook giả. **URL cổng lấy từ env `VNPAY_PAY_URL`** (default sandbox cho dev) — prod fail-fast nếu URL còn `sandbox`, và `VNPAY_RETURN_URL` không được rỗng → tránh đẩy giao dịch thật sang môi trường thử.
+- Thanh toán gateway MVP: `PaymentService.createPayment` hiện chỉ nhận `provider="VNPAY"` → `PlatformPayment` PENDING + `redirectUrl` VNPay theo env (`VNPAY_PAY_URL` + `VNPAY_RETURN_URL`). Webhook `POST /platform/webhooks/vnpay` → verify chữ ký (HMAC-SHA512), **dedupe** theo `(provider,eventId)`, **idempotent** theo `(provider,gatewayRef)` → invoice PAID → reactivate + đẩy kỳ. Provider khác trả `UNSUPPORTED_PROVIDER` cho tới khi có verifier riêng.
+- **Hardening chữ ký webhook (áp cho cả platform billing lẫn học phí `POST /tuition/webhooks/vnpay`):** verifier fail-closed — thiếu `VNPAY_HASH_SECRET` ở production → luôn từ chối; provider ≠ VNPAY bị chặn ngay ở route (`UNSUPPORTED_PROVIDER`). Ở dev/test khi chưa cấu hình secret thì bỏ qua verify cho tiện. VNPay **không có default URL/secret trong code**: deploy không dùng VNPay có thể để trống; khi gọi flow VNPay mà thiếu `VNPAY_PAY_URL` hoặc `VNPAY_RETURN_URL` sẽ trả `VNPAY_NOT_CONFIGURED`. Nếu production có cấu hình bất kỳ biến VNPay nào thì `config.schema` bắt đủ secret + URL, và fail-fast nếu `VNPAY_PAY_URL` còn trỏ `sandbox`.
 - `billingMode`: `GATEWAY` (tự trả) · `MANUAL` (đối soát chuyển khoản) · `DEDICATED_FREE` (không thu qua gateway).
 - MVP VietQR hiện **đối soát thủ công** trong Platform Console; chưa có auto đối soát ngân hàng/Casso/SePay.
 
 ## Cron jobs ([`BillingJobsService`](../kids-api/src/billing/billing-jobs.service.ts))
 
-| Job | Lịch | Việc |
-|---|---|---|
-| `expireTrials` | hằng giờ | TRIALING & hết trial → EXPIRED |
+| Job                   | Lịch      | Việc                                  |
+| --------------------- | --------- | ------------------------------------- |
+| `expireTrials`        | hằng giờ  | TRIALING & hết trial → EXPIRED        |
 | `markOverdueInvoices` | hằng ngày | OPEN quá hạn → OVERDUE + sub PAST_DUE |
-| `dunningSuspend` | hằng ngày | PAST_DUE > 7 ngày → SUSPENDED |
-| `dunningCancel` | hằng ngày | SUSPENDED > 14 ngày → CANCELED |
+| `dunningSuspend`      | hằng ngày | PAST_DUE > 7 ngày → SUSPENDED         |
+| `dunningCancel`       | hằng ngày | SUSPENDED > 14 ngày → CANCELED        |
 
 Logic tách khỏi `BillingCron` để test gọi trực tiếp (deterministic, truyền `now`). Mọi job idempotent + chạy `prisma.system`.
 

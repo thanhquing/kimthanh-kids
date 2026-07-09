@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type PickupAuthorizationStatus = "ACTIVE" | "REVOKED";
 export type PickupEventType = "CHECK_IN" | "CHECK_OUT";
@@ -39,8 +39,18 @@ export function listPickupAuthorizations(studentId?: string) {
   });
 }
 
+export function listPickupAuthorizationsPage(studentId: string | undefined, params: PageParams) {
+  return api.getPage<PickupAuthorization>("/pickup/authorizations", {
+    query: { ...params, studentId, status: "ACTIVE" },
+  });
+}
+
 export function listPickupLogs(studentId?: string) {
   return api.get<PickupLog[]>("/pickup/logs", { query: { studentId } });
+}
+
+export function listPickupLogsPage(studentId: string | undefined, params: PageParams) {
+  return api.getPage<PickupLog>("/pickup/logs", { query: { ...params, studentId } });
 }
 
 export function createPickupLog(input: {

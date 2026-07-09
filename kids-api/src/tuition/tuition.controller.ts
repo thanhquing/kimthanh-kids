@@ -4,6 +4,7 @@ import { TenantRole, TuitionInvoiceStatus } from "@prisma/client";
 import { Response } from "express";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { renderInvoiceHtml } from "./tuition-print";
@@ -34,6 +35,12 @@ const manualSchema = z.object({
   reference: z.string().max(120).optional(),
 });
 const gatewaySchema = z.object({ method: z.enum(["VNPAY"]) });
+const mineQuery = paginationQuerySchema;
+const listQuery = paginationQuerySchema.extend({
+  status: z.nativeEnum(TuitionInvoiceStatus).optional(),
+  studentId: z.string().uuid().optional(),
+  search: z.string().trim().min(1).max(120).optional(),
+});
 
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
@@ -65,8 +72,11 @@ export class TuitionController {
 
   @Roles(TenantRole.PARENT)
   @Get("invoices/mine")
-  mine(@CurrentUser() user: AuthUser) {
-    return this.tuition.myInvoices(user);
+  mine(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(mineQuery)) q: z.infer<typeof mineQuery>,
+  ) {
+    return this.tuition.myInvoices(user, q);
   }
 
   @Roles(...STAFF)
@@ -86,10 +96,9 @@ export class TuitionController {
   @Get("invoices")
   list(
     @CurrentUser() user: AuthUser,
-    @Query("status") status?: TuitionInvoiceStatus,
-    @Query("studentId") studentId?: string,
+    @Query(new ZodValidationPipe(listQuery)) q: z.infer<typeof listQuery>,
   ) {
-    return this.tuition.list(user, { status, studentId });
+    return this.tuition.list(user, q);
   }
 
   @Roles(...VIEWERS)

@@ -6,7 +6,9 @@ import { AuthImage } from "@/components/ui/AuthImage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
+import { LoadMore } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT } from "@/i18n";
 import { formatDate } from "@/lib/labels";
 
@@ -118,7 +120,9 @@ export function AlbumsPage() {
   const [uploading, setUploading] = useState<Album | null>(null);
   const [removing, setRemoving] = useState<Album | null>(null);
   const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
-  const albums = useQuery({ queryKey: ["albums", classroomId], queryFn: () => crm.albums.list(classroomId) });
+  const albums = useLoadMore(["albums", classroomId], (pg) =>
+    crm.albums.page({ classroomId: classroomId || undefined, ...pg }),
+  );
   const selected = useQuery({ queryKey: ["album", selectedId], queryFn: () => crm.albums.get(selectedId!), enabled: !!selectedId });
   const remove = useMutation({
     mutationFn: (id: string) => crm.albums.remove(id),
@@ -143,13 +147,18 @@ export function AlbumsPage() {
             </select>
             <button className="btn-primary text-sm" onClick={() => setCreateOpen(true)}>{t("common.create")}</button>
           </div>
-          {(albums.data ?? []).map((a) => (
+          {albums.items.map((a) => (
             <button key={a.id} className="card w-full p-4 text-left hover:border-orange-200" onClick={() => setSelectedId(a.id)}>
               <div className="font-bold">{a.title}</div>
               <div className="text-sm text-slate-500">{a.classroom?.name ?? t("audience.ALL")} · {a._count?.photos ?? 0} {t("feature.photos")}</div>
               <div className="text-xs text-slate-400">{formatDate(a.createdAt)}</div>
             </button>
           ))}
+          <LoadMore
+            hasMore={albums.hasNextPage}
+            loading={albums.isFetchingNextPage}
+            onMore={() => albums.fetchNextPage()}
+          />
         </section>
         <section className="card p-5">
           {!selected.data ? (

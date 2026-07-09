@@ -1,5 +1,9 @@
 import { api } from "./http";
 
+export type { Page } from "./http";
+/** Tham số phân trang gửi lên server (khớp common/http/pagination của kids-api). */
+export type PageParams = { page?: number; pageSize?: number };
+
 export type DashboardSummary = {
   students: number;
   classrooms: number;
@@ -130,6 +134,8 @@ export const crm = {
 
   classrooms: {
     list: (schoolId?: string) => api.get<Classroom[]>("/classrooms", { query: { schoolId } }),
+    page: (opts: { schoolId?: string } & PageParams = {}) =>
+      api.getPage<Classroom>("/classrooms", { query: opts }),
     get: (id: string) => api.get<Classroom>(`/classrooms/${id}`),
     create: (body: CreateClassroom) => api.post<Classroom>("/classrooms", body),
     update: (id: string, body: UpdateClassroom) => api.patch<Classroom>(`/classrooms/${id}`, body),
@@ -139,6 +145,9 @@ export const crm = {
   students: {
     list: (opts: { classroomId?: string; schoolId?: string } = {}) =>
       api.get<Student[]>("/students", { query: opts }),
+    page: (
+      opts: { classroomId?: string; schoolId?: string; gender?: Gender; search?: string } & PageParams = {},
+    ) => api.getPage<Student>("/students", { query: opts }),
     get: (id: string) => api.get<Student>(`/students/${id}`),
     create: (body: CreateStudent) => api.post<Student>("/students", body),
     update: (id: string, body: UpdateStudent) => api.patch<Student>(`/students/${id}`, body),
@@ -151,6 +160,10 @@ export const crm = {
 
   members: {
     list: () => api.get<Member[]>("/tenant/members"),
+    page: (
+      opts: { search?: string; role?: TenantRole; isActive?: boolean; staffOnly?: boolean } & PageParams = {},
+    ) =>
+      api.getPage<Member>("/tenant/members", { query: opts }),
     create: (body: CreateMember) => api.post<Member["user"]>("/tenant/members", body),
     setStatus: (userId: string, isActive: boolean) =>
       api.patch<{ id: string; isActive: boolean }>(`/tenant/members/${userId}/status`, { isActive }),
@@ -166,12 +179,16 @@ export const crm = {
   attendance: {
     list: (classroomId: string, date: string) =>
       api.get<AttendanceRow[]>("/attendance", { query: { classroomId, date } }),
+    page: (opts: { classroomId: string; date: string } & PageParams) =>
+      api.getPage<AttendanceRow>("/attendance", { query: opts }),
     mark: (body: MarkAttendance) => api.post<{ marked: number; skipped: number }>("/attendance/mark", body),
   },
 
   reports: {
     list: (classroomId: string, date: string) =>
       api.get<DailyReport[]>("/daily-reports", { query: { classroomId, date } }),
+    page: (opts: { classroomId: string; date: string } & PageParams) =>
+      api.getPage<DailyReport>("/daily-reports", { query: opts }),
     byStudent: (studentId: string) => api.get<DailyReport[]>(`/daily-reports/student/${studentId}`),
     create: (body: CreateReport) => api.post<DailyReport>("/daily-reports", body),
   },
@@ -179,6 +196,8 @@ export const crm = {
   tuition: {
     list: (opts: { status?: TuitionInvoiceStatus; studentId?: string } = {}) =>
       api.get<Invoice[]>("/tuition/invoices", { query: opts }),
+    page: (opts: { status?: TuitionInvoiceStatus; studentId?: string; search?: string } & PageParams = {}) =>
+      api.getPage<Invoice>("/tuition/invoices", { query: opts }),
     get: (id: string) => api.get<Invoice>(`/tuition/invoices/${id}`),
     create: (body: CreateInvoice) => api.post<Invoice>("/tuition/invoices", body),
     payManual: (id: string, body: ManualPayment) =>
@@ -191,6 +210,8 @@ export const crm = {
   announcements: {
     list: (audience?: AnnouncementAudience) =>
       api.get<Announcement[]>("/announcements", { query: { audience } }),
+    page: (opts: { audience?: AnnouncementAudience } & PageParams = {}) =>
+      api.getPage<Announcement>("/announcements", { query: opts }),
     get: (id: string) => api.get<Announcement>(`/announcements/${id}`),
     create: (body: CreateAnnouncement) => api.post<Announcement>("/announcements", body),
     publish: (id: string) => api.post<Announcement>(`/announcements/${id}/publish`),
@@ -200,16 +221,22 @@ export const crm = {
   audit: {
     list: (opts: { action?: string; limit?: number } = {}) =>
       api.get<AuditLog[]>("/audit-logs", { query: opts }),
+    page: (opts: { action?: string } & PageParams = {}) =>
+      api.getPage<AuditLog>("/audit-logs", { query: opts }),
   },
 
   medicine: {
     list: (status?: MedicineStatus) => api.get<MedicineRequest[]>("/medicine", { query: { status } }),
+    page: (opts: { status?: MedicineStatus } & PageParams = {}) =>
+      api.getPage<MedicineRequest>("/medicine", { query: opts }),
     handle: (id: string, body: { status: MedicineStatus; note?: string }) =>
       api.post<MedicineRequest>(`/medicine/${id}/handle`, body),
   },
 
   incidents: {
     list: (studentId?: string) => api.get<Incident[]>("/incidents", { query: { studentId } }),
+    page: (opts: { studentId?: string } & PageParams = {}) =>
+      api.getPage<Incident>("/incidents", { query: opts }),
     create: (body: CreateIncident) => api.post<Incident>("/incidents", body),
   },
 
@@ -228,6 +255,8 @@ export const crm = {
   assignments: {
     list: (opts: { staffId?: string; classroomId?: string; weekday?: number } = {}) =>
       api.get<Assignment[]>("/assignments", { query: opts }),
+    page: (opts: { staffId?: string; classroomId?: string; weekday?: number } & PageParams = {}) =>
+      api.getPage<Assignment>("/assignments", { query: opts }),
     mine: () => api.get<Assignment[]>("/assignments/mine"),
     create: (body: CreateAssignment) => api.post<Assignment>("/assignments", body),
     update: (id: string, body: Partial<CreateAssignment>) => api.patch<Assignment>(`/assignments/${id}`, body),
@@ -236,6 +265,8 @@ export const crm = {
 
   leave: {
     list: (status?: LeaveStatus) => api.get<LeaveRequest[]>("/leave", { query: { status } }),
+    page: (opts: { status?: LeaveStatus } & PageParams = {}) =>
+      api.getPage<LeaveRequest>("/leave", { query: opts }),
     mine: () => api.get<LeaveRequest[]>("/leave/mine"),
     get: (id: string) => api.get<LeaveRequest>(`/leave/${id}`),
     create: (body: CreateLeaveRequest) => api.post<LeaveRequest>("/leave", body),
@@ -246,6 +277,8 @@ export const crm = {
   menus: {
     list: (opts: { weekStart?: string; classroomId?: string } = {}) =>
       api.get<WeeklyMenu[]>("/menus", { query: opts }),
+    page: (opts: { weekStart?: string; classroomId?: string } & PageParams = {}) =>
+      api.getPage<WeeklyMenu>("/menus", { query: opts }),
     get: (id: string) => api.get<WeeklyMenu>(`/menus/${id}`),
     create: (body: CreateWeeklyMenu) => api.post<WeeklyMenu>("/menus", body),
     remove: (id: string) => api.delete<{ ok: true }>(`/menus/${id}`),
@@ -256,6 +289,8 @@ export const crm = {
   lessons: {
     list: (opts: { classroomId?: string; week?: string } = {}) =>
       api.get<LessonPlan[]>("/lesson-plans", { query: opts }),
+    page: (opts: { classroomId?: string; week?: string } & PageParams = {}) =>
+      api.getPage<LessonPlan>("/lesson-plans", { query: opts }),
     get: (id: string) => api.get<LessonPlan>(`/lesson-plans/${id}`),
     create: (body: CreateLessonPlan) => api.post<LessonPlan>("/lesson-plans", body),
     remove: (id: string) => api.delete<{ ok: true }>(`/lesson-plans/${id}`),
@@ -271,6 +306,8 @@ export const crm = {
 
   albums: {
     list: (classroomId?: string) => api.get<Album[]>("/albums", { query: { classroomId } }),
+    page: (opts: { classroomId?: string } & PageParams = {}) =>
+      api.getPage<Album>("/albums", { query: opts }),
     get: (id: string) => api.get<Album>(`/albums/${id}`),
     create: (body: CreateAlbum) => api.post<Album>("/albums", body),
     addPhotos: (id: string, photos: { mediaId: string; caption?: string }[]) =>
@@ -282,6 +319,8 @@ export const crm = {
   notifications: {
     feed: (unreadOnly?: boolean) =>
       api.get<NotificationItem[]>("/notifications", { query: { unreadOnly } }),
+    feedPage: (opts: { unreadOnly?: boolean } & PageParams = {}) =>
+      api.getPage<NotificationItem>("/notifications", { query: opts }),
     unreadCount: () => api.get<{ count: number }>("/notifications/unread-count"),
     preferences: () => api.get<NotificationPreference[]>("/notifications/preferences"),
     setPreference: (type: NotificationType, enabled: boolean) =>
@@ -293,6 +332,11 @@ export const crm = {
   pickup: {
     authorizations: (opts: { studentId?: string; status?: PickupAuthorizationStatus } = {}) =>
       api.get<PickupAuthorization[]>("/pickup/authorizations", { query: opts }),
+    authorizationsPage: (
+      opts: { studentId?: string; status?: PickupAuthorizationStatus } & PageParams = {},
+    ) => api.getPage<PickupAuthorization>("/pickup/authorizations", { query: opts }),
+    logsPage: (opts: { studentId?: string } & PageParams = {}) =>
+      api.getPage<PickupLog>("/pickup/logs", { query: opts }),
     createAuthorization: (body: CreatePickupAuthorization) =>
       api.post<PickupAuthorization>("/pickup/authorizations", body),
     revokeAuthorization: (id: string) =>

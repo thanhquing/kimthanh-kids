@@ -3,6 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { AnnouncementAudience, TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
+import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
 import { AnnouncementsService } from "./announcements.service";
@@ -16,7 +17,10 @@ const createSchema = z.object({
   publish: z.boolean().optional(),
 });
 
-const listQuery = z.object({ audience: z.nativeEnum(AnnouncementAudience).optional() });
+const feedQuery = paginationQuerySchema;
+const listQuery = paginationQuerySchema.extend({
+  audience: z.nativeEnum(AnnouncementAudience).optional(),
+});
 
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
@@ -43,8 +47,11 @@ export class AnnouncementsController {
 
   @Roles(...STAFF, TenantRole.PARENT)
   @Get("feed")
-  feed(@CurrentUser() user: AuthUser) {
-    return this.announcements.feed(user);
+  feed(
+    @CurrentUser() user: AuthUser,
+    @Query(new ZodValidationPipe(feedQuery)) q: z.infer<typeof feedQuery>,
+  ) {
+    return this.announcements.feed(user, q);
   }
 
   @Roles(...STAFF)

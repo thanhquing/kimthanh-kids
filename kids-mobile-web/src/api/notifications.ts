@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "./http";
+import { api, type PageParams } from "./http";
 
 export type NotificationType =
   | "ATTENDANCE"
@@ -34,6 +34,10 @@ export const notificationKeys = {
 
 export function listNotifications() {
   return api.get<AppNotification[]>("/notifications");
+}
+
+export function listNotificationsPage(params: PageParams) {
+  return api.getPage<AppNotification>("/notifications", { query: params });
 }
 
 export function listNotificationPreferences() {
@@ -73,4 +77,3 @@ export function useMarkAllNotificationsRead() {
     mutationFn: markAllNotificationsRead,
   });
 }
-

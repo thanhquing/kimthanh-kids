@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { Mood, NotificationType, Prisma } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
+import { paginated } from "../common/http/api-response";
+import { page, PaginationQuery } from "../common/http/pagination";
 import { isStaff, schoolWhere } from "../common/scope/school-scope";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -116,24 +118,43 @@ export class DailyReportsService {
   }
 
   /** Báo cáo của 1 lớp trong 1 ngày. */
-  listByClass(user: AuthUser, classroomId: string, date: string) {
-    return this.prisma.db.dailyReport.findMany({
-      where: { classroomId, date: new Date(date), ...schoolWhere(user) },
-      include: { student: { select: { id: true, fullName: true } }, ...reportInclude },
-      orderBy: { student: { fullName: "asc" } },
-    });
+  async listByClass(user: AuthUser, opts: { classroomId: string; date: string } & PaginationQuery) {
+    const pg = page(opts);
+    const where = {
+      classroomId: opts.classroomId,
+      date: new Date(opts.date),
+      ...schoolWhere(user),
+    };
+    const [items, total] = await Promise.all([
+      this.prisma.db.dailyReport.findMany({
+        where,
+        include: { student: { select: { id: true, fullName: true } }, ...reportInclude },
+        orderBy: { student: { fullName: "asc" } },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.dailyReport.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 
   /** Timeline báo cáo của 1 học sinh — staff (school-scope) hoặc phụ huynh (con mình). */
-  studentFeed(user: AuthUser, studentId: string) {
+  async studentFeed(user: AuthUser, studentId: string, opts: PaginationQuery = {}) {
     const access = isStaff(user)
       ? schoolWhere(user)
       : { student: { parents: { some: { parentId: user.id } } } };
-    return this.prisma.db.dailyReport.findMany({
-      where: { studentId, ...access },
-      include: reportInclude,
-      orderBy: { date: "desc" },
-      take: 60,
-    });
+    const pg = page(opts, 60);
+    const where = { studentId, ...access };
+    const [items, total] = await Promise.all([
+      this.prisma.db.dailyReport.findMany({
+        where,
+        include: reportInclude,
+        orderBy: { date: "desc" },
+        skip: pg.skip,
+        take: pg.take,
+      }),
+      this.prisma.db.dailyReport.count({ where }),
+    ]);
+    return paginated(items, { page: pg.page, pageSize: pg.pageSize, total });
   }
 }

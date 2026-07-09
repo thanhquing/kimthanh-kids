@@ -5,9 +5,13 @@ import { Link } from "react-router-dom";
 import { crm, type Classroom, type CreateClassroom } from "@/api/crm";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { EntitySelect } from "@/components/ui/EntitySelect";
 import { Field, Modal } from "@/components/ui/Modal";
+import { LoadMore } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type Translator } from "@/i18n";
+import { fetchAllPages } from "@/lib/fetchAll";
 import { ApiError } from "@/api/http";
 
 function useSchools() {
@@ -42,12 +46,6 @@ function ClassroomForm({
         }
       : EMPTY,
   );
-
-  const teachers = useQuery({
-    queryKey: ["members"],
-    queryFn: () => crm.members.list(),
-    select: (rows) => rows.filter((m) => m.role === "TEACHER" && m.user.isActive),
-  });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -117,14 +115,16 @@ function ClassroomForm({
         </Field>
       </div>
       <Field label={t("classrooms.fHomeroom")}>
-        <select className="field" value={form.homeroomTeacherId} onChange={set("homeroomTeacherId")}>
-          <option value="">{t("classrooms.noHomeroom")}</option>
-          {(teachers.data ?? []).map((m) => (
-            <option key={m.user.id} value={m.user.id}>
-              {m.user.fullName}
-            </option>
-          ))}
-        </select>
+        <EntitySelect
+          value={form.homeroomTeacherId}
+          selectedLabel={editing?.homeroomTeacher?.fullName ?? ""}
+          fetchPage={(search) => crm.members.page({ search: search || undefined, role: "TEACHER", pageSize: 20 })}
+          labelOf={(m) => m.user.fullName}
+          idOf={(m) => m.user.id}
+          onChange={(id) => setForm((f) => ({ ...f, homeroomTeacherId: id }))}
+          queryKey={["members-select", "teachers"]}
+          placeholder={t("classrooms.noHomeroom")}
+        />
       </Field>
     </Modal>
   );
@@ -186,14 +186,14 @@ export function ClassroomsPage() {
   const schools = useSchools();
   const schoolId = schools.data?.[0]?.id;
 
-  const classrooms = useQuery({ queryKey: ["classrooms"], queryFn: () => crm.classrooms.list() });
+  const classrooms = useLoadMore(["classrooms"], (pg) => crm.classrooms.page(pg));
   const teachersCount = useQuery({
-    queryKey: ["members"],
-    queryFn: () => crm.members.list(),
+    queryKey: ["members", "teachers-count"],
+    queryFn: () => fetchAllPages((pg) => crm.members.page({ role: "TEACHER", ...pg })),
     select: (rows) => rows.filter((m) => m.role === "TEACHER").length,
   });
 
-  const list = classrooms.data ?? [];
+  const list = classrooms.items;
   const filtered = useMemo(
     () => list.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase())),
     [list, search],
@@ -263,6 +263,11 @@ export function ClassroomsPage() {
             ))}
           </div>
         )}
+        <LoadMore
+          hasMore={classrooms.hasNextPage}
+          loading={classrooms.isFetchingNextPage}
+          onMore={() => classrooms.fetchNextPage()}
+        />
       </main>
 
       {formOpen && (

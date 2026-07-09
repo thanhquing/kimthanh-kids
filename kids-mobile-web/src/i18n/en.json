@@ -4,7 +4,8 @@
   },
   "common": {
     "back": "Back",
-    "loading": "Loading data…"
+    "loading": "Loading data…",
+    "loadMore": "Load more"
   },
   "auth": {
     "welcome": "Welcome back",
