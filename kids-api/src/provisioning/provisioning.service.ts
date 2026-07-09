@@ -286,7 +286,7 @@ export class ProvisioningService {
   /**
    * Danh sách trường công khai để CHỌN ở màn login (độc lập subdomain). Mặc định (q rỗng) trả
    * danh sách để hiện thẳng trong dropdown; có q → lọc thêm theo tên/mã trường/MST. Chỉ trả field
-   * an toàn (logo/tên/MST/mã/domain) — KHÔNG lộ gói/email/bank. Cap 50 để giới hạn payload.
+   * an toàn (logo/tên/mã/domain) — KHÔNG trả MST/gói/email/bank. Cap 50 để giới hạn payload.
    */
   async searchTenants(q: string) {
     const term = (q ?? "").trim();

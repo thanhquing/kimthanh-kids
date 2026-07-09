@@ -38,6 +38,20 @@ describe("F — Giao tiếp & nội dung (announcements/menu/lesson-plan/album)"
       .expect(201);
     return { userId: r.body.data.id as string, token: login.body.data.accessToken as string };
   }
+  async function invitedMember(t: TenantFixture, role: string, schoolId?: string) {
+    const email = `${role.toLowerCase()}-${rnd()}@x.vn`;
+    await api()
+      .post("/api/tenant/members")
+      .set(auth(t))
+      .send({ email, fullName: role, role, schoolId, password: "Password123" })
+      .expect(201);
+    const login = await api()
+      .post("/api/auth/login")
+      .set("Host", t.host)
+      .send({ email, password: "Password123" })
+      .expect(201);
+    return login.body.data.accessToken as string;
+  }
   async function classroom(t: TenantFixture, schoolId: string, name: string) {
     const r = await api().post("/api/classrooms").set(auth(t)).send({ schoolId, name }).expect(201);
     return r.body.data.id as string;
@@ -179,6 +193,39 @@ describe("F — Giao tiếp & nội dung (announcements/menu/lesson-plan/album)"
     // PH xem thực đơn của trường con
     const list = await api().get("/api/menus").set(auth(t, parent.token)).expect(200);
     expect(list.body.data.length).toBe(1);
+  });
+
+  it("staff school-scope không tạo menu/album trực tiếp vào school khác", async () => {
+    const t = await createTenant(app);
+    const schoolA = await mainSchool(t);
+    const schoolB = (
+      await api()
+        .post("/api/tenant/schools")
+        .set(auth(t))
+        .send({ name: "Cơ sở F B", code: "FB" })
+        .expect(201)
+    ).body.data.id as string;
+
+    const nurseToken = await invitedMember(t, "NURSE", schoolA);
+    const menuRes = await api()
+      .post("/api/menus")
+      .set(auth(t, nurseToken))
+      .send({
+        schoolId: schoolB,
+        weekStart: "2026-07-13",
+        meals: [{ weekday: 1, mealType: "LUNCH", name: "Cơm", ingredients: "gạo" }],
+      })
+      .expect(403);
+    expect(menuRes.body.error.code).toBe("SCHOOL_FORBIDDEN");
+
+    await enableFeature(t, "media_gallery");
+    const teacherToken = await invitedMember(t, "TEACHER", schoolA);
+    const albumRes = await api()
+      .post("/api/albums")
+      .set(auth(t, teacherToken))
+      .send({ schoolId: schoolB, title: "Sai cơ sở" })
+      .expect(403);
+    expect(albumRes.body.error.code).toBe("SCHOOL_FORBIDDEN");
   });
 
   // ── F4 Lesson Plan (feature-gated lesson_plan) ──

@@ -2,7 +2,12 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { paginated } from "../common/http/api-response";
 import { page, PaginationQuery } from "../common/http/pagination";
-import { contentScopeForKids, isStaff, schoolWhere } from "../common/scope/school-scope";
+import {
+  assertSchoolAccess,
+  contentScopeForKids,
+  isStaff,
+  schoolWhere,
+} from "../common/scope/school-scope";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface CreateAlbumInput {
@@ -45,6 +50,7 @@ export class AlbumsService {
         code: "NO_SCHOOL",
         message: "Cần chỉ định cơ sở (schoolId)",
       });
+    assertSchoolAccess(user, schoolId);
 
     return this.prisma.db.album.create({
       data: {

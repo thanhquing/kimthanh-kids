@@ -55,7 +55,7 @@ Thứ tự resolve (precedence): SILO → Host → x-tenant → JWT
 
 Client không qua subdomain (mobile-web/native, CRM dev) chọn trường ở **màn login** rồi gửi tenant qua header — không phụ thuộc Host:
 
-1. **Discovery công khai** `GET /public/tenants?q=` (`@Public`, cross-tenant `prisma.system`): `q` rỗng → danh sách (cap 50, sắp theo tên); có `q` → lọc theo tên/`Tenant.code`/MST. Trả **chỉ field an toàn** `{ id, code, slug, displayName, taxCode, logoUrl, primaryDomain }` (ẩn `SUSPENDED`/đã xoá; KHÔNG lộ gói/email/bank).
+1. **Discovery công khai** `GET /public/tenants?q=` (`@Public`, cross-tenant `prisma.system`): `q` rỗng → danh sách (cap 50, sắp theo tên); có `q` → lọc theo tên/`Tenant.code`/MST. Trả **chỉ field an toàn** `{ id, code, slug, displayName, logoUrl, primaryDomain }` (ẩn `SUSPENDED`/đã xoá; cho tìm theo MST nhưng **KHÔNG trả `taxCode`**; cũng KHÔNG lộ gói/email/bank).
 2. Client lưu `tenantId` đã chọn, gửi **`x-tenant: <tenantId>`** ở `POST /auth/login` (và các request sau — tùy chọn vì token đã mang `tenantId`).
 3. **An toàn:** `x-tenant` chỉ *seed* context **trước auth**; sau khi có token, `jwt.tenantId` là nguồn sự thật và `TenantGuard` chặn nếu lệch → **không thể vượt tenant**. `x-tenant` sai/không có khi login tenant (mà cũng không có Host) → `TENANT_REQUIRED`.
 

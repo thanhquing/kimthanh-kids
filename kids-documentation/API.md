@@ -230,7 +230,7 @@ Role: `AD`, `KT`. Host: tenant. Các endpoint có ghi Inactive-OK vẫn gọi đ
 
 ## Platform Admin
 
-Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BILLING`.
+Host: `admin.<ROOT_DOMAIN>`. Role platform chính: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BILLING`; một số route nội dung landing cho phép thêm `PLATFORM_SUPPORT` (ghi rõ ở từng dòng).
 
 | Method   | Path                                                  | Body / Query                                                                                                                                                                                                            | Data trả về                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | -------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -277,10 +277,14 @@ Host: `admin.<ROOT_DOMAIN>`. Role platform: `PLATFORM_SUPER_ADMIN`, `PLATFORM_BI
 {
   schoolName: string;
   slug: string;
+  code?: string;
+  taxCode: string;
   adminEmail: string;
   adminPassword: string;
   adminFullName: string;
   phone?: string;
+  planCode?: string;
+  billingCycle?: BillingCycle;
 }
 ```
 
@@ -742,8 +746,8 @@ type AnnouncementCreate = {
 ```ts
 type MenuCreate = {
   weekStart: string; // YYYY-MM-DD
-  schoolId?: string;
-  classroomId?: string;
+  schoolId?: string; // nếu truyền trực tiếp, user phải có quyền trên school này
+  classroomId?: string; // nếu truyền classroomId, backend lấy schoolId từ lớp và kiểm school-scope
   note?: string; // max 500
   meals: Array<{
     weekday: number; // 1..7
@@ -766,7 +770,7 @@ type LessonPlanCreate = {
 };
 type AlbumCreate = {
   classroomId?: string;
-  schoolId?: string;
+  schoolId?: string; // nếu truyền trực tiếp, user phải có quyền trên school này
   title: string; // 1..200
   description?: string; // max 1000
 };
@@ -781,9 +785,9 @@ Lỗi thường gặp: `FEATURE_NOT_AVAILABLE`, `NO_MENU`, `NO_PLAN`, `NO_ALBUM`
 
 ## G — Notifications, Dashboard, Audit
 
-| Method  | Path                                            | Role            | Body / Query                                   | Data trả về                           |
-| ------- | ----------------------------------------------- | --------------- | ---------------------------------------------- | ------------------------------------- | -------------------------------------------- |
-| `GET`   | `/notifications?page=&pageSize=&unreadOnly=true | false`          | mọi tenant role                                | optional                              | paginated `Notification[]` của user hiện tại |
+| Method  | Path                                                        | Role            | Body / Query                                 | Data trả về                                    |
+| ------- | ----------------------------------------------------------- | --------------- | -------------------------------------------- | ---------------------------------------------- |
+| `GET`   | `/notifications?page=&pageSize=&unreadOnly=true\|false`     | mọi tenant role | optional                                     | paginated `Notification[]` của user hiện tại   |
 | `GET`   | `/notifications/unread-count`                   | mọi tenant role | -                                              | `{ count: number }`                   |
 | `GET`   | `/notifications/preferences`                    | mọi tenant role | -                                              | preferences cho đủ `NotificationType` |
 | `PATCH` | `/notifications/preferences`                    | mọi tenant role | `{ type: NotificationType, enabled: boolean }` | `NotificationPreference`              |

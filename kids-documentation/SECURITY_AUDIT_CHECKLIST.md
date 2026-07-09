@@ -128,7 +128,7 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 | [~]   | Không truyền object query raw vào Prisma nếu chưa validate kiểu                                                           | service review                                         | PARTIAL — list domain chính đã Zod/page cap và build `where` từ field allowlist; còn vài query đơn giản như export/status cần validate enum ở controller để đóng hẳn                              |
 | [~]   | Không dùng `prisma.system` trong tenant service nếu không filter `tenantId` tường minh                                    | `rg "prisma.system"` + code review                     | PARTIAL — các flow tenant-facing chính filter `tenantId` tường minh; `prisma.system` vẫn là foot-gun cho soft-delete/isolation, cần lint/CI guard như mục còn lại vòng 5                         |
 | [x]   | `findUnique/update/delete` theo PK không gây IDOR; phải `findFirst` theo scope trước hoặc filter tenant/school tường minh | service review                                         | PASS — 19 điểm PK-mutation đều `findFirst`+scope trước (audit vòng 2) |
-| [ ]   | Nested `create`, `upsert`, `createMany` set `tenantId`/`schoolId` tường minh                                              | service review                                         | TODO                                                                  |
+| [x]   | Nested `create`, `upsert`, `createMany` set `tenantId`/`schoolId` tường minh                                              | service review                                         | PASS — audit vòng 10: nested domain writes (`Membership`, `TuitionInvoiceItem`, `MedicineStatusHistory`, `Attendance`, `DailyReportPhoto`, `Meal`, `Activity`, `AlbumPhoto`, `Notification*`) set `tenantId`; fix thêm `assertSchoolAccess` cho menu/album khi truyền `schoolId` trực tiếp |
 | [x]   | Raw SQL nếu có phải parameterized và có tenant/school filter                                                              | `rg "\\$queryRaw\\|\\$executeRaw"`                     | PASS — `rg "\\$queryRaw\\|\\$executeRaw\\|queryRawUnsafe\\|executeRawUnsafe" kids-api/src kids-api/prisma` không có kết quả                                                                        |
 | [x]   | Lỗi trả về không lộ stack trace, SQL, secret, token, đường dẫn nội bộ                                                     | test lỗi validation/500                                | PASS — `AllExceptionsFilter` trả envelope `{code,message,details}`; Prisma `P2002/P2025` không trả `meta`; 500 log stack server-side nhưng client chỉ nhận message chung                          |
 | [~]   | Log không ghi password, refresh token, access token, thông tin sức khỏe chi tiết, nội dung ảnh                            | log review                                             | PARTIAL — log app hiện chủ yếu ghi count/id/action, không thấy token/password; vẫn cần prod redaction/masking cho exception stack và PII theo §11                                                    |
@@ -184,7 +184,7 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 
 | Check | Hạng mục                                                                                         | Bằng chứng cần có    | Trạng thái                                                                                                                                                        |
 | ----- | ------------------------------------------------------------------------------------------------ | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [ ]   | API contract trong [API.md](./API.md) khớp controller thực tế                                    | endpoint diff/review | TODO                                                                                                                                                              |
+| [x]   | API contract trong [API.md](./API.md) khớp controller thực tế                                    | endpoint diff/review | PASS — audit vòng 10: script diff method/path controller ↔ API.md sạch (`missing:[]`, `extra:[]`); cập nhật drift PlatformCreateTenantInput, platform roles, public tenant MST, notification table, menu/album school-scope |
 | [x]   | Swagger `/docs` không public ở production                                                        | config/test          | PASS — `main.ts` chỉ `SwaggerModule.setup` khi `!env.isProd` (vòng 7 verify)                                                                                      |
 | [x]   | CORS chỉ cho origin hợp lệ, không wildcard khi gửi credential                                    | config review        | PASS — `config.schema` fail-fast wildcard ở prod (vòng 1)                                                                                                         |
 | [x]   | Header bảo mật từ Helmet có hiệu lực                                                             | response headers     | PASS — `main.ts` `app.use(helmet())` global (default headers: CSP mặc định off — xem §12 CSP reverse-proxy)                                                       |
@@ -500,7 +500,19 @@ Migration `auth_hardening_lockout_tokenversion_refresh_family` thêm `User.token
 
 **CÒN MỞ SAU SYNC:**
 
-- Code/audit nhỏ: nested create/upsert/createMany tenantId review, API.md endpoint diff, sort/filter allowlist, payload mass-assignment e2e riêng.
+- Code/audit nhỏ: sort/filter allowlist, payload mass-assignment e2e riêng.
 - Mini-project: FE token → cookie `HttpOnly` + access in-memory.
 - Product/legal: deletion contract, retention/export/erasure/consent/offboarding.
 - Devops: HTTPS/HSTS/CSP, DB firewall, non-root runtime, CI security scan, monitoring/alert, backup/rollback.
+
+### Vòng 10 (2026-07-09) — nested writes + API contract diff
+
+**ĐÃ FIX/AUDIT:**
+
+- ✅ §4 nested `create/upsert/createMany`: rà các nested/domain writes và xác nhận `tenantId` được set tường minh ở các chỗ cần (`Membership`, `TuitionInvoiceItem`, `MedicineStatusHistory`, `Attendance`, `DailyReportPhoto`, `Meal`, `Activity`, `AlbumPhoto`, `NotificationPreference`/`UsageCounter`).
+- ✅ Fix school-scope khi tạo menu/album bằng `schoolId` trực tiếp: `MenusService.create` và `AlbumsService.create` gọi `assertSchoolAccess(user, schoolId)` sau khi resolve school.
+- ✅ e2e regression: `communication.e2e-spec.ts` thêm case staff scope school A không tạo menu/album ở school B → `SCHOOL_FORBIDDEN`.
+- ✅ §8 API contract: script diff method/path controller ↔ API.md sạch (`missing:[]`, `extra:[]`); cập nhật drift chi tiết trong API/MULTI_TENANCY docs.
+- Snapshot checklist sau vòng 10: **127 mục = 93 PASS, 14 PARTIAL, 20 TODO**.
+
+**Verify focused:** `pnpm test:e2e -- communication.e2e-spec.ts` PASS — 5 tests / 1 suite.
