@@ -117,23 +117,23 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 
 ## 4. Backend Code — NestJS & Prisma
 
-| Check | Hạng mục                                                                                                                  | Bằng chứng cần có                                      | Trạng thái                                                            |
-| ----- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------- | ---- |
-| [ ]   | Guard chain đúng thứ tự: throttling, JWT, tenant, subscription, roles                                                     | review `app.module.ts`/guard config                    | TODO                                                                  |
-| [ ]   | Endpoint public chỉ dùng `@Public` khi thật sự cần                                                                        | danh sách endpoint public đối chiếu [API.md](./API.md) | TODO                                                                  |
-| [ ]   | Tất cả controller domain có `@Roles` phù hợp, không chỉ dựa vào FE ẩn nút                                                 | controller review                                      | TODO                                                                  |
-| [ ]   | Endpoint platform dùng `@PlatformRoles`, không lẫn với role tenant                                                        | controller review                                      | TODO                                                                  |
-| [ ]   | Endpoint có feature gating/quota dùng `@RequireFeature` hoặc service quota đúng nơi                                       | module review + e2e                                    | TODO                                                                  |
-| [ ]   | Query/body/path params dùng Zod DTO hoặc pipe tương đương                                                                 | DTO/controller review                                  | TODO                                                                  |
-| [ ]   | Không truyền object query raw vào Prisma nếu chưa validate kiểu                                                           | service review                                         | TODO                                                                  |
-| [ ]   | Không dùng `prisma.system` trong tenant service nếu không filter `tenantId` tường minh                                    | `rg "prisma.system"` + code review                     | TODO                                                                  |
+| Check | Hạng mục                                                                                                                  | Bằng chứng cần có                                      | Trạng thái                                                                                                                                                                                          |
+| ----- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [x]   | Guard chain đúng thứ tự: throttling, JWT, tenant, subscription, roles                                                     | review `app.module.ts`/guard config                    | PASS — `APP_GUARD` trong `app.module.ts`: `ThrottlerGuard` → `JwtAuthGuard` → `TenantGuard` → `SubscriptionGuard` → `RolesGuard`; auth route có named throttler riêng                           |
+| [x]   | Endpoint public chỉ dùng `@Public` khi thật sự cần                                                                        | danh sách endpoint public đối chiếu [API.md](./API.md) | PASS — chỉ `auth/login`, `auth/refresh`, `/public/*`, public posts/assets/invoice và webhook platform/tuition; khớp API.md public/webhook sections                                                 |
+| [x]   | Tất cả controller domain có `@Roles` phù hợp, không chỉ dựa vào FE ẩn nút                                                 | controller review                                      | PASS — domain controller đều có `@Roles` ở class hoặc method; e2e RBAC phủ tenant/platform/Finance/Nurse negative cases                                                                             |
+| [x]   | Endpoint platform dùng `@PlatformRoles`, không lẫn với role tenant                                                        | controller review                                      | PASS — `platform`, `platform/posts`, `platform/usage` gated bằng `@PlatformRoles`; public invoice/assets tách controller `@Public`; tenant user gọi platform → 403 (`auth-rbac.e2e`)                |
+| [x]   | Endpoint có feature gating/quota dùng `@RequireFeature` hoặc service quota đúng nơi                                       | module review + e2e                                    | PASS — `albums` dùng `@RequireFeature("media_gallery")`, `lesson-plans` dùng `@RequireFeature("lesson_plan")`; quota ở students/classrooms/members/storage qua `EntitlementService.consumeQuota` |
+| [~]   | Query/body/path params dùng Zod DTO hoặc pipe tương đương                                                                 | DTO/controller review                                  | PARTIAL — body/query hầu hết dùng `ZodValidationPipe` + pagination chung; còn một số path param id/raw query đơn giản chưa ép UUID/enum ở boundary, cần audit tiếp khi đóng §8 sort/filter        |
+| [~]   | Không truyền object query raw vào Prisma nếu chưa validate kiểu                                                           | service review                                         | PARTIAL — list domain chính đã Zod/page cap và build `where` từ field allowlist; còn vài query đơn giản như export/status cần validate enum ở controller để đóng hẳn                              |
+| [~]   | Không dùng `prisma.system` trong tenant service nếu không filter `tenantId` tường minh                                    | `rg "prisma.system"` + code review                     | PARTIAL — các flow tenant-facing chính filter `tenantId` tường minh; `prisma.system` vẫn là foot-gun cho soft-delete/isolation, cần lint/CI guard như mục còn lại vòng 5                         |
 | [x]   | `findUnique/update/delete` theo PK không gây IDOR; phải `findFirst` theo scope trước hoặc filter tenant/school tường minh | service review                                         | PASS — 19 điểm PK-mutation đều `findFirst`+scope trước (audit vòng 2) |
 | [ ]   | Nested `create`, `upsert`, `createMany` set `tenantId`/`schoolId` tường minh                                              | service review                                         | TODO                                                                  |
-| [ ]   | Raw SQL nếu có phải parameterized và có tenant/school filter                                                              | `rg "\\$queryRaw\\|\\$executeRaw"`                     | TODO                                                                  |
-| [ ]   | Lỗi trả về không lộ stack trace, SQL, secret, token, đường dẫn nội bộ                                                     | test lỗi validation/500                                | TODO                                                                  |
-| [ ]   | Log không ghi password, refresh token, access token, thông tin sức khỏe chi tiết, nội dung ảnh                            | log review                                             | TODO                                                                  |
-| [ ]   | `AuditService.log` ghi đủ hành động nhạy cảm: login/admin mutation/billing/tuition/medicine/media                         | audit event sample                                     | TODO                                                                  |
-| [ ]   | `NotificationsService.notify` không làm lộ dữ liệu nhạy cảm trong payload                                                 | payload review                                         | TODO                                                                  |
+| [x]   | Raw SQL nếu có phải parameterized và có tenant/school filter                                                              | `rg "\\$queryRaw\\|\\$executeRaw"`                     | PASS — `rg "\\$queryRaw\\|\\$executeRaw\\|queryRawUnsafe\\|executeRawUnsafe" kids-api/src kids-api/prisma` không có kết quả                                                                        |
+| [x]   | Lỗi trả về không lộ stack trace, SQL, secret, token, đường dẫn nội bộ                                                     | test lỗi validation/500                                | PASS — `AllExceptionsFilter` trả envelope `{code,message,details}`; Prisma `P2002/P2025` không trả `meta`; 500 log stack server-side nhưng client chỉ nhận message chung                          |
+| [~]   | Log không ghi password, refresh token, access token, thông tin sức khỏe chi tiết, nội dung ảnh                            | log review                                             | PARTIAL — log app hiện chủ yếu ghi count/id/action, không thấy token/password; vẫn cần prod redaction/masking cho exception stack và PII theo §11                                                    |
+| [~]   | `AuditService.log` ghi đủ hành động nhạy cảm: login/admin mutation/billing/tuition/medicine/media                         | audit event sample                                     | PARTIAL — platform billing/settings/impersonate, tuition payment, student delete đã log; cần audit coverage matrix cho login/admin mutation/medicine/media để đóng PASS                            |
+| [~]   | `NotificationsService.notify` không làm lộ dữ liệu nhạy cảm trong payload                                                 | payload review                                         | PARTIAL — notify là best-effort và không log payload, nhưng một số title/body còn chứa tên bé/tên thuốc/note; trước khi bật push FCM cần chính sách không đưa PII nhạy cảm ra title/body            |
 
 ## 5. Authentication & Session
 
@@ -158,8 +158,8 @@ Login chọn trường qua `x-tenant` (PASS — TenantGuard chặn lệch token)
 | [x]   | JWT tenant không khớp host/header bị chặn                                                           | e2e negative test       | PASS — `TENANT_MISMATCH` (auth-rbac e2e)                                          |
 | [x]   | Parent chỉ thấy dữ liệu của con mình                                                                | e2e parent isolation    | PASS — `recordScopeWhere`/`ownedStudentWhere` (tuition/health e2e)                |
 | [x]   | Staff chỉ thấy dữ liệu trong school scope được phân quyền                                           | e2e school scope        | PASS — `schoolWhere`/`assertSchoolAccess` (vòng 2)                                |
-| [ ]   | Finance không truy cập module sức khỏe nếu không có role                                            | e2e RBAC                | TODO — thêm test matrix (§13)                                                     |
-| [ ]   | Nurse không truy cập học phí nếu không có role                                                      | e2e RBAC                | TODO — thêm test matrix (§13)                                                     |
+| [x]   | Finance không truy cập module sức khỏe nếu không có role                                            | e2e RBAC                | PASS — `auth-rbac.e2e`: FINANCE gọi `/api/medicine` và `/api/incidents` → 403; health/medicine/incidents/allergies đã gỡ FINANCE khỏi staff least-privilege |
+| [x]   | Nurse không truy cập học phí nếu không có role                                                      | e2e RBAC                | PASS — `auth-rbac.e2e`: NURSE `POST /api/tuition/invoices` → 403; tuition MANAGERS/VIEWERS không chứa NURSE                                          |
 | [x]   | Teacher không sửa billing/platform settings                                                         | e2e RBAC                | PASS — `@Roles`/`@PlatformRoles` (vòng 2 verify)                                  |
 | [x]   | Platform staff không được đọc dữ liệu tenant nhạy cảm nếu endpoint không có mục đích hỗ trợ rõ ràng | platform API review     | PASS — platform endpoint gated `@PlatformRoles`, dùng cho hỗ trợ/billing (vòng 2) |
 | [x]   | Tenant A không đọc/sửa/xóa record Tenant B bằng ID đoán được                                        | IDOR test matrix        | PASS — Prisma tenant-extension + `isolation.e2e`                                  |
@@ -324,7 +324,7 @@ Mỗi phát hiện nên ghi theo mẫu:
 - Bằng chứng: request/response/log/screenshot
 ```
 
-Tổng kết audit (tính đến vòng 4 — 2026-07-04):
+Tổng kết findings exploit đã fix (bảng lịch sử vòng 1-4 — các vòng 5-8 ghi chi tiết bên dưới):
 
 | Severity | Số lượng | Đã fix | Còn mở | Ghi chú                                                                                   |
 | -------- | -------: | -----: | -----: | ----------------------------------------------------------------------------------------- |
@@ -488,3 +488,19 @@ Migration `auth_hardening_lockout_tokenversion_refresh_family` thêm `User.token
 **CÒN MỞ (đưa lên CÒN LẠI):**
 
 - 🔧 [LOW] Allowlist sort/filter field cho list domain (§8) — chưa làm.
+
+### Vòng 9 (2026-07-09) — sync checklist theo code latest
+
+**ĐÃ CẬP NHẬT DOCS (không đổi code):**
+
+- §4 Backend Code: tick PASS cho guard chain, inventory public endpoint, domain `@Roles`, platform `@PlatformRoles`, feature/quota gating, raw SQL = 0, exception filter không lộ stack/Prisma meta ra client.
+- §4 chuyển sang PARTIAL cho các mục chưa nên "xanh hóa" hoàn toàn: Zod/path param coverage, raw query đơn giản, `prisma.system` foot-gun, log redaction prod, audit-log coverage matrix, notification payload PII trước push FCM.
+- §6 Multi-Tenancy/RBAC: Finance→medicine/incidents 403 và Nurse→tuition 403 đã sync từ `auth-rbac.e2e`.
+- Snapshot checklist sau sync: **127 mục = 91 PASS, 14 PARTIAL, 22 TODO**.
+
+**CÒN MỞ SAU SYNC:**
+
+- Code/audit nhỏ: nested create/upsert/createMany tenantId review, API.md endpoint diff, sort/filter allowlist, payload mass-assignment e2e riêng.
+- Mini-project: FE token → cookie `HttpOnly` + access in-memory.
+- Product/legal: deletion contract, retention/export/erasure/consent/offboarding.
+- Devops: HTTPS/HSTS/CSP, DB firewall, non-root runtime, CI security scan, monitoring/alert, backup/rollback.
