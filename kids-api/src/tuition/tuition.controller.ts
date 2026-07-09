@@ -41,6 +41,9 @@ const listQuery = paginationQuerySchema.extend({
   studentId: z.string().uuid().optional(),
   search: z.string().trim().min(1).max(120).optional(),
 });
+const exportQuery = z.object({
+  status: z.nativeEnum(TuitionInvoiceStatus).optional(),
+});
 
 const STAFF = [
   TenantRole.SCHOOL_ADMIN,
@@ -84,9 +87,9 @@ export class TuitionController {
   async exportCsv(
     @CurrentUser() user: AuthUser,
     @Res() res: Response,
-    @Query("status") status?: TuitionInvoiceStatus,
+    @Query(new ZodValidationPipe(exportQuery)) q: z.infer<typeof exportQuery>,
   ) {
-    const csv = await this.tuition.exportCsv(user, { status });
+    const csv = await this.tuition.exportCsv(user, { status: q.status });
     res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader("Content-Disposition", 'attachment; filename="hoa-don-hoc-phi.csv"');
     res.send(csv);

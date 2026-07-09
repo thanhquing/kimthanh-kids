@@ -272,6 +272,18 @@ erDiagram
 - `PlatformWebhookEvent`: `@@unique([provider, eventId])` (dedupe).
 - `UsageCounter`: `@@unique([tenantId, metric])`.
 
+## Deletion contract (xóa dữ liệu)
+
+Nguyên tắc: **soft-delete là cơ chế chính**; hard-delete chỉ dùng cho erasure/ops có kiểm soát và được FK bảo vệ.
+
+- **Soft-delete (`deletedAt`)** — model: `Tenant`, `School`, `Membership`, `Plan`, `Subscription`, `PlatformInvoice`, `Classroom`, `Student` (tập `SOFT_DELETE` trong `prisma-tenant.extension.ts`). Xóa thường = `update({ deletedAt })`; extension **tự ẩn** bản ghi `deletedAt != null` ở chiều đọc. Không physical delete trong luồng nghiệp vụ.
+- **Cascade trong aggregate** — bản ghi con chỉ tồn tại cùng cha thì `onDelete: Cascade`: `Student → Attendance/DailyReport/HealthRecord/MedicineRequest/Allergy/Incident/PickupLog/TuitionInvoice/StaffAssignment`; `TuitionInvoice → Item/Payment`; `DailyReport → Photo`; `WeeklyMenu → Meal`; `LessonPlan → Activity`; `Album → Photo`; `MedicineRequest → StatusHistory`; `Subscription/Plan/PlatformInvoice → *`. → **Erasure 1 học sinh** (right-to-erasure) xóa sạch dây con.
+- **RESTRICT ở cạnh top** — FK `tenantId`/`schoolId` (required) = `ON DELETE RESTRICT`: **không thể hard-delete Tenant/School khi còn bản ghi con** → chống xóa nhầm dây chuyền cả trường/tenant và chống orphan. Offboarding/xoá-tenant toàn phần là **quy trình ops tường minh, có audit**, không phải một lệnh `DELETE` lạc.
+- **SetNull cho ref optional** — vd `Student.classroomId`, `DailyReport.classroomId`: xóa lớp thì bản ghi vẫn sống, chỉ null tham chiếu.
+- **Media file** — hiện xóa record `Media` không tự xóa file vật lý (S3/đĩa); cleanup theo retention policy — xem `SECURITY_AUDIT_CHECKLIST.md` §11.
+
+> Regression: `test/deletion-contract.e2e-spec.ts` khóa hành vi (cascade Student→Allergy; RESTRICT chặn xóa School/Tenant còn con).
+
 ---
 
 ## Tầng B — Domain (Phase 1, đang mở rộng)

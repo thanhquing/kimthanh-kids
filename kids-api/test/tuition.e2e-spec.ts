@@ -263,6 +263,10 @@ describe("E — Học phí (hóa đơn, thanh toán, chứng từ in)", () => {
     const csv = await api().get("/api/tuition/invoices/export").set(auth(t)).expect(200);
     expect(csv.headers["content-type"]).toContain("text/csv");
     expect(csv.text).toContain(inv.invoiceNumber);
+
+    // Filter allowlist: status enum sai → 400 (không để string thô vào Prisma where → 500).
+    await api().get("/api/tuition/invoices/export?status=HACK").set(auth(t)).expect(400);
+    await api().get("/api/tuition/invoices/export?status=UNPAID").set(auth(t)).expect(200);
   });
 
   it("hủy hóa đơn chưa thanh toán → CANCELED; quá hạn → OVERDUE (cron)", async () => {
