@@ -146,6 +146,9 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
       expect(d.roles).toContain("SCHOOL_ADMIN");
       expect(typeof d.tenantId).toBe("string");
       expect(d.platformRole ?? null).toBeNull(); // tài khoản tenant không có platformRole
+      // features map (featureKey→bool) — FE feature-gate UI (ẩn nav album/giáo án theo gói).
+      expect(d.features).toBeDefined();
+      expect(typeof d.features).toBe("object");
     });
 
     it("logout thu hồi refresh token", async () => {

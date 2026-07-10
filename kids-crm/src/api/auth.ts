@@ -8,8 +8,12 @@ export type Me = {
   type?: "PLATFORM" | "TENANT";
   platformRole?: string | null;
   tenantId?: string | null;
+  fullName?: string | null;
+  phone?: string | null;
   roles?: string[];
   allowedSchoolIds?: string[] | null;
+  // Feature đang bật của gói (featureKey → bool) — dùng feature-gate UI (vd media_gallery, lesson_plan).
+  features?: Record<string, boolean>;
 };
 
 export async function login(input: LoginInput, tenantId: string): Promise<LoginResult> {

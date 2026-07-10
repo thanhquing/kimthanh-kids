@@ -1,6 +1,6 @@
 # Phase UI — kids-platform + kids-crm + mobile (integrate `kids-api`)
 
-> **Tiền đề:** API Phase 0+1 (A→G) đã đóng, 165 e2e / 18 suite ở test inventory hiện tại, và **127 flow cURL theo mock UI đã PASS** (xem [`../kids-documentation/UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md)). API coi như hợp đồng ổn định để FE tiêu thụ.
+> **Tiền đề:** API Phase 0+1 (A→G) đã đóng, 168 e2e / 18 suite ở test inventory hiện tại, và **127 flow cURL theo mock UI đã PASS** (xem [`../kids-documentation/UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md)). API coi như hợp đồng ổn định để FE tiêu thụ.
 >
 > **Chiến lược FE:** API-first → FE chỉ tiêu thụ. **Type-safety end-to-end**: sinh type + client từ **OpenAPI** của `kids-api`, không gõ type tay. Mỗi màn FE bám đúng thứ tự call API đã chốt trong ledger.
 >
@@ -70,7 +70,7 @@ Rút ra từ quá trình test cURL — chi tiết & ví dụ ở [`UI_API_FLOW_T
 - [x] `kids-api` script `openapi:json` → `kids-api/openapi.json` (commit làm nguồn chung).
 - [x] Root `gen:api` (openapi-typescript) sinh `api-client/generated/api.d.ts` → copy vào từng app (bỏ qua app chưa scaffold).
 
-**Quyết định về độ giàu spec (đã chốt):** **dùng spec mỏng hiện tại** — type có sẵn **path + param + operationId**; **body/response gõ type tay** theo ledger + Swagger khi dựng từng màn. KHÔNG đụng backend đã đóng băng (tránh rủi ro đổi error envelope `{code,message}` mà 127 cURL + 165 e2e đang dựa vào). Nếu sau này gõ tay quá nhiều → làm giàu spec bằng `@asteasolutions/zod-to-openapi` (additive, không đổi runtime) → pipeline tự tốt lên, không phải sửa plumbing.
+**Quyết định về độ giàu spec (đã chốt):** **dùng spec mỏng hiện tại** — type có sẵn **path + param + operationId**; **body/response gõ type tay** theo ledger + Swagger khi dựng từng màn. KHÔNG đụng backend đã đóng băng (tránh rủi ro đổi error envelope `{code,message}` mà 127 cURL + 168 e2e đang dựa vào). Nếu sau này gõ tay quá nhiều → làm giàu spec bằng `@asteasolutions/zod-to-openapi` (additive, không đổi runtime) → pipeline tự tốt lên, không phải sửa plumbing.
 
 **Mỗi app cần (P0, khi scaffold):**
 - [x] **`kids-platform/src/api/http.ts`** — đã có lớp HTTP mẫu (bóc envelope, auth, refresh 401, `getPage` giữ meta).

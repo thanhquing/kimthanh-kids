@@ -25,6 +25,7 @@ export type UpsertDailyReportInput = {
   nap?: string;
   activities?: string;
   note?: string;
+  photoIds?: string[]; // media đã upload (kind REPORT_PHOTO) gắn vào báo cáo
 };
 
 export const reportKeys = {

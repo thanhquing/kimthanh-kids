@@ -1,6 +1,6 @@
 # Phase 1 — Tầng B: Domain nghiệp vụ (API — `kids-api`)
 
-> ## ✅ Tiến độ (165 e2e / 18 suite ở inventory hiện tại · NestJS 11/Express 5 · tsc + lint sạch ở mốc verify gần nhất)
+> ## ✅ Tiến độ (168 e2e / 18 suite ở inventory hiện tại · NestJS 11/Express 5 · tsc + lint sạch ở mốc verify gần nhất)
 > - **A — Nền:** `schoolWhere`/`assertSchoolAccess`/`isStaff` + `recordScopeWhere`/`ownedStudentWhere` (school-scope), tenant extension cô lập mọi model domain, quota `consumeQuota`/`releaseQuota`.
 > - **B — Hồ sơ & tổ chức:** Students + Classrooms + Guardians (StudentParent): CRUD, gán phụ huynh, "con của tôi", quota STUDENTS/CLASSROOMS.
 > - **C — Vận hành:** Attendance (điểm danh hàng loạt theo lớp, xem lớp/ngày, lịch sử con cho PH) + DailyReports (GV soạn upsert, xem lớp, feed con cho PH).
@@ -27,9 +27,9 @@
 
 ## A. Nền domain dùng chung (làm trước)
 
-- [ ] **P0** Guard/decorator `@SchoolScope`: đọc `allowedSchoolIds` từ `AuthUser`; service kiểm tra resource `schoolId ∈ allowedSchoolIds` (null = toàn tenant).
-- [ ] **P0** Cập nhật `TENANT_KEY` + `SOFT_DELETE` trong tenant extension cho mọi model mới.
-- [ ] **P0** Tích hợp `consumeQuota`/`releaseQuota` vào create/delete của Student, Teacher(member), Classroom; reconcile job đếm lại counter.
+- [x] **P0** Guard/decorator `@SchoolScope`: đọc `allowedSchoolIds` từ `AuthUser`; service kiểm tra resource `schoolId ∈ allowedSchoolIds` (null = toàn tenant). *(school-scope helpers: `assertSchoolAccess`/`recordScopeWhere`/`ownedStudentWhere`)*
+- [x] **P0** Cập nhật `TENANT_KEY` + `SOFT_DELETE` trong tenant extension cho mọi model mới.
+- [x] **P0** Tích hợp `consumeQuota`/`releaseQuota` vào create/delete của Student, Teacher(member), Classroom. *(reconcile-counter job: đẩy cuối P1 — xem "Còn lại")*
 - [ ] **P1** Lưu trữ media: object storage (Cloudflare R2 / S3) + signed upload URL; model `Media` + liên kết.
 - [ ] **P1** Push notification: tích hợp FCM/Expo; model `Notification` + `DeviceToken` + service fan-out.
 - [x] **P1** Seed dữ liệu demo domain/platform — `prisma/seed-demo.ts` (`pnpm prisma:seed:demo`, idempotent theo slug `demo` + `saomai/bupmang/rangdong/tuoitho/banmai`): 1 trường gói **PRO** đủ tính năng, 3 lớp · 12 HS+PH · 6 nhân sự · điểm danh/báo cáo hôm nay · sức khỏe/thuốc/sự cố/nghỉ phép · thực đơn tuần (có cảnh báo dị ứng) · 2 thông báo · 12 hóa đơn (PAID/PARTIAL/UNPAID) · giáo án · album · thông báo in-app · usage login; thêm 5 tenant platform case để UI thấy đủ quota-risk, gói FREE/STARTER/PRO/ENTERPRISE, trial sắp hết hạn và công nợ cần thu. Đăng nhập demo domain: `admin@hoasen.edu.vn` / `Password123` tại host `demo.<ROOT_DOMAIN>`.
@@ -39,14 +39,14 @@
 ## B. Hồ sơ & tổ chức (P0)
 
 ### B1. Students & Guardians — *mock: students, student-profile, children-list, student-detail*
-- [ ] Model `Student` (fullName, nickname, dob, gender, avatarUrl, classroomId, schoolId, tenantId, status, soft-delete).
-- [ ] Model `StudentParent` (N-N học sinh ↔ phụ huynh; relationship Mẹ/Ba; isPrimary).
-- [ ] API: CRUD học sinh, gán phụ huynh, xuất CSV; phụ huynh xem con mình.
-- [ ] Quota: `consumeQuota(STUDENTS)`.
+- [x] Model `Student` (fullName, nickname, dob, gender, avatarUrl, classroomId, schoolId, tenantId, status, soft-delete).
+- [x] Model `StudentParent` (N-N học sinh ↔ phụ huynh; relationship Mẹ/Ba; isPrimary).
+- [x] API: CRUD học sinh, gán phụ huynh, xuất CSV; phụ huynh xem con mình.
+- [x] Quota: `consumeQuota(STUDENTS)`.
 
 ### B2. Classrooms & enrollment — *mock: classrooms, classroom-detail, class-roster*
-- [ ] Model `Classroom` (name, ageGroup, capacity, homeroomTeacherId, schoolId) + enrollment + sĩ số.
-- [ ] Quota: `CLASSROOMS`.
+- [x] Model `Classroom` (name, ageGroup, capacity, homeroomTeacherId, schoolId) + enrollment + sĩ số.
+- [x] Quota: `CLASSROOMS`.
 
 ### B3. Staff/Teacher accounts — *mock: users, assignments, home-teacher* ✅ (reset mật khẩu thật → P2)
 - [x] **Tạo tài khoản trực tiếp** (KHÔNG mời): `POST /tenant/members` — chủ trường/HT tạo GV/y tá/kế toán/PH; định danh **email HOẶC số điện thoại**, login bằng cả hai.
@@ -60,12 +60,12 @@
 ## C. Vận hành hằng ngày (P0)
 
 ### C1. Attendance — *mock: attendance, attendance-mark, attendance-history*
-- [ ] Model `Attendance` (studentId, classroomId, date, status PRESENT/LATE/ABSENT/EXCUSED, checkInAt, note, recordedById). Unique (studentId, date).
-- [ ] API: GV điểm danh hàng loạt theo lớp; phụ huynh xem lịch sử + calendar.
+- [x] Model `Attendance` (studentId, classroomId, date, status PRESENT/LATE/ABSENT/EXCUSED, checkInAt, note, recordedById). Unique (studentId, date).
+- [x] API: GV điểm danh hàng loạt theo lớp; phụ huynh xem lịch sử + calendar.
 
 ### C2. Daily Reports — *mock: report-compose (GV) → report-feed (PH)*
-- [ ] Model `DailyReport` (studentId, date, mood, meals, nap, activities, note, authorId, images[]). Unique (studentId, date).
-- [ ] API: GV soạn (hỗ trợ hàng loạt/lớp); PH xem timeline theo con; gắn ảnh. Notify khi có báo cáo mới.
+- [x] Model `DailyReport` (studentId, date, mood, meals, nap, activities, note, authorId, images[]). Unique (studentId, date).
+- [x] API: GV soạn (hỗ trợ hàng loạt/lớp); PH xem timeline theo con; gắn ảnh. Notify khi có báo cáo mới.
 
 ---
 

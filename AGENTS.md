@@ -5,7 +5,7 @@
 ## Dự án là gì
 
 **KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant). Truy cập qua subdomain HOẶC **chọn trường ở login** (dropdown `/public/tenants` + header `x-tenant`, độc lập subdomain). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
-**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (165 e2e / 18 suite; NestJS 11 trên Express 5). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 (nối API thật; xem `CRM_FEATURE_IDEAS.md`) · `kids-mobile-native` 🟡 đã khởi tạo Expo (copy-first từ mobile-web), port P0/P1 nhiều màn; còn smoke thiết bị thật/EAS build/upload ảnh native/push FCM.
+**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (168 e2e / 18 suite; NestJS 11 trên Express 5). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 (nối API thật; xem `CRM_FEATURE_IDEAS.md`) · `kids-mobile-native` 🟡 đã khởi tạo Expo (copy-first từ mobile-web), port P0/P1 nhiều màn; còn smoke thiết bị thật/EAS build/push FCM (upload ảnh đã code, chờ smoke).
 
 ## Bản đồ repo
 
@@ -69,7 +69,7 @@ pnpm prisma:deploy         # áp migration
 pnpm prisma:seed           # 5 gói + platform super-admin
 pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # /api · Swagger /docs
-pnpm test:e2e              # 165 e2e / 18 suite
+pnpm test:e2e              # 168 e2e / 18 suite
 ```
 
 Demo login (host `demo.<ROOT_DOMAIN>`, mật khẩu `Password123`): `admin@hoasen.edu.vn` (admin) … `ph01@gmail.com` (PH). Platform: `admin@kimthanhkids.vn` / `Admin@12345`.

@@ -142,6 +142,8 @@
     "student": "Student",
     "mood": "Mood",
     "addPhoto": "Add photo",
+    "photoSelected": "{count} photo(s)",
+    "photoUploadError": "Could not upload photo.",
     "composeSubmit": "Send report",
     "composeSaving": "Sending…",
     "composeSaved": "Saved report for {name}"

@@ -142,6 +142,8 @@
     "student": "Học sinh",
     "mood": "Tâm trạng",
     "addPhoto": "Thêm ảnh",
+    "photoSelected": "{count} ảnh",
+    "photoUploadError": "Không tải được ảnh lên.",
     "composeSubmit": "Gửi báo cáo",
     "composeSaving": "Đang gửi…",
     "composeSaved": "Đã lưu báo cáo cho {name}"

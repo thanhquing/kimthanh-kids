@@ -5,6 +5,7 @@ import { AuditService } from "../audit/audit.service";
 import { TenantContextStore } from "../common/context/tenant-context";
 import { comparePassword, hashPassword, needsRehash } from "../common/crypto/password";
 import { EnvService } from "../config/env.service";
+import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { UsageService } from "../usage/usage.service";
 import { TokenService } from "./token.service";
@@ -31,6 +32,7 @@ export class AuthService {
     private readonly usage: UsageService,
     private readonly env: EnvService,
     private readonly audit: AuditService,
+    private readonly entitlements: EntitlementService,
   ) {}
 
   /** Đăng nhập theo ngữ cảnh host: platform host → platform user; tenant host → user của tenant đó. */
@@ -214,7 +216,12 @@ export class AuthService {
   }
 
   async me(userId: string) {
-    return this.users.load(userId);
+    const user = await this.users.load(userId);
+    if (!user) return null;
+    // Kèm feature đang bật của gói (map { featureKey: boolean }) để FE feature-gate UI
+    // (ẩn nav album/giáo án khi gói tắt). Chỉ resolve ở /auth/me (không phải mọi request).
+    const features = user.tenantId ? (await this.entitlements.resolve(user.tenantId)).features : {};
+    return { ...user, features };
   }
 
   private async revokeRefreshFamily(familyId: string): Promise<void> {

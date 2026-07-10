@@ -28,8 +28,27 @@ import { crm, type TenantRole } from "@/api/crm";
 import logoFull from "@/assets/logo-kimthanh.png";
 import { useT, type TKey, type Translator } from "@/i18n";
 import { languageStore, type Language } from "@/lib/language";
+import { ROLE } from "@/lib/people";
 import { ADMIN_ROLES, LESSON_EDITOR_ROLES, NON_FINANCE_ROLES, hasAnyRole } from "@/lib/roles";
 import { cn } from "@/lib/utils";
+
+// Ưu tiên hiển thị role "cao" nhất khi user có nhiều membership.
+const ROLE_PRIORITY: TenantRole[] = [
+  "SCHOOL_ADMIN",
+  "PRINCIPAL",
+  "TEACHER",
+  "NURSE",
+  "FINANCE",
+  "PARENT",
+];
+
+/** Chữ cái đầu cho avatar: "Nguyễn Văn A" → "NA". Rỗng → "?". */
+function initialsOf(name?: string | null): string {
+  const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 // `roles`: chỉ hiện mục nav khi user có ≥1 role trong danh sách (khớp @Roles BE của endpoint
 // chính trang đó → tránh vào trang bị 403). Mục KHÔNG có `roles` = mọi staff (list = STAFF đủ role).
@@ -39,6 +58,7 @@ type NavItem = {
   icon: typeof LayoutDashboard;
   end?: boolean;
   roles?: TenantRole[];
+  feature?: string; // featureKey phải bật ở gói (entitlements) — vd media_gallery, lesson_plan
 };
 
 const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
@@ -80,8 +100,14 @@ const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
     items: [
       { to: "/assignments", labelKey: "nav.assignments", icon: ClipboardCheck },
       { to: "/menus", labelKey: "nav.menus", icon: Utensils },
-      { to: "/albums", labelKey: "nav.albums", icon: Images },
-      { to: "/lessons", labelKey: "nav.lessons", icon: BookOpen, roles: LESSON_EDITOR_ROLES },
+      { to: "/albums", labelKey: "nav.albums", icon: Images, feature: "media_gallery" },
+      {
+        to: "/lessons",
+        labelKey: "nav.lessons",
+        icon: BookOpen,
+        roles: LESSON_EDITOR_ROLES,
+        feature: "lesson_plan",
+      },
     ],
   },
   {
@@ -97,17 +123,26 @@ const MOBILE_PRIMARY: NavItem[] = [
   { to: "/tuition", labelKey: "nav.tuition", icon: Receipt },
 ];
 
-/** Mục hiện khi không giới hạn role HOẶC user có ≥1 role khớp. */
-function canSee(item: NavItem, roles: TenantRole[]): boolean {
-  return hasAnyRole(roles, item.roles);
+/** Mục hiện khi: role khớp (hoặc không giới hạn) VÀ feature (nếu yêu cầu) đang bật ở gói. */
+function canSee(item: NavItem, roles: TenantRole[], features: Record<string, boolean>): boolean {
+  if (!hasAnyRole(roles, item.roles)) return false;
+  return !item.feature || features[item.feature] === true;
 }
 
-function NavSections({ roles, onNavigate }: { roles: TenantRole[]; onNavigate?: () => void }) {
+function NavSections({
+  roles,
+  features,
+  onNavigate,
+}: {
+  roles: TenantRole[];
+  features: Record<string, boolean>;
+  onNavigate?: () => void;
+}) {
   const { t } = useT();
   return (
     <>
       {NAV.map((sec, i) => {
-        const items = sec.items.filter((it) => canSee(it, roles));
+        const items = sec.items.filter((it) => canSee(it, roles, features));
         if (!items.length) return null; // ẩn cả group khi mọi mục bị lọc
         return (
           <div key={i}>
@@ -178,23 +213,27 @@ function NotificationBell({ label, onClick }: { label: string; onClick: () => vo
 function AccountPanel({
   t,
   lang,
+  name,
+  roleLabel,
+  initials,
   onLogout,
   onNotifications,
 }: {
   t: Translator;
   lang: Language;
+  name: string;
+  roleLabel: string;
+  initials: string;
   onLogout: () => void;
   onNotifications: () => void;
 }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2.5 rounded-xl border border-[#f4e7e0] bg-[#fffaf7] px-3 py-2.5">
-        <div className="avatar !h-9 !w-9 shrink-0 text-xs">SA</div>
+        <div className="avatar !h-9 !w-9 shrink-0 text-xs">{initials}</div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold leading-tight text-slate-800">
-            {t("topbar.adminName")}
-          </div>
-          <div className="truncate text-xs leading-tight text-slate-400">{t("topbar.adminRole")}</div>
+          <div className="truncate text-sm font-semibold leading-tight text-slate-800">{name}</div>
+          <div className="truncate text-xs leading-tight text-slate-400">{roleLabel}</div>
         </div>
         <button
           type="button"
@@ -222,7 +261,15 @@ export function AppLayout() {
   // tới khi biết role, tránh nháy mục không được phép).
   const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
   const roles = (meQuery.data?.roles ?? []) as TenantRole[];
-  const mobilePrimary = MOBILE_PRIMARY.filter((it) => canSee(it, roles));
+  const features = meQuery.data?.features ?? {};
+  const mobilePrimary = MOBILE_PRIMARY.filter((it) => canSee(it, roles, features));
+
+  // Danh tính thật cho account panel (thay hardcode "SA"). Chưa tải xong → fallback nhãn chung.
+  const accountName = meQuery.data?.fullName?.trim() || t("topbar.adminName");
+  const primaryRole = ROLE_PRIORITY.find((r) => roles.includes(r));
+  const accountRole = primaryRole ? t(ROLE[primaryRole].key) : t("topbar.adminRole");
+  const accountInitials = initialsOf(meQuery.data?.fullName);
+  const accountProps = { name: accountName, roleLabel: accountRole, initials: accountInitials };
 
   async function onLogout() {
     setMoreOpen(false);
@@ -241,11 +288,17 @@ export function AppLayout() {
         </div>
 
         <div className="mb-3 border-b border-[#f4e7e0] pb-4">
-          <AccountPanel t={t} lang={lang} onLogout={onLogout} onNotifications={() => navigate("/notifications")} />
+          <AccountPanel
+            t={t}
+            lang={lang}
+            {...accountProps}
+            onLogout={onLogout}
+            onNotifications={() => navigate("/notifications")}
+          />
         </div>
 
         <nav className="flex-1 overflow-y-auto">
-          <NavSections roles={roles} />
+          <NavSections roles={roles} features={features} />
         </nav>
       </aside>
 
@@ -296,9 +349,18 @@ export function AppLayout() {
               </button>
             </div>
             <div className="mb-3 border-b border-[#f4e7e0] pb-3">
-              <AccountPanel t={t} lang={lang} onLogout={onLogout} onNotifications={() => { setMoreOpen(false); navigate("/notifications"); }} />
+              <AccountPanel
+                t={t}
+                lang={lang}
+                {...accountProps}
+                onLogout={onLogout}
+                onNotifications={() => {
+                  setMoreOpen(false);
+                  navigate("/notifications");
+                }}
+              />
             </div>
-            <NavSections roles={roles} onNavigate={() => setMoreOpen(false)} />
+            <NavSections roles={roles} features={features} onNavigate={() => setMoreOpen(false)} />
           </div>
         </div>
       )}

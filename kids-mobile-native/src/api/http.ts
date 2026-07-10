@@ -133,14 +133,21 @@ async function raw(method: string, path: string, opts: Options, token: string | 
     "x-client": "native",
     "x-language": appStorage.getString(LANGUAGE_KEY) === "en" ? "en" : "vi",
   };
-  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  // Upload ảnh: body là FormData → KHÔNG set Content-Type (RN tự thêm boundary multipart).
+  const isForm = typeof FormData !== "undefined" && opts.body instanceof FormData;
+  if (opts.body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (opts.auth !== false && token) headers["Authorization"] = `Bearer ${token}`;
   const tenantId = appStorage.getString(TENANT_KEY);
   if (tenantId) headers["x-tenant"] = tenantId;
   return fetch(buildUrl(path, opts.query), {
     method,
     headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    body:
+      opts.body !== undefined
+        ? isForm
+          ? (opts.body as FormData)
+          : JSON.stringify(opts.body)
+        : undefined,
   });
 }
 

@@ -126,7 +126,7 @@ Ghi chú: signup luôn tạo tenant gói `free` ở trạng thái `ACTIVE`, khô
 | `POST` | `/auth/login`   | `LoginInput`               | `{ accessToken, userId }` + **Set-Cookie `kk_rt`** (refresh token, HttpOnly)       |
 | `POST` | `/auth/refresh` | _(trống — đọc cookie)_     | `{ accessToken }` + Set-Cookie `kk_rt` mới (rotate)                                 |
 | `POST` | `/auth/logout`  | _(trống — đọc cookie)_     | `{ ok: true }` + xóa cookie `kk_rt`                                                |
-| `GET`  | `/auth/me`      | Bearer                     | `{ id, type, tenantId, platformRole, fullName, phone, roles[], allowedSchoolIds }` |
+| `GET`  | `/auth/me`      | Bearer                     | `{ id, type, tenantId, platformRole, fullName, phone, roles[], allowedSchoolIds, features }` (`features`={featureKey:bool} của gói → FE feature-gate UI) |
 
 > **Refresh token trong cookie HttpOnly.** Refresh token KHÔNG trả ra body (chống XSS đọc cắp credential dài hạn) mà đặt trong cookie `kk_rt` (`HttpOnly`, `SameSite=Lax`, `Path=/api/auth`, `Secure` ở prod, host-only). Web FE gọi API same-origin (Vite proxy dev / nginx prod) nên cookie tự gửi kèm; `/auth/refresh` + `/auth/logout` đọc token từ cookie. Access token trả ra body và FE giữ **in-memory** (mất khi reload → gọi `/auth/refresh` bằng cookie để khôi phục). `SameSite=Lax` + refresh là `POST` ⇒ chặn CSRF.
 >

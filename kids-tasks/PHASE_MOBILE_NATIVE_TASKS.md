@@ -43,7 +43,7 @@ Status: TODO / PROGRESS / DONE.
 - [x] **PH**: home, con của tôi, chi tiết bé (điểm danh/báo cáo), hóa đơn + VietQR, gửi thuốc, xin nghỉ, notifications
 - [x] **Chung**: profile (đổi ngôn ngữ + logout), announcements, medicine list/detail, album (expo-image), thực đơn, giáo án
 - [x] P1 một phần: GV duyệt thuốc, lesson-plan
-- [ ] P1 còn lại: upload ảnh (expo-image-picker → `/media`)
+- [x] P1 còn lại: upload ảnh (expo-image-picker → `/media`) — `api/media.ts` + `lib/pickImage.ts` + FormData ở `http.ts`, gắn vào `ReportComposeScreen` (kind REPORT_PHOTO → photoIds). *tsc sạch; smoke thiết bị thật khi tới phase device/EAS.*
 
 ## 5. Performance + hoàn thiện
 - [x] FlashList cho list dài · expo-image cache · react-query `focusManager`/`onlineManager` theo AppState/NetInfo · New Arch qua build-properties
