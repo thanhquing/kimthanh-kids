@@ -20,6 +20,40 @@
 >
 > **Định giá đã chốt (hòa vốn ở 1–2 trường, không lỗ):** Free 0đ (10 HS · 1 GV · **200MB**) · Starter **690k/th** (100 HS · 8 GV · 5GB · +Album) · Pro **1.39tr/th** (300 HS · 25 GV · 20GB · +Album +Giáo án) · Enterprise/Dedicated liên hệ. Gói tính theo **GV + HS + lưu trữ**, KHÔNG theo lớp. Nhỉnh dưới đối thủ + nhiều chức năng; hạ tầng lean ~1–1.3tr/th → 1 trường Pro (hoặc 2 Starter) là hòa vốn. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
 
+### 🚀 Lộ trình lên PRODUCTION sớm nhất (mục tiêu 5 trường đầu tiên)
+
+> Sản phẩm đã chạy được (Phase 0 + Phase 1 xong, e2e 168 xanh). Với 5 trường đầu, **việc chặn không phải là thêm tính năng mà là TRIỂN KHAI + hardening tối thiểu + pháp lý tối thiểu**. Làm đúng thứ tự sau; các task khác trong file này để SAU khi đã có khách chạy thật.
+
+**Bắt buộc trước khi mở cho trường thật (P0-PROD):**
+1. 🚀 **BL-051** — Provision hạ tầng + deploy production (VPS, Postgres, HTTPS, domain, secrets, backup đêm). *(Bắt đầu ngay — mua VPS.)*
+2. 🚀 **BL-005** — CORS origins cho domain thật.
+3. 🚀 **BL-007** — Rà `.gitignore`/secrets (không lộ `.env`, key).
+4. 🚀 **BL-008 + BL-009** — Verify backend (tsc/lint/e2e) + build FE xanh trên máy build.
+5. 🚀 **BL-046 (mức tối thiểu)** — Privacy Policy + Điều khoản + **consent dữ liệu trẻ em** (BẮT BUỘC vì lưu dữ liệu trẻ thật; Luật BVDLCN đã hiệu lực). Không cần đủ DPIA/DPO ngay, nhưng phải có consent + chính sách công khai.
+6. 🚀 **BL-001 → BL-004** — Smoke toàn hệ trên chính prod (seed thật, đăng nhập, CRM, mobile, landing) trước khi giao trường.
+
+**Nên làm sớm (ngay sau khi có trường, không chặn launch):**
+- **BL-049** (gỡ quota lớp — đúng mô hình gói) · **BL-043** (landing hiển thị đúng gói + Coming Soon) · **BL-047** (thông tin pháp nhân + thông báo Bộ Công Thương khi bật đăng ký công khai).
+
+**Hoãn tới khi >5 trường / có nhu cầu thật:** BL-050 (versioning gói), BL-018 (email — tạm dùng admin reset ở CRM), BL-030 (push), BL-010/011/012 (Playwright/visual), BL-025 (R2/S3 — local + backup là đủ ở quy mô nhỏ), BL-038 (analytics), BL-031/032/033/034 (payment nâng cao), BL-039..042.
+
+### BL-051 — Provision hạ tầng + deploy production (5 trường đầu)
+
+- **Ưu tiên:** P0-PROD (làm đầu tiên — đang mua VPS).
+- **Owner:** ops, `kids-api`, các app FE
+- **Đọc trước:** `kids-api/.env.example`, `kids-api/docker-compose*.yml` (nếu có), `kids-api/src/config/config.schema.ts`, `DEVELOPMENT.md`
+- **Cấu hình VPS khuyến nghị (đủ cho ~5–20 trường nhỏ):**
+  - **4 vCPU · 8 GB RAM · 80–100 GB NVMe SSD**, Ubuntu 22.04/24.04 LTS. (Tối thiểu 2 vCPU/4GB nếu tiết kiệm, nhưng 8GB cho Postgres cache + xử lý ảnh sharp thoải mái.)
+  - **Đặt máy chủ tại Việt Nam** (latency + tuân thủ dữ liệu trẻ em nên lưu trong nước).
+- **Stack triển khai:**
+  - Docker + docker-compose: Postgres 16 + `kids-api` (NestJS) + reverse proxy **Caddy** (tự động HTTPS Let's Encrypt) hoặc Nginx + certbot.
+  - Build FE (platform/crm/mobile-web/landing) → phục vụ tĩnh (Caddy/Nginx) hoặc host riêng (Vercel/Netlify cho landing/marketing).
+  - Domain + subdomain: `admin.*` (platform), CRM, `*.<root>` cho tenant/subdomain, landing.
+  - Secrets qua env (KHÔNG commit): `JWT`/token secret mạnh, `DATABASE_URL`, `API_CORS_ORIGINS`, cấu hình VietQR/NH, VNPay (sandbox→prod sau).
+- **Backup (bắt buộc):** cron `pg_dump` hằng đêm + tar thư mục media, đẩy off-box (Cloudflare R2 / Backblaze B2). Test restore 1 lần (giao thoa BL-028).
+- **Done khi:** hệ thống chạy trên domain thật có HTTPS; đăng nhập/CRM/mobile/landing hoạt động; có backup đêm + đã thử restore.
+- **Verify:** smoke BL-001→004 trên prod; `curl` health; kiểm HTTPS + CORS.
+
 ### Ma trận Entitlement chuẩn (spec cho BL-043/BL-044 — theo code thật `kids-api/prisma/seed.ts`)
 
 > **Nguyên tắc tính gói (chốt 2026-07-10):** gói định lượng theo **số giáo viên (TEACHERS) + số học sinh (STUDENTS) + dung lượng lưu trữ (STORAGE_MB)**. **KHÔNG tính theo số lớp** — số lớp không phải chiều bán gói. Hệ thống hiện còn enforce quota `CLASSROOMS` (sai với nguyên tắc này) → xem **BL-049** để gỡ.
