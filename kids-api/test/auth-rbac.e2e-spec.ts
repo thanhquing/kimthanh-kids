@@ -98,6 +98,39 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
       expect(refreshed.body.data.refreshToken).toBeUndefined();
     });
 
+    it("client native (x-client): login + refresh trả refreshToken ở body (không cookie jar)", async () => {
+      const t = await createTenant(app);
+      // App native React Native không có cookie jar → khai header `x-client: native` để nhận
+      // refresh token ở body, lưu vào SecureStore. (Web KHÔNG gửi header → vẫn cookie-only.)
+      const login = await api()
+        .post("/api/auth/login")
+        .set("Host", t.host)
+        .set("x-client", "native")
+        .send({ email: t.email, password: t.password })
+        .expect(201);
+      const r1 = login.body.data.refreshToken as string;
+      expect(login.body.data.accessToken).toBeDefined();
+      expect(r1).toBeTruthy(); // native NHẬN refresh ở body
+
+      // Refresh bằng body token → cấp access mới + refresh ĐÃ ROTATE ở body (không phải token cũ).
+      const rotated = await api()
+        .post("/api/auth/refresh")
+        .set("x-client", "native")
+        .send({ refreshToken: r1 })
+        .expect(201);
+      expect(rotated.body.data.accessToken).toBeDefined();
+      const r2 = rotated.body.data.refreshToken as string;
+      expect(r2).toBeTruthy();
+      expect(r2).not.toBe(r1);
+
+      // Token cũ dùng lại → reuse-detection từ chối (đảm bảo native không tự đá mình ra).
+      await api()
+        .post("/api/auth/refresh")
+        .set("x-client", "native")
+        .send({ refreshToken: r1 })
+        .expect(401);
+    });
+
     it("logout thu hồi refresh token", async () => {
       const t = await createTenant(app);
       const login = await api()

@@ -5,7 +5,7 @@
 ## Dự án là gì
 
 **KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant). Truy cập qua subdomain HOẶC **chọn trường ở login** (dropdown `/public/tenants` + header `x-tenant`, độc lập subdomain). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
-**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (146 e2e / 16 suite). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 + mở rộng `CRM_FEATURE_IDEAS.md` (phân công, nghỉ phép, thực đơn, album/upload, giáo án, notifications, reset mật khẩu, đón-trả) · `kids-mobile-native` ⛔ chưa khởi tạo (sẽ **copy-first** từ mobile-web → Expo).
+**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (165 e2e / 18 suite; NestJS 11 trên Express 5). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 + mở rộng `CRM_FEATURE_IDEAS.md` (phân công, nghỉ phép, thực đơn, album/upload, giáo án, notifications, reset mật khẩu, đón-trả) · `kids-mobile-native` 🟡 đã khởi tạo Expo (copy-first từ mobile-web), port P0/P1 nhiều màn; còn smoke thiết bị thật/EAS build/upload ảnh native/push FCM.
 
 ## Bản đồ repo
 
@@ -19,7 +19,7 @@
 | `kids-platform/`                                       | Platform Console (React + Vite) — ✅ tích hợp các trang vận hành nền tảng                              |
 | `kids-mobile-web/`                                     | App PH/GV (React + Vite PWA) — ✅ API thật + i18n VI/EN + login chọn trường (x-tenant)                 |
 | `kids-crm/`                                            | Web quản trị trường (React + Vite) — ✅ P0/P1 + mở rộng mobile↔CRM (`CRM_FEATURE_IDEAS.md`) |
-| `kids-mobile-native/`                                  | App native (Expo) — ⛔ chưa khởi tạo; sẽ **copy-first** từ `kids-mobile-web` (xem README app)          |
+| `kids-mobile-native/`                                  | App native (Expo) — 🟡 đã khởi tạo **copy-first** từ `kids-mobile-web`, port P0/P1; còn smoke thiết bị/EAS/upload ảnh/push (xem README app) |
 
 ## Đọc trước khi làm task (theo loại việc)
 
@@ -69,7 +69,7 @@ pnpm prisma:deploy         # áp migration
 pnpm prisma:seed           # 5 gói + platform super-admin
 pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # /api · Swagger /docs
-pnpm test:e2e              # 146 e2e / 16 suite
+pnpm test:e2e              # 165 e2e / 18 suite
 ```
 
 Demo login (host `demo.<ROOT_DOMAIN>`, mật khẩu `Password123`): `admin@hoasen.edu.vn` (admin) … `ph01@gmail.com` (PH). Platform: `admin@kimthanhkids.vn` / `Admin@12345`.

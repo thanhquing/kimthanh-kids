@@ -15,6 +15,7 @@ import {
   TenantStatus,
   UserType,
 } from "@prisma/client";
+import { AuditService } from "../audit/audit.service";
 import { TokenService } from "../auth/token.service";
 import { paginated } from "../common/http/api-response";
 import { LifecycleService } from "../billing/lifecycle.service";
@@ -90,6 +91,7 @@ export class PlatformService {
     private readonly mrr: MrrSnapshotService,
     private readonly entitlements: EntitlementService,
     private readonly config: PlatformConfigService,
+    private readonly audit: AuditService,
   ) {}
 
   /** Cấu hình nền tảng (ngân hàng VietQR + grace dunning). */
@@ -417,15 +419,13 @@ export class PlatformService {
 
   async createTenant(input: PlatformCreateTenantInput, actorId: string) {
     const created = await this.provisioning.signup(input);
-    await this.prisma.system.auditLog.create({
-      data: {
-        tenantId: created.tenant.id,
-        actorId,
-        actorType: UserType.PLATFORM,
-        action: "platform.tenant.create",
-        targetType: "Tenant",
-        targetId: created.tenant.id,
-      },
+    await this.audit.log({
+      tenantId: created.tenant.id,
+      actorId,
+      actorType: UserType.PLATFORM,
+      action: "platform.tenant.create",
+      targetType: "Tenant",
+      targetId: created.tenant.id,
     });
     return created;
   }
@@ -463,16 +463,14 @@ export class PlatformService {
       });
     }
 
-    await this.prisma.system.auditLog.create({
-      data: {
-        tenantId,
-        actorId,
-        actorType: UserType.PLATFORM,
-        action: "platform.tenant.impersonate",
-        targetType: "User",
-        targetId: admin.id,
-        metadata: { tenantId },
-      },
+    await this.audit.log({
+      tenantId,
+      actorId,
+      actorType: UserType.PLATFORM,
+      action: "platform.tenant.impersonate",
+      targetType: "User",
+      targetId: admin.id,
+      metadata: { tenantId },
     });
 
     const accessToken = await this.tokens.signAccess({
@@ -588,6 +586,17 @@ export class PlatformService {
       `${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
     const rows = items.map((inv) => ({
       ...inv,
+      // Decimal → number tường minh (Prisma serialize Decimal thành string) để khớp type FE.
+      subtotal: Number(inv.subtotal),
+      discount: Number(inv.discount),
+      tax: Number(inv.tax),
+      total: Number(inv.total),
+      amountPaid: Number(inv.amountPaid),
+      lines: inv.lines.map((l) => ({
+        ...l,
+        unitPrice: Number(l.unitPrice),
+        amount: Number(l.amount),
+      })),
       tenantName: tenantNames.get(inv.tenantId) ?? null,
       period: fmtPeriod(inv.periodStart),
       dueDate: inv.dueAt, // alias cho FE
@@ -900,13 +909,13 @@ export class PlatformService {
     const [tenants, actors] = await Promise.all([
       tenantIds.length
         ? this.prisma.system.tenant.findMany({
-            where: { id: { in: tenantIds } },
+            where: { id: { in: tenantIds }, deletedAt: null },
             include: { settings: true },
           })
         : Promise.resolve([]),
       actorIds.length
         ? this.prisma.system.user.findMany({
-            where: { id: { in: actorIds } },
+            where: { id: { in: actorIds }, deletedAt: null },
             select: { id: true, fullName: true, email: true },
           })
         : Promise.resolve([]),

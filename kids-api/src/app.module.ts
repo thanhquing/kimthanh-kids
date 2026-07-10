@@ -112,6 +112,7 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(TenantResolutionMiddleware).forRoutes("*");
+    // Express 5 (path-to-regexp mới): wildcard phải đặt tên. "{*path}" = mọi route (khớp cả "/").
+    consumer.apply(TenantResolutionMiddleware).forRoutes("{*path}");
   }
 }

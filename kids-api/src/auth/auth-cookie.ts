@@ -42,6 +42,16 @@ export function clearRefreshCookie(res: Response, env: EnvService): void {
   res.clearCookie(REFRESH_COOKIE, baseOptions(env));
 }
 
+/**
+ * Client KHÔNG có cookie jar (app native React Native) tự khai qua header `x-client: native`.
+ * Với client này refresh token PHẢI trả trong body để lưu vào SecureStore (Keychain/Keystore) —
+ * cookie HttpOnly chỉ dành cho web (same-origin, chống XSS). Web KHÔNG gửi header này nên vẫn
+ * cookie-only, giữ nguyên hardening.
+ */
+export function isCookielessClient(req: Request): boolean {
+  return req.headers["x-client"] === "native";
+}
+
 /** Đọc refresh token từ cookie (không cần cookie-parser — parse header thủ công). */
 export function readRefreshCookie(req: Request): string | undefined {
   const raw = req.headers.cookie;

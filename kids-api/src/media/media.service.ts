@@ -10,6 +10,7 @@ import { createReadStream } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import sharp from "sharp";
+import { AuditService } from "../audit/audit.service";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { assertSchoolAccess, isStaff } from "../common/scope/school-scope";
 import { EnvService } from "../config/env.service";
@@ -28,6 +29,7 @@ export class MediaService {
     private readonly prisma: PrismaService,
     private readonly env: EnvService,
     private readonly entitlements: EntitlementService,
+    private readonly audit: AuditService,
   ) {}
 
   /**
@@ -79,7 +81,7 @@ export class MediaService {
     await mkdir(join(this.root(), tenantId), { recursive: true });
     await writeFile(abs, data);
 
-    return this.prisma.db.media.create({
+    const media = await this.prisma.db.media.create({
       data: {
         kind: opts.kind ?? MediaKind.OTHER,
         schoolId: opts.schoolId,
@@ -92,6 +94,13 @@ export class MediaService {
         uploadedById: user.id,
       } as never, // tenantId tự được extension gán
     });
+    await this.audit.logAs(
+      user,
+      "media.upload",
+      { type: "Media", id: media.id },
+      { kind: media.kind },
+    );
+    return media;
   }
 
   /** Lấy thông tin + stream file, giới hạn theo tenant và quyền xem nội dung gắn với media. */
@@ -154,7 +163,7 @@ export class MediaService {
     const ent = await this.entitlements.resolve(tenantId);
     const limit = ent.limits.STORAGE_MB;
     if (!limit || limit.limitValue === null) return; // unlimited
-    const agg = await this.prisma.system.media.aggregate({
+    const agg = await this.prisma.db.media.aggregate({
       where: { tenantId },
       _sum: { sizeBytes: true },
     });

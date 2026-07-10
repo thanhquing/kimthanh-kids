@@ -24,7 +24,7 @@ pnpm start:dev             # http://localhost:3000/api  ·  Swagger: /docs
 ## Kiểm thử & chất lượng
 
 ```bash
-pnpm test:e2e              # 131 e2e / 15 suite (inventory hiện tại)
+pnpm test:e2e              # 165 e2e / 18 suite (inventory hiện tại)
 pnpm exec tsc --noEmit     # type-check
 pnpm lint                  # eslint (chặn $queryRaw trong domain code)
 ```

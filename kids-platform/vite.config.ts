@@ -10,6 +10,9 @@ const PLATFORM_HOST = process.env.VITE_PLATFORM_HOST ?? "admin.kimthanhkids.vn";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    sourcemap: false,
+  },
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },

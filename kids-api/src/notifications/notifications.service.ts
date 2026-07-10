@@ -13,6 +13,14 @@ export interface NotifyPayload {
   linkId?: string;
 }
 
+const SAFE_COPY_BY_TYPE: Partial<Record<NotificationType, Pick<NotifyPayload, "title" | "body">>> =
+  {
+    [NotificationType.DAILY_REPORT]: { title: "Có báo cáo ngày mới" },
+    [NotificationType.INCIDENT]: { title: "Có cập nhật sự cố" },
+    [NotificationType.MEDICINE]: { title: "Có cập nhật yêu cầu thuốc" },
+    [NotificationType.LEAVE]: { title: "Có cập nhật đơn xin nghỉ" },
+  };
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -29,10 +37,11 @@ export class NotificationsService {
    */
   async notify(tenantId: string, userIds: string[], p: NotifyPayload): Promise<void> {
     try {
+      const payload = this.safePayload(p);
       const ids = [...new Set(userIds)].filter(Boolean);
       if (!ids.length) return;
       const disabled = await this.prisma.db.notificationPreference.findMany({
-        where: { userId: { in: ids }, type: p.type, enabled: false },
+        where: { userId: { in: ids }, type: payload.type, enabled: false },
         select: { userId: true },
       });
       const off = new Set(disabled.map((d) => d.userId));
@@ -42,16 +51,26 @@ export class NotificationsService {
         data: recipients.map((userId) => ({
           tenantId,
           userId,
-          type: p.type,
-          title: p.title,
-          body: p.body,
-          linkType: p.linkType,
-          linkId: p.linkId,
+          type: payload.type,
+          title: payload.title,
+          body: payload.body,
+          linkType: payload.linkType,
+          linkId: payload.linkId,
         })),
       });
     } catch (e) {
       this.logger.error(`notify thất bại (type=${p.type}, tenant=${tenantId})`, e as Error);
     }
+  }
+
+  private safePayload(p: NotifyPayload): NotifyPayload {
+    const safe = SAFE_COPY_BY_TYPE[p.type];
+    if (!safe) return p;
+    return {
+      ...p,
+      title: safe.title,
+      body: safe.body,
+    };
   }
 
   /** Tiện ích: gửi tới mọi phụ huynh của 1 học sinh. Best-effort như notify(). */

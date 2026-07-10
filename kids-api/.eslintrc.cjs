@@ -36,6 +36,8 @@ module.exports = {
         "src/medicine/**/*.ts",
         "src/incidents/**/*.ts",
         "src/attendance/**/*.ts",
+        "src/daily-reports/**/*.ts",
+        "src/media/**/*.ts",
         "src/announcements/**/*.ts",
         "src/menus/**/*.ts",
         "src/albums/**/*.ts",

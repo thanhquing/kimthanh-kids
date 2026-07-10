@@ -182,7 +182,7 @@ export class TenantService {
           passwordHash,
           memberships: { create: { tenantId, role: input.role, schoolId: input.schoolId ?? null } },
         },
-        select: { id: true, email: true, phone: true, fullName: true },
+        select: { id: true, email: true, phone: true, fullName: true, isActive: true },
       });
       await this.audit.log({
         tenantId,

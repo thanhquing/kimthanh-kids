@@ -128,6 +128,9 @@ function buildUrl(path: string, query?: Options["query"]): string {
 
 async function raw(method: string, path: string, opts: Options, token: string | null) {
   const headers: Record<string, string> = {
+    // Báo BE đây là client không có cookie jar → login/refresh trả refreshToken ở body
+    // để lưu SecureStore (web dùng cookie HttpOnly). Xem auth-cookie.isCookielessClient().
+    "x-client": "native",
     "x-language": appStorage.getString(LANGUAGE_KEY) === "en" ? "en" : "vi",
   };
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
@@ -141,7 +144,9 @@ async function raw(method: string, path: string, opts: Options, token: string | 
   });
 }
 
-async function refreshTokens(): Promise<boolean> {
+let inflightRefresh: Promise<boolean> | null = null;
+
+async function doRefresh(): Promise<boolean> {
   const refresh = await tokenStore.getRefresh();
   if (!refresh) return false;
   const res = await raw("POST", "/auth/refresh", { body: { refreshToken: refresh }, auth: false }, null);
@@ -153,6 +158,22 @@ async function refreshTokens(): Promise<boolean> {
     return true;
   }
   return false;
+}
+
+/**
+ * Single-flight: nhiều request cùng nhận 401 (vd lúc mở lại app, react-query bắn song song)
+ * chỉ kích hoạt MỘT lần gọi `/auth/refresh`. Server rotate refresh token theo `familyId` +
+ * reuse-detection — token đã rotate mà bị dùng lại sẽ thu hồi CẢ họ (chống trộm token). Nếu gọi
+ * refresh song song với cùng token, lần thứ hai bị coi là reuse → user bị đá ra oan. Gom về một
+ * promise dùng chung để tránh đúng race đó.
+ */
+function refreshTokens(): Promise<boolean> {
+  if (!inflightRefresh) {
+    inflightRefresh = doRefresh().finally(() => {
+      inflightRefresh = null;
+    });
+  }
+  return inflightRefresh;
 }
 
 async function parse<T>(res: Response): Promise<T> {

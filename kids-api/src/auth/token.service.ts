@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import { JwtService, JwtSignOptions } from "@nestjs/jwt";
 import { PlatformRole, UserType } from "@prisma/client";
 import { createHash, randomBytes } from "node:crypto";
 import { EnvService } from "../config/env.service";
@@ -23,7 +23,9 @@ export class TokenService {
   async signAccess(payload: AccessTokenPayload): Promise<string> {
     return this.jwt.signAsync(payload, {
       secret: this.env.get("JWT_ACCESS_SECRET"),
-      expiresIn: this.env.get("JWT_ACCESS_TTL"),
+      // jsonwebtoken (qua @nestjs/jwt 11) thắt `expiresIn` thành `ms.StringValue | number`;
+      // JWT_ACCESS_TTL là chuỗi ms hợp lệ ("15m") validate ở config.schema → cast tường minh.
+      expiresIn: this.env.get("JWT_ACCESS_TTL") as JwtSignOptions["expiresIn"],
       algorithm: "HS256",
     });
   }

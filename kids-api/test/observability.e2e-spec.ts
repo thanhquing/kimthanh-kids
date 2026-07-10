@@ -1,5 +1,6 @@
 import { INestApplication } from "@nestjs/common";
 import request from "supertest";
+import { AuditService } from "../src/audit/audit.service";
 import { PrismaService } from "../src/prisma/prisma.service";
 import {
   PLATFORM_HOST,
@@ -14,6 +15,7 @@ import {
 describe("G — Notification / Dashboard / Audit / Usage", () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let audit: AuditService;
   const api = () => request(app.getHttpServer());
   const auth = (t: TenantFixture, token = t.adminToken) => ({
     Host: t.host,
@@ -61,6 +63,7 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
   beforeAll(async () => {
     app = await bootstrap();
     prisma = app.get(PrismaService);
+    audit = app.get(AuditService);
   });
   afterAll(async () => app.close());
 
@@ -76,6 +79,9 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const feed = await api().get("/api/notifications").set(auth(t, p.token)).expect(200);
     expect(feed.body.data.length).toBe(1);
     expect(feed.body.data[0].type).toBe("INCIDENT");
+    expect(feed.body.data[0].title).toBe("Có cập nhật sự cố");
+    expect(feed.body.data[0].title).not.toContain("Bé G");
+    expect(feed.body.data[0].body).toBeNull();
     expect(feed.body.data[0].linkType).toBe("Incident");
     const notifId = feed.body.data[0].id;
 
@@ -141,7 +147,7 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
   });
 
   // ── G4 Audit ──
-  it("ghi audit hành động nhạy cảm: tạo thành viên + hủy hóa đơn", async () => {
+  it("ghi audit hành động nhạy cảm và không expose metadata thô", async () => {
     const t = await createTenant(app);
     const school = await mainSchool(t);
     const p = await parent(t); // tạo member → audit member.create
@@ -160,8 +166,12 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
 
     const logs = await api().get("/api/audit-logs").set(auth(t)).expect(200);
     const actions = logs.body.data.map((l: { action: string }) => l.action);
+    expect(actions).toContain("auth.login");
     expect(actions).toContain("member.create");
     expect(actions).toContain("invoice.cancel");
+    expect(logs.body.data.every((l: { metadata?: unknown }) => l.metadata === undefined)).toBe(
+      true,
+    );
 
     // Lọc theo action.
     const filtered = await api()
@@ -174,6 +184,38 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
 
     // PH không xem được audit.
     await api().get("/api/audit-logs").set(auth(t, p.token)).expect(403);
+  });
+
+  it("audit metadata sanitizer redacts secret/PII-like keys before persistence", async () => {
+    const t = await createTenant(app);
+    const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
+    const admin = await prisma.system.user.findFirst({
+      where: { tenantId: tenant!.id, email: t.email },
+    });
+    await audit.log({
+      tenantId: tenant!.id,
+      actorId: admin!.id,
+      action: "audit.sanitize.test",
+      targetType: "Tenant",
+      targetId: tenant!.id,
+      metadata: {
+        password: "Password123",
+        token: "abc",
+        role: "SCHOOL_ADMIN",
+        nested: { medicineName: "Hapacol", ok: true },
+      },
+    });
+
+    const row = await prisma.system.auditLog.findFirst({
+      where: { tenantId: tenant!.id, action: "audit.sanitize.test" },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(row?.metadata).toMatchObject({
+      password: "[REDACTED]",
+      token: "[REDACTED]",
+      role: "SCHOOL_ADMIN",
+      nested: { medicineName: "[REDACTED]", ok: true },
+    });
   });
 
   // ── G usage (operator) ──

@@ -9,6 +9,9 @@ const API_TARGET = process.env.VITE_API_TARGET ?? "http://localhost:3000";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    sourcemap: false,
+  },
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },

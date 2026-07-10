@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PlatformRole } from "@prisma/client";
 import { randomUUID } from "node:crypto";
+import { AuditService } from "../audit/audit.service";
 import { TenantContextStore } from "../common/context/tenant-context";
 import { comparePassword, hashPassword, needsRehash } from "../common/crypto/password";
 import { EnvService } from "../config/env.service";
@@ -29,6 +30,7 @@ export class AuthService {
     private readonly users: UserContextService,
     private readonly usage: UsageService,
     private readonly env: EnvService,
+    private readonly audit: AuditService,
   ) {}
 
   /** Đăng nhập theo ngữ cảnh host: platform host → platform user; tenant host → user của tenant đó. */
@@ -89,6 +91,15 @@ export class AuthService {
     await this.usage
       .track("login", { tenantId: user.tenantId, userId: user.id, meta: { type: user.type } })
       .catch(() => undefined);
+    await this.audit.log({
+      tenantId: user.tenantId,
+      actorId: user.id,
+      actorType: user.type,
+      action: "auth.login",
+      targetType: "User",
+      targetId: user.id,
+      metadata: { type: user.type },
+    });
 
     return {
       ...(await this.issueTokens(

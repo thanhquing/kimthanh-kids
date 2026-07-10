@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { MedicineStatus, NotificationType } from "@prisma/client";
+import { AuditService } from "../audit/audit.service";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { paginated } from "../common/http/api-response";
 import { page, PaginationQuery } from "../common/http/pagination";
@@ -29,6 +30,7 @@ export class MedicineService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
+    private readonly audit: AuditService,
   ) {}
 
   /** PH (hoặc staff) tạo yêu cầu cho con/học sinh; mở timeline với mốc PENDING. */
@@ -40,7 +42,7 @@ export class MedicineService {
     if (!student)
       throw new NotFoundException({ code: "NO_STUDENT", message: "Không tìm thấy học sinh" });
 
-    return this.prisma.db.medicineRequest.create({
+    const request = await this.prisma.db.medicineRequest.create({
       data: {
         schoolId: student.schoolId,
         studentId: input.studentId,
@@ -61,6 +63,8 @@ export class MedicineService {
         },
       } as never,
     });
+    await this.audit.logAs(user, "medicine.create", { type: "MedicineRequest", id: request.id });
+    return request;
   }
 
   /** Yêu cầu của các con phụ huynh đang đăng nhập. */
@@ -161,6 +165,7 @@ export class MedicineService {
         linkId: id,
       });
     }
+    await this.audit.logAs(user, "medicine.handle", { type: "MedicineRequest", id }, { status });
     return updated;
   }
 }

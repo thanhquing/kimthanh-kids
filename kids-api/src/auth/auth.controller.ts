@@ -6,7 +6,12 @@ import { Public } from "../common/decorators/public.decorator";
 import { AllowInactive } from "../common/decorators/subscription.decorator";
 import { EnvService } from "../config/env.service";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
-import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from "./auth-cookie";
+import {
+  clearRefreshCookie,
+  isCookielessClient,
+  readRefreshCookie,
+  setRefreshCookie,
+} from "./auth-cookie";
 import { AuthService } from "./auth.service";
 import { LoginDto, RefreshDto, loginSchema, refreshSchema } from "./auth.dto";
 import { TokenService } from "./token.service";
@@ -36,8 +41,9 @@ export class AuthController {
       ip: req.ip,
     });
     setRefreshCookie(res, refreshToken, this.tokens.refreshTtlMs(), this.env);
-    // KHÔNG trả refreshToken ra body — chỉ nằm trong cookie HttpOnly.
-    return rest;
+    // Web: refreshToken CHỈ trong cookie HttpOnly. Native (x-client) không có cookie jar →
+    // trả kèm body để lưu SecureStore. Xem isCookielessClient().
+    return isCookielessClient(req) ? { ...rest, refreshToken } : rest;
   }
 
   @Public()
@@ -59,7 +65,9 @@ export class AuthController {
       ip: req.ip,
     });
     setRefreshCookie(res, refreshToken, this.tokens.refreshTtlMs(), this.env);
-    return { accessToken };
+    // Refresh token ĐÃ ROTATE — native phải nhận token mới ở body, nếu không lần refresh sau
+    // dùng lại token cũ → reuse-detection thu hồi cả họ. Web tiếp tục dùng cookie mới.
+    return isCookielessClient(req) ? { accessToken, refreshToken } : { accessToken };
   }
 
   @Post("logout")

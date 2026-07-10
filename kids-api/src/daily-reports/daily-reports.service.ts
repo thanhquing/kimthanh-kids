@@ -87,11 +87,11 @@ export class DailyReportsService {
       if (media.length !== uniqueIds.length)
         throw new NotFoundException({ code: "NO_MEDIA", message: "Không tìm thấy ảnh" });
 
-      await this.prisma.system.dailyReportPhoto.deleteMany({
-        where: { tenantId: user.tenantId!, reportId: report.id },
+      await this.prisma.db.dailyReportPhoto.deleteMany({
+        where: { reportId: report.id },
       });
       if (uniqueIds.length) {
-        await this.prisma.system.dailyReportPhoto.createMany({
+        await this.prisma.db.dailyReportPhoto.createMany({
           data: uniqueIds.map((mediaId, index) => ({
             tenantId: user.tenantId!,
             reportId: report.id,

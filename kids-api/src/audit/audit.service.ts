@@ -15,6 +15,35 @@ export interface AuditInput {
   metadata?: Prisma.InputJsonValue;
 }
 
+const SENSITIVE_METADATA_KEY =
+  /password|token|secret|hash|cookie|authorization|email|phone|fullName|studentName|medicineName|note|description|rawPayload|gatewayRef|reference|bankAccount/i;
+const REDACTED = "[REDACTED]";
+
+function sanitizeAuditMetadata(
+  value: Prisma.InputJsonValue | undefined,
+): Prisma.InputJsonValue | undefined {
+  return value === undefined ? undefined : sanitizeJsonValue(value);
+}
+
+function sanitizeJsonValue(value: Prisma.InputJsonValue): Prisma.InputJsonValue {
+  if (value === null) return value;
+  if (Array.isArray(value))
+    return value.map((item) => sanitizeJsonValue(item)) as Prisma.InputJsonArray;
+  if (typeof value === "object") return sanitizeJsonObject(value as Prisma.InputJsonObject);
+  return value;
+}
+
+function sanitizeJsonObject(value: Prisma.InputJsonObject): Prisma.InputJsonObject {
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      SENSITIVE_METADATA_KEY.test(key)
+        ? REDACTED
+        : sanitizeJsonValue(item as Prisma.InputJsonValue),
+    ]),
+  ) as Prisma.InputJsonObject;
+}
+
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
@@ -39,7 +68,7 @@ export class AuditService {
           action: input.action,
           targetType: input.targetType,
           targetId: input.targetId,
-          metadata: input.metadata,
+          metadata: sanitizeAuditMetadata(input.metadata),
         },
       });
     } catch (e) {

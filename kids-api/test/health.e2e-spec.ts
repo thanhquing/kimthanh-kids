@@ -1,13 +1,16 @@
 import { INestApplication } from "@nestjs/common";
 import request from "supertest";
+import { PrismaService } from "../src/prisma/prisma.service";
 import { TenantFixture, bootstrap, createTenant, rnd } from "./helpers";
 
 describe("Phase 1 — D. Sức khỏe (health/medicine/incidents/leave)", () => {
   let app: INestApplication;
+  let prisma: PrismaService;
   const api = () => request(app.getHttpServer());
 
   beforeAll(async () => {
     app = await bootstrap();
+    prisma = app.get(PrismaService);
   });
   afterAll(async () => app.close());
 
@@ -163,6 +166,28 @@ describe("Phase 1 — D. Sức khỏe (health/medicine/incidents/leave)", () => 
     const detail = await api().get(`/api/medicine/${reqId}`).set(auth(t)).expect(200);
     expect(detail.body.data.status).toBe("ADMINISTERED");
     expect(detail.body.data.history.length).toBe(3); // PENDING + APPROVED + ADMINISTERED
+
+    const feed = await api().get("/api/notifications").set(auth(t, parent.token)).expect(200);
+    const medNotifs = feed.body.data.filter((n: { type: string }) => n.type === "MEDICINE");
+    expect(medNotifs.length).toBeGreaterThanOrEqual(2);
+    for (const n of medNotifs as Array<{ title: string; body?: string }>) {
+      expect(n.title).toBe("Có cập nhật yêu cầu thuốc");
+      expect(n.title).not.toContain("Hapacol");
+      expect(n.body ?? "").not.toContain("OK");
+      expect(n.body ?? "").not.toContain("Đã cho uống");
+    }
+
+    const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
+    const audit = await prisma.system.auditLog.findFirst({
+      where: {
+        tenantId: tenant!.id,
+        action: "medicine.handle",
+        targetType: "MedicineRequest",
+        targetId: reqId,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(audit?.metadata).toMatchObject({ status: "ADMINISTERED" });
   });
 
   it("D2: PH không tạo được yêu cầu cho bé không phải con (404)", async () => {

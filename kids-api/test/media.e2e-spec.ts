@@ -119,6 +119,17 @@ describe("Phase 1 — media (compress + lưu nội bộ + cô lập)", () => {
     const serve = await api().get(up.body.data.url).set(auth(t)).expect(200);
     expect(serve.headers["content-type"]).toContain("image/webp");
     expect(serve.body.length).toBeGreaterThan(0);
+
+    const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
+    const audit = await prisma.system.auditLog.findFirst({
+      where: {
+        tenantId: tenant!.id,
+        action: "media.upload",
+        targetType: "Media",
+        targetId: up.body.data.id,
+      },
+    });
+    expect(audit?.metadata).toMatchObject({ kind: "REPORT_PHOTO" });
   });
 
   it("từ chối file không phải ảnh", async () => {

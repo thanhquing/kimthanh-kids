@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { PostStatus, Prisma, UserType } from "@prisma/client";
+import { AuditService } from "../audit/audit.service";
 import { paginated } from "../common/http/api-response";
 import { EnvService } from "../config/env.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -39,6 +40,7 @@ export class PlatformPostsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly env: EnvService,
+    private readonly audit: AuditService,
   ) {}
 
   private cleanSlug(slug: string): string {
@@ -142,8 +144,13 @@ export class PlatformPostsService {
   }
 
   private logAction(action: string, targetId: string, actorId?: string) {
-    return this.prisma.system.auditLog.create({
-      data: { actorId, actorType: UserType.PLATFORM, action, targetType: "PlatformPost", targetId },
+    return this.audit.log({
+      tenantId: null,
+      actorId,
+      actorType: UserType.PLATFORM,
+      action,
+      targetType: "PlatformPost",
+      targetId,
     });
   }
 

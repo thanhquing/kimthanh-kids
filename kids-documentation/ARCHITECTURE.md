@@ -2,9 +2,9 @@
 
 ## Tech stack
 
-- **NestJS 10** (DI, guards, interceptors, modules)
+- **NestJS 11** (DI, guards, interceptors, modules; trên Express 5)
 - **Prisma 5 + PostgreSQL 16** (ORM, migrations, client extension cho multi-tenant)
-- **JWT** access HS256 (15m, claim `tv`=tokenVersion → vô hiệu khi reset mật khẩu; web FE giữ **in-memory**) + refresh (30d, hash SHA-256, rotation theo `familyId` + **reuse-detection** revoke cả họ; trả qua **cookie `HttpOnly` `kk_rt`** — SameSite=Lax, Path bám global prefix, không lộ ra body/JS; fallback body cho client không dùng cookie) · **bcrypt** (cost `BCRYPT_COST`, rehash-on-login) · **account lockout** (`failedLoginCount`/`lockedUntil`, ngưỡng `AUTH_LOCKOUT_*`)
+- **JWT** access HS256 (15m, claim `tv`=tokenVersion → vô hiệu khi reset mật khẩu; web FE giữ **in-memory**) + refresh (30d, hash SHA-256, rotation theo `familyId` + **reuse-detection** revoke cả họ; trả qua **cookie `HttpOnly` `kk_rt`** — SameSite=Lax, Path bám global prefix, không lộ ra body/JS; client không có cookie jar khai header `x-client: native` → nhận refreshToken ở body lưu SecureStore) · **bcrypt** (cost `BCRYPT_COST`, rehash-on-login) · **account lockout** (`failedLoginCount`/`lockedUntil`, ngưỡng `AUTH_LOCKOUT_*`)
 - **Zod** validate env + request body · **class-validator** (global ValidationPipe)
 - **@nestjs/schedule** (cron) · **@nestjs/throttler** (2 named throttler env-driven: `default` 120/60s mọi route + `auth` 5/60s cho `/auth/login`+`/auth/refresh` chống brute-force; cấu hình `THROTTLE_*`/`AUTH_THROTTLE_*`) · **helmet** · **trust proxy** (`TRUST_PROXY`) · **Swagger** (`/docs`)
 - Package manager: **pnpm** · Node ≥ 20
@@ -115,7 +115,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — **131 e2e / 15 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6 + pickup 7/7).
+- `pnpm test:e2e` — **165 e2e / 18 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6 + pickup 7/7).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.
 - Cron billing chạy tự động (`@nestjs/schedule`); logic tách ở `BillingJobsService` để test gọi trực tiếp.

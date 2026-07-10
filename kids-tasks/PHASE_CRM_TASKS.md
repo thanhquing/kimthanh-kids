@@ -6,7 +6,7 @@
 
 ## 0. Trạng thái hiện tại
 
-- `kids-api` Phase 0 + Phase 1 đã đóng; inventory hiện tại 131 e2e / 15 suite (xem `ARCHITECTURE.md`). Lần verify gần nhất: `tsc` + `lint` sạch; `test:e2e` cần chạy lại khi Docker/Postgres local hoạt động.
+- `kids-api` Phase 0 + Phase 1 đã đóng; inventory hiện tại 165 e2e / 18 suite (xem `ARCHITECTURE.md`). Lần verify gần nhất: `tsc` + `lint` + `test:e2e` sạch (165/18) trên NestJS 11/Express 5.
 - Ledger CRM trong [`UI_API_FLOW_TEST.md`](../kids-documentation/UI_API_FLOW_TEST.md) đã PASS **49/49** flow chủ trường, fixture `crm1782232197.kimthanhkids.vn`.
 - `kids-platform` đã có pattern cần copy: Vite + React + TypeScript + Tailwind + TanStack Query, `src/api/http.ts` bóc envelope, refresh token, invalidate query theo nhóm.
 - `kids-crm/` đã bootstrap source bằng copy-first từ `kids-platform`: app shell, đăng nhập realm tenant (login/me/refresh + guard chặn tài khoản platform).
@@ -120,7 +120,7 @@ Nguồn hiện có: `kids-landing/public/mock-ui/web/`.
   - [x] bóc `{ success:true, data, meta? }`.
   - [x] throw `ApiError(code,message,status)` khi `{ success:false }`.
   - [x] `401 -> refresh -> retry once -> logout`.
-- [x] Auth store: accessToken + refreshToken trong `localStorage` có chủ đích.
+- [x] Auth store: accessToken + refreshToken trong `localStorage` có chủ đích. _(Cập nhật vòng 14 bảo mật: refresh token → cookie `HttpOnly`, access token in-memory; bỏ localStorage.)_
 - [x] QueryClient + toast/error boundary.
 - [x] Layout:
   - [x] sidebar desktop, bottom/nav compact mobile.
