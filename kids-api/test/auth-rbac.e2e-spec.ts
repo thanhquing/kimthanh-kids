@@ -131,6 +131,23 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
         .expect(401);
     });
 
+    it("contract /auth/me: đủ field FE phụ thuộc (type/roles/tenantId) — chống drift shape", async () => {
+      const t = await createTenant(app);
+      const me = await api()
+        .get("/api/auth/me")
+        .set("Host", t.host)
+        .set("Authorization", `Bearer ${t.adminToken}`)
+        .expect(200);
+      const d = me.body.data;
+      // CRM login role-guard + AppLayout nav gating dựa vào type + roles[].
+      expect(typeof d.id).toBe("string");
+      expect(d.type).toBe("TENANT");
+      expect(Array.isArray(d.roles)).toBe(true);
+      expect(d.roles).toContain("SCHOOL_ADMIN");
+      expect(typeof d.tenantId).toBe("string");
+      expect(d.platformRole ?? null).toBeNull(); // tài khoản tenant không có platformRole
+    });
+
     it("logout thu hồi refresh token", async () => {
       const t = await createTenant(app);
       const login = await api()

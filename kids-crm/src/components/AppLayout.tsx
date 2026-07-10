@@ -23,23 +23,37 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { logout } from "@/api/auth";
-import { crm } from "@/api/crm";
+import { logout, me } from "@/api/auth";
+import { crm, type TenantRole } from "@/api/crm";
 import logoFull from "@/assets/logo-kimthanh.png";
 import { useT, type TKey, type Translator } from "@/i18n";
 import { languageStore, type Language } from "@/lib/language";
+import { ADMIN_ROLES, LESSON_EDITOR_ROLES, NON_FINANCE_ROLES, hasAnyRole } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
-type NavItem = { to: string; labelKey: TKey; icon: typeof LayoutDashboard; end?: boolean };
+// `roles`: chỉ hiện mục nav khi user có ≥1 role trong danh sách (khớp @Roles BE của endpoint
+// chính trang đó → tránh vào trang bị 403). Mục KHÔNG có `roles` = mọi staff (list = STAFF đủ role).
+type NavItem = {
+  to: string;
+  labelKey: TKey;
+  icon: typeof LayoutDashboard;
+  end?: boolean;
+  roles?: TenantRole[];
+};
 
 const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
-  { groupKey: null, items: [{ to: "/", labelKey: "nav.dashboard", icon: LayoutDashboard, end: true }] },
+  {
+    groupKey: null,
+    items: [
+      { to: "/", labelKey: "nav.dashboard", icon: LayoutDashboard, end: true, roles: ADMIN_ROLES },
+    ],
+  },
   {
     groupKey: "navGroups.profile",
     items: [
       { to: "/classrooms", labelKey: "nav.classrooms", icon: BookOpen },
       { to: "/students", labelKey: "nav.students", icon: Users },
-      { to: "/members", labelKey: "nav.members", icon: ClipboardList },
+      { to: "/members", labelKey: "nav.members", icon: ClipboardList, roles: ADMIN_ROLES },
     ],
   },
   {
@@ -47,9 +61,9 @@ const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
     items: [
       { to: "/attendance", labelKey: "nav.attendance", icon: CalendarCheck },
       { to: "/reports", labelKey: "nav.reports", icon: Bell },
-      { to: "/health", labelKey: "nav.health", icon: HeartPulse },
+      { to: "/health", labelKey: "nav.health", icon: HeartPulse, roles: NON_FINANCE_ROLES },
       { to: "/leave", labelKey: "nav.leave", icon: CalendarDays },
-      { to: "/pickup", labelKey: "nav.pickup", icon: ContactRound },
+      { to: "/pickup", labelKey: "nav.pickup", icon: ContactRound, roles: NON_FINANCE_ROLES },
     ],
   },
   {
@@ -58,7 +72,7 @@ const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
       { to: "/tuition", labelKey: "nav.tuition", icon: Receipt },
       { to: "/announcements", labelKey: "nav.announcements", icon: Megaphone },
       { to: "/notifications", labelKey: "nav.notifications", icon: Inbox },
-      { to: "/audit-logs", labelKey: "nav.auditLogs", icon: Activity },
+      { to: "/audit-logs", labelKey: "nav.auditLogs", icon: Activity, roles: ADMIN_ROLES },
     ],
   },
   {
@@ -67,43 +81,52 @@ const NAV: { groupKey: TKey | null; items: NavItem[] }[] = [
       { to: "/assignments", labelKey: "nav.assignments", icon: ClipboardCheck },
       { to: "/menus", labelKey: "nav.menus", icon: Utensils },
       { to: "/albums", labelKey: "nav.albums", icon: Images },
-      { to: "/lessons", labelKey: "nav.lessons", icon: BookOpen },
+      { to: "/lessons", labelKey: "nav.lessons", icon: BookOpen, roles: LESSON_EDITOR_ROLES },
     ],
   },
   {
     groupKey: "navGroups.config",
-    items: [{ to: "/settings", labelKey: "nav.settings", icon: Settings }],
+    items: [{ to: "/settings", labelKey: "nav.settings", icon: Settings, roles: ADMIN_ROLES }],
   },
 ];
 
 const MOBILE_PRIMARY: NavItem[] = [
-  { to: "/", labelKey: "nav.dashboard", icon: LayoutDashboard, end: true },
+  { to: "/", labelKey: "nav.dashboard", icon: LayoutDashboard, end: true, roles: ADMIN_ROLES },
   { to: "/classrooms", labelKey: "nav.classroomsShort", icon: BookOpen },
   { to: "/students", labelKey: "nav.students", icon: Users },
   { to: "/tuition", labelKey: "nav.tuition", icon: Receipt },
 ];
 
-function NavSections({ onNavigate }: { onNavigate?: () => void }) {
+/** Mục hiện khi không giới hạn role HOẶC user có ≥1 role khớp. */
+function canSee(item: NavItem, roles: TenantRole[]): boolean {
+  return hasAnyRole(roles, item.roles);
+}
+
+function NavSections({ roles, onNavigate }: { roles: TenantRole[]; onNavigate?: () => void }) {
   const { t } = useT();
   return (
     <>
-      {NAV.map((sec, i) => (
-        <div key={i}>
-          {sec.groupKey && <div className="nav-group">{t(sec.groupKey)}</div>}
-          {sec.items.map((it) => (
-            <NavLink
-              key={it.to}
-              to={it.to}
-              end={it.end ?? false}
-              onClick={onNavigate}
-              className={({ isActive }) => cn("nav-item", isActive && "active")}
-            >
-              <it.icon className="w-4 h-4" />
-              {t(it.labelKey)}
-            </NavLink>
-          ))}
-        </div>
-      ))}
+      {NAV.map((sec, i) => {
+        const items = sec.items.filter((it) => canSee(it, roles));
+        if (!items.length) return null; // ẩn cả group khi mọi mục bị lọc
+        return (
+          <div key={i}>
+            {sec.groupKey && <div className="nav-group">{t(sec.groupKey)}</div>}
+            {items.map((it) => (
+              <NavLink
+                key={it.to}
+                to={it.to}
+                end={it.end ?? false}
+                onClick={onNavigate}
+                className={({ isActive }) => cn("nav-item", isActive && "active")}
+              >
+                <it.icon className="w-4 h-4" />
+                {t(it.labelKey)}
+              </NavLink>
+            ))}
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -195,6 +218,11 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { t, lang } = useT();
   const [moreOpen, setMoreOpen] = useState(false);
+  // Role của user hiện tại (để ẩn nav ngoài quyền). Chưa tải xong → [] (ẩn mục hạn chế
+  // tới khi biết role, tránh nháy mục không được phép).
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
+  const roles = (meQuery.data?.roles ?? []) as TenantRole[];
+  const mobilePrimary = MOBILE_PRIMARY.filter((it) => canSee(it, roles));
 
   async function onLogout() {
     setMoreOpen(false);
@@ -217,7 +245,7 @@ export function AppLayout() {
         </div>
 
         <nav className="flex-1 overflow-y-auto">
-          <NavSections />
+          <NavSections roles={roles} />
         </nav>
       </aside>
 
@@ -226,7 +254,7 @@ export function AppLayout() {
       </div>
 
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 flex bg-white border-t border-[#f4e7e0]">
-        {MOBILE_PRIMARY.map((it) => (
+        {mobilePrimary.map((it) => (
           <NavLink
             key={it.to}
             to={it.to}
@@ -270,7 +298,7 @@ export function AppLayout() {
             <div className="mb-3 border-b border-[#f4e7e0] pb-3">
               <AccountPanel t={t} lang={lang} onLogout={onLogout} onNotifications={() => { setMoreOpen(false); navigate("/notifications"); }} />
             </div>
-            <NavSections onNavigate={() => setMoreOpen(false)} />
+            <NavSections roles={roles} onNavigate={() => setMoreOpen(false)} />
           </div>
         </div>
       )}

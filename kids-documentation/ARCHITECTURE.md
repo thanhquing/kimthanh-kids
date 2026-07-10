@@ -115,7 +115,8 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — **165 e2e / 18 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6 + pickup 7/7).
+- `pnpm test:e2e` — **168 e2e / 18 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6 + pickup 7/7).
+- **Contract FE↔BE:** type FE viết tay (không dùng OpenAPI codegen) — Swagger KHÔNG introspect được Zod DTO nên `openapi.json` rỗng schema, generated types chỉ là vỏ `never`. Chống drift bằng **contract e2e** assert shape response/params cho endpoint FE/mobile phụ thuộc (vd `/auth/me`, `/platform/invoices` money=number, native token-in-body). Muốn adopt generated types thì phải wire Zod→OpenAPI trước (xem SECURITY_AUDIT_CHECKLIST).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.
 - Cron billing chạy tự động (`@nestjs/schedule`); logic tách ở `BillingJobsService` để test gọi trực tiếp.

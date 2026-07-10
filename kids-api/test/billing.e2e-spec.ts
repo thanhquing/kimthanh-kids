@@ -303,6 +303,31 @@ describe("Phase 0 edge — billing / quota / entitlement / webhook", () => {
     await platformGet(tk, "/api/platform/invoices?status=OPEN").expect(200);
   });
 
+  // Contract: field tiền phải là number (không phải Decimal→string) để khớp type FE.
+  it("GET /platform/invoices: money fields là number, không phải string (chống drift Decimal)", async () => {
+    const t = await createTenant(app);
+    const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
+    const tk = await loginPlatform(app);
+    await api()
+      .post("/api/platform/invoices")
+      .set("Host", PLATFORM_HOST)
+      .set("Authorization", `Bearer ${tk}`)
+      .send({ tenantId: tenant!.id })
+      .expect(201);
+
+    const res = await platformGet(tk, `/api/platform/invoices?tenantId=${tenant!.id}`).expect(200);
+    const rows = res.body.data as Record<string, unknown>[];
+    expect(rows.length).toBeGreaterThan(0);
+    const inv = rows[0];
+    for (const f of ["subtotal", "discount", "tax", "total", "amountPaid", "amountDue"]) {
+      expect(typeof inv[f]).toBe("number");
+    }
+    for (const line of (inv.lines ?? []) as Record<string, unknown>[]) {
+      expect(typeof line.amount).toBe("number");
+      expect(typeof line.unitPrice).toBe("number");
+    }
+  });
+
   it("GET /platform/audit: tenantId không phải uuid → 400", async () => {
     const tk = await loginPlatform(app);
     await platformGet(tk, "/api/platform/audit?tenantId=not-a-uuid").expect(400);

@@ -1,7 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { isAuthed } from "./api/auth";
+import { isAuthed, me } from "./api/auth";
+import type { TenantRole } from "./api/crm";
 import { bootstrapAuth, setOnUnauthorized } from "./api/http";
+import { isAdminRole } from "./lib/roles";
 import { AppLayout } from "./components/AppLayout";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ClassroomsPage } from "./pages/ClassroomsPage";
@@ -31,6 +34,21 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Trang chủ "/" = Dashboard, nhưng dashboard chỉ cho SCHOOL_ADMIN/PRINCIPAL (BE 403 với role khác).
+ * User không phải admin → chuyển về "/students" (list mở cho mọi staff) để không đáp vào trang 403.
+ */
+function DashboardGate() {
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
+  if (meQuery.isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center text-slate-400 text-sm">Đang tải…</div>
+    );
+  }
+  const roles = (meQuery.data?.roles ?? []) as TenantRole[];
+  return isAdminRole(roles) ? <DashboardPage /> : <Navigate to="/students" replace />;
+}
+
 export function App() {
   const navigate = useNavigate();
   // Access token in-memory mất khi reload → khôi phục phiên từ cookie refresh trước khi render route.
@@ -58,7 +76,7 @@ export function App() {
           </RequireAuth>
         }
       >
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<DashboardGate />} />
         <Route path="/classrooms" element={<ClassroomsPage />} />
         <Route path="/classrooms/:id" element={<ClassroomDetailPage />} />
         <Route path="/students" element={<StudentsPage />} />
