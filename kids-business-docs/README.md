@@ -21,7 +21,8 @@
 ## Nguồn sự thật
 
 - Code API: [`kids-api/`](../kids-api).
-- Kế hoạch & tiến độ: [`kids-tasks/PHASE_DOMAIN_API_TASKS.md`](../kids-tasks/PHASE_DOMAIN_API_TASKS.md).
+- Kế hoạch & tiến độ: [`kids-tasks/BACKLOG.md`](../kids-tasks/BACKLOG.md).
+- Kiến thức phần đã làm xong: [`kids-documentation/IMPLEMENTATION_KNOWLEDGE.md`](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
 - Mockup UI tham chiếu: [`kids-landing/public/mock-ui/`](../kids-landing/public/mock-ui).
 
 ## Lưu ý nhất quán (đọc trước khi quảng bá/triển khai)
@@ -31,4 +32,4 @@ Các phần **chưa làm / thuộc giai đoạn sau** (đừng cam kết với k
 - **Chat realtime** — đã **loại khỏi kế hoạch**.
 - **Push notification FCM** — làm cùng phase mobile.
 - **Tự động đối soát ngân hàng cho VietQR**, **cổng MoMo/ZaloPay**, **analytics nâng cao**, **reset mật khẩu qua email** — P2.
-- **App iOS/Android & web CRM** — phase UI sau cùng.
+- **App iOS/Android store release** — native đã code nhiều màn, còn smoke/EAS/store readiness trong backlog.

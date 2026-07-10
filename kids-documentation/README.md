@@ -11,6 +11,7 @@ Tài liệu tham chiếu cho hệ thống SaaS quản lý mầm non **KimThanh K
 | [DATABASE_ERD.md](./DATABASE_ERD.md) | Sơ đồ ER (Mermaid) + mô tả từng bảng của Tầng A |
 | [BILLING.md](./BILLING.md) | Gói cước, state machine subscription, hóa đơn/thanh toán, feature-gating, quota, cron |
 | [API.md](./API.md) | Danh mục endpoint **đầy đủ** (Tầng A + Phase 1 A→G): public/auth/tenant/billing/platform + domain nghiệp vụ |
+| [IMPLEMENTATION_KNOWLEDGE.md](./IMPLEMENTATION_KNOWLEDGE.md) | Kiến thức triển khai đã DONE: API/domain, platform, CRM, mobile, landing, verify |
 | [UI_API_FLOW_TEST.md](./UI_API_FLOW_TEST.md) | Ledger kiểm thử cURL theo mock UI: Platform tenant → CRM chủ trường → app nhỏ/mobile |
 | [SECURITY_AUDIT_CHECKLIST.md](./SECURITY_AUDIT_CHECKLIST.md) | Checklist audit bảo mật: multi-tenant isolation, RBAC, auth/session, API, FE/BE, DB/schema |
 | [PRIVACY_RETENTION.md](./PRIVACY_RETENTION.md) | Phân loại dữ liệu, chính sách retention, right-to-erasure, incident runbook, kiểm soát export |
@@ -36,6 +37,7 @@ kimthanh-kids/
 - **Phase 0 — Tầng A (Platform/SaaS) — ĐÃ XONG:** đa-tenant, tenant/school, white-label, gói cước, subscription, billing nền tảng, feature-gating, quota, RBAC 2 cấp, auth.
 - **Phase 1 — Tầng B (Domain nghiệp vụ) — ĐÃ XONG (A→G):** B hồ sơ/lớp/nhân sự · C điểm danh/báo cáo · D sức khỏe (health/medicine/incident/allergy/leave) · E học phí (VietQR/tiền mặt/VNPay + chứng từ) · F giao tiếp (announcement/menu/lesson-plan/album) · G observability (notification/dashboard/audit/usage). Mọi bảng domain có `tenantId` + `schoolId`. **Chat realtime đã loại khỏi kế hoạch.**
 - **Phase UI:** `kids-platform` ✅, `kids-mobile-web` ✅ và `kids-crm` ✅ đã tiêu thụ API thật cho các flow chính. `kids-mobile-native` 🟡 đã khởi tạo Expo/copy-first và port nhiều màn P0/P1; còn cần smoke trên thiết bị thật, EAS/dev build, upload ảnh native và push FCM/Expo.
+- **Backlog hiện tại:** xem [`../kids-tasks/BACKLOG.md`](../kids-tasks/BACKLOG.md), đã sắp thứ tự dễ → phức tạp.
 
 ## Chạy nhanh `kids-api`
 

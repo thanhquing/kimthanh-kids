@@ -41,7 +41,6 @@ pnpm build
 
 ## Handoff
 
-- [MOBILE_WEB_TASKS.md](./MOBILE_WEB_TASKS.md) — trạng thái tổng việc đã làm / còn lại
-- [API_INTEGRATION_TASKS.md](./API_INTEGRATION_TASKS.md) — chi tiết integrate API từng domain + cURL + review
+- [../kids-tasks/BACKLOG.md](../kids-tasks/BACKLOG.md) — việc còn lại đã sắp thứ tự dễ → phức tạp
+- [../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md) — kiến thức phần đã DONE
 - [FE_TEST_SCENARIOS.md](./FE_TEST_SCENARIOS.md) — kịch bản chức năng làm cơ sở e2e FE
-- [../kids-crm/CRM_FEATURE_IDEAS.md](../kids-crm/CRM_FEATURE_IDEAS.md) — ý tưởng CRM tương quan mobile theo role

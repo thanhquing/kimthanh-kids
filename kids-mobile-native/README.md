@@ -6,7 +6,7 @@ App di động native (iOS/Android) cho phụ huynh & giáo viên KimThanh Kids 
 
 ## Chiến lược: copy-first từ `kids-mobile-web`
 
-Quyết định kiến trúc (D5, [`../kids-tasks/PHASE_UI_TASKS.md`](../kids-tasks/PHASE_UI_TASKS.md)): **2 codebase tách, chia sẻ logic bằng copy**, KHÔNG hợp nhất 1 codebase Expo + web-export.
+Quyết định kiến trúc đã chốt: **2 codebase tách, chia sẻ logic bằng copy**, KHÔNG hợp nhất 1 codebase Expo + web-export. Xem kiến thức DONE ở [`../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md`](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
 
 - **Copy gần nguyên xi** từ `kids-mobile-web`: `src/api/*` (types + react-query hooks + `public.ts`), `src/i18n/*` (vi/en + `useT`), `src/lib/*` (display helpers, date, routes).
 - **Chỉ sửa lớp biên (adapter):**
@@ -26,7 +26,7 @@ FlashList virtualization cho roster/feed · expo-image cache · Hermes · react-
 ## Khi khởi tạo
 
 - `.gitignore`: `node_modules`, `.expo`, `dist`, `.env`, `ios/`, `android/`.
-- Flow nghiệp vụ P0/P1 (GV + PH): xem [`../kids-tasks/PHASE_UI_TASKS.md`](../kids-tasks/PHASE_UI_TASKS.md) §6 + [`../kids-mobile-web/FE_TEST_SCENARIOS.md`](../kids-mobile-web/FE_TEST_SCENARIOS.md).
+- Flow nghiệp vụ P0/P1 (GV + PH): xem [`../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md`](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md) + [`../kids-mobile-web/FE_TEST_SCENARIOS.md`](../kids-mobile-web/FE_TEST_SCENARIOS.md). Việc còn lại nằm ở [`../kids-tasks/BACKLOG.md`](../kids-tasks/BACKLOG.md).
 
 ## Chạy local
 

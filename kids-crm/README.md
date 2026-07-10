@@ -13,7 +13,7 @@ Web quản trị (CRM/dashboard) cho nhà trường & nhân viên KimThanh Kids.
 
 ## Roadmap
 
-Theo dõi checklist triển khai ở [`../kids-tasks/PHASE_CRM_TASKS.md`](../kids-tasks/PHASE_CRM_TASKS.md).
+Theo dõi việc còn lại ở [`../kids-tasks/BACKLOG.md`](../kids-tasks/BACKLOG.md); kiến thức phần đã DONE ở [`../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md`](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
 
 ## Bắt đầu
 

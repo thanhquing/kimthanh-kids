@@ -37,8 +37,8 @@ pnpm gen:api            # sinh type từ openapi.json có sẵn + copy vào app
 ```
 
 Sau khi copy, mỗi app dùng type qua lớp `src/api/http.ts` (mutator: bóc `{success,data}`,
-gắn `Authorization` + `Host`, `401 → refresh`). Lớp này mỗi app giữ 1 bản (xem kế hoạch
-[`kids-tasks/PHASE_UI_TASKS.md`](kids-tasks/PHASE_UI_TASKS.md) §3).
+gắn `Authorization` + tenant/language header, `401 → refresh`). Lớp này mỗi app giữ 1 bản
+(xem [`kids-documentation/IMPLEMENTATION_KNOWLEDGE.md`](kids-documentation/IMPLEMENTATION_KNOWLEDGE.md)).
 
 ## Chạy dev
 

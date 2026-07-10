@@ -5,7 +5,7 @@
 ## Dự án là gì
 
 **KimThanh Kids** — SaaS đa-tenant quản lý trường mầm non (mỗi trường = 1 tenant). Truy cập qua subdomain HOẶC **chọn trường ở login** (dropdown `/public/tenants` + header `x-tenant`, độc lập subdomain). Backend **API-first**: `kids-api` (NestJS + Prisma + PostgreSQL).
-**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (168 e2e / 18 suite; NestJS 11 trên Express 5). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 (nối API thật; xem `CRM_FEATURE_IDEAS.md`) · `kids-mobile-native` 🟡 đã khởi tạo Expo (copy-first từ mobile-web), port P0/P1 nhiều màn; còn smoke thiết bị thật/EAS build/push FCM (upload ảnh đã code, chờ smoke).
+**Trạng thái:** Phase 0 (nền tảng SaaS) + Phase 1 nghiệp vụ **A→G** đã XONG (168 e2e / 18 suite; NestJS 11 trên Express 5). FE: `kids-platform` ✅ · `kids-mobile-web` ✅ (React+Vite PWA, API thật + i18n + login chọn trường) · `kids-crm` ✅ toàn bộ mục nav P0/P1 · `kids-mobile-native` 🟡 đã khởi tạo Expo (copy-first từ mobile-web), port P0/P1 nhiều màn; còn smoke thiết bị thật/EAS build/push FCM (upload ảnh đã code, chờ smoke).
 
 ## Bản đồ repo
 
@@ -14,11 +14,12 @@
 | `kids-api/`                                            | Backend (nguồn sự thật của code) — schema `prisma/schema.prisma`, controller `src/**/*.controller.ts` |
 | `kids-documentation/`                                  | **Tài liệu KỸ THUẬT** (dev/AI): ARCHITECTURE · MULTI_TENANCY · DATABASE_ERD · BILLING · API           |
 | `kids-business-docs/`                                  | Tài liệu **nghiệp vụ/đào tạo/sale** (CEO/PO/Sale)                                                     |
-| `kids-tasks/PHASE_DOMAIN_API_TASKS.md`                 | Kế hoạch & tiến độ (checklist task)                                                                   |
+| `kids-tasks/BACKLOG.md`                                | Backlog hợp nhất, đã sắp thứ tự dễ → phức tạp                                                         |
+| `kids-documentation/IMPLEMENTATION_KNOWLEDGE.md`       | Kiến thức triển khai đã DONE sau khi gom/xoá task tracker cũ                                          |
 | `kids-landing/public/mock-ui/`                         | Mockup UI tham chiếu                                                                                  |
 | `kids-platform/`                                       | Platform Console (React + Vite) — ✅ tích hợp các trang vận hành nền tảng                              |
 | `kids-mobile-web/`                                     | App PH/GV (React + Vite PWA) — ✅ API thật + i18n VI/EN + login chọn trường (x-tenant)                 |
-| `kids-crm/`                                            | Web quản trị trường (React + Vite) — ✅ P0/P1 nối API thật (xem `CRM_FEATURE_IDEAS.md`)                |
+| `kids-crm/`                                            | Web quản trị trường (React + Vite) — ✅ P0/P1 nối API thật                                            |
 | `kids-mobile-native/`                                  | App native (Expo) — 🟡 đã khởi tạo **copy-first** từ `kids-mobile-web`, port P0/P1; còn smoke thiết bị/EAS/upload ảnh/push (xem README app) |
 
 ## Đọc trước khi làm task (theo loại việc)
@@ -26,7 +27,8 @@
 - **Hiểu hệ thống / sửa code API:** [`kids-documentation/ARCHITECTURE.md`](kids-documentation/ARCHITECTURE.md) → [`MULTI_TENANCY.md`](kids-documentation/MULTI_TENANCY.md) → [`DATABASE_ERD.md`](kids-documentation/DATABASE_ERD.md).
 - **Thêm/đổi endpoint:** [`kids-documentation/API.md`](kids-documentation/API.md).
 - **Gói cước/billing/quota:** [`kids-documentation/BILLING.md`](kids-documentation/BILLING.md).
-- **Biết việc cần làm tiếp:** [`kids-tasks/PHASE_DOMAIN_API_TASKS.md`](kids-tasks/PHASE_DOMAIN_API_TASKS.md).
+- **Biết việc cần làm tiếp:** [`kids-tasks/BACKLOG.md`](kids-tasks/BACKLOG.md).
+- **Hiểu phần đã làm xong:** [`kids-documentation/IMPLEMENTATION_KNOWLEDGE.md`](kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
 - **Hiểu nghiệp vụ/giá/role để giải thích:** [`kids-business-docs/`](kids-business-docs/).
 
 ## Quy ước code (bắt buộc — chi tiết ở ARCHITECTURE §gotchas)
@@ -57,7 +59,7 @@ Khi thay đổi code ảnh hưởng hành vi đã tài liệu hóa, **cập nh�
 | `prisma/seed.ts` (gói/giá/limit/feature)                | `kids-documentation/BILLING.md` + `kids-business-docs/` (giá ở SALES/BUSINESS)             |
 | Thêm/bỏ module, đổi guard/luồng                         | `kids-documentation/ARCHITECTURE.md` (module map + §domain)                                |
 | Quota/feature-gating                                    | `kids-documentation/BILLING.md`                                                            |
-| Hoàn tất/đổi phạm vi task                               | `kids-tasks/PHASE_DOMAIN_API_TASKS.md` (tick + cập nhật header)                            |
+| Hoàn tất/đổi phạm vi task                               | `kids-tasks/BACKLOG.md` (+ `kids-documentation/IMPLEMENTATION_KNOWLEDGE.md` nếu là kiến thức DONE) |
 
 Nguyên tắc: tài liệu KỸ THUẬT ở `kids-documentation/`, NGHIỆP VỤ/SALE ở `kids-business-docs/` — sửa đúng 1 nơi, không tạo file trùng. Sau khi sửa doc: kiểm tra link `.md` nội bộ không gãy.
 
