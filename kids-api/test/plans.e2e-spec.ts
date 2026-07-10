@@ -31,8 +31,8 @@ describe("Gói dịch vụ — freemium (Free vĩnh viễn, bậc theo GV/HS)", 
     expect(tenant!.planTier).toBe("FREE");
 
     const ent = await entitlements.resolve(tenant!.id);
-    expect(ent.limits.TEACHERS?.limitValue).toBe(2);
-    expect(ent.limits.STUDENTS?.limitValue).toBe(20);
+    expect(ent.limits.TEACHERS?.limitValue).toBe(1);
+    expect(ent.limits.STUDENTS?.limitValue).toBe(10);
     expect(ent.limits.CLASSROOMS?.limitValue).toBe(2);
     // tính năng nâng cao tắt ở gói Free
     expect(ent.features.messaging).toBe(false);

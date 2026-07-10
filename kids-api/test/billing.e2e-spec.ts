@@ -96,8 +96,8 @@ describe("Phase 0 edge — billing / quota / entitlement / webhook", () => {
       .set("Authorization", `Bearer ${ptoken}`)
       .send({ tenantId: tenant!.id })
       .expect(201);
-    expect(Number(inv.body.data.total)).toBe(1_200_000);
-    expect(Number(inv.body.data.subtotal)).toBe(1_200_000);
+    expect(Number(inv.body.data.total)).toBe(690_000);
+    expect(Number(inv.body.data.subtotal)).toBe(690_000);
   });
 
   it("GET /billing/invoices: KHÔNG lộ publicToken (link no-login) + metadata nội bộ", async () => {

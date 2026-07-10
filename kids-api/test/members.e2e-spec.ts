@@ -102,7 +102,7 @@ describe("Tạo tài khoản thành viên — định danh email/phone + login c
       .expect(201);
   });
 
-  it("gói Free: tối đa 2 giáo viên (TEACHERS=2) → GV thứ 3 bị 403; phụ huynh KHÔNG giới hạn", async () => {
+  it("gói Free: tối đa 1 giáo viên (TEACHERS=1) → GV thứ 2 bị 403; phụ huynh KHÔNG giới hạn", async () => {
     const t = await createTenant(app);
     const mkTeacher = (name: string) =>
       api()
@@ -111,11 +111,10 @@ describe("Tạo tài khoản thành viên — định danh email/phone + login c
         .send({ phone: randomPhone(), fullName: name, role: "TEACHER", password: "Password123" });
 
     await mkTeacher("Cô A").expect(201);
-    await mkTeacher("Cô B").expect(201);
-    const blocked = await mkTeacher("Cô C").expect(403);
+    const blocked = await mkTeacher("Cô B").expect(403);
     expect(blocked.body.error.code).toBe("QUOTA_EXCEEDED");
 
-    // phụ huynh không tiêu quota giáo viên → vẫn tạo được (Free STUDENTS=20 > 0)
+    // phụ huynh không tiêu quota giáo viên → vẫn tạo được (Free STUDENTS=10 > 0)
     await api()
       .post("/api/tenant/members")
       .set(auth(t))

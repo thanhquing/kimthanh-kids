@@ -31,14 +31,13 @@ describe("B3 — vòng đời tài khoản + lịch phân công làm việc", ()
   afterAll(async () => app.close());
 
   it("vô hiệu hoá GV → giải phóng quota + chặn đăng nhập; tạo lại GV khác OK", async () => {
-    const t = await createTenant(app); // Free: TEACHERS=2
+    const t = await createTenant(app); // Free: TEACHERS=1
     const t1 = await createTeacher(t, "Cô Một");
-    await createTeacher(t, "Cô Hai");
-    // đầy 2/2 → GV thứ 3 bị chặn
+    // đầy 1/1 → GV thứ 2 bị chặn
     await api()
       .post("/api/tenant/members")
       .set(auth(t))
-      .send({ phone: randomPhone(), fullName: "Cô Ba", role: "TEACHER", password: "Password123" })
+      .send({ phone: randomPhone(), fullName: "Cô Hai", role: "TEACHER", password: "Password123" })
       .expect(403);
 
     // vô hiệu hoá Cô Một → giải phóng 1 slot
@@ -65,14 +64,13 @@ describe("B3 — vòng đời tài khoản + lịch phân công làm việc", ()
 
   it("kích hoạt lại GV khi đã đầy chỗ → 403 QUOTA_EXCEEDED", async () => {
     const t = await createTenant(app);
-    const t1 = await createTeacher(t, "Cô A");
-    await createTeacher(t, "Cô B"); // 2/2
+    const t1 = await createTeacher(t, "Cô A"); // 1/1
     await api()
       .patch(`/api/tenant/members/${t1.userId}/status`)
       .set(auth(t))
       .send({ isActive: false })
-      .expect(200); // 1/2
-    await createTeacher(t, "Cô C"); // 2/2 trở lại
+      .expect(200); // 0/1
+    await createTeacher(t, "Cô B"); // 1/1 trở lại
     const reactivate = await api()
       .patch(`/api/tenant/members/${t1.userId}/status`)
       .set(auth(t))

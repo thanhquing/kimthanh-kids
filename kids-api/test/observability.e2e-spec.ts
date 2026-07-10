@@ -443,11 +443,11 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     );
     expect(Number(monthly.amount)).toBe(1_300_000);
 
-    // Khôi phục giá để không lệch các test khác chạy chung DB.
+    // Khôi phục giá gói pro về đúng giá seed hiện tại để không lệch test khác chạy chung DB.
     await api()
       .patch(`/api/platform/plans/${plan.id}`)
       .set(phead)
-      .send({ trialDays: 0, prices: [{ billingCycle: "MONTHLY", amount: 1_200_000 }] })
+      .send({ trialDays: 0, prices: [{ billingCycle: "MONTHLY", amount: 690_000 }] })
       .expect(200);
 
     // Sửa gói không tồn tại → 404.
@@ -595,7 +595,7 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     // kể cả DB dev/e2e đã có nhiều tenant rác từ lần chạy trước.
     const school = await mainSchool(t);
     const p = await parent(t);
-    for (let i = 0; i < 16; i++) await student(t, school, p.userId);
+    for (let i = 0; i < 8; i++) await student(t, school, p.userId); // ≤ Free STUDENTS(10); override=1 bên dưới ép at-risk
     await prisma.system.tenantEntitlement.create({
       data: {
         tenantId: tid,
@@ -657,7 +657,7 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const metrics = listedRow.quota.map((x: { metric: string }) => x.metric);
     expect(metrics).toEqual(["STUDENTS", "TEACHERS", "CLASSROOMS", "STORAGE_MB"]);
     const studentQuota = listedRow.quota.find((x: { metric: string }) => x.metric === "STUDENTS");
-    expect(studentQuota).toMatchObject({ used: 16, limit: 1 });
+    expect(studentQuota).toMatchObject({ used: 8, limit: 1 });
 
     // Tenant thường không xem worklist nền tảng.
     await api().get("/api/platform/worklist").set(auth(t)).expect(403);

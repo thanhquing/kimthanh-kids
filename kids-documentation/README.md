@@ -35,7 +35,7 @@ kimthanh-kids/
 ## Lộ trình (phases)
 
 - **Phase 0 — Tầng A (Platform/SaaS) — ĐÃ XONG:** đa-tenant, tenant/school, white-label, gói cước, subscription, billing nền tảng, feature-gating, quota, RBAC 2 cấp, auth.
-- **Phase 1 — Tầng B (Domain nghiệp vụ) — ĐÃ XONG (A→G):** B hồ sơ/lớp/nhân sự · C điểm danh/báo cáo · D sức khỏe (health/medicine/incident/allergy/leave) · E học phí (VietQR/tiền mặt/VNPay + chứng từ) · F giao tiếp (announcement/menu/lesson-plan/album) · G observability (notification/dashboard/audit/usage). Mọi bảng domain có `tenantId` + `schoolId`. **Chat realtime đã loại khỏi kế hoạch.**
+- **Phase 1 — Tầng B (Domain nghiệp vụ) — ĐÃ XONG (A→G):** B hồ sơ/lớp/nhân sự · C điểm danh/báo cáo · D sức khỏe (health/medicine/incident/allergy/leave) · E học phí (VietQR/tiền mặt/VNPay + chứng từ) · F giao tiếp (announcement/menu/lesson-plan/album) · G observability (notification/dashboard/audit/usage). Mọi bảng domain có `tenantId` + `schoolId`. **Chat GV–PH: Coming Soon** (chưa có module).
 - **Phase UI:** `kids-platform` ✅, `kids-mobile-web` ✅ và `kids-crm` ✅ đã tiêu thụ API thật cho các flow chính. `kids-mobile-native` 🟡 đã khởi tạo Expo/copy-first và port nhiều màn P0/P1; còn cần smoke trên thiết bị thật, EAS/dev build, upload ảnh native và push FCM/Expo.
 - **Backlog hiện tại:** xem [`../kids-tasks/BACKLOG.md`](../kids-tasks/BACKLOG.md), đã sắp thứ tự dễ → phức tạp.
 

@@ -29,7 +29,7 @@
 
 Các phần **chưa làm / thuộc giai đoạn sau** (đừng cam kết với khách):
 
-- **Chat realtime** — đã **loại khỏi kế hoạch**.
+- **Chat GV–PH** — **Coming Soon** (hiển thị badge "Sắp có" ở bảng giá, chưa có module; không bán như đã có).
 - **Push notification FCM** — làm cùng phase mobile.
 - **Tự động đối soát ngân hàng cho VietQR**, **cổng MoMo/ZaloPay**, **analytics nâng cao**, **reset mật khẩu qua email** — P2.
 - **App iOS/Android store release** — native đã code nhiều màn, còn smoke/EAS/store readiness trong backlog.

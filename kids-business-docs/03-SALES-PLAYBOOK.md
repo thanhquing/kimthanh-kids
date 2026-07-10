@@ -69,14 +69,14 @@
 
 | Gói | Giá | Quy mô | Điểm nhấn để bán |
 |-----|-----|--------|------------------|
-| **Miễn phí** | 0đ — **dùng vĩnh viễn** | 20 học sinh · 2 giáo viên · 2 lớp | "Dùng thử thật, không giới hạn thời gian — cứ trải nghiệm đã." |
-| **Khởi đầu** | **490k/tháng** (hoặc 4.9tr/năm — rẻ ~2 tháng) | 100 học sinh · 8 giáo viên · 8 lớp | Mở thêm **Album ảnh lớp** + dung lượng lớn |
-| **Chuyên nghiệp** | **1.2tr/tháng** (3.24tr/quý · 12.24tr/năm) | 300 học sinh · 25 giáo viên · 20 lớp | Thêm **Giáo án điện tử** + báo cáo nâng cao |
+| **Miễn phí** | 0đ — **dùng vĩnh viễn** | 10 học sinh · 1 giáo viên · 500MB | "Dùng thử thật, không giới hạn thời gian — cứ trải nghiệm đã." |
+| **Khởi đầu** | **290k/tháng** (hoặc 2.9tr/năm — rẻ ~2 tháng) | 100 học sinh · 8 giáo viên · 5GB | Mở thêm **Album ảnh lớp** + dung lượng lớn |
+| **Chuyên nghiệp** | **690k/tháng** (1.89tr/quý · 6.9tr/năm) | 300 học sinh · 25 giáo viên · 20GB | Thêm **Giáo án điện tử** + báo cáo nâng cao |
 | **Hệ thống (Enterprise)** | **Liên hệ** | Không giới hạn | Nhiều cơ sở, tích hợp riêng, hỗ trợ ưu tiên |
 
 **Cách chốt gói theo quy mô (nói thẳng):**
-- ≤ 20 bé: "Anh/chị **bắt đầu Miễn phí**, không mất gì. Khi vượt 20 bé mình nâng **Khởi đầu** chỉ 490k/tháng."
-- 20–100 bé: "Với quy mô này **Khởi đầu** là chuẩn — có cả album ảnh cho phụ huynh."
+- ≤ 10 bé: "Anh/chị **bắt đầu Miễn phí**, không mất gì. Khi vượt 10 bé mình nâng **Khởi đầu** chỉ 290k/tháng."
+- 10–100 bé: "Với quy mô này **Khởi đầu** là chuẩn — có cả album ảnh cho phụ huynh, chỉ 290k/tháng."
 - 100–300 bé hoặc cần giáo án: "**Chuyên nghiệp** phù hợp — quản được tới 300 bé và có giáo án điện tử."
 - Chuỗi nhiều cơ sở: "Mình đi **Hệ thống**, em xin phép báo giá riêng theo nhu cầu."
 
@@ -94,7 +94,7 @@
 *(Học thuộc cặp "Phản đối → Trả lời")*
 
 - **"Đắt quá."**
-  → "Em hiểu ạ. Mình **bắt đầu Miễn phí**, không tốn đồng nào. Còn gói trả phí — 490k/tháng chia cho cả trăm bé thì mỗi bé chưa tới **5.000đ/tháng**, đổi lại phụ huynh hài lòng và trường giữ khách."
+  → "Em hiểu ạ. Mình **bắt đầu Miễn phí**, không tốn đồng nào. Còn gói trả phí — 290k/tháng chia cho cả trăm bé thì mỗi bé chưa tới **3.000đ/tháng** (đối thủ 15–30k/bé), đổi lại phụ huynh hài lòng và trường giữ khách."
 
 - **"Giáo viên lớn tuổi, sợ khó dùng."**
   → "Thao tác chính chỉ là **điểm danh một chạm** và **chọn vài ô báo cáo** — em sẽ **đào tạo và mở sẵn trường mẫu** cho các cô tập trước."
@@ -142,9 +142,9 @@
 
 ```
 PITCH:    Số hóa trường mầm non → phụ huynh an tâm, cô nhẹ việc, chủ nắm tiền.
-FREE:     0đ vĩnh viễn · 20 bé · 2 GV · 2 lớp → luôn mời dùng thử ngay.
-KHỞI ĐẦU: 490k/th (4.9tr/năm) · 100 bé · +Album ảnh.
-CHUYÊN:   1.2tr/th (12.24tr/năm) · 300 bé · +Giáo án điện tử.
+FREE:     0đ vĩnh viễn · 10 bé · 1 GV · 500MB → luôn mời dùng thử ngay.
+KHỞI ĐẦU: 290k/th (2.9tr/năm) · 100 bé · +Album ảnh.
+CHUYÊN:   690k/th (6.9tr/năm) · 300 bé · +Giáo án điện tử.
 HỆ THỐNG: liên hệ · không giới hạn · nhiều cơ sở.
 BÁN BẰNG: trải nghiệm phụ huynh → công nợ/doanh thu cho chủ → chốt mở Free.
 TRÁNH HỨA: chat realtime · push tức thì · auto đối soát · app store.

@@ -56,7 +56,7 @@ Mỗi trường truy cập qua **địa chỉ riêng** (vd `hoasen.kimthanhkids.
 
 **Mục tiêu:** đưa trường lên hệ thống và bắt đầu vận hành trong ~1 buổi.
 
-1. **Đăng ký trên landing** → chọn gói, điền tên trường + MST + tên miền con + tài khoản chủ trường → có ngay không gian riêng, **gói Miễn phí dùng vĩnh viễn** (tối đa 20 học sinh, 2 giáo viên).
+1. **Đăng ký trên landing** → chọn gói, điền tên trường + MST + tên miền con + tài khoản chủ trường → có ngay không gian riêng, **gói Miễn phí dùng vĩnh viễn** (tối đa 10 học sinh, 1 giáo viên, 500MB).
    - Nếu chọn gói trả phí: trường vẫn vào dùng Free ngay, đồng thời nhận hóa đơn nâng cấp + mã VietQR để chuyển khoản cho KimThanh Kids.
    - Gói trả phí chỉ kích hoạt sau khi đội vận hành KimThanh xác nhận đã thu tiền trên Platform Console.
 2. **Tạo tài khoản nhân sự** (giáo viên, y tá, kế toán, hiệu trưởng) bằng **email hoặc số điện thoại**.
@@ -147,7 +147,7 @@ Mỗi trường truy cập qua **địa chỉ riêng** (vd `hoasen.kimthanhkids.
 ```
 
 - **Free** kéo trường nhỏ vào dùng thử thật (không giới hạn thời gian) → quen tay.
-- Khi trường lớn lên (vượt 20 HS / cần album, giáo án) → **nâng gói** một cách tự nhiên.
+- Khi trường lớn lên (vượt 10 HS / cần album, giáo án) → **nâng gói** một cách tự nhiên.
 - Phụ huynh hài lòng = vũ khí marketing miễn phí cho trường = trường gắn bó với KimThanh.
 
 ---
@@ -161,7 +161,7 @@ Những chỗ nên review xem có "lạ" hoặc kém hiệu quả với người
 3. **Giới hạn phụ huynh = số học sinh** (1 bé ~ 1 phụ huynh đại diện). → Thực tế nhiều bé có cả ba lẫn mẹ muốn tài khoản riêng — có nên cho 2 phụ huynh/bé?
 4. **Học phí lập theo từng bé thủ công.** → Có cần "lập hàng loạt cả lớp theo biểu phí" để kế toán nhẹ việc?
 5. **Cảnh báo dị ứng so khớp theo chữ** (tên món chứa tên dị nguyên). → Đủ tin cậy chưa, hay cần danh mục dị nguyên chuẩn hóa?
-6. **Chat realtime đã loại khỏi kế hoạch.** → Trường có thực sự cần nhắn tin 1-1 trong app, hay thông báo + báo cáo là đủ?
+6. **Chat GV–PH là Coming Soon** (chưa có module, chỉ badge "Sắp có" ở bảng giá). → Trường có thực sự cần nhắn tin 1-1 trong app, hay thông báo + báo cáo là đủ? Ưu tiên build tới đâu?
 7. **Thanh toán VietQR phải đối soát thủ công** (chưa tự khớp giao dịch ngân hàng). → Mức độ ưu tiên tự động đối soát?
 8. **Push thông báo điện thoại (FCM)** sẽ làm ở phase mobile. → Hiện thông báo chỉ hiện trong app; có chấp nhận được giai đoạn đầu?
 

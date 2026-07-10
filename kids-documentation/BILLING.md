@@ -4,20 +4,36 @@
 
 ## Gói cước (seed mặc định — `prisma/seed.ts`)
 
-| code         | tier       | Giá                                 | HS / GV / Lớp / Lưu trữ | Tính năng bật                         |
-| ------------ | ---------- | ----------------------------------- | ----------------------- | ------------------------------------- |
-| `free`       | FREE       | 0đ — **vĩnh viễn**                  | 20 / 2 / 2 / 1GB        | —                                     |
-| `starter`    | STARTER    | 490k/th · 4.9tr/năm                 | 100 / 8 / 8 / 5GB       | media_gallery                         |
-| `pro`        | PRO        | 1.2tr/th · 3.24tr/quý · 12.24tr/năm | 300 / 25 / 20 / 20GB    | media_gallery, lesson_plan, analytics |
-| `enterprise` | ENTERPRISE | thỏa thuận                          | ∞                       | tất cả + api_access                   |
-| `dedicated`  | CUSTOM     | thỏa thuận (ẩn)                     | ∞                       | tất cả; deploy riêng                  |
+> **Chiều tính gói:** theo **HS + GV + Lưu trữ**. KHÔNG tính theo số lớp (quota `CLASSROOMS` đang còn trong code sẽ được gỡ — xem [BACKLOG BL-049](../kids-tasks/BACKLOG.md)).
+
+| code         | tier       | Giá (NET)                           | HS / GV / Lưu trữ | Tính năng bật                         |
+| ------------ | ---------- | ----------------------------------- | ----------------- | ------------------------------------- |
+| `free`       | FREE       | 0đ — **vĩnh viễn**                  | 10 / 1 / 500MB    | —                                     |
+| `starter`    | STARTER    | 290k/th · 2.9tr/năm                 | 100 / 8 / 5GB     | media_gallery                         |
+| `pro`        | PRO        | 690k/th · 1.89tr/quý · 6.9tr/năm    | 300 / 25 / 20GB   | media_gallery, lesson_plan, analytics |
+| `enterprise` | ENTERPRISE | thỏa thuận                          | ∞                 | tất cả + api_access                   |
+| `dedicated`  | CUSTOM     | thỏa thuận (ẩn)                     | ∞                 | tất cả; deploy riêng                  |
 
 > **Freemium:** `POST /public/signup` luôn gắn gói **`free` ở trạng thái ACTIVE vĩnh viễn** (`trialEndsAt=null`, `currentPeriodEnd ≈ +100 năm`) — **không qua TRIAL**. Tất cả gói seed hiện đặt `trialDays=0`; state `TRIALING` + cron `expireTrials` chỉ kích hoạt nếu cấu hình gói có `trialDays>0`.
 > **Signup trả phí:** landing có thể gửi `planCode` + `billingCycle`. Backend vẫn tạo tenant Free ACTIVE trước, sau đó tạo `PlatformInvoice` OPEN metadata `{ type: "SIGNUP_UPGRADE", targetPlanId, targetPlanCode, targetBillingCycle }`. Chỉ khi platform admin bấm **Đã thu** thì subscription mới nâng sang gói đã chọn.
-> **Feature key:** `media_gallery` (Album), `lesson_plan` (Giáo án), `analytics` (báo cáo nâng cao — chưa xây), `api_access`. Cờ `messaging` vẫn tồn tại nhưng **module Chat đã loại khỏi kế hoạch** — không dùng/quảng bá.
+> **Feature key:** `media_gallery` (Album, **enforced** Starter+), `lesson_plan` (Giáo án, **enforced** Pro+), `analytics` (báo cáo nâng cao — **Coming Soon**, cờ khai báo nhưng chưa enforce/chưa xây), `api_access` (**Coming Soon**, chưa enforce). Cờ `messaging` (Chat GV–PH) là **Coming Soon** — có cờ seed nhưng chưa có module; bảng giá chỉ hiển thị badge "Sắp có", không bán như đã có.
 > **Quota PARENT:** không đếm bằng counter mà **giới hạn theo `STUDENTS`** (1 học sinh ~ 1 phụ huynh đại diện).
 
 Mô hình giá **linh hoạt**: `PlanPrice` (theo chu kỳ × tiền tệ) + `PlanFeature` (bật/tắt tính năng) + `PlanLimit` (quota theo metric). Đổi giá/feature/limit không cần đổi schema.
+
+### Cơ sở định giá (chi phí thực tế + thuế + đối thủ, cập nhật 2026-07-10)
+
+Giá seed là **giá NET (chưa gồm VAT)**. Nguồn tham chiếu thực tế:
+
+- **Đối thủ VN (giá/HS/tháng):** OneKids 1.000–25.000đ · KidsOnline 30.000đ · MISA EMIS 20.000–30.000đ · PMS từ 10.000đ · GoKids ~15.000đ · LittleLives 2–5 USD. Thị trường tính **theo đầu học sinh**, gói trả phí phổ biến **10.000–30.000đ/HS/tháng**.
+- **Định vị của mình (định giá THÂM NHẬP — sản phẩm mới, phải rẻ hơn để cạnh tranh):** giữ mô hình **giá trọn gói theo bậc + cap theo GV/HS** (chi phí dự đoán được = điểm bán), giá thấp + nhiều chức năng = giá trị cảm nhận cao. Quy đổi:
+  - Starter 290k @ 40–100 HS ≈ **2.900–7.250đ/HS** · Pro 690k @ 100–300 HS ≈ **2.300–6.900đ/HS** → **rẻ hơn hẳn** OneKids/KidsOnline/MISA (10–30k/HS) mà biên gộp ~90%.
+- **Hạ tầng VN (VPS):** 4vCPU/8GB NVMe ~386k–790k/tháng. Kiến trúc **multi-tenant chung 1 cụm** → chi phí biên/tenant chỉ ~vài chục nghìn đ/tháng (chủ yếu là lưu trữ ảnh + phí cổng thanh toán ~1–2%). Chi phí cố định nền tảng giai đoạn đầu (app VPS + Postgres + R2/S3 + email + domain/monitoring/backup) ≈ **2–2.5tr/tháng**, phục vụ tới hàng trăm tenant trước khi cần scale.
+- **Điểm hòa vốn hạ tầng:** ~**8–9 tenant Starter** (hoặc ~4 Pro) là đủ bù chi phí cố định 2–2.5tr/tháng; lời thực phụ thuộc chi phí hỗ trợ/CS + marketing (CAC). Giá thâm nhập thấp đổi lấy thị phần sớm; có thể nâng bậc/giá về sau qua cơ chế versioning ([BL-050](../kids-tasks/BACKLOG.md)) mà không ảnh hưởng khách cũ.
+- **Thuế (áp dụng, cần kế toán chốt):**
+  - **GTGT:** theo Luật GTGT 48/2024 + NĐ 181/2025 (hiệu lực 01/7/2025), "sản phẩm/dịch vụ phần mềm" có thể **không chịu GTGT**; nhưng SaaS truy cập theo kỳ thường bị xem là **dịch vụ chịu 10%**. Đây là **vùng xám** → giá lưu NET, VAT xử lý ở khâu xuất hóa đơn. GTGT là **pass-through**, không ảnh hưởng biên lời.
+  - **TNDN:** chuẩn **20%** trên lợi nhuận; DN sản xuất phần mềm có thể được **ưu đãi 10%/miễn 4 năm/giảm 50% 9 năm** — cần xác nhận điều kiện.
+- **Blocked input (business):** cách áp VAT trên `PlatformInvoice` (0%/8%/10%) và pháp nhân xuất hóa đơn — do kế toán/PO chốt trước khi phát hành hóa đơn thật.
 
 ## State machine Subscription
 
@@ -52,7 +68,7 @@ stateDiagram-v2
 
 ## Feature-gating & Quota
 
-- **Feature-gating:** `@RequireFeature('lesson_plan')`, `@RequireFeature('media_gallery')`... trên route → `SubscriptionGuard` chặn nếu gói không bật. Cờ `messaging` còn tồn tại trong seed cũ nhưng Chat đã loại khỏi kế hoạch, không dùng/quảng bá.
+- **Feature-gating:** `@RequireFeature('lesson_plan')`, `@RequireFeature('media_gallery')` trên route → `SubscriptionGuard` chặn nếu gói không bật (đây là 2 feature ĐƯỢC enforce). Cờ `analytics`/`api_access` đã seed nhưng chưa có endpoint gate (**Coming Soon**). Cờ `messaging` (Chat GV–PH) là **Coming Soon** — chưa có module, chỉ hiển thị badge "Sắp có" ở bảng giá.
 - **Quota:** `EntitlementService.consumeQuota(tenantId, metric)` tăng nguyên tử `UsageCounter` (UPDATE … WHERE value ≤ limit-delta). HARD vượt → `403 QUOTA_EXCEEDED`; SOFT cho vượt + ghi overage. `releaseQuota` khi xóa thực thể. Phase 1 gọi trong transaction tạo Student/Classroom...
 - **Cảnh báo nâng gói:** `GET /platform/worklist` trả KPI `quota` (atRisk = số dòng >=80% / `tenants` = số trường distinct) cho tenant ACTIVE/TRIAL/PAST_DUE, tính trực tiếp từ Student/Membership(GV)/Classroom/Media (KHÔNG tính SCHOOLS — gói 1 cơ sở luôn 100%; không qua `UsageCounter` cache). Danh sách trường + cột "Hạn mức" (used/limit 4 metric) ở `GET /platform/tenants?quota=at-risk` (bấm KPI để mở) → operator chủ động tư vấn nâng gói trước khi tenant bị chặn.
 - **Entitlements** = `Plan.features/limits` + override `TenantEntitlement` (cho dedicated nâng riêng). Cache ở `Subscription.entitlementsCache`.

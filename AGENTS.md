@@ -45,7 +45,7 @@
 - **KHÔNG tự ý commit.** Làm xong chỉ **gợi ý commit message**; chờ người dùng commit.
 - **Chạy nền vững trước khi mở rộng** — ưu tiên đúng đắn + test xanh hơn là làm nhanh.
 - Trước khi báo "xong": **`tsc --noEmit` + `eslint` + `test:e2e` phải sạch** (Node ≥ 20 — `export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"`).
-- **Đừng quảng bá/cam kết tính năng chưa có:** Chat realtime (**đã loại khỏi kế hoạch**), push FCM (phase mobile), auto đối soát VietQR, cổng MoMo/ZaloPay, analytics nâng cao, app store — tất cả là sau/P2.
+- **Đừng quảng bá/cam kết tính năng chưa có như đã có:** Chat GV–PH (**Coming Soon** — chỉ badge bảng giá, chưa có module), push FCM (phase mobile), auto đối soát VietQR, cổng MoMo/ZaloPay, analytics nâng cao, app store — tất cả là sau/P2.
 - Khi sửa tài liệu: cập nhật đúng nguồn (kỹ thuật → `kids-documentation/`, nghiệp vụ → `kids-business-docs/`), không tạo file trùng.
 
 ## Đồng bộ tài liệu khi đổi code (BẮT BUỘC trong cùng task)

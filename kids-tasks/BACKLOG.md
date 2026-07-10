@@ -14,6 +14,153 @@
 - Khi đổi FE copy: cập nhật i18n VI/EN cùng lúc; không hardcode text mới.
 - Khi task hoàn tất: tick task trong file này, ghi bằng chứng kiểm ở dòng `Evidence`.
 
+## 0. Ưu tiên cao nhất — Phân tách chức năng theo gói, role & tuân thủ pháp lý
+
+> Nhóm này làm TRƯỚC Nhóm 1. Thứ tự ưu tiên: **BL-049** (gỡ CLASSROOMS khỏi chiều tính gói — sửa sai thiết kế) → **BL-050** (vòng đời & versioning gói: đổi giá không ảnh hưởng khách cũ, chọn gói đại diện landing) → BL-043/044/045 (phân tách feature theo gói cho user từng tenant, Q2) → BL-046/047 (tuân thủ pháp luật VN cho landing — Luật BVDLCN 91/2025 + NĐ 356/2025 hiệu lực 01/01/2026 và TMĐT NĐ 85/2021; rủi ro pháp lý đang hiệu lực) → BL-048 (hoàn thiện role-gating UI kids-crm, Q1).
+>
+> **Định giá đã chốt (thâm nhập, có lời, không nợ):** Free 0đ (10 HS · 1 GV · 500MB) · Starter 290k/th (100 HS · 8 GV · 5GB · +Album) · Pro 690k/th (300 HS · 25 GV · 20GB · +Giáo án) · Enterprise/Dedicated liên hệ. Gói tính theo **GV + HS + lưu trữ**, KHÔNG theo lớp. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
+
+### Ma trận Entitlement chuẩn (spec cho BL-043/BL-044 — theo code thật `kids-api/prisma/seed.ts`)
+
+> **Nguyên tắc tính gói (chốt 2026-07-10):** gói định lượng theo **số giáo viên (TEACHERS) + số học sinh (STUDENTS) + dung lượng lưu trữ (STORAGE_MB)**. **KHÔNG tính theo số lớp** — số lớp không phải chiều bán gói. Hệ thống hiện còn enforce quota `CLASSROOMS` (sai với nguyên tắc này) → xem **BL-049** để gỡ.
+
+Chức năng **nền tảng (luôn bật mọi gói kể cả Free)**: hồ sơ học sinh/PH, lớp, nhân sự; điểm danh + nhật ký ngày; sức khỏe/thuốc/sự cố/dị ứng/nghỉ phép; học phí (hóa đơn·VietQR·tiền mặt/CK thủ công·VNPay sandbox); thông báo + thực đơn tuần; notifications in-app; dashboard/audit/usage; đón-trả (pickup). Các chức năng này KHÔNG gate theo gói.
+
+Chức năng **gate theo feature-flag** và **Coming Soon**:
+
+| Feature | Free | Starter | Pro | Enterprise | Dedicated (ẩn) | Trạng thái code |
+| --- | --- | --- | --- | --- | --- | --- |
+| `media_gallery` (Album/ảnh) | ✗ | ✓ | ✓ | ✓ | ✓ | **Enforced** (`albums.controller.ts:37`) |
+| `lesson_plan` (Giáo án) | ✗ | ✗ | ✓ | ✓ | ✓ | **Enforced** (`lesson-plans.controller.ts:36`) |
+| `analytics` (Báo cáo nâng cao) | ✗ | ✗ | ✓ | ✓ | ✓ | **Coming Soon** — cờ khai báo, CHƯA enforce/CHƯA xây |
+| `api_access` (API/webhook tích hợp) | ✗ | ✗ | ✗ | ✓ | ✓ | **Coming Soon** — cờ khai báo, CHƯA enforce |
+| `messaging` (Chat GV–PH) | ✗ | ✓ | ✓ | ✓ | ✓ | **Coming Soon** — có cờ seed nhưng chưa có module; hiển thị badge "Sắp có" |
+
+Quota theo gói (metric HARD, `null` = không giới hạn):
+
+| Metric (chiều bán gói) | Free | Starter | Pro | Enterprise | Dedicated |
+| --- | --- | --- | --- | --- | --- |
+| STUDENTS | 10 | 100 | 300 | ∞ | ∞ |
+| TEACHERS | 1 | 8 | 25 | ∞ | ∞ |
+| STORAGE_MB | 500 | 5120 | 20480 | ∞ | ∞ |
+| Giá (VND, NET) | 0 | **290k/th · 2.9tr/năm** | **690k/th · 1.89tr/quý · 6.9tr/năm** | liên hệ | liên hệ (ẩn) |
+| ~~CLASSROOMS~~ (sẽ gỡ, BL-049) | 2 | 8 | 20 | ∞ | ∞ |
+
+Định giá **thâm nhập** (sản phẩm mới): Starter 290k @ ≤100 HS +Album ⇒ ~3–10k đ/HS/tháng; Pro 690k @ ≤300 HS +Giáo án ⇒ ~2–7k đ/HS/tháng — rẻ hơn hẳn thị trường VN (OneKids/KidsOnline/MISA 10–30k đ/HS) mà biên gộp ~90% (chi phí biên/tenant ~vài chục nghìn đ). Cơ sở chi phí/thuế: xem [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
+
+Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đang enforce nhưng sẽ gỡ (BL-049)**; `SCHOOLS` không tính (1 cơ sở), `STORAGE_MB` có limit seed nhưng **chưa có counter enforce**; `PUSH_PER_MONTH`/`ADMIN_USERS` có trong enum nhưng chưa seed/chưa enforce. Coming Soon toàn hệ (không theo gói, chưa build): Push notification, auto đối soát VietQR, MoMo/ZaloPay, VAT điện tử, proration đổi gói giữa kỳ, auto-charge thẻ.
+
+### BL-049 — Bỏ CLASSROOMS khỏi chiều tính gói (quản theo GV + HS + lưu trữ)
+
+- **Ưu tiên:** CAO NHẤT (sửa sai thiết kế trước khi chốt bảng giá).
+- **Owner:** `kids-api`, `kids-crm`, `kids-documentation`
+- **Đọc trước:** `kids-api/prisma/schema.prisma` (enum `LimitMetric`, model `PlanLimit`), `kids-api/src/classrooms/classrooms.controller.ts` + `classrooms.service.ts` (chỗ `@CheckQuota("CLASSROOMS")` + `consumeQuota/releaseQuota`), `kids-api/src/prisma/entitlement.service.ts`, `kids-api/prisma/seed.ts`, `kids-api/test/isolation.e2e-spec.ts` + `plans.e2e-spec.ts` (test đang assert quota CLASSROOMS)
+- **Làm:**
+  - Gỡ enforce quota `CLASSROOMS`: bỏ `@CheckQuota("CLASSROOMS")` + `consumeQuota/releaseQuota("CLASSROOMS")` ở classrooms service/controller; tạo lớp không còn bị chặn theo gói.
+  - Seed: bỏ `CLASSROOMS` khỏi `limits` mọi plan (hoặc set `null`). Giữ enum `LimitMetric.CLASSROOMS` để tránh migration phức tạp, HOẶC gỡ hẳn enum + migration nếu chắc không dùng — chọn 1 hướng, ghi rõ.
+  - Cập nhật test: chuyển 2 test quota CLASSROOMS (isolation `:133`, plans `:48`) sang khẳng định "tạo lớp không bị chặn theo gói" (hoặc xoá test quota lớp).
+  - CRM/landing: bỏ hiển thị "số lớp" như một giới hạn/điểm bán của gói; chỉ hiển thị GV + HS + lưu trữ.
+- **Docs:** `BILLING.md`, `DATABASE_ERD.md` (nếu gỡ enum/metric), `03-SALES-PLAYBOOK.md`, `IMPLEMENTATION_KNOWLEDGE.md`.
+- **Done khi:** gói chỉ định lượng theo GV + HS + STORAGE_MB; tạo lớp không bị 403 QUOTA theo gói; e2e xanh.
+- **Verify:** `cd kids-api && pnpm exec tsc --noEmit && pnpm lint && pnpm test:e2e`.
+
+### BL-050 — Vòng đời & versioning gói (đổi giá không ảnh hưởng khách cũ; chọn gói đại diện trên landing)
+
+- **Ưu tiên:** CAO (nền tảng cho việc đổi giá về sau).
+- **Owner:** `kids-api`, `kids-platform`, `kids-landing`, `kids-documentation`
+- **Đọc trước:** `kids-api/prisma/schema.prisma` (model `Plan` có `isPublic/isActive/deletedAt/sortOrder`, `Subscription.planId`), `kids-api/src/platform/platform.controller.ts` (`listPlans/createPlan/updatePlan` — CHƯA có delete), `kids-api/src/platform/platform.service.ts`, `kids-api/src/billing/billing.service.ts` (renewal đọc `planPrice` hiện tại của plan, `markPaid`/đẩy kỳ `:248,:343`), `kids-api/src/billing/billing.cron.ts`
+- **Bối cảnh (yêu cầu CEO):** đổi giá trong tương lai nhưng **không mutate gói cũ** → tạo **phiên bản gói mới (ID mới)**. Khách đã mua theo tháng/quý/năm giữ nguyên giá theo `subscription.planId` cho tới hết kỳ; **kỳ kế tiếp** (tháng/quý/năm sau) tính theo **gói active mới nhất của cùng tier** đang hiển thị trên landing.
+- **Làm:**
+  - **CRUD gói đầy đủ:** thêm endpoint deactivate (`isActive=false`) + soft-delete (`deletedAt`) + không cho xoá cứng gói còn subscription. UI Platform Console quản lý gói (thêm/sửa/ẩn/active/nghỉ bán).
+  - **Versioning:** cho phép nhiều gói cùng `tier` (bỏ ràng buộc "1 code/tier" nếu cần — dùng code có version, ví dụ `pro-2026q3`). Thêm khái niệm **gói đại diện đang bán cho mỗi tier** (cờ `isFeatured`/`isCurrent` hoặc con trỏ per-tier) để landing hiển thị đúng 1 gói/tier.
+  - **Landing:** `/public/plans` trả gói đại diện (`isActive && isPublic && isFeatured`) — chọn được gói nào show.
+  - **Renewal migration:** khi tạo hóa đơn kỳ mới, nếu tier của subscriber có gói đại diện mới hơn → chuyển `subscription.planId` sang gói mới và tính theo giá mới; hóa đơn đang mở/khách trong kỳ hiện tại KHÔNG đổi.
+  - **Bất biến giá đã bán:** không sửa `PlanPrice` của gói đã có subscription; đổi giá = tạo bản ghi/gói mới.
+- **Docs:** `BILLING.md` (mục vòng đời/versioning + hành vi renewal), `API.md` (endpoint mới), `DATABASE_ERD.md` (field mới nếu thêm), `IMPLEMENTATION_KNOWLEDGE.md`.
+- **Done khi:** đổi giá tạo phiên bản mới; khách cũ giữ giá tới hết kỳ rồi sang gói active mới nhất của tier; admin chọn được gói đại diện show landing; không mutate giá gói đã bán.
+- **Verify:** e2e: (a) tạo phiên bản mới không đổi hóa đơn/kỳ hiện tại của khách cũ; (b) renewal tính theo gói đại diện mới; (c) landing chỉ hiện 1 gói/tier theo cờ đại diện.
+
+### BL-043 — Bảng giá landing hiển thị đúng feature theo gói + đánh dấu Coming Soon
+
+- **Owner:** `kids-landing`, `kids-documentation`
+- **Đọc trước:** `kids-landing/src/routes/bang-gia.tsx` (đặc biệt `FEATURE_LABELS` :31-37, danh sách feature nền tảng :58-62), `kids-landing/src/api/public.ts`, `kids-documentation/BILLING.md`, ma trận ở trên
+- **Làm:**
+  - Landing đã đọc động `/public/plans` — giữ nguyên; chỉ sửa lớp hiển thị.
+  - Với feature Coming Soon (`analytics`, `api_access`, `messaging`/Chat): hiển thị kèm **badge "Sắp có"**, style phân biệt (mờ/nhãn), KHÔNG bán như đã có, không cho hiểu là dùng được ngay.
+  - Feature nền tảng luôn-bật: giữ nhóm hiển thị chung cho mọi gói (đã có :58-62), rà đúng danh sách theo ma trận.
+  - Không hardcode giá/quota; giá/quota vẫn từ API.
+  - Cập nhật i18n VI/EN cho badge "Sắp có" nếu landing có i18n.
+- **Docs:** đồng bộ `kids-documentation/BILLING.md` §feature (Chat = Coming Soon, không còn "đã loại"), `kids-business-docs/` bảng giá sales.
+- **Done khi:** trang `/bang-gia` thể hiện đúng feature từng gói theo ma trận; Coming Soon có badge rõ; không cam kết feature chưa có như đã có.
+- **Verify:** `cd kids-landing && pnpm build && pnpm lint`; xem `/bang-gia` render đúng từng gói.
+
+### BL-044 — Feature-gating theo gói ở FE (CRM + mobile-web + native)
+
+- **Owner:** `kids-crm`, `kids-mobile-web`, `kids-mobile-native`
+- **Đọc trước:** `kids-crm/src/components/AppLayout.tsx` (`canSee`/`feature` :55-146), `kids-crm/src/api/auth.ts` (`Me.features` :15-16), `kids-crm/src/App.tsx` (route :79-99), tương ứng ở mobile-web/native
+- **Làm:**
+  - Route guard theo feature: khi tenant không bật feature, route liên quan (`/albums`→`media_gallery`, `/lessons`→`lesson_plan`, và analytics khi có) không render page thao tác mà show state "Nâng cấp gói"/`FEATURE_NOT_AVAILABLE` theo i18n, thay vì để API 403.
+  - Trong page có nhánh feature: ẩn/disable section/nút theo `me.features[key]`, kèm gợi ý nâng gói.
+  - Không tự bịa feature key; chỉ dùng key có thật: `media_gallery`, `lesson_plan` (và `analytics` sau khi BL-045 enforce).
+  - Backend `@RequireFeature` vẫn là chốt an toàn; đây là lớp UX.
+- **Docs:** cập nhật README app phần feature-gating; `SECURITY_AUDIT_CHECKLIST.md` dòng defense-in-depth FE.
+- **Done khi:** user gói không bật feature không thấy page/section/nút tương ứng (không còn "bấm mới 403").
+- **Verify:** build từng app; smoke với tenant Free vs Pro (seed demo có case gói khác nhau).
+
+### BL-045 — Enforce hoặc dọn cờ feature "chết" ở API (`analytics`, `api_access`)
+
+- **Owner:** `kids-api`, `kids-documentation`
+- **Đọc trước:** `kids-api/src/common/guards/subscription.guard.ts`, `kids-api/src/prisma/entitlement.service.ts`, `kids-api/prisma/seed.ts:15,328-334`, `kids-documentation/BILLING.md:17,55`
+- **Làm:**
+  - `analytics`: hoặc (a) làm cùng BL-038 (thêm endpoint `@RequireFeature("analytics")`), hoặc (b) nếu chưa làm, giữ cờ nhưng đánh dấu Coming Soon nhất quán ở seed comment + BILLING.md; KHÔNG để FE tưởng đã enforce.
+  - `api_access`: chưa có bề mặt API tích hợp → giữ Coming Soon, ghi rõ chưa enforce.
+  - `messaging`: giữ cờ cho Chat Coming Soon; ghi rõ chưa có module.
+  - Không xoá key khỏi enum nếu đã seed vào `PlanFeature` (tránh migration rủi ro); chỉ chuẩn hoá trạng thái + tài liệu.
+- **Docs:** cập nhật `BILLING.md` (bảng feature + trạng thái enforce), `IMPLEMENTATION_KNOWLEDGE.md`.
+- **Done khi:** mỗi feature key có trạng thái rõ (Enforced / Coming Soon) khớp giữa seed, BILLING.md và FE.
+- **Verify:** `cd kids-api && pnpm exec tsc --noEmit && pnpm lint && pnpm test:e2e`.
+
+### BL-046 — Landing tuân thủ Luật Bảo vệ dữ liệu cá nhân (Luật 91/2025 + NĐ 356/2025, hiệu lực 01/01/2026)
+
+- **Owner:** `kids-landing`, `kids-api`, `kids-documentation`
+- **Đọc trước:** `kids-landing/src/routes/dang-ky.tsx`, `kids-landing/src/routes/lien-he.tsx`, `kids-api/src/provisioning/provisioning.controller.ts`, `kids-documentation/PRIVACY_RETENTION.md`
+- **Blocked input:** nội dung pháp lý chính thức do PO/luật sư duyệt (Privacy Policy, Điều khoản dịch vụ, thông tin DPO/bộ phận bảo vệ DLCN).
+- **Làm:**
+  - Form đăng ký/liên hệ: thêm **checkbox consent riêng, không tick sẵn**, tách bạch với nút submit; nêu rõ mục đích thu thập (tên, email, SĐT, tên trường) trước khi gửi.
+  - Thêm trang **Chính sách bảo mật** + **Điều khoản dịch vụ** (route + link footer); nêu quyền: được biết/truy cập/sửa/xóa/rút đồng ý và cách thực hiện.
+  - Vì SaaS xử lý **dữ liệu trẻ em (nhạy cảm)**: khi onboarding/nhập học sinh, có **consent người giám hộ** rõ ràng; ghi cơ sở pháp lý xử lý dữ liệu trẻ. (Phần nhập liệu học sinh nằm ở CRM/mobile — mở task con nếu cần.)
+  - Không cản đăng ký quá mức: consent gọn 1–2 dòng + link "xem chi tiết", không bắt đọc hết mới cho submit.
+  - Cân nhắc mục PRIVACY_RETENTION: DPIA (hồ sơ đánh giá tác động) + chỉ định bộ phận/nhân sự bảo vệ DLCN.
+- **Docs:** cập nhật `kids-documentation/PRIVACY_RETENTION.md`, `SECURITY_AUDIT_CHECKLIST.md`.
+- **Done khi:** thu thập dữ liệu có consent hợp lệ + có Privacy Policy/ToS công khai; luồng đăng ký vẫn mượt.
+- **Verify:** `cd kids-landing && pnpm build`; rà UX submit vẫn thông; checklist privacy tick các dòng tương ứng.
+
+### BL-047 — Landing tuân thủ TMĐT (NĐ 52/2013 sửa bởi NĐ 85/2021): thông tin pháp nhân + thông báo Bộ Công Thương
+
+- **Owner:** `kids-landing`, ops docs
+- **Đọc trước:** `kids-landing/src/routes/bang-gia.tsx`, `kids-landing/src/routes/dang-ky.tsx`, `kids-landing/src/routes/dang-ky.thanh-cong.tsx`, footer/layout landing
+- **Blocked input:** thông tin pháp nhân chính thức (tên công ty, MST, địa chỉ, hotline, email), và việc thực hiện **thông báo website tại online.gov.vn** (thủ tục ngoài code).
+- **Làm:**
+  - Footer/trang thông tin: hiển thị **tên doanh nghiệp, MST, địa chỉ, liên hệ**; sau khi thông báo BCT xong, gắn **logo/dấu "đã thông báo"** trỏ online.gov.vn.
+  - Trước bước đăng ký gói trả phí: hiển thị rõ **giá đã gồm/chưa gồm thuế**, **điều khoản dịch vụ**, **phương thức thanh toán**, chính sách hoàn/hủy — trước khi khách xác nhận.
+  - Trang xác nhận đăng ký: tóm tắt gói/giá/điều khoản đã đồng ý.
+- **Docs:** ghi runbook thủ tục thông báo BCT vào `kids-documentation/` (ops), không tạo file trùng.
+- **Done khi:** landing hiển thị đủ thông tin pháp nhân + điều khoản trước khi chốt đăng ký; sẵn sàng gắn dấu BCT sau khi thông báo.
+- **Verify:** `cd kids-landing && pnpm build`; rà các trang giá/đăng ký/liên hệ có đủ thông tin bắt buộc.
+
+### BL-048 — Hoàn thiện role-gating UI kids-crm (route guard + ẩn nút hành động theo role)
+
+- **Owner:** `kids-crm`
+- **Đọc trước:** `kids-crm/src/App.tsx` (`RequireAuth` :32-35, `DashboardGate` :41-50, routes :79-99), `kids-crm/src/components/AppLayout.tsx` (`canSee`/`roles` :55-146), `kids-crm/src/lib/roles.ts`, `kids-crm/src/api/auth.ts`
+- **Làm:**
+  - Thêm `RequireRole`/guard cho các route đang chỉ ẩn ở nav: `/members`, `/settings`, `/audit-logs` (ADMIN_ROLES), `/health`, `/pickup` (NON_FINANCE_ROLES), `/lessons` (LESSON_EDITOR_ROLES) → user sai role gõ thẳng URL bị redirect/`403 page`, không render page thao tác.
+  - Ẩn/disable **nút hành động theo role** trong page (không chỉ chờ API 403): ví dụ tạo hóa đơn (`TuitionPage.tsx:274`, FINANCE/ADMIN), reset mật khẩu (`MembersPage.tsx:363`, ADMIN), approve/reject nghỉ phép (`LeaveRequestsPage.tsx:112-118`, theo role duyệt), create/revoke pickup (`PickupPage.tsx:177,190`).
+  - Dùng `me.roles` + helper `isAdminRole`/`hasAnyRole` sẵn có ở `lib/roles.ts`; không tự định nghĩa role mới.
+  - Backend `@Roles` vẫn là chốt an toàn; đây là lớp UX giảm bề mặt 403.
+- **Docs:** cập nhật `SECURITY_AUDIT_CHECKLIST.md` (§10 CRM defense-in-depth, mở rộng từ nav sang route + nút), `kids-crm/README.md`.
+- **Done khi:** user sai role không vào được page hạn chế qua URL và không thấy nút hành động ngoài quyền; đúng khớp `@Roles` backend.
+- **Verify:** `cd kids-crm && pnpm build`; smoke đăng nhập từng role (admin/teacher/nurse/finance) theo seed demo.
+
 ## 1. Smoke và đồng bộ cấu hình dev
 
 ### BL-001 — Seed demo và kiểm login demo

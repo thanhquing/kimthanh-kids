@@ -64,5 +64,5 @@
 
 ## Không được quảng bá như đã có
 
-- Chat realtime đã loại khỏi kế hoạch.
+- Chat GV–PH: Coming Soon — chưa có module, chỉ hiển thị badge "Sắp có" ở bảng giá (không bán như đã có).
 - Push FCM/Expo, reset mật khẩu qua email/SMS, auto đối soát VietQR, MoMo/ZaloPay production, analytics nâng cao, app store release, VAT điện tử đều là backlog/P2+.
