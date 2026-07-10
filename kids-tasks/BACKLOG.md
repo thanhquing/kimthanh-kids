@@ -18,7 +18,7 @@
 
 > Nhóm này làm TRƯỚC Nhóm 1. Thứ tự ưu tiên: **BL-049** (gỡ CLASSROOMS khỏi chiều tính gói — sửa sai thiết kế) → **BL-050** (vòng đời & versioning gói: đổi giá không ảnh hưởng khách cũ, chọn gói đại diện landing) → BL-043/044/045 (phân tách feature theo gói cho user từng tenant, Q2) → BL-046/047 (tuân thủ pháp luật VN cho landing — Luật BVDLCN 91/2025 + NĐ 356/2025 hiệu lực 01/01/2026 và TMĐT NĐ 85/2021; rủi ro pháp lý đang hiệu lực) → BL-048 (hoàn thiện role-gating UI kids-crm, Q1).
 >
-> **Định giá đã chốt (thâm nhập, có lời, không nợ):** Free 0đ (10 HS · 1 GV · 500MB) · Starter 290k/th (100 HS · 8 GV · 5GB · +Album) · Pro 690k/th (300 HS · 25 GV · 20GB · +Giáo án) · Enterprise/Dedicated liên hệ. Gói tính theo **GV + HS + lưu trữ**, KHÔNG theo lớp. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
+> **Định giá đã chốt (hòa vốn ở 1–2 trường, không lỗ):** Free 0đ (10 HS · 1 GV · **200MB**) · Starter **690k/th** (100 HS · 8 GV · 5GB · +Album) · Pro **1.39tr/th** (300 HS · 25 GV · 20GB · +Album +Giáo án) · Enterprise/Dedicated liên hệ. Gói tính theo **GV + HS + lưu trữ**, KHÔNG theo lớp. Nhỉnh dưới đối thủ + nhiều chức năng; hạ tầng lean ~1–1.3tr/th → 1 trường Pro (hoặc 2 Starter) là hòa vốn. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
 
 ### Ma trận Entitlement chuẩn (spec cho BL-043/BL-044 — theo code thật `kids-api/prisma/seed.ts`)
 
@@ -42,11 +42,11 @@ Quota theo gói (metric HARD, `null` = không giới hạn):
 | --- | --- | --- | --- | --- | --- |
 | STUDENTS | 10 | 100 | 300 | ∞ | ∞ |
 | TEACHERS | 1 | 8 | 25 | ∞ | ∞ |
-| STORAGE_MB | 500 | 5120 | 20480 | ∞ | ∞ |
-| Giá (VND, NET) | 0 | **290k/th · 2.9tr/năm** | **690k/th · 1.89tr/quý · 6.9tr/năm** | liên hệ | liên hệ (ẩn) |
+| STORAGE_MB | 200 | 5120 | 20480 | ∞ | ∞ |
+| Giá (VND, NET) | 0 | **690k/th · 6.9tr/năm** | **1.39tr/th · 3.75tr/quý · 13.9tr/năm** | liên hệ | liên hệ (ẩn) |
 | ~~CLASSROOMS~~ (sẽ gỡ, BL-049) | 2 | 8 | 20 | ∞ | ∞ |
 
-Định giá **thâm nhập** (sản phẩm mới): Starter 290k @ ≤100 HS +Album ⇒ ~3–10k đ/HS/tháng; Pro 690k @ ≤300 HS +Giáo án ⇒ ~2–7k đ/HS/tháng — rẻ hơn hẳn thị trường VN (OneKids/KidsOnline/MISA 10–30k đ/HS) mà biên gộp ~90% (chi phí biên/tenant ~vài chục nghìn đ). Cơ sở chi phí/thuế: xem [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
+Định giá **nhỉnh dưới đối thủ + gói nhiều chức năng**, đủ **hòa vốn ở 1–2 trường**: Starter 690k @ ≤100 HS +Album ⇒ ~7–14k đ/HS; Pro 1.39tr @ ≤300 HS +Album+Giáo án ⇒ ~4.6–14k đ/HS — ngang/nhỉnh dưới thị trường VN (10–30k đ/HS) nhưng gói nhiều chức năng hơn. Hạ tầng lean ~1–1.3tr/tháng → **1 trường Pro** (hoặc **2 Starter**) là hòa vốn; biên gộp ~90%. Free siết còn **200MB** để user free gần như không tốn chi phí. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
 
 Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đang enforce nhưng sẽ gỡ (BL-049)**; `SCHOOLS` không tính (1 cơ sở), `STORAGE_MB` có limit seed nhưng **chưa có counter enforce**; `PUSH_PER_MONTH`/`ADMIN_USERS` có trong enum nhưng chưa seed/chưa enforce. Coming Soon toàn hệ (không theo gói, chưa build): Push notification, auto đối soát VietQR, MoMo/ZaloPay, VAT điện tử, proration đổi gói giữa kỳ, auto-charge thẻ.
 

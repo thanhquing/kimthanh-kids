@@ -233,7 +233,7 @@ async function main() {
   const proMonthly = await prisma.planPrice.findFirst({
     where: { planId: proPlan.id, billingCycle: BillingCycle.MONTHLY },
   });
-  const platAmount = proMonthly?.amount ?? 690_000;
+  const platAmount = proMonthly?.amount ?? 1_390_000;
   const platInvNo = (issued: Date, seq: number) => {
     const y = issued.getFullYear();
     const m = String(issued.getMonth() + 1).padStart(2, "0");

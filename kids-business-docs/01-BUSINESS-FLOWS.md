@@ -56,7 +56,7 @@ Mỗi trường truy cập qua **địa chỉ riêng** (vd `hoasen.kimthanhkids.
 
 **Mục tiêu:** đưa trường lên hệ thống và bắt đầu vận hành trong ~1 buổi.
 
-1. **Đăng ký trên landing** → chọn gói, điền tên trường + MST + tên miền con + tài khoản chủ trường → có ngay không gian riêng, **gói Miễn phí dùng vĩnh viễn** (tối đa 10 học sinh, 1 giáo viên, 500MB).
+1. **Đăng ký trên landing** → chọn gói, điền tên trường + MST + tên miền con + tài khoản chủ trường → có ngay không gian riêng, **gói Miễn phí dùng vĩnh viễn** (tối đa 10 học sinh, 1 giáo viên, 200MB).
    - Nếu chọn gói trả phí: trường vẫn vào dùng Free ngay, đồng thời nhận hóa đơn nâng cấp + mã VietQR để chuyển khoản cho KimThanh Kids.
    - Gói trả phí chỉ kích hoạt sau khi đội vận hành KimThanh xác nhận đã thu tiền trên Platform Console.
 2. **Tạo tài khoản nhân sự** (giáo viên, y tá, kế toán, hiệu trưởng) bằng **email hoặc số điện thoại**.

@@ -360,7 +360,7 @@ async function main() {
       analytics: false,
       api_access: false,
     },
-    limits: { STUDENTS: 10, TEACHERS: 1, CLASSROOMS: 2, SCHOOLS: 1, STORAGE_MB: 500 },
+    limits: { STUDENTS: 10, TEACHERS: 1, CLASSROOMS: 2, SCHOOLS: 1, STORAGE_MB: 200 },
   });
 
   await upsertPlan({
@@ -370,12 +370,11 @@ async function main() {
     isPublic: true,
     trialDays: 0,
     sortOrder: 1,
-    // Giá NET (chưa gồm VAT — GTGT pass-through). Định giá THÂM NHẬP cho sản phẩm mới:
-    // 290k @ ≤100 HS + Album ⇒ ~3-10k đ/HS/tháng, rẻ hơn hẳn thị trường (OneKids/KidsOnline/MISA 10-30k),
-    // "rẻ mà nhiều chức năng". Biên gộp vẫn ~90% vì chi phí biên/tenant chỉ ~vài chục nghìn đ.
+    // Giá NET (chưa gồm VAT — GTGT pass-through). Chiến lược: nhỉnh DƯỚI đối thủ + gói nhiều chức năng.
+    // 690k @ ≤100 HS + Album ⇒ ~7-14k đ/HS/tháng (đối thủ 10-30k). Hòa vốn: 2 trường Starter (~1.38tr) ≈ hạ tầng lean.
     prices: [
-      { billingCycle: BillingCycle.MONTHLY, amount: 290_000 },
-      { billingCycle: BillingCycle.ANNUAL, amount: 2_900_000 }, // ~10 tháng (2 tháng miễn phí)
+      { billingCycle: BillingCycle.MONTHLY, amount: 690_000 },
+      { billingCycle: BillingCycle.ANNUAL, amount: 6_900_000 }, // ~10 tháng (2 tháng miễn phí)
     ],
     features: {
       messaging: true,
@@ -394,11 +393,12 @@ async function main() {
     isPublic: true,
     trialDays: 0,
     sortOrder: 2,
-    // Giá NET (chưa gồm VAT). 690k @ ≤300 HS + Giáo án ⇒ ~2-7k đ/HS/tháng. Quý giảm ~9%; năm ~10 tháng.
+    // Giá NET (chưa gồm VAT). 1.39tr @ ≤300 HS + Album + Giáo án ⇒ ~4.6-14k đ/HS/tháng (đối thủ 10-30k).
+    // Hòa vốn: chỉ 1 trường Pro (~1.39tr) ≈ hạ tầng lean lúc mới ra. Quý giảm ~10%; năm ~10 tháng.
     prices: [
-      { billingCycle: BillingCycle.MONTHLY, amount: 690_000 },
-      { billingCycle: BillingCycle.QUARTERLY, amount: 1_890_000 },
-      { billingCycle: BillingCycle.ANNUAL, amount: 6_900_000 },
+      { billingCycle: BillingCycle.MONTHLY, amount: 1_390_000 },
+      { billingCycle: BillingCycle.QUARTERLY, amount: 3_750_000 },
+      { billingCycle: BillingCycle.ANNUAL, amount: 13_900_000 },
     ],
     features: {
       messaging: true,

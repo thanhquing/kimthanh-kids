@@ -8,9 +8,9 @@
 
 | code         | tier       | Giá (NET)                           | HS / GV / Lưu trữ | Tính năng bật                         |
 | ------------ | ---------- | ----------------------------------- | ----------------- | ------------------------------------- |
-| `free`       | FREE       | 0đ — **vĩnh viễn**                  | 10 / 1 / 500MB    | —                                     |
-| `starter`    | STARTER    | 290k/th · 2.9tr/năm                 | 100 / 8 / 5GB     | media_gallery                         |
-| `pro`        | PRO        | 690k/th · 1.89tr/quý · 6.9tr/năm    | 300 / 25 / 20GB   | media_gallery, lesson_plan, analytics |
+| `free`       | FREE       | 0đ — **vĩnh viễn**                  | 10 / 1 / 200MB    | —                                     |
+| `starter`    | STARTER    | 690k/th · 6.9tr/năm                 | 100 / 8 / 5GB     | media_gallery                         |
+| `pro`        | PRO        | 1.39tr/th · 3.75tr/quý · 13.9tr/năm | 300 / 25 / 20GB   | media_gallery, lesson_plan, analytics |
 | `enterprise` | ENTERPRISE | thỏa thuận                          | ∞                 | tất cả + api_access                   |
 | `dedicated`  | CUSTOM     | thỏa thuận (ẩn)                     | ∞                 | tất cả; deploy riêng                  |
 
@@ -26,10 +26,10 @@ Mô hình giá **linh hoạt**: `PlanPrice` (theo chu kỳ × tiền tệ) + `Pl
 Giá seed là **giá NET (chưa gồm VAT)**. Nguồn tham chiếu thực tế:
 
 - **Đối thủ VN (giá/HS/tháng):** OneKids 1.000–25.000đ · KidsOnline 30.000đ · MISA EMIS 20.000–30.000đ · PMS từ 10.000đ · GoKids ~15.000đ · LittleLives 2–5 USD. Thị trường tính **theo đầu học sinh**, gói trả phí phổ biến **10.000–30.000đ/HS/tháng**.
-- **Định vị của mình (định giá THÂM NHẬP — sản phẩm mới, phải rẻ hơn để cạnh tranh):** giữ mô hình **giá trọn gói theo bậc + cap theo GV/HS** (chi phí dự đoán được = điểm bán), giá thấp + nhiều chức năng = giá trị cảm nhận cao. Quy đổi:
-  - Starter 290k @ 40–100 HS ≈ **2.900–7.250đ/HS** · Pro 690k @ 100–300 HS ≈ **2.300–6.900đ/HS** → **rẻ hơn hẳn** OneKids/KidsOnline/MISA (10–30k/HS) mà biên gộp ~90%.
-- **Hạ tầng VN (VPS):** 4vCPU/8GB NVMe ~386k–790k/tháng. Kiến trúc **multi-tenant chung 1 cụm** → chi phí biên/tenant chỉ ~vài chục nghìn đ/tháng (chủ yếu là lưu trữ ảnh + phí cổng thanh toán ~1–2%). Chi phí cố định nền tảng giai đoạn đầu (app VPS + Postgres + R2/S3 + email + domain/monitoring/backup) ≈ **2–2.5tr/tháng**, phục vụ tới hàng trăm tenant trước khi cần scale.
-- **Điểm hòa vốn hạ tầng:** ~**8–9 tenant Starter** (hoặc ~4 Pro) là đủ bù chi phí cố định 2–2.5tr/tháng; lời thực phụ thuộc chi phí hỗ trợ/CS + marketing (CAC). Giá thâm nhập thấp đổi lấy thị phần sớm; có thể nâng bậc/giá về sau qua cơ chế versioning ([BL-050](../kids-tasks/BACKLOG.md)) mà không ảnh hưởng khách cũ.
+- **Định vị của mình (nhỉnh DƯỚI đối thủ + gói nhiều chức năng):** giữ mô hình **giá trọn gói theo bậc + cap theo GV/HS** (chi phí dự đoán được = điểm bán). Không định giá quá rẻ (tránh lỗ); đủ để **hòa vốn ở 1–2 trường**, nhưng per-student vẫn ≤ đối thủ. Quy đổi:
+  - Starter 690k @ 50–100 HS ≈ **6.900–13.800đ/HS** · Pro 1.39tr @ 100–300 HS ≈ **4.600–13.900đ/HS** → ngang/nhỉnh dưới OneKids/KidsOnline/MISA (10–30k/HS) nhưng **gói nhiều chức năng hơn** (Album ở Starter; Album+Giáo án ở Pro).
+- **Hạ tầng VN — cấu hình LEAN lúc mới ra:** **1 VPS 4vCPU/8GB NVMe chạy chung app + Postgres** (~500–790k/tháng) + R2/S3 lưu ảnh (~vài chục–100k) + email (free tier/SES ~0–100k) + domain/SSL/monitoring (~100k). **Tổng cố định ≈ 1–1.3tr/tháng**, dư sức phục vụ vài chục–hàng trăm tenant trước khi phải tách DB/scale. Chi phí biên/tenant chỉ ~vài chục nghìn đ (lưu trữ ảnh + phí cổng thanh toán ~1–2%). Free bị siết còn **200MB** nên user free gần như không tốn chi phí.
+- **Điểm hòa vốn (mục tiêu 1–2 trường):** **1 trường Pro (1.39tr/th) ≈ đủ bù toàn bộ hạ tầng lean** (~1–1.3tr); hoặc **2 trường Starter (~1.38tr/th)**. Từ trường thứ 2–3 trở đi gần như lãi thuần (biên gộp ~90%). Nâng bậc/giá về sau qua cơ chế versioning ([BL-050](../kids-tasks/BACKLOG.md)) mà không ảnh hưởng khách cũ. *(Khi scale lớn cần tách DB/backup riêng thì chi phí cố định tăng — giá vẫn dư biên.)*
 - **Thuế (áp dụng, cần kế toán chốt):**
   - **GTGT:** theo Luật GTGT 48/2024 + NĐ 181/2025 (hiệu lực 01/7/2025), "sản phẩm/dịch vụ phần mềm" có thể **không chịu GTGT**; nhưng SaaS truy cập theo kỳ thường bị xem là **dịch vụ chịu 10%**. Đây là **vùng xám** → giá lưu NET, VAT xử lý ở khâu xuất hóa đơn. GTGT là **pass-through**, không ảnh hưởng biên lời.
   - **TNDN:** chuẩn **20%** trên lợi nhuận; DN sản xuất phần mềm có thể được **ưu đãi 10%/miễn 4 năm/giảm 50% 9 năm** — cần xác nhận điều kiện.

@@ -447,7 +447,7 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     await api()
       .patch(`/api/platform/plans/${plan.id}`)
       .set(phead)
-      .send({ trialDays: 0, prices: [{ billingCycle: "MONTHLY", amount: 690_000 }] })
+      .send({ trialDays: 0, prices: [{ billingCycle: "MONTHLY", amount: 1_390_000 }] })
       .expect(200);
 
     // Sửa gói không tồn tại → 404.
