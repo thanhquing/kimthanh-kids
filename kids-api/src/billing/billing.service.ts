@@ -22,8 +22,9 @@ export class BillingService {
   ) {}
 
   listPublicPlans() {
+    // Landing chỉ hiển thị gói ĐẠI DIỆN (featured) của mỗi tier — 1 gói/tier (BL-050).
     return this.prisma.system.plan.findMany({
-      where: { isPublic: true, isActive: true, deletedAt: null },
+      where: { isPublic: true, isActive: true, isFeatured: true, deletedAt: null },
       orderBy: { sortOrder: "asc" },
       select: {
         id: true,
@@ -61,8 +62,14 @@ export class BillingService {
   async changePlan(tenantId: string, planId: string, billingCycle: BillingCycle, actorId?: string) {
     const sub = await this.prisma.system.subscription.findUnique({ where: { tenantId } });
     if (!sub) throw new NotFoundException({ code: "NO_SUBSCRIPTION", message: "Chưa có thuê bao" });
-    const plan = await this.prisma.system.plan.findFirst({ where: { id: planId, isActive: true } });
+    // Gói trả phí chỉ đổi sang bản ĐANG BÁN (featured); Free là entry/safety-net → luôn cho về
+    // (không cho nhảy về bản giá cũ, nhưng không khoá đường downgrade Free — BL-050).
+    const plan = await this.prisma.system.plan.findFirst({
+      where: { id: planId, isActive: true, isPublic: true, deletedAt: null },
+    });
     if (!plan) throw new BadRequestException({ code: "INVALID_PLAN", message: "Gói không hợp lệ" });
+    if (plan.tier !== "FREE" && !plan.isFeatured)
+      throw new BadRequestException({ code: "INVALID_PLAN", message: "Gói không còn được bán" });
     const currentPlan = await this.prisma.system.plan.findUnique({ where: { id: sub.planId } });
 
     const rank = { FREE: 0, STARTER: 1, PRO: 2, ENTERPRISE: 3, CUSTOM: 4 } as const;
@@ -126,10 +133,58 @@ export class BillingService {
     });
     if (!sub) throw new NotFoundException({ code: "NO_SUBSCRIPTION", message: "Chưa có thuê bao" });
 
+    // Versioning (BL-050): khi tạo hóa đơn kỳ mới, nếu tier của thuê bao có gói ĐẠI DIỆN (featured)
+    // mới hơn gói đang gắn → chuyển subscription sang gói mới và tính theo giá mới. Hóa đơn/kỳ cũ
+    // KHÔNG bị đụng (bất biến giá đã bán); giá mới chỉ áp cho hóa đơn kỳ này trở đi.
+    let billingPlan = sub.plan;
+    const featured = await this.prisma.system.plan.findFirst({
+      where: {
+        tier: sub.plan.tier,
+        isFeatured: true,
+        isActive: true,
+        isPublic: true,
+        deletedAt: null,
+      },
+    });
+    if (featured && featured.id !== sub.planId) {
+      const featuredPrice = await this.prisma.system.planPrice.findUnique({
+        where: {
+          planId_billingCycle_currency: {
+            planId: featured.id,
+            billingCycle: sub.billingCycle,
+            currency: sub.currency,
+          },
+        },
+      });
+      // Chỉ migrate nếu gói đại diện mới có giá cho đúng chu kỳ; nếu thiếu, giữ nguyên gói cũ.
+      if (featuredPrice) {
+        await this.prisma.system.$transaction([
+          this.prisma.system.subscription.update({
+            where: { tenantId },
+            data: { planId: featured.id, entitlementsCache: Prisma.DbNull },
+          }),
+          this.prisma.system.subscriptionChange.create({
+            data: {
+              subscriptionId: sub.id,
+              type: SubscriptionChangeType.RENEW,
+              fromPlanId: sub.planId,
+              toPlanId: featured.id,
+              fromCycle: sub.billingCycle,
+              toCycle: sub.billingCycle,
+              effectiveAt: new Date(),
+              reason: "plan_version_migrate",
+              metadata: { fromPlanCode: sub.plan.code, toPlanCode: featured.code },
+            },
+          }),
+        ]);
+        billingPlan = featured;
+      }
+    }
+
     const price = await this.prisma.system.planPrice.findUnique({
       where: {
         planId_billingCycle_currency: {
-          planId: sub.planId,
+          planId: billingPlan.id,
           billingCycle: sub.billingCycle,
           currency: sub.currency,
         },
@@ -143,7 +198,7 @@ export class BillingService {
 
     const amount = price.amount;
     const issuedAt = new Date();
-    const invoiceNumber = await this.nextInvoiceNumber(sub.tenant.slug, sub.plan.code, issuedAt);
+    const invoiceNumber = await this.nextInvoiceNumber(sub.tenant.slug, billingPlan.code, issuedAt);
     return this.prisma.system.platformInvoice.create({
       data: {
         invoiceNumber,
@@ -160,7 +215,7 @@ export class BillingService {
         lines: {
           create: {
             kind: "SUBSCRIPTION",
-            label: `${sub.plan.name} — ${sub.billingCycle}`,
+            label: `${billingPlan.name} — ${sub.billingCycle}`,
             quantity: 1,
             unitPrice: amount,
             amount,
@@ -180,7 +235,8 @@ export class BillingService {
     if (!sub) throw new NotFoundException({ code: "NO_SUBSCRIPTION", message: "Chưa có thuê bao" });
 
     const plan = await this.prisma.system.plan.findFirst({
-      where: { code: planCode, isPublic: true, isActive: true, deletedAt: null },
+      // Chỉ nâng cấp sang gói ĐANG BÁN (featured) — chặn mua bản giá cũ qua code (BL-050).
+      where: { code: planCode, isPublic: true, isActive: true, isFeatured: true, deletedAt: null },
     });
     if (!plan) throw new BadRequestException({ code: "INVALID_PLAN", message: "Gói không hợp lệ" });
     if (plan.code === "free") {

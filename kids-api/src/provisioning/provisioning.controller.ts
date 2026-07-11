@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Post, Query, UsePipes } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req, UsePipes } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { BillingCycle } from "@prisma/client";
+import { Request } from "express";
 import { z } from "zod";
 import { BillingService } from "../billing/billing.service";
 import { Public } from "../common/decorators/public.decorator";
@@ -21,6 +22,10 @@ const signupSchema = z.object({
   phone: z.string().max(20).optional(),
   planCode: z.string().min(2).max(40).optional(),
   billingCycle: z.nativeEnum(BillingCycle).optional(),
+  // BL-046: chủ trường phải tích đồng ý Điều khoản + Chính sách bảo mật mới được đăng ký.
+  acceptConsent: z.literal(true, {
+    errorMap: () => ({ message: "Phải đồng ý Điều khoản dịch vụ và Chính sách bảo mật" }),
+  }),
 });
 type SignupDto = z.infer<typeof signupSchema>;
 
@@ -40,8 +45,12 @@ export class ProvisioningController {
 
   @Post("signup")
   @UsePipes(new ZodValidationPipe(signupSchema))
-  signup(@Body() dto: SignupDto) {
-    return this.provisioning.signup(dto);
+  signup(@Body() dto: SignupDto, @Req() req: Request) {
+    return this.provisioning.signup(dto, {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+      recordConsent: true,
+    });
   }
 
   @Get("availability")

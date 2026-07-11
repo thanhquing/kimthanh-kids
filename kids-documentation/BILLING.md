@@ -4,7 +4,7 @@
 
 ## Gói cước (seed mặc định — `prisma/seed.ts`)
 
-> **Chiều tính gói:** theo **HS + GV + Lưu trữ**. KHÔNG tính theo số lớp (quota `CLASSROOMS` đang còn trong code sẽ được gỡ — xem [BACKLOG BL-049](../kids-tasks/BACKLOG.md)).
+> **Chiều tính gói:** theo **HS + GV + Lưu trữ**. KHÔNG tính theo số lớp — quota `CLASSROOMS` đã được gỡ khỏi enforcement + seed (BL-049 DONE); enum `LimitMetric.CLASSROOMS` giữ lại để tránh migration nhưng không còn seed vào bất kỳ gói nào. Tạo lớp không bị chặn theo gói.
 
 | code         | tier       | Giá (NET)                           | HS / GV / Lưu trữ | Tính năng bật                         |
 | ------------ | ---------- | ----------------------------------- | ----------------- | ------------------------------------- |
@@ -19,7 +19,7 @@
 > **Feature key:** `media_gallery` (Album, **enforced** Starter+), `lesson_plan` (Giáo án, **enforced** Pro+), `analytics` (báo cáo nâng cao — **Coming Soon**, cờ khai báo nhưng chưa enforce/chưa xây), `api_access` (**Coming Soon**, chưa enforce). Cờ `messaging` (Chat GV–PH) là **Coming Soon** — có cờ seed nhưng chưa có module; bảng giá chỉ hiển thị badge "Sắp có", không bán như đã có.
 > **Quota PARENT:** không đếm bằng counter mà **giới hạn theo `STUDENTS`** (1 học sinh ~ 1 phụ huynh đại diện).
 
-Mô hình giá **linh hoạt**: `PlanPrice` (theo chu kỳ × tiền tệ) + `PlanFeature` (bật/tắt tính năng) + `PlanLimit` (quota theo metric). Đổi giá/feature/limit không cần đổi schema.
+Mô hình giá **linh hoạt**: `PlanPrice` (theo chu kỳ × tiền tệ) + `PlanFeature` (bật/tắt tính năng) + `PlanLimit` (quota theo metric). **Đổi giá của gói ĐÃ có thuê bao = tạo phiên bản gói mới** (không mutate tại chỗ) — xem §Vòng đời & versioning gói.
 
 ### Cơ sở định giá (chi phí thực tế + thuế + đối thủ, cập nhật 2026-07-10)
 
@@ -34,6 +34,18 @@ Giá seed là **giá NET (chưa gồm VAT)**. Nguồn tham chiếu thực tế:
   - **GTGT:** theo Luật GTGT 48/2024 + NĐ 181/2025 (hiệu lực 01/7/2025), "sản phẩm/dịch vụ phần mềm" có thể **không chịu GTGT**; nhưng SaaS truy cập theo kỳ thường bị xem là **dịch vụ chịu 10%**. Đây là **vùng xám** → giá lưu NET, VAT xử lý ở khâu xuất hóa đơn. GTGT là **pass-through**, không ảnh hưởng biên lời.
   - **TNDN:** chuẩn **20%** trên lợi nhuận; DN sản xuất phần mềm có thể được **ưu đãi 10%/miễn 4 năm/giảm 50% 9 năm** — cần xác nhận điều kiện.
 - **Blocked input (business):** cách áp VAT trên `PlatformInvoice` (0%/8%/10%) và pháp nhân xuất hóa đơn — do kế toán/PO chốt trước khi phát hành hóa đơn thật.
+
+## Vòng đời & versioning gói (BL-050)
+
+Mục tiêu: đổi giá trong tương lai mà **không ảnh hưởng khách đã mua**, và admin **chọn được gói đại diện** hiển thị landing.
+
+- **Gói đại diện (`Plan.isFeatured`):** mỗi tier chỉ có **1 gói featured**. `GET /public/plans` chỉ trả gói `isPublic && isActive && isFeatured` → landing hiển thị đúng 1 gói/tier. Seed đánh dấu 5 gói hiện tại là featured của tier tương ứng.
+- **Đổi giá = tạo phiên bản mới:** KHÔNG sửa `PlanPrice` của gói đã có thuê bao. `PATCH /platform/plans/:id` **từ chối** (`PLAN_IMMUTABLE`) nếu gói đã có ≥1 subscription và request **thực sự đổi** `prices/features/limits` (gửi lại đúng giá trị hiện tại = no-op, VẪN được — để sửa tên/trial/public không bị chặn oan). Thay vào đó: `POST /platform/plans` tạo gói mới cùng `tier` (code versioned, ví dụ `pro-2026q3`) → `PATCH /platform/plans/:id/feature` đặt làm gói đại diện (tự bỏ featured của gói cũ cùng tier).
+- **Chỉ bán gói đại diện (sellable = `isPublic && isActive && isFeatured`):** `POST /public/signup`, signup-upgrade và `POST /billing/subscription/change` **chỉ chấp nhận gói featured** với gói TRẢ PHÍ (gọi API trực tiếp bằng code/id gói cũ → `INVALID_PLAN`), chống mua bản giá cũ đã ẩn. **Ngoại lệ Free/entry:** gói `free` (tier FREE) KHÔNG bị ép featured — là cửa vào bắt buộc, tránh trường hợp lỡ bỏ featured/ngừng bán Free làm chết toàn bộ đăng ký công khai hoặc khoá đường downgrade về Free.
+- **Khách cũ giữ giá tới hết kỳ:** subscription trỏ `planId` gói cũ, hóa đơn/kỳ đang mở KHÔNG đổi.
+- **Renewal migrate:** khi platform tạo hóa đơn kỳ mới (`POST /platform/invoices` → `createPeriodInvoice`), nếu tier của thuê bao có gói đại diện (`featured && isActive && isPublic`) **khác** gói đang gắn và gói mới có giá cho đúng chu kỳ → subscription **chuyển sang gói đại diện mới** + tính giá mới, ghi `SubscriptionChange` type `RENEW` reason `plan_version_migrate`. Gói ẩn/ngừng bán KHÔNG được dùng làm đích migrate. Thiếu giá chu kỳ → giữ nguyên gói cũ.
+- **CRUD gói:** `PATCH /plans/:id/deactivate` (ngừng bán, `isActive=false` + tự bỏ featured); `PATCH /plans/:id` với `isActive=false`/`isPublic=false` cũng **tự clear `isFeatured`** (tier không mất/nhầm gói đại diện). `DELETE /plans/:id` (soft-delete) — **bị chặn** (`PLAN_HAS_SUBSCRIPTIONS`) nếu còn thuê bao tham chiếu.
+- **Bất biến "≤1 featured/tier" ở DB:** partial unique index `plans_one_featured_per_tier` (`UNIQUE(tier) WHERE isFeatured`) — chốt cứng, không phụ thuộc app logic. Platform Console (`PlansPage`) quản trị đủ vòng đời: đặt đại diện / ngừng bán / xoá + badge "Đại diện".
 
 ## State machine Subscription
 

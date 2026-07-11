@@ -73,7 +73,13 @@ function SignupPage() {
     adminPassword: "",
     planCode: search.plan ?? "free",
     billingCycle: search.cycle ?? "MONTHLY",
+    acceptConsent: false,
   });
+  const [consentDoc, setConsentDoc] = useState<null | "TERMS" | "PRIVACY">(null);
+
+  const legalQuery = useQuery({ queryKey: ["public-legal"], queryFn: () => publicApi.legal() });
+  const legalDocs = legalQuery.data ?? [];
+  const openDoc = legalDocs.find((d) => d.type === consentDoc) ?? null;
 
   const plansQuery = useQuery({ queryKey: ["public-plans"], queryFn: () => publicApi.plans() });
   const plans = plansQuery.data ?? [];
@@ -116,6 +122,7 @@ function SignupPage() {
     !form.adminEmail ||
     !form.adminPassword ||
     !form.adminFullName ||
+    !form.acceptConsent ||
     availability.data?.available === false ||
     selectedPlan?.tier === "ENTERPRISE";
 
@@ -284,6 +291,33 @@ function SignupPage() {
                   thanh toán.
                 </p>
               </div>
+              <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 shrink-0"
+                  checked={form.acceptConsent}
+                  onChange={(e) => setForm((f) => ({ ...f, acceptConsent: e.target.checked }))}
+                />
+                <span>
+                  Tôi đã đọc và đồng ý với{" "}
+                  <button
+                    type="button"
+                    className="font-semibold text-primary underline"
+                    onClick={() => setConsentDoc("TERMS")}
+                  >
+                    Điều khoản dịch vụ
+                  </button>{" "}
+                  và{" "}
+                  <button
+                    type="button"
+                    className="font-semibold text-primary underline"
+                    onClick={() => setConsentDoc("PRIVACY")}
+                  >
+                    Chính sách bảo mật
+                  </button>
+                  , bao gồm việc trường tự chịu trách nhiệm xin phép người giám hộ khi nhập dữ liệu trẻ em.
+                </span>
+              </label>
               <button
                 type="submit"
                 disabled={cannotSubmit || signup.isPending}
@@ -308,6 +342,50 @@ function SignupPage() {
           </aside>
         </form>
       </section>
+
+      {openDoc && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setConsentDoc(null)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-2xl flex-col rounded-2xl bg-card shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <h3 className="font-display text-lg font-bold text-foreground">
+                {openDoc.title}{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  (v{openDoc.version})
+                </span>
+              </h3>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setConsentDoc(null)}
+                aria-label="Đóng"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="overflow-y-auto whitespace-pre-wrap px-6 py-4 text-sm leading-relaxed text-foreground">
+              {openDoc.body}
+            </div>
+            <div className="border-t border-border px-6 py-4">
+              <button
+                type="button"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground transition hover:brightness-110"
+                onClick={() => {
+                  setForm((f) => ({ ...f, acceptConsent: true }));
+                  setConsentDoc(null);
+                }}
+              >
+                Tôi đã đọc & đồng ý
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .form-input {

@@ -54,6 +54,7 @@ export async function createTenant(app: INestApplication): Promise<TenantFixture
       adminEmail: email,
       adminPassword: password,
       adminFullName: "HT",
+      acceptConsent: true,
     })
     .expect(201);
 

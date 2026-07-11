@@ -13,6 +13,7 @@ import { BillingService } from "../billing/billing.service";
 import { isValidTaxCode, normalizeTaxCode } from "../common/validation/tax-code";
 import { EnvService } from "../config/env.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { ConsentService } from "../consent/consent.service";
 
 const RESERVED_SLUGS = new Set([
   "www",
@@ -50,6 +51,7 @@ export class ProvisioningService {
     private readonly prisma: PrismaService,
     private readonly env: EnvService,
     private readonly billing: BillingService,
+    private readonly consent: ConsentService,
   ) {}
 
   private hostFor(slug: string): string {
@@ -107,7 +109,10 @@ export class ProvisioningService {
   }
 
   /** Onboard trường mới: Tenant + Settings + Subdomain + School + Admin + Trial subscription (1 TX). */
-  async signup(input: SignupInput) {
+  async signup(
+    input: SignupInput,
+    meta?: { ipAddress?: string; userAgent?: string; recordConsent?: boolean },
+  ) {
     const check = await this.checkSlugAvailable(input.slug);
     if (!check.available)
       throw new BadRequestException({ code: "SLUG_UNAVAILABLE", message: check.reason });
@@ -139,7 +144,16 @@ export class ProvisioningService {
     const selectedPlanCode = (input.planCode ?? "free").trim().toLowerCase();
     const selectedCycle = input.billingCycle ?? BillingCycle.MONTHLY;
     const selectedPlan = await this.prisma.system.plan.findFirst({
-      where: { code: selectedPlanCode, isPublic: true, isActive: true, deletedAt: null },
+      // Gói TRẢ PHÍ chỉ cho đăng ký bản ĐANG BÁN (featured) — chặn mua bản giá cũ qua code (BL-050).
+      // Free là cửa vào BẮT BUỘC (không "bán", không versioning giá) → KHÔNG ép featured, tránh
+      // trường hợp lỡ bỏ featured/thêm gói FREE khác làm chết toàn bộ đăng ký công khai.
+      where: {
+        code: selectedPlanCode,
+        isPublic: true,
+        isActive: true,
+        deletedAt: null,
+        ...(selectedPlanCode === "free" ? {} : { isFeatured: true }),
+      },
       include: { prices: { where: { isActive: true } } },
     });
     if (!selectedPlan) {
@@ -163,6 +177,10 @@ export class ProvisioningService {
     // Freemium: gói Miễn phí dùng vĩnh viễn (ACTIVE), không có hạn dùng thử.
     const periodEnd = new Date(now.getTime() + 100 * 365 * 86_400_000);
     const host = this.hostFor(input.slug);
+
+    // BL-046: chỉ ghi nhận consent khi ĐĂNG KÝ CÔNG KHAI (chủ trường thật sự tick — controller ép
+    // acceptConsent=true). Platform tạo hộ (không meta) KHÔNG ghi khống — admin sẽ tick ở gate đăng nhập.
+    const consentDocs = meta?.recordConsent ? await this.consent.activeDocKeys("vi") : [];
 
     try {
       const created = await this.prisma.system.$transaction(async (tx) => {
@@ -230,6 +248,22 @@ export class ProvisioningService {
             targetId: tenant.id,
           },
         });
+
+        // BL-046: ghi nhận chủ trường đồng ý các văn bản pháp lý hiệu lực (bằng chứng + IP/UA).
+        if (consentDocs.length) {
+          await tx.consentAcceptance.createMany({
+            data: consentDocs.map((d) => ({
+              documentId: d.id,
+              docType: d.type,
+              version: d.version,
+              userId: admin.id,
+              tenantId: tenant.id,
+              email: input.adminEmail,
+              ipAddress: meta?.ipAddress ?? null,
+              userAgent: meta?.userAgent ?? null,
+            })),
+          });
+        }
 
         return {
           tenant: {

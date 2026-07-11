@@ -1,10 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { LimitMetric } from "@prisma/client";
 import { AuthUser } from "../common/decorators/current-user.decorator";
 import { paginated } from "../common/http/api-response";
 import { page, PaginationQuery } from "../common/http/pagination";
 import { assertSchoolAccess, schoolWhere } from "../common/scope/school-scope";
-import { EntitlementService } from "../entitlement/entitlement.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 export interface CreateClassroomInput {
@@ -24,10 +22,7 @@ export interface UpdateClassroomInput {
 
 @Injectable()
 export class ClassroomsService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly entitlements: EntitlementService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async list(user: AuthUser, opts: { schoolId?: string } & PaginationQuery = {}) {
     const pg = page(opts);
@@ -63,23 +58,18 @@ export class ClassroomsService {
 
   async create(user: AuthUser, input: CreateClassroomInput) {
     assertSchoolAccess(user, input.schoolId);
-    await this.entitlements.consumeQuota(user.tenantId!, LimitMetric.CLASSROOMS);
-    try {
-      // tenantId tự được extension gán theo ngữ cảnh.
-      return await this.prisma.db.classroom.create({
-        data: {
-          schoolId: input.schoolId,
-          name: input.name,
-          ageGroup: input.ageGroup,
-          capacity: input.capacity ?? 25,
-          homeroomTeacherId: input.homeroomTeacherId,
-          createdById: user.id,
-        } as never,
-      });
-    } catch (e) {
-      await this.entitlements.releaseQuota(user.tenantId!, LimitMetric.CLASSROOMS);
-      throw e;
-    }
+    // Số lớp KHÔNG còn là chiều tính gói (BL-049): tạo lớp không bị chặn theo quota.
+    // tenantId tự được extension gán theo ngữ cảnh.
+    return this.prisma.db.classroom.create({
+      data: {
+        schoolId: input.schoolId,
+        name: input.name,
+        ageGroup: input.ageGroup,
+        capacity: input.capacity ?? 25,
+        homeroomTeacherId: input.homeroomTeacherId,
+        createdById: user.id,
+      } as never,
+    });
   }
 
   async update(user: AuthUser, id: string, input: UpdateClassroomInput) {
@@ -90,7 +80,6 @@ export class ClassroomsService {
   async remove(user: AuthUser, id: string) {
     await this.get(user, id);
     await this.prisma.db.classroom.update({ where: { id }, data: { deletedAt: new Date() } });
-    await this.entitlements.releaseQuota(user.tenantId!, LimitMetric.CLASSROOMS);
     return { ok: true };
   }
 }

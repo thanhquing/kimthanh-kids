@@ -47,6 +47,19 @@ export type SignupInput = {
   phone?: string;
   planCode?: string;
   billingCycle?: BillingCycle;
+  /** BL-046: bắt buộc = true — chủ trường đã đọc & đồng ý Điều khoản + Chính sách bảo mật. */
+  acceptConsent: boolean;
+};
+
+export type LegalDoc = {
+  id: string;
+  type: "TERMS" | "PRIVACY";
+  version: string;
+  locale: string;
+  title: string;
+  summary?: string | null;
+  body: string;
+  effectiveFrom: string;
 };
 
 export type SignupResult = {
@@ -82,6 +95,7 @@ export type PublicInvoice = {
 
 export const publicApi = {
   plans: () => api.get<PublicPlan[]>("/public/plans"),
+  legal: () => api.get<LegalDoc[]>("/public/legal"),
   availability: (slug: string) =>
     api.get<{ available: boolean; reason?: string }>("/public/availability", { query: { slug } }),
   signup: (body: SignupInput) => api.post<SignupResult>("/public/signup", body),

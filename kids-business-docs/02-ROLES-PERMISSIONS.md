@@ -186,5 +186,5 @@ Một người có thể được gán **nhiều vai trò** (vd vừa Hiệu tr�
 2. **School-scope:** vai trò gắn cơ sở (vd GV/YT) chỉ thấy dữ liệu cơ sở đó; Admin/HT thấy toàn trường.
 3. **Phụ huynh chỉ thấy con mình** — mọi truy vấn tự lọc theo quan hệ phụ huynh-học sinh.
 4. **Tính năng theo gói:** Giáo án (Pro+), Album (Khởi đầu+). Hết gói/không có feature → bị chặn lịch sự (`FEATURE_NOT_AVAILABLE`).
-5. **Hạn mức cứng:** vượt số học sinh/giáo viên/lớp của gói → bị chặn (`QUOTA_EXCEEDED`); phụ huynh giới hạn theo số học sinh.
+5. **Hạn mức cứng:** vượt số học sinh/giáo viên của gói → bị chặn (`QUOTA_EXCEEDED`); phụ huynh giới hạn theo số học sinh. (Số lớp KHÔNG tính vào hạn mức gói.)
 6. **Hành động nhạy cảm được ghi nhật ký:** tạo tài khoản, bật/tắt tài khoản, xóa học sinh, hủy/thu hóa đơn.

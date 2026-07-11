@@ -34,12 +34,7 @@ const QUOTA_AT_RISK_PCT = 80;
  * Metric có nguồn usage thật để cảnh báo nâng gói. KHÔNG gồm SCHOOLS: gói phổ thông chỉ cho
  * 1 cơ sở nên mọi trường đều 1/1 = 100% → nhiễu (gần như trường nào cũng "sắp chạm hạn").
  */
-const QUOTA_METRICS = [
-  LimitMetric.STUDENTS,
-  LimitMetric.TEACHERS,
-  LimitMetric.CLASSROOMS,
-  LimitMetric.STORAGE_MB,
-] as const;
+const QUOTA_METRICS = [LimitMetric.STUDENTS, LimitMetric.TEACHERS, LimitMetric.STORAGE_MB] as const;
 
 export interface CreatePlanInput {
   code: string;
@@ -47,6 +42,7 @@ export interface CreatePlanInput {
   tier: PlanTier;
   description?: string;
   isPublic?: boolean;
+  isFeatured?: boolean;
   trialDays?: number;
   sortOrder?: number;
   prices?: { billingCycle: BillingCycle; currency?: BillingCurrency; amount: number }[];
@@ -59,6 +55,7 @@ export interface UpdatePlanInput {
   description?: string;
   isPublic?: boolean;
   isActive?: boolean;
+  isFeatured?: boolean;
   trialDays?: number;
   sortOrder?: number;
   prices?: { billingCycle: BillingCycle; currency?: BillingCurrency; amount: number }[];
@@ -375,7 +372,7 @@ export class PlatformService {
       throw new NotFoundException({ code: "NO_TENANT", message: "Không tìm thấy tenant" });
 
     // Đếm usage thật + giới hạn gói → quota cho card hạn mức.
-    const [studentCount, teacherIds, classroomCount, storageAgg, ent] = await Promise.all([
+    const [studentCount, teacherIds, storageAgg, ent] = await Promise.all([
       this.prisma.system.student.count({
         where: { tenantId: id, status: StudentStatus.ACTIVE, deletedAt: null },
       }),
@@ -384,27 +381,21 @@ export class PlatformService {
         distinct: ["userId"],
         select: { userId: true },
       }),
-      this.prisma.system.classroom.count({ where: { tenantId: id, deletedAt: null } }),
       this.prisma.system.media.aggregate({ where: { tenantId: id }, _sum: { sizeBytes: true } }),
       this.entitlements.resolve(id),
     ]);
 
     const teacherCount = teacherIds.length;
     const storageUsedMb = Math.round((storageAgg._sum.sizeBytes ?? 0) / (1024 * 1024));
+    // Gói tính theo GV + HS + lưu trữ; số lớp KHÔNG còn là chiều quota (BL-049).
     const usedByMetric: Partial<Record<LimitMetric, number>> = {
       [LimitMetric.STUDENTS]: studentCount,
       [LimitMetric.TEACHERS]: teacherCount,
-      [LimitMetric.CLASSROOMS]: classroomCount,
       [LimitMetric.SCHOOLS]: tenant.schools.length,
       [LimitMetric.STORAGE_MB]: storageUsedMb,
     };
     const quota = (
-      [
-        LimitMetric.STUDENTS,
-        LimitMetric.TEACHERS,
-        LimitMetric.CLASSROOMS,
-        LimitMetric.STORAGE_MB,
-      ] as const
+      [LimitMetric.STUDENTS, LimitMetric.TEACHERS, LimitMetric.STORAGE_MB] as const
     ).map((metric) => ({
       metric,
       used: usedByMetric[metric] ?? 0,
@@ -749,14 +740,16 @@ export class PlatformService {
     return plans.map((p) => ({ ...p, tenantCount: countMap.get(p.id) ?? 0 }));
   }
 
-  createPlan(input: CreatePlanInput) {
-    return this.prisma.system.plan.create({
+  async createPlan(input: CreatePlanInput) {
+    // Gói mới (kể cả phiên bản giá mới) mặc định CHƯA đại diện; admin dùng setPlanFeatured để lên landing.
+    const plan = await this.prisma.system.plan.create({
       data: {
         code: input.code,
         name: input.name,
         tier: input.tier,
         description: input.description,
         isPublic: input.isPublic ?? true,
+        isFeatured: false,
         trialDays: input.trialDays ?? 0,
         sortOrder: input.sortOrder ?? 0,
         prices: input.prices ? { create: input.prices.map((p) => ({ ...p })) } : undefined,
@@ -765,21 +758,68 @@ export class PlatformService {
       },
       include: { prices: true, features: true, limits: true },
     });
+    if (input.isFeatured) await this.setPlanFeatured(plan.id);
+    return this.prisma.system.plan.findFirst({
+      where: { id: plan.id },
+      include: { prices: true, features: true, limits: true },
+    });
+  }
+
+  /** Số thuê bao (mọi trạng thái) đang tham chiếu gói — "gói đã bán" thì bất biến giá/feature/limit. */
+  private planSubscriptionCount(planId: string) {
+    return this.prisma.system.subscription.count({ where: { planId } });
   }
 
   /**
    * Sửa gói: cập nhật field vô hướng + upsert giá/feature/limit (theo unique key).
-   * KHÔNG đổi tier/code (định danh gói — đổi sẽ lệch entitlement của thuê bao đang chạy).
+   * KHÔNG đổi tier/code (định danh gói). BẤT BIẾN (BL-050): gói đã có subscription thì KHÔNG cho
+   * đổi giá/feature/limit — muốn đổi giá phải tạo phiên bản gói mới (createPlan) rồi setPlanFeatured.
    * Thuê bao đang chạy giữ nguyên tới kỳ kế (giá khóa ở subscription).
    */
   async updatePlan(id: string, input: UpdatePlanInput) {
-    const plan = await this.prisma.system.plan.findFirst({ where: { id, deletedAt: null } });
+    const plan = await this.prisma.system.plan.findFirst({
+      where: { id, deletedAt: null },
+      include: { prices: true, features: true, limits: true },
+    });
     if (!plan) {
       throw new NotFoundException({
         code: "PLAN_NOT_FOUND",
         message: "Không tìm thấy gói dịch vụ",
       });
     }
+    // BẤT BIẾN (BL-050): gói đã có thuê bao thì KHÔNG cho ĐỔI giá/feature/limit. Gửi lại y hệt giá trị
+    // hiện tại (no-op) VẪN được — để UI sửa tên/trial/public không bị chặn oan dù có kèm prices.
+    const priceChanged = (input.prices ?? []).some((p) => {
+      const cur = plan.prices.find(
+        (x) =>
+          x.billingCycle === p.billingCycle && x.currency === (p.currency ?? BillingCurrency.VND),
+      );
+      return !cur || Number(cur.amount) !== Number(p.amount);
+    });
+    const featureChanged = (input.features ?? []).some((f) => {
+      const cur = plan.features.find((x) => x.featureKey === f.featureKey);
+      return !cur || cur.enabled !== (f.enabled ?? true);
+    });
+    const limitChanged = (input.limits ?? []).some((l) => {
+      const cur = plan.limits.find((x) => x.metric === l.metric);
+      return (
+        !cur ||
+        cur.limitValue !== l.limitValue ||
+        (l.enforcement != null && cur.enforcement !== l.enforcement)
+      );
+    });
+    if (
+      (priceChanged || featureChanged || limitChanged) &&
+      (await this.planSubscriptionCount(id)) > 0
+    ) {
+      throw new BadRequestException({
+        code: "PLAN_IMMUTABLE",
+        message:
+          "Gói đã có thuê bao — không sửa được giá/tính năng/hạn mức. Hãy tạo phiên bản gói mới rồi đặt làm gói đại diện.",
+      });
+    }
+    // Ẩn/ngừng bán gói đang đại diện → tự bỏ featured để tier không mất/nhầm gói đại diện (BL-050).
+    const clearFeatured = input.isActive === false || input.isPublic === false;
     await this.prisma.system.plan.update({
       where: { id },
       data: {
@@ -787,10 +827,14 @@ export class PlatformService {
         description: input.description ?? undefined,
         isPublic: input.isPublic ?? undefined,
         isActive: input.isActive ?? undefined,
+        ...(clearFeatured ? { isFeatured: false } : {}),
         trialDays: input.trialDays ?? undefined,
         sortOrder: input.sortOrder ?? undefined,
       },
     });
+    if (input.isFeatured === true && !clearFeatured) await this.setPlanFeatured(id);
+    else if (input.isFeatured === false)
+      await this.prisma.system.plan.update({ where: { id }, data: { isFeatured: false } });
     for (const p of input.prices ?? []) {
       const currency = p.currency ?? BillingCurrency.VND;
       await this.prisma.system.planPrice.upsert({
@@ -824,6 +868,72 @@ export class PlatformService {
       where: { id },
       include: { prices: true, features: true, limits: true },
     });
+  }
+
+  /**
+   * Đặt gói làm ĐẠI DIỆN (featured) cho tier của nó — landing hiển thị đúng 1 gói/tier (BL-050).
+   * Bỏ featured của các gói cùng tier trong cùng transaction. Gói phải active + public.
+   */
+  async setPlanFeatured(id: string) {
+    const plan = await this.prisma.system.plan.findFirst({ where: { id, deletedAt: null } });
+    if (!plan)
+      throw new NotFoundException({
+        code: "PLAN_NOT_FOUND",
+        message: "Không tìm thấy gói dịch vụ",
+      });
+    if (!plan.isActive || !plan.isPublic) {
+      throw new BadRequestException({
+        code: "PLAN_NOT_SELLABLE",
+        message: "Chỉ gói đang bán (active + public) mới được đặt làm gói đại diện",
+      });
+    }
+    await this.prisma.system.$transaction([
+      this.prisma.system.plan.updateMany({
+        where: { tier: plan.tier, isFeatured: true, id: { not: id } },
+        data: { isFeatured: false },
+      }),
+      this.prisma.system.plan.update({ where: { id }, data: { isFeatured: true } }),
+    ]);
+    return this.prisma.system.plan.findFirst({
+      where: { id },
+      include: { prices: true, features: true, limits: true },
+    });
+  }
+
+  /** Ngừng bán gói (isActive=false) — gói không còn hiển thị landing, cũng bỏ đại diện. */
+  async deactivatePlan(id: string) {
+    const plan = await this.prisma.system.plan.findFirst({ where: { id, deletedAt: null } });
+    if (!plan)
+      throw new NotFoundException({
+        code: "PLAN_NOT_FOUND",
+        message: "Không tìm thấy gói dịch vụ",
+      });
+    return this.prisma.system.plan.update({
+      where: { id },
+      data: { isActive: false, isFeatured: false },
+      include: { prices: true, features: true, limits: true },
+    });
+  }
+
+  /** Soft-delete gói. KHÔNG cho xoá nếu còn thuê bao tham chiếu (giữ lịch sử giá đã bán). */
+  async deletePlan(id: string) {
+    const plan = await this.prisma.system.plan.findFirst({ where: { id, deletedAt: null } });
+    if (!plan)
+      throw new NotFoundException({
+        code: "PLAN_NOT_FOUND",
+        message: "Không tìm thấy gói dịch vụ",
+      });
+    if ((await this.planSubscriptionCount(id)) > 0) {
+      throw new BadRequestException({
+        code: "PLAN_HAS_SUBSCRIPTIONS",
+        message: "Gói còn thuê bao tham chiếu — chỉ ngừng bán (deactivate), không xoá được.",
+      });
+    }
+    await this.prisma.system.plan.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false, isFeatured: false },
+    });
+    return { ok: true };
   }
 
   async listCoupons(page = 1, pageSize = 20, isActive?: string) {
@@ -1101,30 +1211,23 @@ export class PlatformService {
     return [...new Set(lines.map((l) => l.tenantId))];
   }
 
-  /** Đếm usage THẬT theo tenant cho các metric có nguồn dữ liệu (HS/GV/Lớp/Lưu trữ MB). */
+  /** Đếm usage THẬT theo tenant cho các metric quota (HS/GV/Lưu trữ MB). Số lớp KHÔNG tính (BL-049). */
   private async usageCounts(tenantIds: string[]): Promise<{
     students: Map<string, number>;
     teachers: Map<string, number>;
-    classrooms: Map<string, number>;
     storageMb: Map<string, number>;
   }> {
     if (!tenantIds.length)
       return {
         students: new Map(),
         teachers: new Map(),
-        classrooms: new Map(),
         storageMb: new Map(),
       };
 
-    const [students, classrooms, teachers, storage] = await Promise.all([
+    const [students, teachers, storage] = await Promise.all([
       this.prisma.system.student.groupBy({
         by: ["tenantId"],
         where: { tenantId: { in: tenantIds }, status: StudentStatus.ACTIVE, deletedAt: null },
-        _count: { _all: true },
-      }),
-      this.prisma.system.classroom.groupBy({
-        by: ["tenantId"],
-        where: { tenantId: { in: tenantIds }, deletedAt: null },
         _count: { _all: true },
       }),
       // 1 GV dạy nhiều cơ sở sinh nhiều dòng membership (@@unique[userId,role,schoolId]) nên
@@ -1154,7 +1257,6 @@ export class PlatformService {
       teacherCount.set(row.tenantId, (teacherCount.get(row.tenantId) ?? 0) + 1);
     return {
       students: countMap(students),
-      classrooms: countMap(classrooms),
       teachers: teacherCount,
       storageMb: new Map(
         storage.map((r) => [r.tenantId, Math.round((r._sum.sizeBytes ?? 0) / (1024 * 1024))]),
@@ -1162,7 +1264,7 @@ export class PlatformService {
     };
   }
 
-  /** Usage 4 metric của 1 tenant từ kết quả `usageCounts`. */
+  /** Usage các metric quota (GV + HS + lưu trữ) của 1 tenant từ kết quả `usageCounts`. */
   private usedForTenant(
     usage: Awaited<ReturnType<PlatformService["usageCounts"]>>,
     tenantId: string,
@@ -1170,7 +1272,6 @@ export class PlatformService {
     return {
       [LimitMetric.STUDENTS]: usage.students.get(tenantId) ?? 0,
       [LimitMetric.TEACHERS]: usage.teachers.get(tenantId) ?? 0,
-      [LimitMetric.CLASSROOMS]: usage.classrooms.get(tenantId) ?? 0,
       [LimitMetric.STORAGE_MB]: usage.storageMb.get(tenantId) ?? 0,
     };
   }

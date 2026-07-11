@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { isAuthed, roleForMobile, useMe } from "@/api/auth";
 import { bootstrapAuth, setOnUnauthorized } from "@/api/http";
 import { PhoneFrame, MobileLayout } from "@/components/mobile/MobileShell";
+import { ConsentGate } from "@/components/ConsentGate";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { AlbumGalleryPage } from "@/pages/parent/AlbumGalleryPage";
@@ -45,6 +46,8 @@ function RoleGuard({ role, children }: { role: Role; children: ReactNode }) {
   if (isError || !me) return <Navigate to="/login" replace />;
   const actual = roleForMobile(me.roles);
   if (!actual) return <Navigate to="/login" replace />;
+  // BL-046: chưa đồng ý văn bản pháp lý hiệu lực → chặn bằng cổng consent trước khi vào app.
+  if (me.pendingConsents && me.pendingConsents.length > 0) return <ConsentGate />;
   if (actual !== role) return <Navigate to={actual === "teacher" ? "/teacher" : "/parent"} replace />;
   return <>{children}</>;
 }

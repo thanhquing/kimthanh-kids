@@ -61,6 +61,7 @@ describe("Phase 0 — Platform layer (multi-tenant isolation)", () => {
           adminEmail: t.email,
           adminPassword: t.password,
           adminFullName: "Hiệu trưởng",
+          acceptConsent: true,
         })
         .expect(201);
       expect(res.body.success).toBe(true);
@@ -125,20 +126,15 @@ describe("Phase 0 — Platform layer (multi-tenant isolation)", () => {
     expect(res.body.error.code).toBe("TENANT_MISMATCH");
   });
 
-  it("quota HARD: vượt giới hạn CLASSROOMS của gói free (2) → QUOTA_EXCEEDED", async () => {
+  it("BL-049: số lớp KHÔNG còn là quota gói → consume CLASSROOMS nhiều lần không bị chặn", async () => {
     const tenant = await prisma.system.tenant.findFirst({ where: { slug: A.slug } });
     const tenantId = tenant!.id;
-    // free limit CLASSROOMS = 2 → 2 lần OK, lần 3 ném lỗi.
-    for (let i = 0; i < 2; i++) {
+    // Trước đây free chặn ở 2 lớp; giờ số lớp không tính gói → không giới hạn.
+    for (let i = 0; i < 5; i++) {
       await expect(
         entitlements.consumeQuota(tenantId, LimitMetric.CLASSROOMS),
       ).resolves.toBeUndefined();
     }
-    await expect(entitlements.consumeQuota(tenantId, LimitMetric.CLASSROOMS)).rejects.toMatchObject(
-      {
-        response: { code: "QUOTA_EXCEEDED" },
-      },
-    );
   });
 
   it("lifecycle: trial hết hạn → EXPIRED → chặn ghi; thanh toán → ACTIVE lại", async () => {

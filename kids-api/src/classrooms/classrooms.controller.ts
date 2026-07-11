@@ -3,7 +3,6 @@ import { ApiTags } from "@nestjs/swagger";
 import { TenantRole } from "@prisma/client";
 import { z } from "zod";
 import { AuthUser, CurrentUser } from "../common/decorators/current-user.decorator";
-import { CheckQuota } from "../common/decorators/entitlement.decorator";
 import { paginationQuerySchema } from "../common/http/pagination";
 import { Roles } from "../common/decorators/roles.decorator";
 import { ZodValidationPipe } from "../common/pipes/zod-validation.pipe";
@@ -60,7 +59,6 @@ export class ClassroomsController {
   }
 
   @Roles(TenantRole.SCHOOL_ADMIN, TenantRole.PRINCIPAL)
-  @CheckQuota("CLASSROOMS")
   @Post()
   create(
     @CurrentUser() user: AuthUser,

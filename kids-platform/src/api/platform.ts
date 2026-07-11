@@ -12,6 +12,7 @@ export type Plan = {
   description?: string | null;
   isPublic: boolean;
   isActive?: boolean;
+  isFeatured?: boolean;
   trialDays?: number;
   sortOrder?: number;
   tenantCount?: number;
@@ -202,6 +203,7 @@ export type UpdatePlanInput = {
   description?: string;
   isPublic?: boolean;
   isActive?: boolean;
+  isFeatured?: boolean;
   trialDays?: number;
   sortOrder?: number;
   prices?: { billingCycle: string; currency?: string; amount: number }[];
@@ -429,6 +431,9 @@ export const platform = {
   createPlan: (body: CreatePlanInput) => api.post<Plan>("/platform/plans", body),
   updatePlan: (id: string, body: UpdatePlanInput) =>
     api.patch<Plan>(`/platform/plans/${id}`, body),
+  setPlanFeatured: (id: string) => api.patch<Plan>(`/platform/plans/${id}/feature`, {}),
+  deactivatePlan: (id: string) => api.patch<Plan>(`/platform/plans/${id}/deactivate`, {}),
+  deletePlan: (id: string) => api.delete<{ ok: boolean }>(`/platform/plans/${id}`),
 
   listCoupons: (page = 1, isActive?: boolean) =>
     api.get<Coupon[]>("/platform/coupons", { query: { page, isActive } }),

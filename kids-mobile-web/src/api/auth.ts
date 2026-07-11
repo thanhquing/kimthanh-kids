@@ -18,6 +18,8 @@ export type Me = {
   phone?: string | null;
   roles: TenantRole[];
   allowedSchoolIds?: string[] | null;
+  // BL-046: văn bản pháp lý user CHƯA đồng ý (bản hiệu lực) — có phần tử ⇒ hiện gate bắt buộc.
+  pendingConsents?: { id: string; type: string; version: string; title: string; summary?: string | null }[];
 };
 
 export async function login(input: LoginInput, tenantId: string): Promise<LoginResult> {

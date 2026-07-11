@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import {
   LimitMetric,
@@ -196,6 +196,21 @@ export class PlatformController {
   @Patch("plans/:id")
   updatePlan(@Param("id") id: string, @Body() body: UpdatePlanInput) {
     return this.platform.updatePlan(id, body);
+  }
+
+  @Patch("plans/:id/feature")
+  setPlanFeatured(@Param("id") id: string) {
+    return this.platform.setPlanFeatured(id);
+  }
+
+  @Patch("plans/:id/deactivate")
+  deactivatePlan(@Param("id") id: string) {
+    return this.platform.deactivatePlan(id);
+  }
+
+  @Delete("plans/:id")
+  deletePlan(@Param("id") id: string) {
+    return this.platform.deletePlan(id);
   }
 
   @Get("coupons")

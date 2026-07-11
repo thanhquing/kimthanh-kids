@@ -6,6 +6,7 @@ import type { TenantRole } from "./api/crm";
 import { bootstrapAuth, setOnUnauthorized } from "./api/http";
 import { isAdminRole } from "./lib/roles";
 import { AppLayout } from "./components/AppLayout";
+import { ConsentGate } from "./components/ConsentGate";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ClassroomsPage } from "./pages/ClassroomsPage";
 import { ClassroomDetailPage } from "./pages/ClassroomDetailPage";
@@ -72,7 +73,9 @@ export function App() {
       <Route
         element={
           <RequireAuth>
-            <AppLayout />
+            <ConsentGate>
+              <AppLayout />
+            </ConsentGate>
           </RequireAuth>
         }
       >

@@ -7,6 +7,7 @@ import {
   UserType,
 } from "@prisma/client";
 import { hashPassword } from "../src/common/crypto/password";
+import { CONSENT_DOCS } from "./consent-documents";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -292,13 +293,17 @@ async function upsertPlan(args: {
   prices: { billingCycle: BillingCycle; amount: number }[];
   features: Record<string, boolean>;
   limits: Partial<Record<LimitMetric, number | null>>;
+  isFeatured?: boolean;
 }) {
+  // Gói seed là gói đại diện (featured) duy nhất của tier nó (BL-050).
+  const isFeatured = args.isFeatured ?? true;
   const plan = await prisma.plan.upsert({
     where: { code: args.code },
     update: {
       name: args.name,
       tier: args.tier,
       isPublic: args.isPublic,
+      isFeatured,
       trialDays: args.trialDays,
       sortOrder: args.sortOrder,
     },
@@ -307,6 +312,7 @@ async function upsertPlan(args: {
       name: args.name,
       tier: args.tier,
       isPublic: args.isPublic,
+      isFeatured,
       trialDays: args.trialDays,
       sortOrder: args.sortOrder,
     },
@@ -332,6 +338,7 @@ async function upsertPlan(args: {
       create: { planId: plan.id, featureKey: key, enabled: args.features[key] ?? false },
     });
   }
+  const seededMetrics = Object.keys(args.limits) as LimitMetric[];
   for (const [metric, limitValue] of Object.entries(args.limits)) {
     await prisma.planLimit.upsert({
       where: { planId_metric: { planId: plan.id, metric: metric as LimitMetric } },
@@ -339,6 +346,10 @@ async function upsertPlan(args: {
       create: { planId: plan.id, metric: metric as LimitMetric, limitValue, enforcement: "HARD" },
     });
   }
+  // Reconcile: gỡ các limit không còn seed (vd CLASSROOMS sau BL-049) để reseed idempotent.
+  await prisma.planLimit.deleteMany({
+    where: { planId: plan.id, metric: { notIn: seededMetrics } },
+  });
   return plan;
 }
 
@@ -360,7 +371,8 @@ async function main() {
       analytics: false,
       api_access: false,
     },
-    limits: { STUDENTS: 10, TEACHERS: 1, CLASSROOMS: 2, SCHOOLS: 1, STORAGE_MB: 200 },
+    // Gói tính theo GV + HS + lưu trữ; KHÔNG theo số lớp (BL-049).
+    limits: { STUDENTS: 10, TEACHERS: 1, SCHOOLS: 1, STORAGE_MB: 200 },
   });
 
   await upsertPlan({
@@ -383,7 +395,7 @@ async function main() {
       analytics: false,
       api_access: false,
     },
-    limits: { STUDENTS: 100, TEACHERS: 8, CLASSROOMS: 8, SCHOOLS: 1, STORAGE_MB: 5120 },
+    limits: { STUDENTS: 100, TEACHERS: 8, SCHOOLS: 1, STORAGE_MB: 5120 },
   });
 
   await upsertPlan({
@@ -407,7 +419,7 @@ async function main() {
       analytics: true,
       api_access: false,
     },
-    limits: { STUDENTS: 300, TEACHERS: 25, CLASSROOMS: 20, SCHOOLS: 1, STORAGE_MB: 20480 },
+    limits: { STUDENTS: 300, TEACHERS: 25, SCHOOLS: 1, STORAGE_MB: 20480 },
   });
 
   await upsertPlan({
@@ -425,7 +437,7 @@ async function main() {
       analytics: true,
       api_access: true,
     },
-    limits: { STUDENTS: null, TEACHERS: null, CLASSROOMS: null, SCHOOLS: null, STORAGE_MB: null },
+    limits: { STUDENTS: null, TEACHERS: null, SCHOOLS: null, STORAGE_MB: null },
   });
 
   await upsertPlan({
@@ -443,7 +455,7 @@ async function main() {
       analytics: true,
       api_access: true,
     },
-    limits: { STUDENTS: null, TEACHERS: null, CLASSROOMS: null, SCHOOLS: null, STORAGE_MB: null },
+    limits: { STUDENTS: null, TEACHERS: null, SCHOOLS: null, STORAGE_MB: null },
   });
 
   // ─── Platform super-admin (staff của bạn) ───
@@ -512,9 +524,23 @@ async function main() {
     });
   }
 
+  // ─── Văn bản pháp lý consent (BL-046) ───
+  // Bản đang seed = bản hiệu lực; mọi bản khác cùng (type, locale) bị hạ isActive=false.
+  for (const doc of CONSENT_DOCS) {
+    await prisma.consentDocument.upsert({
+      where: { type_locale_version: { type: doc.type, locale: doc.locale, version: doc.version } },
+      update: { title: doc.title, summary: doc.summary, body: doc.body, isActive: true },
+      create: { ...doc, isActive: true },
+    });
+    await prisma.consentDocument.updateMany({
+      where: { type: doc.type, locale: doc.locale, version: { not: doc.version } },
+      data: { isActive: false },
+    });
+  }
+
   // eslint-disable-next-line no-console
   console.log(
-    `Seed xong: 5 plan + platform super-admin + cấu hình NH + ${allBlogPosts.length} bài blog (${BLOG_POSTS.length} cũ + ${seoB2BPosts.length} SEO B2B)`,
+    `Seed xong: 5 plan + platform super-admin + cấu hình NH + ${allBlogPosts.length} bài blog (${BLOG_POSTS.length} cũ + ${seoB2BPosts.length} SEO B2B) + ${CONSENT_DOCS.length} văn bản consent`,
   );
 }
 

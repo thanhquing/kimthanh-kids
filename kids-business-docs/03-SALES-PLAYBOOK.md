@@ -42,7 +42,7 @@
 ## 3. Câu hỏi khám phá
 *(Hỏi để hiểu trường trước khi báo giá — học 5 câu này)*
 
-1. "Trường mình hiện có **bao nhiêu bé, bao nhiêu lớp, bao nhiêu giáo viên** ạ?" → định cỡ gói.
+1. "Trường mình hiện có **bao nhiêu bé và bao nhiêu giáo viên** ạ?" → định cỡ gói (gói tính theo HS + GV + lưu trữ, không theo số lớp).
 2. "Hiện trường đang **liên lạc với phụ huynh** bằng gì — Zalo, sổ giấy hay phần mềm nào?" → tìm nỗi đau.
 3. "Việc **thu học phí và xuất chứng từ** hiện làm thế nào ạ?" → mở mảng tài chính.
 4. "Trường có cần **theo dõi sức khỏe, dị ứng, cho uống thuốc** cho các bé không?" → mở mảng y tế.

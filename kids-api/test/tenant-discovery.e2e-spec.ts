@@ -29,6 +29,7 @@ describe("Tenant discovery + x-tenant login (e2e)", () => {
         adminEmail: email,
         adminPassword: password,
         adminFullName: "HT",
+        acceptConsent: true,
       })
       .expect(201);
     tenantId = res.body.data.tenant.id;

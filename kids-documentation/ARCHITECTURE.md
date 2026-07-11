@@ -28,6 +28,7 @@ kids-api/src/
 ├── tenancy/                 # TenantResolutionMiddleware (SILO → Host → x-tenant → JWT)
 ├── auth/                    # login/refresh/logout/me + TokenService + UserContextService
 ├── entitlement/             # EntitlementService (resolve features/limits + quota)
+├── consent/                 # @Global — văn bản pháp lý versioned + log chấp thuận (BL-046): GET /public/legal, /consent/pending, /consent/accept
 ├── provisioning/            # POST /public/signup + public plans + branding + availability + GET /public/tenants (discovery chọn trường, độc lập subdomain)
 ├── billing/                 # plan/subscription/invoice/payment/webhook/cron/lifecycle (grace dunning ← PlatformConfig)
 ├── platform-config/         # PlatformConfigService — config nền tảng singleton (NH VietQR + grace dunning); dùng chung billing + platform (tránh cycle)

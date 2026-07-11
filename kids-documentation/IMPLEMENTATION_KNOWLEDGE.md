@@ -22,7 +22,7 @@
 
 ## Domain Phase 1
 
-- Hồ sơ/lớp/nhân sự: Students, StudentParent, Classrooms, tenant members, staff assignments, quota STUDENTS/CLASSROOMS/TEACHERS/ADMIN_USERS.
+- Hồ sơ/lớp/nhân sự: Students, StudentParent, Classrooms, tenant members, staff assignments, quota STUDENTS/TEACHERS (số lớp KHÔNG tính gói — BL-049 đã gỡ enforcement + seed CLASSROOMS; enum `LimitMetric.CLASSROOMS` giữ lại tránh migration nhưng không seed; seed `upsertPlan` reconcile xoá limit không còn khai báo để reseed idempotent).
 - Vận hành hằng ngày: Attendance bulk theo lớp/ngày, DailyReports upsert theo học sinh/ngày, PH xem feed con mình.
 - Sức khỏe: HealthRecord/growth, MedicineRequest + status history, Incident, Allergy, LeaveRequest.
 - Học phí trường -> phụ huynh: TuitionInvoice/Item/Payment, số hóa đơn `HD-YYYY-NNNN`, VietQR miễn phí, tiền mặt/chuyển khoản thủ công, VNPay sandbox, HTML print, CSV export, cron quá hạn.
@@ -35,6 +35,8 @@
 - Platform realm tách tenant realm; host dev platform ghim `admin.*`.
 - Platform invoice có public token để xem invoice không cần login; mark-paid thủ công là nguồn kích hoạt gói trả phí trong MVP.
 - Signup landing luôn tạo tenant Free ACTIVE trước. Nếu chọn gói trả phí, hệ thống tạo invoice nâng cấp OPEN; mark-paid mới đổi subscription/entitlements.
+- Consent pháp lý (BL-046): bảng system `ConsentDocument` (versioned TERMS/PRIVACY, 1 bản `isActive`/type/locale) + `ConsentAcceptance` (log bất biến userId/tenantId/version/IP/UA). Chủ trường tick lúc signup (`/public/signup` ép `acceptConsent=true`, ghi acceptance trong transaction — chỉ khi `recordConsent`, platform tạo hộ KHÔNG ghi khống). GV/PH/NV: `/auth/me.pendingConsents` → FE gate (CRM `ConsentGate` bọc AppLayout; mobile-web trong `RoleGuard`) → `POST /consent/accept`. Đổi nội dung = tăng `version` trong `prisma/consent-documents.ts` rồi reseed (bản cũ tự hạ `isActive`, user phải đồng ý lại). Văn bản hiện là **BẢN NHÁP cần luật sư duyệt**.
+- Versioning gói (BL-050): `Plan.isFeatured` = gói đại diện mỗi tier (partial unique `UNIQUE(tier) WHERE isFeatured` ⇒ ≤1/tier); `/public/plans` chỉ trả featured. **Chỉ bán gói featured** (sellable=`isPublic&&isActive&&isFeatured`): signup / signup-upgrade / `subscription/change` gọi bằng code/id gói cũ → `INVALID_PLAN` (chống mua bản giá cũ). `updatePlan` = **diff-check**: chặn `PLAN_IMMUTABLE` chỉ khi gói đã có thuê bao mà giá/feature/limit THỰC SỰ đổi (no-op resubmit OK) → sửa tên/trial/public không bị chặn oan. `isActive/isPublic=false` (kể cả qua PATCH) tự clear `isFeatured`; renewal (`createPeriodInvoice`) chỉ migrate sang featured active+public + tính giá mới (`SubscriptionChange` RENEW `plan_version_migrate`), hóa đơn/kỳ cũ bất biến. `DELETE /platform/plans/:id` soft-delete (chặn `PLAN_HAS_SUBSCRIPTIONS`); `.../deactivate` ngừng bán; `.../feature` đặt đại diện. Platform Console `PlansPage` quản trị đủ vòng đời. Seed set featured 5 gói.
 - Blog landing không còn hardcode: `PlatformPost` CRUD/publish trong `kids-platform`, public posts cho landing.
 - Auto đối soát ngân hàng, payment gateway production và lead/contact API là backlog P2.
 

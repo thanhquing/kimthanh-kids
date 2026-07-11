@@ -38,6 +38,7 @@ describe("Landing self-service — public plans, paid signup, blog posts", () =>
         adminEmail: `admin@${slug}.vn`,
         adminPassword: "Password123",
         adminFullName: "HT",
+        acceptConsent: true,
         planCode: "starter",
         billingCycle: "MONTHLY",
       })

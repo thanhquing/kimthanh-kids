@@ -100,24 +100,54 @@ export function PlansPage() {
 
   const save = useMutation({
     mutationFn: () => {
-      const prices = monthly
-        ? [{ billingCycle: "MONTHLY", currency: "VND", amount: Number(monthly) }]
-        : undefined;
+      const monthlyNum = monthly ? Number(monthly) : undefined;
       if (editing) {
+        // Chỉ gửi prices khi giá tháng THỰC SỰ đổi → tránh PLAN_IMMUTABLE khi chỉ sửa tên/trial/public
+        // của gói đã có thuê bao (đổi giá phải tạo phiên bản gói mới — BL-050).
+        const currentMonthly = editing.prices?.find((x) => x.billingCycle === "MONTHLY")?.amount;
+        const priceChanged = monthlyNum != null && monthlyNum !== Number(currentMonthly ?? NaN);
         return platform.updatePlan(editing.id, {
           name: form.name,
           isPublic: form.isPublic,
           trialDays: form.trialDays,
-          prices,
+          prices: priceChanged
+            ? [{ billingCycle: "MONTHLY", currency: "VND", amount: monthlyNum! }]
+            : undefined,
         });
       }
-      return platform.createPlan({ ...form, prices });
+      return platform.createPlan({
+        ...form,
+        prices: monthlyNum
+          ? [{ billingCycle: "MONTHLY", currency: "VND", amount: monthlyNum }]
+          : undefined,
+      });
     },
     onSuccess: () => {
       toast(editing ? t("pl.toastUpdated") : t("pl.toastCreated"));
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["plans"] });
       invalidatePlatformData(qc); // đổi giá gói → MRR đổi ở Tổng quan/Trường/Thuê bao
+    },
+    onError: (e) => toast(e instanceof ApiError ? e.message : t("pl.toastErr"), "error"),
+  });
+
+  const lifecycle = useMutation({
+    mutationFn: (v: { kind: "feature" | "deactivate" | "delete"; id: string }): Promise<unknown> =>
+      v.kind === "feature"
+        ? platform.setPlanFeatured(v.id)
+        : v.kind === "deactivate"
+          ? platform.deactivatePlan(v.id)
+          : platform.deletePlan(v.id),
+    onSuccess: (_d, v) => {
+      toast(
+        v.kind === "feature"
+          ? t("pl.toastFeatured")
+          : v.kind === "deactivate"
+            ? t("pl.toastDeactivated")
+            : t("pl.toastDeleted"),
+      );
+      qc.invalidateQueries({ queryKey: ["plans"] });
+      invalidatePlatformData(qc);
     },
     onError: (e) => toast(e instanceof ApiError ? e.message : t("pl.toastErr"), "error"),
   });
@@ -150,11 +180,14 @@ export function PlansPage() {
               >
                 <div className="flex items-center justify-between">
                   <span className={cn("badge", TIER_BADGE[p.tier] ?? "b-slate")}>{p.tier}</span>
-                  {popular ? (
-                    <span className="badge b-green">{t("pl.popular")}</span>
-                  ) : !p.isPublic ? (
-                    <span className="badge b-slate">{t("pl.hidden")}</span>
-                  ) : null}
+                  <div className="flex items-center gap-1.5">
+                    {p.isFeatured && <span className="badge b-blue">{t("pl.featured")}</span>}
+                    {popular ? (
+                      <span className="badge b-green">{t("pl.popular")}</span>
+                    ) : !p.isPublic ? (
+                      <span className="badge b-slate">{t("pl.hidden")}</span>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="font-bold text-lg mt-3">{p.name}</div>
                 <div className="text-2xl font-bold mt-1">{big}</div>
@@ -184,6 +217,41 @@ export function PlansPage() {
                 <button className="btn-soft w-full mt-3 text-sm" onClick={() => openEdit(p)}>
                   {t("pl.editPlan")}
                 </button>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {!p.isFeatured && p.isActive !== false && p.isPublic && (
+                    <button
+                      className="btn-soft flex-1 text-xs"
+                      disabled={lifecycle.isPending}
+                      onClick={() => lifecycle.mutate({ kind: "feature", id: p.id })}
+                    >
+                      {t("pl.setFeatured")}
+                    </button>
+                  )}
+                  {p.isActive !== false && (
+                    <button
+                      className="btn-soft flex-1 text-xs"
+                      disabled={lifecycle.isPending}
+                      onClick={() => {
+                        if (window.confirm(t("pl.confirmDeactivate", { name: p.name })))
+                          lifecycle.mutate({ kind: "deactivate", id: p.id });
+                      }}
+                    >
+                      {t("pl.deactivate")}
+                    </button>
+                  )}
+                  {!p.tenantCount && (
+                    <button
+                      className="btn-soft flex-1 text-xs text-red-600"
+                      disabled={lifecycle.isPending}
+                      onClick={() => {
+                        if (window.confirm(t("pl.confirmDelete", { name: p.name })))
+                          lifecycle.mutate({ kind: "delete", id: p.id });
+                      }}
+                    >
+                      {t("pl.deletePlan")}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}

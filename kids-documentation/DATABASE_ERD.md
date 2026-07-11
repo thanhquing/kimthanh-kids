@@ -125,6 +125,7 @@ erDiagram
     enum tier "FREE|STARTER|PRO|ENTERPRISE|CUSTOM"
     bool isPublic "dedicated = false (ẩn)"
     bool isActive
+    bool isFeatured "gói đại diện mỗi tier — landing chỉ hiện featured (BL-050); partial unique UNIQUE(tier) WHERE isFeatured ⇒ ≤1/tier"
     int trialDays "seed = 0 (freemium, không trial)"
   }
   PlanPrice {
@@ -143,7 +144,7 @@ erDiagram
   PlanLimit {
     uuid id PK
     uuid planId FK
-    enum metric "STUDENTS|TEACHERS|CLASSROOMS|SCHOOLS|STORAGE_MB|..."
+    enum metric "STUDENTS|TEACHERS|STORAGE_MB (CLASSROOMS còn trong enum nhưng KHÔNG seed — BL-049)"
     int limitValue "null = unlimited"
     enum enforcement "HARD|SOFT"
   }
@@ -725,3 +726,14 @@ erDiagram
 | `AuditLog` (Tầng A, tái dùng) | — (global) | hành động nhạy cảm: member.create/activate/deactivate, student.delete, invoice.cancel/payment |
 
 > **Lưu ý trạng thái thuê bao:** signup hiện tạo gói `free` **ACTIVE** (`trialEndsAt=null`); enum `Tenant.status`/`Subscription.status` vẫn giữ `TRIAL/TRIALING` cho cấu hình gói có `trialDays>0` (seed = 0). Xem [BILLING.md](./BILLING.md).
+
+## Consent pháp lý (BL-046)
+
+Bảng **system** (không tenant-scope; đọc xuyên tenant như `AuditLog`/`UsageEvent`):
+
+| Bảng | Quan hệ / khóa | Ghi chú |
+| --- | --- | --- |
+| `ConsentDocument` | — (platform-global) | văn bản có phiên bản: `type` (`TERMS`/`PRIVACY`), `version`, `locale`, `title/summary/body`, `isActive`, `effectiveFrom`. **Unique `(type, locale, version)`**; mỗi (type, locale) chỉ 1 bản `isActive` (bản hiệu lực). Đổi giá/nội dung = tạo version mới, hạ `isActive` bản cũ. |
+| `ConsentAcceptance` | `documentId`→`ConsentDocument` (RESTRICT); `userId`/`tenantId` (plain, nullable) | log **bất biến** ai-đồng-ý-gì-khi-nào: `docType`+`version` (snapshot), `email` (snapshot), `ipAddress`, `userAgent`, `acceptedAt`. Bằng chứng pháp lý — không sửa/xóa. |
+
+> Enum `ConsentDocType`: `TERMS`, `PRIVACY`. Chủ trường đồng ý lúc signup (`/public/signup` ép `acceptConsent=true`); GV/PH/NV đồng ý ở gate đăng nhập (`/auth/me.pendingConsents` + `POST /consent/accept`). Bản nháp văn bản seed từ `prisma/consent-documents.ts` (⚠️ cần luật sư duyệt).

@@ -303,6 +303,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
           adminEmail: `other@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
+          acceptConsent: true,
         })
         .expect(400);
       expect(res.body.error.code).toBe("SLUG_UNAVAILABLE");
@@ -318,6 +319,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
           adminEmail: `a@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
+          acceptConsent: true,
         })
         .expect(400);
       expect(res.body.error.code).toBe("SLUG_UNAVAILABLE");
@@ -332,6 +334,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
           adminEmail: `a@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
+          acceptConsent: true,
         })
         .expect(400);
       expect(res.body.error.code).toBe("VALIDATION_FAILED");
@@ -347,6 +350,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
           adminEmail: `a@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
+          acceptConsent: true,
         })
         .expect(400);
       expect(res.body.error.code).toBe("VALIDATION_FAILED");
@@ -363,6 +367,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
           adminEmail: `a@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
+          acceptConsent: true,
         })
         .expect(201);
       const res = await api()
@@ -374,6 +379,7 @@ describe("Phase 0 edge — auth / signup / RBAC / subscription / white-label", (
           adminEmail: `b@${rnd()}.vn`,
           adminPassword: "Password123",
           adminFullName: "Người dùng",
+          acceptConsent: true,
         })
         .expect(409);
       expect(res.body.error.code).toBe("TAX_CODE_TAKEN");

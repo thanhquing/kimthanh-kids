@@ -32,6 +32,7 @@ import { SubscriptionGuard } from "./common/guards/subscription.guard";
 import { TenantGuard } from "./common/guards/tenant.guard";
 import { TransformInterceptor } from "./common/interceptors/transform.interceptor";
 import { AppConfigModule } from "./config/config.module";
+import { ConsentModule } from "./consent/consent.module";
 import { EntitlementModule } from "./entitlement/entitlement.module";
 import { PlatformModule } from "./platform/platform.module";
 import { PrismaModule } from "./prisma/prisma.module";
@@ -44,6 +45,7 @@ import { TenantResolutionMiddleware } from "./tenancy/tenant-resolution.middlewa
     AppConfigModule,
     PrismaModule,
     EntitlementModule,
+    ConsentModule,
     NotificationsModule,
     AuditModule,
     UsageModule,

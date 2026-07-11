@@ -16,7 +16,7 @@
 
 ## 0. Ưu tiên cao nhất — Phân tách chức năng theo gói, role & tuân thủ pháp lý
 
-> Nhóm này làm TRƯỚC Nhóm 1. Thứ tự ưu tiên: **BL-049** (gỡ CLASSROOMS khỏi chiều tính gói — sửa sai thiết kế) → **BL-050** (vòng đời & versioning gói: đổi giá không ảnh hưởng khách cũ, chọn gói đại diện landing) → BL-043/044/045 (phân tách feature theo gói cho user từng tenant, Q2) → BL-046/047 (tuân thủ pháp luật VN cho landing — Luật BVDLCN 91/2025 + NĐ 356/2025 hiệu lực 01/01/2026 và TMĐT NĐ 85/2021; rủi ro pháp lý đang hiệu lực) → BL-048 (hoàn thiện role-gating UI kids-crm, Q1).
+> Nhóm này làm TRƯỚC Nhóm 1. Thứ tự ưu tiên: ~~**BL-049** (gỡ CLASSROOMS khỏi chiều tính gói)~~ **DONE** → ~~**BL-050** (vòng đời & versioning gói)~~ **DONE** → BL-043/044/045 (phân tách feature theo gói cho user từng tenant, Q2) → ~~BL-046~~ **DONE** (hệ thống consent — chờ text luật sư) / BL-047 (TMĐT NĐ 85/2021 — pháp nhân + thông báo BCT) → BL-048 (hoàn thiện role-gating UI kids-crm, Q1).
 >
 > **Định giá đã chốt (hòa vốn ở 1–2 trường, không lỗ):** Free 0đ (10 HS · 1 GV · **200MB**) · Starter **690k/th** (100 HS · 8 GV · 5GB · +Album) · Pro **1.39tr/th** (300 HS · 25 GV · 20GB · +Album +Giáo án) · Enterprise/Dedicated liên hệ. Gói tính theo **GV + HS + lưu trữ**, KHÔNG theo lớp. Nhỉnh dưới đối thủ + nhiều chức năng; hạ tầng lean ~1–1.3tr/th → 1 trường Pro (hoặc 2 Starter) là hòa vốn. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
 
@@ -29,13 +29,15 @@
 2. 🚀 **BL-005** — CORS origins cho domain thật.
 3. 🚀 **BL-007** — Rà `.gitignore`/secrets (không lộ `.env`, key).
 4. 🚀 **BL-008 + BL-009** — Verify backend (tsc/lint/e2e) + build FE xanh trên máy build.
-5. 🚀 **BL-046 (mức tối thiểu)** — Privacy Policy + Điều khoản + **consent dữ liệu trẻ em** (BẮT BUỘC vì lưu dữ liệu trẻ thật; Luật BVDLCN đã hiệu lực). Không cần đủ DPIA/DPO ngay, nhưng phải có consent + chính sách công khai.
+5. ✅ **BL-046** — Hệ thống consent (đọc + tick ToS/Privacy: chủ trường lúc đăng ký, GV/PH/NV lúc đăng nhập; log bất biến + IP/UA) **ĐÃ XONG**. Chỉ còn **thay bản nháp bằng text luật sư duyệt** trước khi mở trường thật (đổi dữ liệu, không đổi code).
 6. 🚀 **BL-001 → BL-004** — Smoke toàn hệ trên chính prod (seed thật, đăng nhập, CRM, mobile, landing) trước khi giao trường.
 
 **Nên làm sớm (ngay sau khi có trường, không chặn launch):**
 - **BL-049** (gỡ quota lớp — đúng mô hình gói) · **BL-043** (landing hiển thị đúng gói + Coming Soon) · **BL-047** (thông tin pháp nhân + thông báo Bộ Công Thương khi bật đăng ký công khai).
 
-**Hoãn tới khi >5 trường / có nhu cầu thật:** BL-050 (versioning gói), BL-018 (email — tạm dùng admin reset ở CRM), BL-030 (push), BL-010/011/012 (Playwright/visual), BL-025 (R2/S3 — local + backup là đủ ở quy mô nhỏ), BL-038 (analytics), BL-031/032/033/034 (payment nâng cao), BL-039..042.
+> **Đã làm sẵn để tránh migration/reseed về sau (landmine schema/giá):** ~~BL-049~~ (gỡ quota lớp) **DONE** · ~~BL-050~~ (versioning + bất biến giá gói — làm trước khi có subscription trả phí đầu tiên) **DONE**.
+
+**Hoãn tới khi >5 trường / có nhu cầu thật:** BL-018 (email — tạm dùng admin reset ở CRM), BL-030 (push), BL-010/011/012 (Playwright/visual), BL-025 (R2/S3 — local + backup là đủ ở quy mô nhỏ), BL-038 (analytics), BL-031/032/033/034 (payment nâng cao), BL-039..042.
 
 ### BL-051 — Provision hạ tầng + deploy production (5 trường đầu)
 
@@ -56,7 +58,7 @@
 
 ### Ma trận Entitlement chuẩn (spec cho BL-043/BL-044 — theo code thật `kids-api/prisma/seed.ts`)
 
-> **Nguyên tắc tính gói (chốt 2026-07-10):** gói định lượng theo **số giáo viên (TEACHERS) + số học sinh (STUDENTS) + dung lượng lưu trữ (STORAGE_MB)**. **KHÔNG tính theo số lớp** — số lớp không phải chiều bán gói. Hệ thống hiện còn enforce quota `CLASSROOMS` (sai với nguyên tắc này) → xem **BL-049** để gỡ.
+> **Nguyên tắc tính gói (chốt 2026-07-10):** gói định lượng theo **số giáo viên (TEACHERS) + số học sinh (STUDENTS) + dung lượng lưu trữ (STORAGE_MB)**. **KHÔNG tính theo số lớp** — số lớp không phải chiều bán gói. Quota `CLASSROOMS` đã được gỡ khỏi enforcement + seed (**BL-049 DONE**); enum giữ lại tránh migration.
 
 Chức năng **nền tảng (luôn bật mọi gói kể cả Free)**: hồ sơ học sinh/PH, lớp, nhân sự; điểm danh + nhật ký ngày; sức khỏe/thuốc/sự cố/dị ứng/nghỉ phép; học phí (hóa đơn·VietQR·tiền mặt/CK thủ công·VNPay sandbox); thông báo + thực đơn tuần; notifications in-app; dashboard/audit/usage; đón-trả (pickup). Các chức năng này KHÔNG gate theo gói.
 
@@ -78,15 +80,18 @@ Quota theo gói (metric HARD, `null` = không giới hạn):
 | TEACHERS | 1 | 8 | 25 | ∞ | ∞ |
 | STORAGE_MB | 200 | 5120 | 20480 | ∞ | ∞ |
 | Giá (VND, NET) | 0 | **690k/th · 6.9tr/năm** | **1.39tr/th · 3.75tr/quý · 13.9tr/năm** | liên hệ | liên hệ (ẩn) |
-| ~~CLASSROOMS~~ (sẽ gỡ, BL-049) | 2 | 8 | 20 | ∞ | ∞ |
+| ~~CLASSROOMS~~ (đã gỡ — BL-049 DONE) | — | — | — | — | — |
 
 Định giá **nhỉnh dưới đối thủ + gói nhiều chức năng**, đủ **hòa vốn ở 1–2 trường**: Starter 690k @ ≤100 HS +Album ⇒ ~7–14k đ/HS; Pro 1.39tr @ ≤300 HS +Album+Giáo án ⇒ ~4.6–14k đ/HS — ngang/nhỉnh dưới thị trường VN (10–30k đ/HS) nhưng gói nhiều chức năng hơn. Hạ tầng lean ~1–1.3tr/tháng → **1 trường Pro** (hoặc **2 Starter**) là hòa vốn; biên gộp ~90%. Free siết còn **200MB** để user free gần như không tốn chi phí. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
 
-Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đang enforce nhưng sẽ gỡ (BL-049)**; `SCHOOLS` không tính (1 cơ sở), `STORAGE_MB` có limit seed nhưng **chưa có counter enforce**; `PUSH_PER_MONTH`/`ADMIN_USERS` có trong enum nhưng chưa seed/chưa enforce. Coming Soon toàn hệ (không theo gói, chưa build): Push notification, auto đối soát VietQR, MoMo/ZaloPay, VAT điện tử, proration đổi gói giữa kỳ, auto-charge thẻ.
+Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đã gỡ khỏi enforcement + seed (BL-049 DONE)** — tạo lớp không bị chặn theo gói; `SCHOOLS` không tính (1 cơ sở), `STORAGE_MB` có limit seed nhưng **chưa có counter enforce**; `PUSH_PER_MONTH`/`ADMIN_USERS` có trong enum nhưng chưa seed/chưa enforce. Coming Soon toàn hệ (không theo gói, chưa build): Push notification, auto đối soát VietQR, MoMo/ZaloPay, VAT điện tử, proration đổi gói giữa kỳ, auto-charge thẻ.
 
-### BL-049 — Bỏ CLASSROOMS khỏi chiều tính gói (quản theo GV + HS + lưu trữ)
+### BL-049 — Bỏ CLASSROOMS khỏi chiều tính gói (quản theo GV + HS + lưu trữ) ✅ DONE
 
-- **Ưu tiên:** CAO NHẤT (sửa sai thiết kế trước khi chốt bảng giá).
+- **Ưu tiên:** CAO NHẤT (sửa sai thiết kế trước khi chốt bảng giá). — **HOÀN THÀNH.**
+- **Hướng đã chọn:** GIỮ enum `LimitMetric.CLASSROOMS` (tránh migration), chỉ gỡ enforcement + bỏ khỏi seed + bỏ khỏi mọi bề mặt quota (platform usage/worklist). Enum còn đó nhưng không seed vào gói nào.
+- **Đã sửa:** `classrooms.controller.ts` (bỏ `@CheckQuota`), `classrooms.service.ts` (bỏ `consumeQuota/releaseQuota` + dependency EntitlementService), `prisma/seed.ts` (bỏ key CLASSROOMS ở 5 gói), `platform.service.ts` (bỏ CLASSROOMS khỏi `QUOTA_METRICS`, `getTenant.quota`, `usedForTenant`, `usageCounts`), tests `plans.e2e`/`isolation.e2e`/`observability.e2e` (đổi sang khẳng định tạo lớp không bị chặn). Docs: BILLING.md, DATABASE_ERD.md, API.md, 02-ROLES-PERMISSIONS.md, 03-SALES-PLAYBOOK.md.
+- **Evidence:** `tsc --noEmit` ✅ · `eslint` ✅ · e2e (xem verify cuối task).
 - **Owner:** `kids-api`, `kids-crm`, `kids-documentation`
 - **Đọc trước:** `kids-api/prisma/schema.prisma` (enum `LimitMetric`, model `PlanLimit`), `kids-api/src/classrooms/classrooms.controller.ts` + `classrooms.service.ts` (chỗ `@CheckQuota("CLASSROOMS")` + `consumeQuota/releaseQuota`), `kids-api/src/prisma/entitlement.service.ts`, `kids-api/prisma/seed.ts`, `kids-api/test/isolation.e2e-spec.ts` + `plans.e2e-spec.ts` (test đang assert quota CLASSROOMS)
 - **Làm:**
@@ -98,9 +103,17 @@ Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đan
 - **Done khi:** gói chỉ định lượng theo GV + HS + STORAGE_MB; tạo lớp không bị 403 QUOTA theo gói; e2e xanh.
 - **Verify:** `cd kids-api && pnpm exec tsc --noEmit && pnpm lint && pnpm test:e2e`.
 
-### BL-050 — Vòng đời & versioning gói (đổi giá không ảnh hưởng khách cũ; chọn gói đại diện trên landing)
+### BL-050 — Vòng đời & versioning gói (đổi giá không ảnh hưởng khách cũ; chọn gói đại diện trên landing) ✅ DONE (API/BE)
 
-- **Ưu tiên:** CAO (nền tảng cho việc đổi giá về sau).
+- **Ưu tiên:** CAO (nền tảng cho việc đổi giá về sau). — **HOÀN THÀNH backend/API** (UI Platform Console quản lý gói = việc FE còn lại, không chặn).
+- **Đã làm:** thêm `Plan.isFeatured` (+ migration `20260711120000_plan_featured_versioning`, seed set featured 5 gói). `listPublicPlans` chỉ trả featured (1 gói/tier). `updatePlan` chặn `PLAN_IMMUTABLE` khi gói đã có thuê bao mà đụng prices/features/limits. Thêm `setPlanFeatured` (`PATCH /platform/plans/:id/feature`), `deactivatePlan` (`.../deactivate`), `deletePlan` soft-delete (`DELETE /platform/plans/:id`, chặn `PLAN_HAS_SUBSCRIPTIONS`). `createPeriodInvoice` migrate thuê bao sang gói đại diện mới của tier + tính giá mới (ghi `SubscriptionChange` RENEW `plan_version_migrate`); hóa đơn/kỳ cũ bất biến. `createPlan` mặc định chưa featured.
+- **Platform Console:** `PlansPage` quản trị đủ vòng đời — badge "Đại diện", nút Đặt đại diện / Ngừng bán / Xoá; sửa tên/trial/public không gửi `prices` nếu giá không đổi.
+- **Fix review Codex (vòng 2):**
+  - Chặn mua bản giá cũ: `/public/signup`, signup-upgrade, `/billing/subscription/change` chỉ nhận gói **featured** (sellable) → `INVALID_PLAN` nếu gọi bằng code/id gói cũ.
+  - `updatePlan` đổi guard sang **diff-check** (gửi lại đúng giá hiện tại = no-op vẫn OK) → không chặn oan khi sửa tên/trial/public gói đã bán.
+  - `isActive=false`/`isPublic=false` (kể cả qua PATCH) **tự clear `isFeatured`**; renewal tìm featured thêm `isPublic` (không migrate sang gói ẩn).
+  - Migration: chọn **đúng 1 gói/tier** làm featured (`DISTINCT ON (tier)`) + **partial unique index** `UNIQUE(tier) WHERE isFeatured` (chốt cứng ≤1 featured/tier ở DB).
+- **Evidence:** `tsc` ✅ · `eslint` ✅ · e2e **176/176**; build platform/landing/crm/mobile-web ✅. Suite `test/plan-versioning.e2e-spec.ts`: 1 gói/tier featured; versioning + renewal migrate; không mua được bản cũ (`INVALID_PLAN`); deactivate gỡ featured + khỏi landing; không xoá gói còn thuê bao; + observability assert `PLAN_IMMUTABLE`.
 - **Owner:** `kids-api`, `kids-platform`, `kids-landing`, `kids-documentation`
 - **Đọc trước:** `kids-api/prisma/schema.prisma` (model `Plan` có `isPublic/isActive/deletedAt/sortOrder`, `Subscription.planId`), `kids-api/src/platform/platform.controller.ts` (`listPlans/createPlan/updatePlan` — CHƯA có delete), `kids-api/src/platform/platform.service.ts`, `kids-api/src/billing/billing.service.ts` (renewal đọc `planPrice` hiện tại của plan, `markPaid`/đẩy kỳ `:248,:343`), `kids-api/src/billing/billing.cron.ts`
 - **Bối cảnh (yêu cầu CEO):** đổi giá trong tương lai nhưng **không mutate gói cũ** → tạo **phiên bản gói mới (ID mới)**. Khách đã mua theo tháng/quý/năm giữ nguyên giá theo `subscription.planId` cho tới hết kỳ; **kỳ kế tiếp** (tháng/quý/năm sau) tính theo **gói active mới nhất của cùng tier** đang hiển thị trên landing.
@@ -154,7 +167,17 @@ Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đan
 - **Done khi:** mỗi feature key có trạng thái rõ (Enforced / Coming Soon) khớp giữa seed, BILLING.md và FE.
 - **Verify:** `cd kids-api && pnpm exec tsc --noEmit && pnpm lint && pnpm test:e2e`.
 
-### BL-046 — Landing tuân thủ Luật Bảo vệ dữ liệu cá nhân (Luật 91/2025 + NĐ 356/2025, hiệu lực 01/01/2026)
+### BL-046 — Consent pháp lý (Luật 91/2025 + NĐ 356/2025, hiệu lực 01/01/2026) ✅ HỆ THỐNG DONE (chờ text luật sư)
+
+- **Trạng thái:** hệ thống consent **đã hoàn thành** (BE + landing + CRM + mobile-web). **Còn lại:** thay bản nháp văn bản bằng bản luật sư/PO duyệt (chỉ đổi dữ liệu, không đổi code) + trang privacy/terms công khai riêng ở landing (hiện đọc qua modal/gate) — thuộc BL-047/PRIVACY_RETENTION.
+- **Đã làm:**
+  - BE: `ConsentDocument` (versioned TERMS/PRIVACY) + `ConsentAcceptance` (log bất biến + IP/UA) + migration + seed bản nháp VN (`prisma/consent-documents.ts`, ⚠️ cần luật sư duyệt). `ConsentModule`: `GET /public/legal`, `GET /consent/pending`, `POST /consent/accept`. `/public/signup` ép `acceptConsent=true` + ghi acceptance chủ trường trong transaction (platform tạo hộ KHÔNG ghi khống). `/auth/me` trả `pendingConsents`.
+  - FE: landing `dang-ky` checkbox không-tick-sẵn + modal đọc ToS/Privacy, chặn submit tới khi tick. CRM `ConsentGate` bọc AppLayout; mobile-web gate trong `RoleGuard` → GV/PH/NV phải đọc + tick mới vào app.
+  - Đổi nội dung về sau = tăng `version` rồi reseed (user phải đồng ý lại).
+- **Evidence:** e2e `test/consent.e2e-spec.ts` (public/legal · signup ghi acceptance · gate pendingConsents · accept) — full **175/175**; build landing/crm/mobile-web ✅.
+- **Còn lại (blocked/def):** nội dung pháp lý chính thức (PO/luật sư); DPIA + đầu mối bảo vệ DLCN (PRIVACY_RETENTION); consent người giám hộ ở bước nhập học sinh CRM/mobile (task con nếu cần).
+
+<details><summary>Spec gốc (đã triển khai)</summary>
 
 - **Owner:** `kids-landing`, `kids-api`, `kids-documentation`
 - **Đọc trước:** `kids-landing/src/routes/dang-ky.tsx`, `kids-landing/src/routes/lien-he.tsx`, `kids-api/src/provisioning/provisioning.controller.ts`, `kids-documentation/PRIVACY_RETENTION.md`
@@ -168,6 +191,8 @@ Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đan
 - **Docs:** cập nhật `kids-documentation/PRIVACY_RETENTION.md`, `SECURITY_AUDIT_CHECKLIST.md`.
 - **Done khi:** thu thập dữ liệu có consent hợp lệ + có Privacy Policy/ToS công khai; luồng đăng ký vẫn mượt.
 - **Verify:** `cd kids-landing && pnpm build`; rà UX submit vẫn thông; checklist privacy tick các dòng tương ứng.
+
+</details>
 
 ### BL-047 — Landing tuân thủ TMĐT (NĐ 52/2013 sửa bởi NĐ 85/2021): thông tin pháp nhân + thông báo Bộ Công Thương
 

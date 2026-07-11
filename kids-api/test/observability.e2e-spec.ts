@@ -330,9 +330,7 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     expect(typeof dt.mrr).toBe("number");
     expect(typeof dt.studentCount).toBe("number");
     const metrics = dt.quota.map((x: { metric: string }) => x.metric);
-    expect(metrics).toEqual(
-      expect.arrayContaining(["STUDENTS", "TEACHERS", "CLASSROOMS", "STORAGE_MB"]),
-    );
+    expect(metrics).toEqual(expect.arrayContaining(["STUDENTS", "TEACHERS", "STORAGE_MB"]));
     const sQuota = dt.quota.find((x: { metric: string }) => x.metric === "STUDENTS");
     expect(sQuota).toHaveProperty("used");
     expect(sQuota).toHaveProperty("limit");
@@ -427,12 +425,25 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const free = list.body.data.find((p: { code: string }) => p.code === "free");
     expect(free.tenantCount).toBeGreaterThanOrEqual(1);
 
-    // Sửa gói: đổi mô tả + nâng số ngày dùng thử + upsert giá tháng.
-    const upd = await api()
-      .patch(`/api/platform/plans/${plan.id}`)
+    // BL-050: đổi giá chỉ trên gói CHƯA có thuê bao (tạo phiên bản mới; KHÔNG mutate gói đã bán).
+    // Dùng gói tạm mới toanh để không đụng gói seed đang có subscriber (tránh lệch test chạy chung DB).
+    const freshCode = `obs-edit-${Date.now()}`;
+    const created = await api()
+      .post("/api/platform/plans")
       .set(phead)
       .send({
-        description: "Gói chuyên nghiệp (đã sửa)",
+        code: freshCode,
+        name: "Gói sửa thử",
+        tier: "STARTER",
+        prices: [{ billingCycle: "MONTHLY", amount: 500_000 }],
+      })
+      .expect(201);
+    const freshId = created.body.data.id;
+    const upd = await api()
+      .patch(`/api/platform/plans/${freshId}`)
+      .set(phead)
+      .send({
+        description: "Gói sửa thử (đã sửa)",
         trialDays: 14,
         prices: [{ billingCycle: "MONTHLY", amount: 1_300_000 }],
       })
@@ -443,12 +454,13 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     );
     expect(Number(monthly.amount)).toBe(1_300_000);
 
-    // Khôi phục giá gói pro về đúng giá seed hiện tại để không lệch test khác chạy chung DB.
-    await api()
-      .patch(`/api/platform/plans/${plan.id}`)
+    // Gói đã có thuê bao (free — mọi tenant đang dùng) KHÔNG cho đổi giá → PLAN_IMMUTABLE.
+    const blocked = await api()
+      .patch(`/api/platform/plans/${free.id}`)
       .set(phead)
-      .send({ trialDays: 0, prices: [{ billingCycle: "MONTHLY", amount: 1_390_000 }] })
-      .expect(200);
+      .send({ prices: [{ billingCycle: "MONTHLY", amount: 1 }] })
+      .expect(400);
+    expect(blocked.body.error.code).toBe("PLAN_IMMUTABLE");
 
     // Sửa gói không tồn tại → 404.
     await api()
@@ -653,9 +665,9 @@ describe("G — Notification / Dashboard / Audit / Usage", () => {
     const listed = await api().get("/api/platform/tenants?quota=at-risk").set(phead).expect(200);
     const listedRow = listed.body.data.find((row: { id: string }) => row.id === tid);
     expect(listedRow).toBeDefined();
-    // Cột "Hạn mức": mỗi dòng kèm quota 4 metric (không có SCHOOLS), STUDENTS = 16/1.
+    // Cột "Hạn mức": mỗi dòng kèm quota 3 metric (GV + HS + lưu trữ; không có SCHOOLS/CLASSROOMS).
     const metrics = listedRow.quota.map((x: { metric: string }) => x.metric);
-    expect(metrics).toEqual(["STUDENTS", "TEACHERS", "CLASSROOMS", "STORAGE_MB"]);
+    expect(metrics).toEqual(["STUDENTS", "TEACHERS", "STORAGE_MB"]);
     const studentQuota = listedRow.quota.find((x: { metric: string }) => x.metric === "STUDENTS");
     expect(studentQuota).toMatchObject({ used: 8, limit: 1 });
 

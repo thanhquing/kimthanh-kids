@@ -333,6 +333,9 @@ model Plan {
   tier        PlanTier  @default(STARTER)
   isPublic    Boolean   @default(true)
   isActive    Boolean   @default(true)
+  // Gói ĐẠI DIỆN đang bán cho mỗi tier: landing chỉ hiển thị 1 gói/tier (isFeatured=true).
+  // Đổi giá tương lai = tạo Plan mới (versioned code) rồi set gói mới làm featured (BL-050).
+  isFeatured  Boolean   @default(false)
   trialDays   Int       @default(0)
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
@@ -1466,4 +1469,50 @@ model UsageEvent {
   @@index([tenantId, createdAt])
   @@index([type, createdAt])
   @@map("usage_events")
+}
+
+// ─── Consent pháp lý (BL-046) ───
+// Văn bản có phiên bản + log chấp thuận bất biến (bằng chứng ai-đồng-ý-gì-khi-nào).
+// Bảng SYSTEM (không tenant-scope): consent là quan hệ platform ↔ người dùng, đọc xuyên tenant.
+enum ConsentDocType {
+  TERMS // Điều khoản dịch vụ
+  PRIVACY // Chính sách bảo mật / xử lý dữ liệu cá nhân
+}
+
+model ConsentDocument {
+  id            String         @id @default(uuid())
+  type          ConsentDocType
+  version       String // vd "2026-01-draft"
+  locale        String         @default("vi")
+  title         String
+  summary       String? // dòng ngắn cạnh checkbox
+  body          String // nội dung đầy đủ (markdown/plain)
+  effectiveFrom DateTime       @default(now())
+  isActive      Boolean        @default(true) // bản đang hiệu lực cho (type, locale)
+  createdAt     DateTime       @default(now())
+
+  acceptances ConsentAcceptance[]
+
+  @@unique([type, locale, version])
+  @@index([type, locale, isActive])
+  @@map("consent_documents")
+}
+
+model ConsentAcceptance {
+  id         String          @id @default(uuid())
+  documentId String
+  document   ConsentDocument @relation(fields: [documentId], references: [id])
+  docType    ConsentDocType // denormalize để check nhanh "đã đồng ý bản hiện hành?"
+  version    String // snapshot version tại thời điểm đồng ý
+  userId     String? // null khi chưa gắn user (hiếm); signup thì gắn admin
+  tenantId   String?
+  email      String? // snapshot email lúc đồng ý (bằng chứng)
+  ipAddress  String?
+  userAgent  String?
+  acceptedAt DateTime        @default(now())
+
+  @@index([userId])
+  @@index([tenantId])
+  @@index([docType, version])
+  @@map("consent_acceptances")
 }

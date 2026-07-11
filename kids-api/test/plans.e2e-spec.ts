@@ -18,7 +18,7 @@ describe("Gói dịch vụ — freemium (Free vĩnh viễn, bậc theo GV/HS)", 
   });
   afterAll(async () => app.close());
 
-  it("đăng ký mới → gói Miễn phí, ACTIVE (vĩnh viễn), giới hạn 2 GV / 20 HS", async () => {
+  it("đăng ký mới → gói Miễn phí, ACTIVE (vĩnh viễn), giới hạn 1 GV / 10 HS", async () => {
     const t = await createTenant(app);
     const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
     const sub = await prisma.system.subscription.findUnique({
@@ -33,25 +33,26 @@ describe("Gói dịch vụ — freemium (Free vĩnh viễn, bậc theo GV/HS)", 
     const ent = await entitlements.resolve(tenant!.id);
     expect(ent.limits.TEACHERS?.limitValue).toBe(1);
     expect(ent.limits.STUDENTS?.limitValue).toBe(10);
-    expect(ent.limits.CLASSROOMS?.limitValue).toBe(2);
+    // BL-049: số lớp KHÔNG còn là chiều tính gói → không có limit CLASSROOMS.
+    expect(ent.limits.CLASSROOMS).toBeUndefined();
     // tính năng nâng cao tắt ở gói Free
     expect(ent.features.messaging).toBe(false);
     expect(ent.features.analytics).toBe(false);
   });
 
-  it("gói Free chặn tạo lớp thứ 3 (CLASSROOMS=2) → 403 QUOTA_EXCEEDED", async () => {
+  it("BL-049: gói Free tạo lớp KHÔNG bị chặn theo gói (số lớp không tính gói)", async () => {
     const t = await createTenant(app);
     const schools = await api().get("/api/tenant/schools").set(auth(t)).expect(200);
     const schoolId = schools.body.data[0].id;
 
-    await api().post("/api/classrooms").set(auth(t)).send({ schoolId, name: "Lớp 1" }).expect(201);
-    await api().post("/api/classrooms").set(auth(t)).send({ schoolId, name: "Lớp 2" }).expect(201);
-    const blocked = await api()
-      .post("/api/classrooms")
-      .set(auth(t))
-      .send({ schoolId, name: "Lớp 3" })
-      .expect(403);
-    expect(blocked.body.error.code).toBe("QUOTA_EXCEEDED");
+    // Trước đây chặn ở lớp thứ 3; giờ tạo thoải mái.
+    for (let i = 1; i <= 3; i++) {
+      await api()
+        .post("/api/classrooms")
+        .set(auth(t))
+        .send({ schoolId, name: `Lớp ${i}` })
+        .expect(201);
+    }
   });
 
   it("nâng cấp Free → Pro mở giới hạn + bật tính năng", async () => {
