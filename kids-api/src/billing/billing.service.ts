@@ -198,31 +198,39 @@ export class BillingService {
 
     const amount = price.amount;
     const issuedAt = new Date();
-    const invoiceNumber = await this.nextInvoiceNumber(sub.tenant.slug, billingPlan.code, issuedAt);
-    return this.prisma.system.platformInvoice.create({
-      data: {
-        invoiceNumber,
+    return this.prisma.system.$transaction(async (tx) => {
+      const invoiceNumber = await this.nextInvoiceNumber(
+        tx,
         tenantId,
-        subscriptionId: sub.id,
-        status: PlatformInvoiceStatus.OPEN,
-        currency: sub.currency,
-        periodStart: sub.currentPeriodStart,
-        periodEnd: sub.currentPeriodEnd,
-        subtotal: amount,
-        total: amount,
+        sub.tenant.slug,
+        billingPlan.code,
         issuedAt,
-        dueAt: new Date(issuedAt.getTime() + 7 * 86_400_000),
-        lines: {
-          create: {
-            kind: "SUBSCRIPTION",
-            label: `${billingPlan.name} — ${sub.billingCycle}`,
-            quantity: 1,
-            unitPrice: amount,
-            amount,
+      );
+      return tx.platformInvoice.create({
+        data: {
+          invoiceNumber,
+          tenantId,
+          subscriptionId: sub.id,
+          status: PlatformInvoiceStatus.OPEN,
+          currency: sub.currency,
+          periodStart: sub.currentPeriodStart,
+          periodEnd: sub.currentPeriodEnd,
+          subtotal: amount,
+          total: amount,
+          issuedAt,
+          dueAt: new Date(issuedAt.getTime() + 7 * 86_400_000),
+          lines: {
+            create: {
+              kind: "SUBSCRIPTION",
+              label: `${billingPlan.name} — ${sub.billingCycle}`,
+              quantity: 1,
+              unitPrice: amount,
+              amount,
+            },
           },
         },
-      },
-      include: { lines: true },
+        include: { lines: true },
+      });
     });
   }
 
@@ -266,38 +274,46 @@ export class BillingService {
     const amount = price.amount;
     const periodStart = issuedAt;
     const periodEnd = new Date(issuedAt.getTime() + CYCLE_DAYS[billingCycle] * 86_400_000);
-    const invoiceNumber = await this.nextInvoiceNumber(sub.tenant.slug, plan.code, issuedAt);
-    return this.prisma.system.platformInvoice.create({
-      data: {
-        invoiceNumber,
+    return this.prisma.system.$transaction(async (tx) => {
+      const invoiceNumber = await this.nextInvoiceNumber(
+        tx,
         tenantId,
-        subscriptionId: sub.id,
-        status: PlatformInvoiceStatus.OPEN,
-        currency: BillingCurrency.VND,
-        periodStart,
-        periodEnd,
-        subtotal: amount,
-        total: amount,
+        sub.tenant.slug,
+        plan.code,
         issuedAt,
-        dueAt: new Date(issuedAt.getTime() + 7 * 86_400_000),
-        metadata: {
-          type: "SIGNUP_UPGRADE",
-          targetPlanId: plan.id,
-          targetPlanCode: plan.code,
-          targetBillingCycle: billingCycle,
-        },
-        lines: {
-          create: {
-            kind: "SUBSCRIPTION",
-            label: `${plan.name} — ${billingCycle}`,
-            quantity: 1,
-            unitPrice: amount,
-            amount,
-            metadata: { targetPlanCode: plan.code, targetBillingCycle: billingCycle },
+      );
+      return tx.platformInvoice.create({
+        data: {
+          invoiceNumber,
+          tenantId,
+          subscriptionId: sub.id,
+          status: PlatformInvoiceStatus.OPEN,
+          currency: BillingCurrency.VND,
+          periodStart,
+          periodEnd,
+          subtotal: amount,
+          total: amount,
+          issuedAt,
+          dueAt: new Date(issuedAt.getTime() + 7 * 86_400_000),
+          metadata: {
+            type: "SIGNUP_UPGRADE",
+            targetPlanId: plan.id,
+            targetPlanCode: plan.code,
+            targetBillingCycle: billingCycle,
+          },
+          lines: {
+            create: {
+              kind: "SUBSCRIPTION",
+              label: `${plan.name} — ${billingCycle}`,
+              quantity: 1,
+              unitPrice: amount,
+              amount,
+              metadata: { targetPlanCode: plan.code, targetBillingCycle: billingCycle },
+            },
           },
         },
-      },
-      include: { lines: true },
+        include: { lines: true },
+      });
     });
   }
 
@@ -413,14 +429,24 @@ export class BillingService {
    * Gồm slug trường + mã gói + ngày lập → dễ đối soát chuyển khoản (addInfo VietQR = số HĐ).
    * Seq = số HĐ cùng prefix (trường+gói+ngày) + 1.
    */
-  private async nextInvoiceNumber(slug: string, planCode: string, issuedAt: Date): Promise<string> {
+  private async nextInvoiceNumber(
+    tx: Prisma.TransactionClient,
+    tenantId: string,
+    slug: string,
+    planCode: string,
+    issuedAt: Date,
+  ): Promise<string> {
     const y = issuedAt.getFullYear();
     const m = String(issuedAt.getMonth() + 1).padStart(2, "0");
     const d = String(issuedAt.getDate()).padStart(2, "0");
     const base = `${slug}-${planCode}-${y}${m}${d}`.toUpperCase();
-    const count = await this.prisma.system.platformInvoice.count({
-      where: { invoiceNumber: { startsWith: base } },
+    const scope = `platform:${base}`;
+    const counter = await tx.invoiceCounter.upsert({
+      where: { tenantId_scope: { tenantId, scope } },
+      create: { tenantId, scope, nextValue: 2 },
+      update: { nextValue: { increment: 1 } },
+      select: { nextValue: true },
     });
-    return `${base}-${String(count + 1).padStart(2, "0")}`;
+    return `${base}-${String(counter.nextValue - 1).padStart(2, "0")}`;
   }
 }

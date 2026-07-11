@@ -22,7 +22,7 @@
 
 ### 🚀 Lộ trình lên PRODUCTION sớm nhất (mục tiêu 5 trường đầu tiên)
 
-> Sản phẩm đã chạy được (Phase 0 + Phase 1 xong, e2e 176 xanh). Với 5 trường đầu, **việc chặn không phải là thêm tính năng mà là TRIỂN KHAI + hardening tối thiểu + pháp lý tối thiểu**. Làm đúng thứ tự sau; các task khác trong file này để SAU khi đã có khách chạy thật.
+> Sản phẩm đã chạy được (Phase 0 + Phase 1 xong, e2e 181 xanh). Với 5 trường đầu, **việc chặn không phải là thêm tính năng mà là TRIỂN KHAI + hardening tối thiểu + pháp lý tối thiểu**. Làm đúng thứ tự sau; các task khác trong file này để SAU khi đã có khách chạy thật.
 
 **Bắt buộc trước khi mở cho trường thật (P0-PROD):**
 1. 🚀 **BL-051** — Provision hạ tầng + deploy production (VPS, Postgres, HTTPS, domain, secrets, backup đêm). *(Bắt đầu ngay — mua VPS.)*
@@ -69,7 +69,7 @@
 
 > Nhóm này là kết quả rà landmine trước production (2026-07-11, đối chiếu code thật). Nguyên tắc: mọi thứ dưới đây **rẻ khi DB còn rỗng, đắt khi đã có rows** (phải migrate + backfill + sửa nhiều delete path). Cả nhóm thuộc checklist P0-PROD bắt buộc; ưu tiên thực thi **BL-052 > BL-053** (schema), rồi BL-054/055/056 trước khi mở cho trường thật.
 
-### BL-052 — Soft-delete + retention cho bảng tài chính / sức khỏe / trẻ em 🆕 P0 schema-freeze
+### BL-052 — Soft-delete + retention cho bảng tài chính / sức khỏe / trẻ em ✅ DONE
 
 - **Ưu tiên:** CAO NHẤT trong nhóm schema-freeze (đắt nhất nếu hoãn). — **Landmine #1.**
 - **Owner:** `kids-api`, `kids-documentation`
@@ -83,8 +83,9 @@
 - **Docs:** `DATABASE_ERD.md` (Deletion contract + `deletedAt` list), `PRIVACY_RETENTION.md`, `SECURITY_AUDIT_CHECKLIST.md`.
 - **Done khi:** không code path nào cascade hard-delete chứng từ thuế/y tế của trẻ; `deletedAt` + retention có tài liệu.
 - **Verify:** `cd kids-api && pnpm exec tsc --noEmit && pnpm lint && pnpm test:e2e`.
+- **Evidence:** migration `20260711143000_schema_freeze_retention_timezone_invoice_counter` ✅; `deletedAt`/`SOFT_DELETE` + `ON DELETE RESTRICT` cho bảng retention của trẻ; `prisma:deploy` ✅ · `tsc` ✅ · `lint` ✅ · full e2e **181/181** ✅ (`deletion-contract.e2e` khóa hard-delete Student bị RESTRICT + soft-delete giữ chứng từ/y tế).
 
-### BL-053 — Chuẩn timezone cho cột DateTime 🆕 P0 schema-freeze
+### BL-053 — Chuẩn timezone cho cột DateTime ✅ DONE
 
 - **Ưu tiên:** CAO (đổi kiểu cột sau khi có rows = `ALTER ... USING` khoá bảng). — **Landmine #2.**
 - **Owner:** `kids-api`, `kids-documentation`
@@ -95,8 +96,9 @@
 - **Docs:** `ARCHITECTURE.md` (§gotchas/timezone), `DATABASE_ERD.md`.
 - **Done khi:** chuẩn timezone được chốt + tài liệu; nếu chọn (a) migration áp trước khi có trường thật.
 - **Verify:** `pnpm prisma:deploy` sạch; e2e ngày/giờ (dashboard/attendance) vẫn xanh.
+- **Evidence:** đã chọn hướng (a) `@db.Timestamptz(3)` cho mọi `DateTime` có thời điểm thật; `@db.Date` giữ cho date-only. `rg` không còn `DateTime` trần; `prisma:deploy` ✅ · `tsc` ✅ · `lint` ✅ · full e2e **181/181** ✅.
 
-### BL-054 — Invoice-number an toàn concurrency 🆕 (data integrity)
+### BL-054 — Invoice-number an toàn concurrency ✅ DONE
 
 - **Ưu tiên:** TRUNG BÌNH (không phải migration, nhưng rẻ khi chưa có hóa đơn thật). — **Landmine #3.**
 - **Owner:** `kids-api`
@@ -105,8 +107,9 @@
 - **Docs:** `BILLING.md` (ghi cơ chế đánh số), `API.md` nếu đổi hành vi.
 - **Done khi:** tạo hóa đơn đồng thời không 500/không nhảy số.
 - **Verify:** e2e/test tạo song song N hóa đơn → số liên tục, không trùng.
+- **Evidence:** thêm `InvoiceCounter` `(tenantId, scope)`; học phí + platform invoice cấp số trong cùng transaction; e2e concurrency cho `tuition` + `billing` PASS; `prisma:deploy` ✅ · `tsc` ✅ · `lint` ✅ · full e2e **181/181** ✅.
 
-### BL-055 — Prod-guard chặn JWT secret mặc định/low-entropy 🆕 (làm cùng BL-007)
+### BL-055 — Prod-guard chặn JWT secret mặc định/low-entropy ✅ DONE
 
 - **Ưu tiên:** THẤP-nhưng-rẻ (một `superRefine`). — **Landmine #4.**
 - **Owner:** `kids-api`
@@ -115,8 +118,9 @@
 - **Docs:** `SECURITY_AUDIT_CHECKLIST.md`, `.env.example` (ghi rõ phải rotate).
 - **Done khi:** prod từ chối boot nếu còn secret mặc định dev.
 - **Verify:** unit/config test: prod + default secret → throw; secret mạnh → pass.
+- **Evidence:** `config.schema` chặn secret dev/low-entropy khi `NODE_ENV=production`; `test/config-schema.e2e-spec.ts` ✅ · `tsc` ✅ · `lint` ✅ · full e2e **181/181** ✅.
 
-### BL-056 — Chốt topology same-origin FE↔API + prod-guard VNPAY_RETURN_URL 🆕 (trong BL-051)
+### BL-056 — Chốt topology same-origin FE↔API + prod-guard VNPAY_RETURN_URL ✅ DONE (code/docs; prod smoke trong BL-051)
 
 - **Ưu tiên:** CAO (quyết định deploy, không phải migration — nhưng lộ ra như "bug auth bí ẩn" nếu bỏ sót). — **Landmine #5/#6.**
 - **Owner:** ops, `kids-api`
@@ -127,6 +131,7 @@
 - **Docs:** `ARCHITECTURE.md` (§auth cookie/topology), `BL-051` runbook, `SECURITY_AUDIT_CHECKLIST.md`.
 - **Done khi:** topology auth được chốt + tài liệu; refresh web hoạt động trên domain prod; VNPAY_RETURN_URL prod-guarded.
 - **Verify:** smoke login+refresh trên domain prod (BL-001→004); config test VNPAY_RETURN_URL localhost + production → throw.
+- **Evidence:** docs chốt same-origin FE↔API qua reverse proxy `/api`; `config.schema` chặn `VNPAY_RETURN_URL` localhost/http/sandbox ở production; `test/config-schema.e2e-spec.ts` ✅ · `tsc` ✅ · `lint` ✅ · full e2e **181/181** ✅. Smoke login/refresh trên domain prod vẫn chạy trong BL-051/BL-001→004 sau deploy.
 
 ### Ma trận Entitlement chuẩn (spec cho BL-043/BL-044 — theo code thật `kids-api/prisma/seed.ts`)
 
@@ -807,3 +812,57 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 - **Owner:** `kids-api`, `kids-crm`, `kids-mobile-web`, `kids-mobile-native`
 - **Blocked input:** chính sách consent ảnh/trẻ em, provider AI, data retention, opt-in school/parent, cost limit, legal approval.
 - **Làm:** không implement code trong task tổng này. Khi có input, tách thành 2 task con: `AI report suggestion` và `AI attendance`, mỗi task phải có security/privacy review trước khi code.
+
+---
+
+## 📊 Bảng tổng hợp tình trạng & thứ tự ưu tiên trước production
+
+> Cập nhật 2026-07-11. Sắp xếp **từ trên xuống theo mức chặn production** — hàng trên = phải chốt trước, vì sai/hoãn sẽ gây **hotfix lan rộng DB → API → mọi FE/Mobile** (bán kính ảnh hưởng lớn nhất). Đọc: các "landmine" bán kính lớn nhất (schema/contract/auth) **đã DONE**; phần còn chặn prod chủ yếu là **deploy + smoke + text pháp lý**, không phải code.
+>
+> Chú thích trạng thái: ✅ xong · 🟢 đang xanh (gate lặp mỗi deploy) · ⚠️ code xong, còn phần dữ liệu/nội dung · ⬜ chưa làm (chặn prod) · 🔒 chờ input ngoài (domain/pháp nhân/provider) · ⏳ hoãn (không chặn 5 trường đầu).
+
+### A. Trước khi mở trường thật (P0-PROD) — theo thứ tự làm
+
+| # | Task | Việc | Repo ảnh hưởng | Rủi ro hotfix nếu sai/hoãn | Trạng thái |
+| --- | --- | --- | --- | --- | --- |
+| 1 | BL-052 | Soft-delete + retention bảng thuế/y tế/trẻ | DB · API | Cascade xóa sạch chứng từ thuế/y tế; sửa sau = migrate + backfill + vá nhiều delete path | ✅ |
+| 2 | BL-053 | Timezone `@db.Timestamptz(3)` | DB | Đổi kiểu cột sau khi có rows = `ALTER` khóa bảng | ✅ |
+| 3 | BL-054 | Invoice-number an toàn concurrency (`InvoiceCounter`) | API | Số hóa đơn thuế nhảy/trùng/500 khi tạo đồng thời | ✅ |
+| 4 | BL-050 | Versioning + bất biến giá gói | DB · API · Landing · Platform | Đổi giá làm sai hóa đơn khách cũ | ✅ |
+| 5 | BL-049 | Bỏ quota lớp (bán theo GV+HS+GB) | API · DB · CRM · Landing | Sai chiều bán gói → sửa lan bảng giá + enforcement | ✅ |
+| 6 | BL-056 | Same-origin FE↔API + guard `VNPAY_RETURN_URL` | ops · API · mọi FE | Cookie refresh cross-site hỏng → **auth chết toàn web/mobile** | ✅ code/docs · ⬜ smoke prod (trong BL-051) |
+| 7 | BL-055 | Prod-guard JWT secret dev/low-entropy | API | Boot prod với khóa ký công khai | ✅ |
+| 8 | BL-005 | CORS origins domain thật | API | Sai → toàn bộ FE bị chặn gọi API | 🔒 chờ domain |
+| 9 | BL-051 | Provision + deploy (VPS/HTTPS/domain/secret/backup) | ops · all | Blocker vật lý để có prod; sai topology = auth hotfix | ⬜ đang mua VPS |
+| 10 | BL-007 | Rà `.gitignore` / secrets | root · all | Lộ `.env`/key → phải rotate khẩn | ⬜ |
+| 11 | BL-046 | Consent pháp lý (ToS/Privacy) | API · CRM · Mobile · Landing | Hệ thống xong; thiếu text hợp lệ = rủi ro pháp lý khi mở trường | ✅ hệ thống · ⚠️ chờ text luật sư (chỉ đổi data) |
+| 12 | BL-008 | Verify backend `tsc`/`lint`/`e2e` | API | Regression lọt prod | 🟢 181/21 xanh (lặp mỗi deploy) |
+| 13 | BL-009 | Build/lint FE (platform/crm/mobile-web/landing/native) | mọi FE | Build vỡ lúc deploy | ⬜ chạy lại trước deploy |
+| 14 | BL-001 | Seed + login demo trên prod | API | Nền cho mọi smoke | ⬜ smoke prod |
+| 15 | BL-002 | Smoke CRM (toàn route P0/P1) | CRM | Phát hiện lỗi tích hợp trước bàn giao | ⬜ smoke prod |
+| 16 | BL-003 | Smoke mobile-web PH/GV | Mobile-web | — | ⬜ smoke prod |
+| 17 | BL-004 | Smoke landing self-service (signup/VietQR) | Landing · API | — | ⬜ smoke prod |
+
+### B. Nên làm sớm sau launch (không chặn 5 trường đầu, giảm hotfix UX)
+
+| # | Task | Việc | Repo ảnh hưởng | Rủi ro nếu hoãn | Trạng thái |
+| --- | --- | --- | --- | --- | --- |
+| 18 | BL-043 | Landing bảng giá đúng feature + badge Coming Soon | Landing | Cam kết feature chưa có → phải gỡ gấp | ⬜ |
+| 19 | BL-006 | Error-code mapping FE (i18n VI/EN) | mọi FE | Lộ raw error; sửa rải rác nhiều app | ⬜ |
+| 20 | BL-044 | Feature-gating theo gói ở FE | CRM · Mobile | "Bấm mới 403" (BE `@RequireFeature` đã là chốt an toàn) | ⬜ |
+| 21 | BL-045 | Chuẩn hóa/enforce cờ feature "chết" (`analytics`/`api_access`) | API | FE tưởng đã enforce | ⬜ |
+| 22 | BL-048 | Role-gating UI CRM (route guard + ẩn nút) | CRM | Gõ URL sai quyền (BE `@Roles` đã là chốt an toàn) | ⬜ |
+| 23 | BL-047 | Landing pháp nhân + thông báo Bộ Công Thương | Landing · ops | Tuân thủ TMĐT khi mở đăng ký công khai | 🔒 chờ pháp nhân/BCT |
+
+### C. Hoãn tới >5 trường / khi có input (không chặn prod)
+
+| Nhóm | Tasks | Việc | Trạng thái |
+| --- | --- | --- | --- |
+| Kiểm thử tự động | BL-010 · BL-011 · BL-012 · BL-013 | Playwright CRM/mobile-web · visual regression · chạy SYSTEM/SECURITY checklist | ⏳ hoãn |
+| Mobile native release | BL-014 · BL-015 · BL-016 · BL-017 | Smoke thiết bị · upload ảnh · EAS build · deep link/tenant context | 🟡 đã port P0/P1 · ⏳ smoke/EAS/push |
+| Vận hành SaaS | BL-018 · BL-019 · BL-020 · BL-021 · BL-022 · BL-023 · BL-024 | Email · reset password · lead API · dunning · coupon redeem · rotate token · PDF | ⏳ hoãn (phần lớn 🔒 input) |
+| File/privacy/ops | BL-025 · BL-026 · BL-027 · BL-028 · BL-029 | R2/S3 · cleanup media · retention/purge · backup runbook · RLS trial | ⏳ hoãn (🔒 input/PO) |
+| Push & thanh toán | BL-030 · BL-031 · BL-032 · BL-033 · BL-034 | Push FCM/Expo · VNPay prod · auto đối soát VietQR · MoMo/ZaloPay · VAT điện tử | ⏳ hoãn (🔒 input) |
+| Sản phẩm nâng cao | BL-035 → BL-042 | Offline queue · CSV import/export · analytics · admissions · lịch thuốc · biên nhận PH · AI | ⏳ hoãn (🔒 input) |
+
+> **Đọc nhanh:** cụm A#1–7 (bán kính hotfix lớn nhất: schema/contract/auth) **đã DONE**. Cửa còn lại để mở trường thật là **BL-051 deploy** + **BL-005/007 config-secret** + **BL-046 text luật sư** + **smoke BL-001→004 trên prod**. Nhóm B là polish UX (BE đã có chốt an toàn nên không phải blocker). Nhóm C hoãn có chủ đích.

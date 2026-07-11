@@ -28,6 +28,7 @@ const invoiceInclude = {
   // Không lộ rawPayload (IPN thô)/gatewayRef/reference/recordedById cho phụ huynh xem hóa đơn.
   // Prisma 5.22 chưa bật omit → dùng select tường minh (chỉ field an toàn), bỏ 4 field nhạy cảm.
   payments: {
+    where: { deletedAt: null },
     select: {
       id: true,
       tenantId: true,
@@ -80,26 +81,38 @@ export class TuitionService {
       throw new BadRequestException({ code: "BAD_TOTAL", message: "Giảm giá vượt tổng tiền" });
 
     const issueDate = input.issueDate ? new Date(input.issueDate) : new Date();
-    const invoiceNumber = await this.nextInvoiceNumber(issueDate.getFullYear());
 
-    const invoice = await this.prisma.db.tuitionInvoice.create({
-      data: {
-        schoolId: student.schoolId,
-        studentId: input.studentId,
-        invoiceNumber,
-        period: input.period,
-        issueDate,
-        dueDate: new Date(input.dueDate),
-        subtotal,
-        discount,
-        total,
-        note: input.note,
-        createdById: user.id,
-        items: {
-          create: items.map((it) => ({ tenantId: user.tenantId!, ...it })), // nested → set tenantId
+    const invoice = await this.prisma.db.$transaction(async (tx) => {
+      const year = issueDate.getFullYear();
+      const scope = `tuition:${year}`;
+      const counter = await tx.invoiceCounter.upsert({
+        where: { tenantId_scope: { tenantId: user.tenantId!, scope } },
+        create: { tenantId: user.tenantId!, scope, nextValue: 2 },
+        update: { nextValue: { increment: 1 } },
+        select: { nextValue: true },
+      });
+      const invoiceNumber = `HD-${year}-${String(counter.nextValue - 1).padStart(4, "0")}`;
+
+      return tx.tuitionInvoice.create({
+        data: {
+          tenantId: user.tenantId!,
+          schoolId: student.schoolId,
+          studentId: input.studentId,
+          invoiceNumber,
+          period: input.period,
+          issueDate,
+          dueDate: new Date(input.dueDate),
+          subtotal,
+          discount,
+          total,
+          note: input.note,
+          createdById: user.id,
+          items: {
+            create: items.map((it) => ({ tenantId: user.tenantId!, ...it })), // nested → set tenantId
+          },
         },
-      } as never,
-      include: invoiceInclude,
+        include: invoiceInclude,
+      });
     });
 
     await this.notifications.notifyStudentParents(user.tenantId!, input.studentId, {
@@ -110,13 +123,6 @@ export class TuitionService {
       linkId: invoice.id,
     });
     return invoice;
-  }
-
-  private async nextInvoiceNumber(year: number): Promise<string> {
-    const count = await this.prisma.db.tuitionInvoice.count({
-      where: { invoiceNumber: { startsWith: `HD-${year}-` } },
-    });
-    return `HD-${year}-${(count + 1).toString().padStart(4, "0")}`;
   }
 
   /** Danh sách hóa đơn cho staff (school-scope, lọc trạng thái/học sinh). */

@@ -100,6 +100,34 @@ describe("Phase 0 edge — billing / quota / entitlement / webhook", () => {
     expect(Number(inv.body.data.subtotal)).toBe(1_390_000);
   });
 
+  it("hóa đơn platform tạo song song không trùng/không nhảy số theo prefix", async () => {
+    const t = await createTenant(app);
+    const pro = await planId("pro");
+    await api()
+      .post("/api/billing/subscription/change")
+      .set("Host", t.host)
+      .set("Authorization", `Bearer ${t.adminToken}`)
+      .send({ planId: pro, billingCycle: "MONTHLY" })
+      .expect(201);
+    const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });
+    const ptoken = await loginPlatform(app);
+
+    const created = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        api()
+          .post("/api/platform/invoices")
+          .set("Host", PLATFORM_HOST)
+          .set("Authorization", `Bearer ${ptoken}`)
+          .send({ tenantId: tenant!.id })
+          .expect(201),
+      ),
+    );
+    const numbers = created.map((r) => r.body.data.invoiceNumber as string).sort();
+    expect(new Set(numbers).size).toBe(5);
+    const base = numbers[0].replace(/-\d{2}$/, "");
+    expect(numbers).toEqual([1, 2, 3, 4, 5].map((n) => `${base}-${String(n).padStart(2, "0")}`));
+  });
+
   it("GET /billing/invoices: KHÔNG lộ publicToken (link no-login) + metadata nội bộ", async () => {
     const t = await createTenant(app);
     const tenant = await prisma.system.tenant.findFirst({ where: { slug: t.slug } });

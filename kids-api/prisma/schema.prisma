@@ -183,16 +183,16 @@ model Tenant {
   code             String?      @unique // Mã trường human-friendly (vd "HOASEN2024") — search/chọn tenant ở login, độc lập subdomain
   legalName        String
   taxCode          String?      @unique // MST pháp nhân — định danh tài khoản, 1 MST = 1 trường (chống mở trùng)
-  taxVerifiedAt    DateTime? // đã xác minh MST với cơ quan thuế (null = mới chỉ đúng format/checksum)
+  taxVerifiedAt    DateTime?    @db.Timestamptz(3) // đã xác minh MST với cơ quan thuế (null = mới chỉ đúng format/checksum)
   status           TenantStatus @default(TRIAL) // cache; nguồn chân lý = Subscription
   tenancyMode      TenancyMode  @default(POOL)
   planTier         PlanTier     @default(STARTER)
-  currentPeriodEnd DateTime? // cache cho SubscriptionGuard
-  trialEndsAt      DateTime?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  currentPeriodEnd DateTime?    @db.Timestamptz(3) // cache cho SubscriptionGuard
+  trialEndsAt      DateTime?    @db.Timestamptz(3)
+  createdAt        DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @db.Timestamptz(3)
   createdById      String?
-  deletedAt        DateTime?
+  deletedAt        DateTime?    @db.Timestamptz(3)
 
   settings     TenantSettings?
   schools      School[]
@@ -225,8 +225,8 @@ model TenantSettings {
   bankBin           String? // mã ngân hàng napas (VietQR)
   bankAccountNumber String?
   bankAccountName   String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime @updatedAt @db.Timestamptz(3)
 
   @@map("tenant_settings")
 }
@@ -240,8 +240,8 @@ model TenantDomain {
   status      DomainStatus @default(PENDING)
   isPrimary   Boolean      @default(false)
   verifyToken String?
-  verifiedAt  DateTime?
-  createdAt   DateTime     @default(now())
+  verifiedAt  DateTime?    @db.Timestamptz(3)
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([status])
@@ -258,10 +258,10 @@ model School {
   address              String?
   phone                String?
   isActive             Boolean               @default(true)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  createdAt            DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @db.Timestamptz(3)
   createdById          String?
-  deletedAt            DateTime?
+  deletedAt            DateTime?             @db.Timestamptz(3)
   memberships          Membership[]
   classrooms           Classroom[]
   students             Student[]
@@ -283,12 +283,12 @@ model User {
   isActive             Boolean               @default(true)
   tokenVersion         Int                   @default(0) // bump để vô hiệu access token đang lưu hành (reset mật khẩu)
   failedLoginCount     Int                   @default(0) // đếm đăng nhập sai liên tiếp → khóa tạm
-  lockedUntil          DateTime? // khóa đăng nhập tới thời điểm này (account lockout)
+  lockedUntil          DateTime?             @db.Timestamptz(3) // khóa đăng nhập tới thời điểm này (account lockout)
   platformRole         PlatformRole? // chỉ set khi type=PLATFORM
   tenantId             String? // null nếu PLATFORM
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  deletedAt            DateTime?
+  createdAt            DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @db.Timestamptz(3)
+  deletedAt            DateTime?             @db.Timestamptz(3)
   memberships          Membership[]
   homeroomClasses      Classroom[]           @relation("HomeroomTeacher")
   childLinks           StudentParent[]       @relation("ParentLinks")
@@ -312,9 +312,9 @@ model Membership {
   schoolId    String? // null = role toàn tenant (chuỗi)
   school      School?    @relation(fields: [schoolId], references: [id])
   isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
   createdById String?
-  deletedAt   DateTime?
+  deletedAt   DateTime?  @db.Timestamptz(3)
 
   @@unique([userId, role, schoolId])
   @@index([tenantId])
@@ -338,9 +338,9 @@ model Plan {
   isFeatured  Boolean   @default(false)
   trialDays   Int       @default(0)
   sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt   DateTime? @db.Timestamptz(3)
 
   prices        PlanPrice[]
   features      PlanFeature[]
@@ -359,8 +359,8 @@ model PlanPrice {
   currency     BillingCurrency @default(VND)
   amount       Decimal         @db.Decimal(12, 2)
   isActive     Boolean         @default(true)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  createdAt    DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime        @updatedAt @db.Timestamptz(3)
 
   @@unique([planId, billingCycle, currency])
   @@map("plan_prices")
@@ -403,20 +403,20 @@ model Subscription {
   currency           BillingCurrency    @default(VND)
   billingMode        BillingMode        @default(GATEWAY)
   status             SubscriptionStatus @default(TRIALING)
-  currentPeriodStart DateTime
-  currentPeriodEnd   DateTime
-  trialEndsAt        DateTime?
+  currentPeriodStart DateTime           @db.Timestamptz(3)
+  currentPeriodEnd   DateTime           @db.Timestamptz(3)
+  trialEndsAt        DateTime?          @db.Timestamptz(3)
   cancelAtPeriodEnd  Boolean            @default(false)
-  canceledAt         DateTime?
-  endedAt            DateTime?
-  pastDueSince       DateTime?
-  suspendedAt        DateTime?
+  canceledAt         DateTime?          @db.Timestamptz(3)
+  endedAt            DateTime?          @db.Timestamptz(3)
+  pastDueSince       DateTime?          @db.Timestamptz(3)
+  suspendedAt        DateTime?          @db.Timestamptz(3)
   entitlementsCache  Json? // {features, limits} — cache cho guard
   couponId           String?
   coupon             Coupon?            @relation(fields: [couponId], references: [id])
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  deletedAt          DateTime?
+  createdAt          DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime           @updatedAt @db.Timestamptz(3)
+  deletedAt          DateTime?          @db.Timestamptz(3)
 
   invoices  PlatformInvoice[]
   changes   SubscriptionChange[]
@@ -439,12 +439,12 @@ model SubscriptionChange {
   toPlanId        String?
   fromCycle       BillingCycle?
   toCycle         BillingCycle?
-  effectiveAt     DateTime
+  effectiveAt     DateTime               @db.Timestamptz(3)
   prorationAmount Decimal?               @db.Decimal(12, 2)
   actorId         String?
   reason          String?
   metadata        Json?
-  createdAt       DateTime               @default(now())
+  createdAt       DateTime               @default(now()) @db.Timestamptz(3)
 
   @@index([subscriptionId, createdAt])
   @@map("subscription_changes")
@@ -461,22 +461,22 @@ model PlatformInvoice {
   subscription   Subscription?         @relation(fields: [subscriptionId], references: [id])
   status         PlatformInvoiceStatus @default(DRAFT)
   currency       BillingCurrency       @default(VND)
-  periodStart    DateTime
-  periodEnd      DateTime
+  periodStart    DateTime              @db.Timestamptz(3)
+  periodEnd      DateTime              @db.Timestamptz(3)
   subtotal       Decimal               @default(0) @db.Decimal(12, 2)
   discount       Decimal               @default(0) @db.Decimal(12, 2)
   tax            Decimal               @default(0) @db.Decimal(12, 2)
   total          Decimal               @default(0) @db.Decimal(12, 2)
   amountPaid     Decimal               @default(0) @db.Decimal(12, 2)
-  issuedAt       DateTime?
-  dueAt          DateTime?
-  paidAt         DateTime?
-  voidedAt       DateTime?
+  issuedAt       DateTime?             @db.Timestamptz(3)
+  dueAt          DateTime?             @db.Timestamptz(3)
+  paidAt         DateTime?             @db.Timestamptz(3)
+  voidedAt       DateTime?             @db.Timestamptz(3)
   notes          String?
   metadata       Json?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  deletedAt      DateTime?
+  createdAt      DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime              @updatedAt @db.Timestamptz(3)
+  deletedAt      DateTime?             @db.Timestamptz(3)
 
   lines    PlatformInvoiceLine[]
   payments PlatformPayment[]
@@ -498,7 +498,7 @@ model PlatformInvoiceLine {
   unitPrice Decimal                 @db.Decimal(12, 2)
   amount    Decimal                 @db.Decimal(12, 2) // có thể âm (credit/discount)
   metadata  Json?
-  createdAt DateTime                @default(now())
+  createdAt DateTime                @default(now()) @db.Timestamptz(3)
 
   @@index([invoiceId])
   @@map("platform_invoice_lines")
@@ -516,14 +516,14 @@ model PlatformPayment {
   gatewayRef     String?
   redirectUrl    String?
   rawPayload     Json?
-  expiresAt      DateTime?
-  paidAt         DateTime?
+  expiresAt      DateTime?               @db.Timestamptz(3)
+  paidAt         DateTime?               @db.Timestamptz(3)
   refundedAmount Decimal?                @db.Decimal(12, 2)
-  refundedAt     DateTime?
+  refundedAt     DateTime?               @db.Timestamptz(3)
   refundRef      String?
   createdById    String?
-  createdAt      DateTime                @default(now())
-  updatedAt      DateTime                @updatedAt
+  createdAt      DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime                @updatedAt @db.Timestamptz(3)
 
   @@unique([provider, gatewayRef])
   @@index([invoiceId, status])
@@ -539,9 +539,9 @@ model PlatformWebhookEvent {
   payload     Json
   verified    Boolean                 @default(false)
   processed   Boolean                 @default(false)
-  processedAt DateTime?
+  processedAt DateTime?               @db.Timestamptz(3)
   error       String?
-  createdAt   DateTime                @default(now())
+  createdAt   DateTime                @default(now()) @db.Timestamptz(3)
 
   @@unique([provider, eventId])
   @@index([processed, createdAt])
@@ -552,13 +552,13 @@ model PlatformWebhookEvent {
 // nhiều tháng. source=CRON là số thực chốt định kỳ; BACKFILL là số suy ngược lúc khởi tạo.
 model MrrSnapshot {
   id          String            @id @default(uuid())
-  periodMonth DateTime          @unique // 00:00 ngày 1 của tháng (mốc đại diện, UTC)
+  periodMonth DateTime          @unique @db.Timestamptz(3) // 00:00 ngày 1 của tháng (mốc đại diện, UTC)
   mrr         Decimal           @default(0) @db.Decimal(14, 2)
   activeSubs  Int               @default(0)
   byTier      Json? // { FREE: number, STARTER: number, ... } — MRR (VND/tháng) theo tier
   source      MrrSnapshotSource @default(CRON)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt   DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
 
   @@index([periodMonth])
   @@map("mrr_snapshots")
@@ -579,8 +579,8 @@ model PlatformConfig {
   bankAccountName    String?
   pastDueGraceDays   Int      @default(7)
   suspendedGraceDays Int      @default(14)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt          DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @db.Timestamptz(3)
 
   @@map("platform_config")
 }
@@ -599,11 +599,11 @@ model PlatformPost {
   status          PostStatus @default(DRAFT)
   seoTitle        String?
   seoDescription  String?
-  publishedAt     DateTime?
+  publishedAt     DateTime?  @db.Timestamptz(3)
   authorId        String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  deletedAt       DateTime?
+  createdAt       DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime   @updatedAt @db.Timestamptz(3)
+  deletedAt       DateTime?  @db.Timestamptz(3)
 
   @@index([status, publishedAt])
   @@index([deletedAt])
@@ -622,9 +622,9 @@ model TenantEntitlement {
   metric         LimitMetric?
   limitValue     Int?
   reason         String?
-  expiresAt      DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  expiresAt      DateTime?     @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
 
   @@index([tenantId])
   @@map("tenant_entitlements")
@@ -637,13 +637,31 @@ model UsageCounter {
   subscription   Subscription? @relation(fields: [subscriptionId], references: [id])
   metric         LimitMetric
   value          Int           @default(0)
-  periodStart    DateTime?
-  periodEnd      DateTime?
-  updatedAt      DateTime      @updatedAt
+  periodStart    DateTime?     @db.Timestamptz(3)
+  periodEnd      DateTime?     @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
 
   @@unique([tenantId, metric])
   @@index([tenantId])
   @@map("usage_counters")
+}
+
+// Cấp số hóa đơn liền mạch, an toàn concurrency (thay `count()+1` — vốn nhảy/trùng khi soft-delete).
+// KHÔNG có schoolId (lệch convention có chủ đích): số HĐ đánh theo tenant+scope, không theo trường.
+// KHÔNG thuộc SOFT_DELETE (counter không xoá mềm). upsert set tenantId tường minh (upsert không
+// nằm trong READ_MANY/WRITE_MANY nên extension không tự inject tenantId).
+model InvoiceCounter {
+  id        String   @id @default(uuid())
+  tenantId  String
+  scope     String // vd "tuition:2026" hoặc "platform:DEMO-PRO-20260711"
+  // Ngữ nghĩa: = (số HĐ lớn nhất đã cấp trong scope) + 1. Số vừa cấp = nextValue - 1.
+  // create truyền 2 (đã cấp số 1); update increment 1. default(1) chỉ dùng nếu row được tạo ngoài luồng này.
+  nextValue Int      @default(1)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@unique([tenantId, scope])
+  @@index([tenantId])
+  @@map("invoice_counters")
 }
 
 model Coupon {
@@ -656,11 +674,11 @@ model Coupon {
   durationCount  Int?
   maxRedemptions Int?
   redeemedCount  Int              @default(0)
-  validFrom      DateTime?
-  validUntil     DateTime?
+  validFrom      DateTime?        @db.Timestamptz(3)
+  validUntil     DateTime?        @db.Timestamptz(3)
   isActive       Boolean          @default(true)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime         @updatedAt @db.Timestamptz(3)
 
   subscriptions Subscription[]
 
@@ -677,7 +695,7 @@ model CreditLedger {
   currency  BillingCurrency  @default(VND)
   reason    String
   metadata  Json?
-  createdAt DateTime         @default(now())
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId, createdAt])
   @@map("credit_ledgers")
@@ -696,7 +714,7 @@ model AuditLog {
   metadata   Json?
   ip         String?
   userAgent  String?
-  createdAt  DateTime  @default(now())
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId, createdAt])
   @@index([action])
@@ -712,9 +730,9 @@ model RefreshToken {
   familyId  String? // nhóm token theo phiên login; dùng lại token đã revoke → revoke cả họ (reuse-detection)
   userAgent String?
   ipAddress String?
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime  @default(now())
+  expiresAt DateTime  @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
 
   @@index([userId])
   @@index([familyId])
@@ -749,10 +767,10 @@ model Classroom {
   homeroomTeacherId String?
   homeroomTeacher   User?             @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
   isActive          Boolean           @default(true)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  createdAt         DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime          @updatedAt @db.Timestamptz(3)
   createdById       String?
-  deletedAt         DateTime?
+  deletedAt         DateTime?         @db.Timestamptz(3)
   students          Student[]
   attendance        Attendance[]
   dailyReports      DailyReport[]
@@ -781,10 +799,10 @@ model Student {
   gender               Gender
   avatarUrl            String?
   status               StudentStatus         @default(ACTIVE)
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  createdAt            DateTime              @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime              @updatedAt @db.Timestamptz(3)
   createdById          String?
-  deletedAt            DateTime?
+  deletedAt            DateTime?             @db.Timestamptz(3)
   parents              StudentParent[]
   attendance           Attendance[]
   dailyReports         DailyReport[]
@@ -812,7 +830,7 @@ model StudentParent {
   tenantId     String
   relationship String // "Mẹ" | "Ba" | "Người giám hộ"...
   isPrimary    Boolean  @default(false)
-  createdAt    DateTime @default(now())
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
 
   @@id([studentId, parentId])
   @@index([tenantId])
@@ -841,21 +859,23 @@ model Attendance {
   tenantId     String
   schoolId     String
   studentId    String
-  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
   classroomId  String
   classroom    Classroom        @relation(fields: [classroomId], references: [id])
   date         DateTime         @db.Date
   status       AttendanceStatus
-  checkInAt    DateTime?
+  checkInAt    DateTime?        @db.Timestamptz(3)
   note         String?
   recordedById String?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime?        @db.Timestamptz(3)
 
   @@unique([studentId, date])
   @@index([tenantId])
   @@index([classroomId, date])
   @@index([schoolId, date])
+  @@index([deletedAt])
   @@map("attendance")
 }
 
@@ -877,7 +897,7 @@ model PickupAuthorization {
   schoolId      String
   school        School                    @relation(fields: [schoolId], references: [id])
   studentId     String
-  student       Student                   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student       Student                   @relation(fields: [studentId], references: [id], onDelete: Restrict)
   parentUserId  String?
   parentUser    User?                     @relation("PickupParentUser", fields: [parentUserId], references: [id])
   guardianName  String
@@ -886,14 +906,16 @@ model PickupAuthorization {
   note          String?
   status        PickupAuthorizationStatus @default(ACTIVE)
   createdById   String?
-  revokedAt     DateTime?
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  revokedAt     DateTime?                 @db.Timestamptz(3)
+  createdAt     DateTime                  @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime                  @updatedAt @db.Timestamptz(3)
+  deletedAt     DateTime?                 @db.Timestamptz(3)
   logs          PickupLog[]
 
   @@index([tenantId])
   @@index([studentId, status])
   @@index([schoolId, status])
+  @@index([deletedAt])
   @@map("pickup_authorizations")
 }
 
@@ -904,20 +926,22 @@ model PickupLog {
   schoolId        String
   school          School               @relation(fields: [schoolId], references: [id])
   studentId       String
-  student         Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student         Student              @relation(fields: [studentId], references: [id], onDelete: Restrict)
   authorizationId String?
   authorization   PickupAuthorization? @relation(fields: [authorizationId], references: [id])
   eventType       PickupEventType
   guardianName    String
   guardianPhone   String?
   note            String?
-  occurredAt      DateTime
+  occurredAt      DateTime             @db.Timestamptz(3)
   recordedById    String?
-  createdAt       DateTime             @default(now())
+  createdAt       DateTime             @default(now()) @db.Timestamptz(3)
+  deletedAt       DateTime?            @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([studentId, occurredAt])
   @@index([schoolId, occurredAt])
+  @@index([deletedAt])
   @@map("pickup_logs")
 }
 
@@ -926,7 +950,7 @@ model DailyReport {
   tenantId    String
   schoolId    String
   studentId   String
-  student     Student            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student     Student            @relation(fields: [studentId], references: [id], onDelete: Restrict)
   classroomId String?
   classroom   Classroom?         @relation(fields: [classroomId], references: [id])
   date        DateTime           @db.Date
@@ -936,13 +960,15 @@ model DailyReport {
   activities  String? // hoạt động
   note        String?
   authorId    String?
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  createdAt   DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime           @updatedAt @db.Timestamptz(3)
+  deletedAt   DateTime?          @db.Timestamptz(3)
   photos      DailyReportPhoto[]
 
   @@unique([studentId, date])
   @@index([tenantId])
   @@index([classroomId, date])
+  @@index([deletedAt])
   @@map("daily_reports")
 }
 
@@ -955,7 +981,7 @@ model DailyReportPhoto {
   media     Media       @relation(fields: [mediaId], references: [id])
   caption   String?
   sortOrder Int         @default(0)
-  createdAt DateTime    @default(now())
+  createdAt DateTime    @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([reportId, sortOrder])
@@ -984,7 +1010,7 @@ model Media {
   height       Int?
   originalName String?
   uploadedById String?
-  createdAt    DateTime           @default(now())
+  createdAt    DateTime           @default(now()) @db.Timestamptz(3)
   albumPhotos  AlbumPhoto[]
   reportPhotos DailyReportPhoto[]
 
@@ -1021,23 +1047,25 @@ enum LeaveStatus {
 
 // D1 — Hồ sơ sức khỏe (y tá ghi: chiều cao/cân nặng/thân nhiệt). Nguồn dữ liệu biểu đồ tăng trưởng.
 model HealthRecord {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   tenantId     String
   schoolId     String
   studentId    String
-  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  date         DateTime @db.Date
+  student      Student   @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  date         DateTime  @db.Date
   heightCm     Float?
   weightKg     Float?
   temperatureC Float?
   note         String?
   recordedById String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime? @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([studentId, date])
   @@index([schoolId])
+  @@index([deletedAt])
   @@map("health_records")
 }
 
@@ -1047,7 +1075,7 @@ model MedicineRequest {
   tenantId      String
   schoolId      String
   studentId     String
-  student       Student                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student       Student                 @relation(fields: [studentId], references: [id], onDelete: Restrict)
   medicineName  String
   dosage        String
   schedule      String // giờ uống, dạng text: "8h, 14h"
@@ -1057,14 +1085,16 @@ model MedicineRequest {
   status        MedicineStatus          @default(PENDING)
   requestedById String? // phụ huynh tạo
   handledById   String? // y tá/GV xử lý
-  handledAt     DateTime?
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
+  handledAt     DateTime?               @db.Timestamptz(3)
+  createdAt     DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime                @updatedAt @db.Timestamptz(3)
+  deletedAt     DateTime?               @db.Timestamptz(3)
   history       MedicineStatusHistory[]
 
   @@index([tenantId])
   @@index([studentId])
   @@index([schoolId, status])
+  @@index([deletedAt])
   @@map("medicine_requests")
 }
 
@@ -1077,7 +1107,7 @@ model MedicineStatusHistory {
   status    MedicineStatus
   note      String?
   actorId   String?
-  createdAt DateTime        @default(now())
+  createdAt DateTime        @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([requestId, createdAt])
@@ -1090,35 +1120,42 @@ model Incident {
   tenantId     String
   schoolId     String
   studentId    String
-  student      Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student      Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
   date         DateTime         @db.Date
   type         String // phân loại tự do: "Té ngã" | "Sốt" | "Xô xát"...
   severity     IncidentSeverity @default(LOW)
   description  String
   actionTaken  String?
   reportedById String?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime?        @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([studentId])
   @@index([schoolId, date])
+  @@index([deletedAt])
   @@map("incidents")
 }
 
 // Dị ứng — dùng cảnh báo thực đơn (F3) về sau.
 model Allergy {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   tenantId  String
   schoolId  String
   studentId String
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Restrict)
   allergen  String
   note      String?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  deletedAt DateTime? @db.Timestamptz(3)
 
-  @@unique([studentId, allergen])
+  // ⚠️ Unique (studentId, allergen) là PARTIAL index `WHERE deletedAt IS NULL` — sống trong
+  // migration SQL (`allergies_active_studentId_allergen_key`), KHÔNG khai báo được ở Prisma schema.
+  // Cho phép soft-delete rồi khai lại cùng allergen; vẫn chặn trùng bản active (P2002 → DUP_ALLERGY).
+  // ĐỪNG thêm lại `@@unique([studentId, allergen])` — sẽ thành unique full, phá soft-delete/retention.
   @@index([tenantId])
+  @@index([deletedAt])
   @@map("allergies")
 }
 
@@ -1144,8 +1181,8 @@ model StaffAssignment {
   duty        String // "GV chính" | "GV phụ" | "Trực trưa" | "Đón trẻ"...
   note        String?
   createdById String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
 
   @@unique([staffId, weekday, shift]) // 1 người chỉ 1 phân công cho mỗi (thứ, ca)
   @@index([tenantId])
@@ -1160,7 +1197,7 @@ model LeaveRequest {
   tenantId      String
   schoolId      String
   studentId     String
-  student       Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student       Student     @relation(fields: [studentId], references: [id], onDelete: Restrict)
   leaveType     LeaveType
   startDate     DateTime    @db.Date
   endDate       DateTime    @db.Date
@@ -1169,14 +1206,16 @@ model LeaveRequest {
   status        LeaveStatus @default(PENDING)
   requestedById String? // phụ huynh tạo
   handledById   String? // GV/admin duyệt
-  handledAt     DateTime?
+  handledAt     DateTime?   @db.Timestamptz(3)
   decisionNote  String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime    @updatedAt @db.Timestamptz(3)
+  deletedAt     DateTime?   @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([studentId])
   @@index([schoolId, status])
+  @@index([deletedAt])
   @@map("leave_requests")
 }
 
@@ -1209,7 +1248,7 @@ model TuitionInvoice {
   tenantId      String
   schoolId      String
   studentId     String
-  student       Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student       Student              @relation(fields: [studentId], references: [id], onDelete: Restrict)
   invoiceNumber String // HD-YYYY-NNNN (tuần tự theo tenant + năm)
   period        String // "2026-06" | "HK1 2026-2027"...
   issueDate     DateTime             @db.Date
@@ -1221,8 +1260,9 @@ model TuitionInvoice {
   status        TuitionInvoiceStatus @default(UNPAID)
   note          String?
   createdById   String?
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  createdAt     DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime             @updatedAt @db.Timestamptz(3)
+  deletedAt     DateTime?            @db.Timestamptz(3)
   items         TuitionInvoiceItem[]
   payments      TuitionPayment[]
 
@@ -1230,6 +1270,7 @@ model TuitionInvoice {
   @@index([tenantId])
   @@index([schoolId, status])
   @@index([studentId])
+  @@index([deletedAt])
   @@map("tuition_invoices")
 }
 
@@ -1259,15 +1300,17 @@ model TuitionPayment {
   amount       Decimal              @db.Decimal(12, 2)
   reference    String? // mã chuyển khoản / ghi chú đối soát
   gatewayRef   String? // mã giao dịch cổng (VNPay vnp_TxnRef)
-  paidAt       DateTime?
+  paidAt       DateTime?            @db.Timestamptz(3)
   rawPayload   Json?
   recordedById String?
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  createdAt    DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime             @updatedAt @db.Timestamptz(3)
+  deletedAt    DateTime?            @db.Timestamptz(3)
 
   @@unique([method, gatewayRef])
   @@index([tenantId])
   @@index([invoiceId, status])
+  @@index([deletedAt])
   @@map("tuition_payments")
 }
 
@@ -1297,10 +1340,10 @@ model Announcement {
   classroom   Classroom?           @relation(fields: [classroomId], references: [id])
   title       String
   body        String
-  publishedAt DateTime? // null = nháp
+  publishedAt DateTime?            @db.Timestamptz(3) // null = nháp
   authorId    String?
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([schoolId, publishedAt])
@@ -1318,8 +1361,8 @@ model WeeklyMenu {
   weekStart   DateTime   @db.Date // thứ 2 đầu tuần
   note        String?
   createdById String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
   meals       Meal[]
 
   @@index([tenantId])
@@ -1353,8 +1396,8 @@ model LessonPlan {
   theme       String
   note        String?
   authorId    String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
   activities  Activity[]
 
   @@index([tenantId])
@@ -1388,8 +1431,8 @@ model Album {
   title       String
   description String?
   createdById String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(3)
   photos      AlbumPhoto[]
 
   @@index([tenantId])
@@ -1407,7 +1450,7 @@ model AlbumPhoto {
   media     Media    @relation(fields: [mediaId], references: [id])
   caption   String?
   sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId])
   @@index([albumId])
@@ -1436,8 +1479,8 @@ model Notification {
   body      String?
   linkType  String? // "TuitionInvoice" | "DailyReport" | "Announcement"...
   linkId    String?
-  readAt    DateTime?
-  createdAt DateTime         @default(now())
+  readAt    DateTime?        @db.Timestamptz(3)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId, userId, readAt])
   @@index([tenantId, userId, createdAt])
@@ -1464,7 +1507,7 @@ model UsageEvent {
   userId    String?
   type      String // "login" | "signup" | "feature.lesson_plan"...
   meta      Json?
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@index([tenantId, createdAt])
   @@index([type, createdAt])
@@ -1487,9 +1530,9 @@ model ConsentDocument {
   title         String
   summary       String? // dòng ngắn cạnh checkbox
   body          String // nội dung đầy đủ (markdown/plain)
-  effectiveFrom DateTime       @default(now())
+  effectiveFrom DateTime       @default(now()) @db.Timestamptz(3)
   isActive      Boolean        @default(true) // bản đang hiệu lực cho (type, locale)
-  createdAt     DateTime       @default(now())
+  createdAt     DateTime       @default(now()) @db.Timestamptz(3)
 
   acceptances ConsentAcceptance[]
 
@@ -1509,7 +1552,7 @@ model ConsentAcceptance {
   email      String? // snapshot email lúc đồng ý (bằng chứng)
   ipAddress  String?
   userAgent  String?
-  acceptedAt DateTime        @default(now())
+  acceptedAt DateTime        @default(now()) @db.Timestamptz(3)
 
   @@index([userId])
   @@index([tenantId])

@@ -1,6 +1,6 @@
 # KimThanh Kids — Kiến thức triển khai đã DONE
 
-> Cập nhật: 2026-07-10. Tài liệu này ghi lại phần đã hoàn tất sau khi gom/xoá các tracker task cũ. Việc còn lại nằm ở [BACKLOG.md](../kids-tasks/BACKLOG.md).
+> Cập nhật: 2026-07-11. Tài liệu này ghi lại phần đã hoàn tất sau khi gom/xoá các tracker task cũ. Việc còn lại nằm ở [BACKLOG.md](../kids-tasks/BACKLOG.md).
 
 ## Trạng thái tổng
 
@@ -18,6 +18,7 @@
 - Code tenant dùng `prisma.db`; code platform/auth/cron dùng `prisma.system` kèm filter tường minh.
 - `findUnique/update/delete` theo PK không tự inject `tenantId`; service phải `findFirst`/assert scope trước khi thao tác.
 - Model domain có `tenantId` + `schoolId` và nằm trong `TENANT_KEY`.
+- Timestamp có thời điểm thật dùng `DateTime @db.Timestamptz(3)`; date-only giữ `@db.Date`.
 - Query params dùng `ZodValidationPipe` để lỗi kiểu trả 400 thay vì Prisma 500.
 
 ## Domain Phase 1
@@ -25,7 +26,8 @@
 - Hồ sơ/lớp/nhân sự: Students, StudentParent, Classrooms, tenant members, staff assignments, quota STUDENTS/TEACHERS (số lớp KHÔNG tính gói — BL-049 đã gỡ enforcement + seed CLASSROOMS; enum `LimitMetric.CLASSROOMS` giữ lại tránh migration nhưng không seed; seed `upsertPlan` reconcile xoá limit không còn khai báo để reseed idempotent).
 - Vận hành hằng ngày: Attendance bulk theo lớp/ngày, DailyReports upsert theo học sinh/ngày, PH xem feed con mình.
 - Sức khỏe: HealthRecord/growth, MedicineRequest + status history, Incident, Allergy, LeaveRequest.
-- Học phí trường -> phụ huynh: TuitionInvoice/Item/Payment, số hóa đơn `HD-YYYY-NNNN`, VietQR miễn phí, tiền mặt/chuyển khoản thủ công, VNPay sandbox, HTML print, CSV export, cron quá hạn.
+- Học phí trường -> phụ huynh: TuitionInvoice/Item/Payment, số hóa đơn `HD-YYYY-NNNN` cấp qua `InvoiceCounter` transaction-safe, VietQR miễn phí, tiền mặt/chuyển khoản thủ công, VNPay sandbox, HTML print, CSV export, cron quá hạn.
+- Schema-freeze BL-052/053/054: dữ liệu retention của trẻ (`Attendance`, `PickupAuthorization`, `PickupLog`, `DailyReport`, `HealthRecord`, `MedicineRequest`, `Incident`, `Allergy`, `LeaveRequest`, `TuitionInvoice`, `TuitionPayment`) có `deletedAt` và được `prisma.db` auto-filter; FK từ `Student` sang các bảng này là `ON DELETE RESTRICT`, nên hard-delete Student bị chặn khi còn chứng từ/y tế/vận hành. Allergy active dùng partial unique `(studentId, allergen) WHERE deletedAt IS NULL`.
 - Nội dung/giao tiếp: Announcements, WeeklyMenu + allergy warnings, LessonPlan feature-gate `lesson_plan`, Album feature-gate `media_gallery`.
 - Notifications: `NotificationsService.notify`/`notifyStudentParents` là điểm phát duy nhất; in-app feed + preferences đã có, push để P2.
 - Dashboard/audit/usage: `GET /dashboard/summary`, `AuditLog`, `GET /audit-logs`, `UsageEvent` login và `GET /platform/usage/overview`.
@@ -34,10 +36,12 @@
 
 - Platform realm tách tenant realm; host dev platform ghim `admin.*`.
 - Platform invoice có public token để xem invoice không cần login; mark-paid thủ công là nguồn kích hoạt gói trả phí trong MVP.
+- Platform invoice number cũng cấp qua `InvoiceCounter` theo scope `{slug}-{plan}-{YYYYMMDD}` trong cùng transaction với create invoice; tạo song song không trùng/không nhảy số giả.
 - Signup landing luôn tạo tenant Free ACTIVE trước. Nếu chọn gói trả phí, hệ thống tạo invoice nâng cấp OPEN; mark-paid mới đổi subscription/entitlements.
 - Consent pháp lý (BL-046): bảng system `ConsentDocument` (versioned TERMS/PRIVACY, 1 bản `isActive`/type/locale) + `ConsentAcceptance` (log bất biến userId/tenantId/version/IP/UA). Chủ trường tick lúc signup (`/public/signup` ép `acceptConsent=true`, ghi acceptance trong transaction — chỉ khi `recordConsent`, platform tạo hộ KHÔNG ghi khống). GV/PH/NV: `/auth/me.pendingConsents` → FE gate (CRM `ConsentGate` bọc AppLayout; mobile-web trong `RoleGuard`) → `POST /consent/accept`. Đổi nội dung = tăng `version` trong `prisma/consent-documents.ts` rồi reseed (bản cũ tự hạ `isActive`, user phải đồng ý lại). Văn bản hiện là **BẢN NHÁP cần luật sư duyệt**.
 - Versioning gói (BL-050): `Plan.isFeatured` = gói đại diện mỗi tier (partial unique `UNIQUE(tier) WHERE isFeatured` ⇒ ≤1/tier); `/public/plans` chỉ trả featured. **Chỉ bán gói featured** (sellable=`isPublic&&isActive&&isFeatured`): signup / signup-upgrade / `subscription/change` gọi bằng code/id gói cũ → `INVALID_PLAN` (chống mua bản giá cũ). `updatePlan` = **diff-check**: chặn `PLAN_IMMUTABLE` chỉ khi gói đã có thuê bao mà giá/feature/limit THỰC SỰ đổi (no-op resubmit OK) → sửa tên/trial/public không bị chặn oan. `isActive/isPublic=false` (kể cả qua PATCH) tự clear `isFeatured`; renewal (`createPeriodInvoice`) chỉ migrate sang featured active+public + tính giá mới (`SubscriptionChange` RENEW `plan_version_migrate`), hóa đơn/kỳ cũ bất biến. `DELETE /platform/plans/:id` soft-delete (chặn `PLAN_HAS_SUBSCRIPTIONS`); `.../deactivate` ngừng bán; `.../feature` đặt đại diện. Platform Console `PlansPage` quản trị đủ vòng đời. Seed set featured 5 gói.
 - Blog landing không còn hardcode: `PlatformPost` CRUD/publish trong `kids-platform`, public posts cho landing.
+- Production guard BL-055/056: `config.schema` chặn JWT secret dev/low-entropy khi `NODE_ENV=production`; nếu bật VNPay ở production thì `VNPAY_RETURN_URL` phải là HTTPS domain thật (không localhost/http/sandbox). Web production chốt same-origin FE↔API qua reverse proxy `/api` để refresh cookie `SameSite=Lax` host-only hoạt động.
 - Auto đối soát ngân hàng, payment gateway production và lead/contact API là backlog P2.
 
 ## Frontend patterns

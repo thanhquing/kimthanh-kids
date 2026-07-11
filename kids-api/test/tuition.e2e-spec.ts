@@ -47,6 +47,7 @@ describe("E — Học phí (hóa đơn, thanh toán, chứng từ in)", () => {
   const invoiceBody = (studentId: string, due = "2026-07-31") => ({
     studentId,
     period: "2026-07",
+    issueDate: "2026-07-11", // pin năm → invoiceNumber HD-2026-xxxx ổn định (không phụ thuộc ngày chạy test)
     dueDate: due,
     items: [
       { label: "Học phí tháng 7", unitPrice: 2_000_000 },
@@ -94,6 +95,27 @@ describe("E — Học phí (hóa đơn, thanh toán, chứng từ in)", () => {
       .get(`/api/tuition/invoices/${created.body.data.id}`)
       .set(auth(t, other.token))
       .expect(404);
+  });
+
+  it("tạo hóa đơn song song không trùng/không nhảy số", async () => {
+    const t = await createTenant(app);
+    const school = await mainSchool(t);
+    const studentIds = await Promise.all(Array.from({ length: 5 }, () => makeStudent(t, school)));
+
+    const created = await Promise.all(
+      studentIds.map((studentId) =>
+        api().post("/api/tuition/invoices").set(auth(t)).send(invoiceBody(studentId)).expect(201),
+      ),
+    );
+    const numbers = created.map((r) => r.body.data.invoiceNumber as string).sort();
+    expect(new Set(numbers).size).toBe(5);
+    expect(numbers).toEqual([
+      "HD-2026-0001",
+      "HD-2026-0002",
+      "HD-2026-0003",
+      "HD-2026-0004",
+      "HD-2026-0005",
+    ]);
   });
 
   it("PARENT không tạo hóa đơn (403)", async () => {

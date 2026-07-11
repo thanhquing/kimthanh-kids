@@ -65,7 +65,7 @@ export class AllergiesService {
     });
     if (!found)
       throw new NotFoundException({ code: "NO_ALLERGY", message: "Không tìm thấy khai báo" });
-    await this.prisma.db.allergy.delete({ where: { id } });
+    await this.prisma.db.allergy.update({ where: { id }, data: { deletedAt: new Date() } });
     return { ok: true };
   }
 }

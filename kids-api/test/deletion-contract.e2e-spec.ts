@@ -4,7 +4,8 @@ import { bootstrap, createTenant } from "./helpers";
 
 /**
  * Deletion-contract (§10): khóa hành vi FK bảo vệ dữ liệu.
- * - Hard-delete Student → cascade các bản ghi con (erasure 1 trẻ sạch dây).
+ * - Hard-delete Student khi còn dữ liệu retention → RESTRICT chặn.
+ * - Xóa thường Student = soft-delete; chứng từ/y tế vẫn còn cho retention.
  * - Hard-delete School/Tenant khi còn con → RESTRICT chặn (không tạo orphan,
  *   không xoá nhầm dây chuyền cả trường/tenant). Offboarding phải là quy trình
  *   ops tường minh, KHÔNG phải một lệnh DELETE lạc.
@@ -41,18 +42,45 @@ describe("Security — deletion contract (FK cascade/restrict)", () => {
       select: { id: true },
     });
 
-  it("hard-delete Student → cascade xóa bản ghi con (Allergy)", async () => {
+  it("hard-delete Student khi còn chứng từ/y tế → bị RESTRICT chặn; soft-delete giữ dữ liệu con", async () => {
     const t = await createTenant(app);
     const { tenantId, schoolId } = await scope(t.slug);
-    const student = await seedStudent(tenantId, schoolId, "Bé Cascade");
-    await prisma.system.allergy.create({
-      data: { tenantId, schoolId, studentId: student.id, allergen: "Đậu phộng" },
+    const student = await seedStudent(tenantId, schoolId, "Bé Retention");
+    await prisma.system.healthRecord.create({
+      data: { tenantId, schoolId, studentId: student.id, date: new Date("2026-07-11") },
+    });
+    const invoice = await prisma.system.tuitionInvoice.create({
+      data: {
+        tenantId,
+        schoolId,
+        studentId: student.id,
+        invoiceNumber: `HD-2026-${student.id.slice(0, 4)}`,
+        period: "2026-07",
+        issueDate: new Date("2026-07-11"),
+        dueDate: new Date("2026-07-20"),
+        total: 100_000,
+      },
+    });
+    await prisma.system.tuitionPayment.create({
+      data: { tenantId, schoolId, invoiceId: invoice.id, method: "CASH", amount: 100_000 },
     });
 
-    await prisma.system.student.delete({ where: { id: student.id } });
+    await expect(prisma.system.student.delete({ where: { id: student.id } })).rejects.toThrow();
 
-    const remaining = await prisma.system.allergy.count({ where: { studentId: student.id } });
-    expect(remaining).toBe(0); // cascade đã dọn con
+    await prisma.system.student.update({
+      where: { id: student.id },
+      data: { deletedAt: new Date() },
+    });
+
+    await expect(
+      prisma.system.healthRecord.count({ where: { studentId: student.id } }),
+    ).resolves.toBe(1);
+    await expect(
+      prisma.system.tuitionInvoice.count({ where: { studentId: student.id } }),
+    ).resolves.toBe(1);
+    await expect(
+      prisma.system.tuitionPayment.count({ where: { invoiceId: invoice.id } }),
+    ).resolves.toBe(1);
   });
 
   it("hard-delete School khi còn Student → bị RESTRICT chặn", async () => {

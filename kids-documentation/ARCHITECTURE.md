@@ -4,7 +4,7 @@
 
 - **NestJS 11** (DI, guards, interceptors, modules; trên Express 5)
 - **Prisma 5 + PostgreSQL 16** (ORM, migrations, client extension cho multi-tenant)
-- **JWT** access HS256 (15m, claim `tv`=tokenVersion → vô hiệu khi reset mật khẩu; web FE giữ **in-memory**) + refresh (30d, hash SHA-256, rotation theo `familyId` + **reuse-detection** revoke cả họ; trả qua **cookie `HttpOnly` `kk_rt`** — SameSite=Lax, Path bám global prefix, không lộ ra body/JS; client không có cookie jar khai header `x-client: native` → nhận refreshToken ở body lưu SecureStore) · **bcrypt** (cost `BCRYPT_COST`, rehash-on-login) · **account lockout** (`failedLoginCount`/`lockedUntil`, ngưỡng `AUTH_LOCKOUT_*`)
+- **JWT** access HS256 (15m, claim `tv`=tokenVersion → vô hiệu khi reset mật khẩu; web FE giữ **in-memory**) + refresh (30d, hash SHA-256, rotation theo `familyId` + **reuse-detection** revoke cả họ; trả qua **cookie `HttpOnly` `kk_rt`** — SameSite=Lax, Path bám global prefix, host-only, không lộ ra body/JS; web FE production chạy **same-origin** với API qua reverse proxy `/api`; client không có cookie jar khai header `x-client: native` → nhận refreshToken ở body lưu SecureStore) · **bcrypt** (cost `BCRYPT_COST`, rehash-on-login) · **account lockout** (`failedLoginCount`/`lockedUntil`, ngưỡng `AUTH_LOCKOUT_*`)
 - **Zod** validate env + request body · **class-validator** (global ValidationPipe)
 - **@nestjs/schedule** (cron) · **@nestjs/throttler** (2 named throttler env-driven: `default` 120/60s mọi route + `auth` 5/60s cho `/auth/login`+`/auth/refresh` chống brute-force; cấu hình `THROTTLE_*`/`AUTH_THROTTLE_*`) · **helmet** · **trust proxy** (`TRUST_PROXY`) · **Swagger** (`/docs`)
 - Package manager: **pnpm** · Node ≥ 20
@@ -83,7 +83,8 @@ Request
 3. **Subscription là nguồn chân lý trạng thái**; `Tenant.status` là cache để guard đọc nhanh.
 4. **Tách 2 lớp billing**: platform (bạn ← trường) vs tuition (trường ← phụ huynh, thuộc Phase 1). Bảng platform có prefix `Platform*`.
 5. **Content landing là platform-global:** `PlatformPost` phục vụ blog/SEO landing, quản lý bởi `kids-platform`, public đọc qua `/public/posts`. Bảng này **không tenant-scoped**, dùng `prisma.system`, không thêm vào `TENANT_KEY`. Cover blog là public asset của API (`/public/assets/blog/:file`, nguồn `kids-api/public/blog` hoặc storage/CDN sau này); landing chỉ render `coverImageUrl` API trả về, không giữ bộ ảnh blog production trong bundle FE.
-6. **`prisma.db` (auto-filter) vs `prisma.system` (raw)** — phân tách rõ để chống rò rỉ.
+6. **Topology web production:** web app và API phải same-origin (mỗi host phục vụ FE tĩnh + reverse proxy `/api` về `kids-api`) để refresh cookie `SameSite=Lax` host-only hoạt động ổn định. Nếu sau này tách `crm.*` gọi `api.*`, phải đổi thiết kế cookie sang `SameSite=None; Secure` + domain phù hợp và smoke login/refresh lại.
+7. **`prisma.db` (auto-filter) vs `prisma.system` (raw)** — phân tách rõ để chống rò rỉ.
 
 ## Domain nghiệp vụ (Phase 1 — A→G)
 
@@ -106,7 +107,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 - `findUnique/update/delete` theo PK **không** được extension inject `tenantId` → dùng `findFirst` trước, hoặc set `tenantId` tường minh ở `create` lồng nhau / `upsert` / `createMany`.
 - Validate query param bằng `ZodValidationPipe` (vd `audience`, `studentId`, `weekStart`) để tránh 500 do Prisma nhận sai kiểu.
 - `NotificationsService.notify` + `AuditService.log` là **best-effort** (tự nuốt lỗi + Logger) — không bao giờ làm hỏng hành động chính. `notify` là **điểm phát duy nhất** để gắn push FCM về sau.
-- Cột `@db.Date` lưu UTC-midnight của chuỗi `YYYY-MM-DD`; dashboard tính "hôm nay" theo `TenantSettings.timezone` (mặc định `Asia/Ho_Chi_Minh`).
+- Cột có thời điểm thật dùng `DateTime @db.Timestamptz(3)` (DB lưu mốc thời gian rõ timezone, Prisma đọc/ghi `Date` UTC); cột date-only dùng `@db.Date` từ chuỗi `YYYY-MM-DD`. Dashboard tính "hôm nay" theo `TenantSettings.timezone` (mặc định `Asia/Ho_Chi_Minh`).
 - `AuditLog`/`UsageEvent` đọc xuyên tenant qua `prisma.system`; ghi set `tenantId` tường minh.
 
 **Luồng tiêu biểu:**
@@ -116,7 +117,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — **176 e2e / 20 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 7/7 + pickup 7/7 + consent 4/4 + plan-versioning 4/4).
+- `pnpm test:e2e` — **181 e2e / 21 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 7/7 + pickup 7/7 + consent 4/4 + plan-versioning 4/4 + schema-freeze/config guards).
 - **Contract FE↔BE:** type FE viết tay (không dùng OpenAPI codegen) — Swagger KHÔNG introspect được Zod DTO nên `openapi.json` rỗng schema, generated types chỉ là vỏ `never`. Chống drift bằng **contract e2e** assert shape response/params cho endpoint FE/mobile phụ thuộc (vd `/auth/me`, `/platform/invoices` money=number, native token-in-body). Muốn adopt generated types thì phải wire Zod→OpenAPI trước (xem SECURITY_AUDIT_CHECKLIST).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.

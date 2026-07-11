@@ -1,7 +1,9 @@
 # Sơ đồ Cơ sở dữ liệu — Tầng A (Platform / SaaS)
 
 Nguồn chân lý: [`kids-api/prisma/schema.prisma`](../kids-api/prisma/schema.prisma).
-Quy ước: UUID PK · tiền tệ `Decimal(12,2)` default `VND` · soft-delete (`deletedAt`) · audit (`createdAt/updatedAt`).
+Quy ước: UUID PK · tiền tệ `Decimal(12,2)` default `VND` · soft-delete (`deletedAt`) · audit (`createdAt/updatedAt`) · timestamp có thời điểm thật dùng `@db.Timestamptz(3)`; date-only dùng `@db.Date`.
+
+**Lưu ý migration timezone** (`..._schema_freeze_...`): các `ALTER COLUMN ... TYPE TIMESTAMPTZ(3)` **không có `USING`** → Postgres diễn giải giá trị `timestamp` cũ theo **session TimeZone** lúc chạy. An toàn tuyệt đối khi **áp lên DB rỗng** (đúng kịch bản trường mới). Nếu buộc phải chạy trên DB đã có rows, đặt session `TimeZone=UTC` trước khi migrate để tránh dịch giờ.
 
 > **Nguyên tắc vàng:** `tenantId` = ranh giới **BẢO MẬT** (luôn auto-filter). `schoolId` = ranh giới **NGHIỆP VỤ** (scope theo quyền). Mọi bảng domain (Phase 1) BẮT BUỘC có cả hai.
 
@@ -260,7 +262,7 @@ erDiagram
 3. **Subscription:** `Subscription` (1/tenant), `SubscriptionChange` (audit + proration).
 4. **Billing nền tảng:** `PlatformInvoice`, `PlatformInvoiceLine`, `PlatformPayment`, `PlatformWebhookEvent`.
    - `MrrSnapshot`: platform-global (KHÔNG tenant-scoped), `@@unique(periodMonth)`. Chốt MRR theo tháng cho biểu đồ doanh thu nhiều tháng — cron đầu tháng ghi số thực (`source=CRON`); `backfill` suy ngược lịch sử (`source=BACKFILL`, gần đúng vì mù churn).
-5. **Entitlement / Quota / Khuyến mãi:** `TenantEntitlement`, `UsageCounter`, `Coupon`, `CreditLedger`.
+5. **Entitlement / Quota / Khuyến mãi / Counter:** `TenantEntitlement`, `UsageCounter`, `InvoiceCounter`, `Coupon`, `CreditLedger`.
 6. **Landing / CMS (platform-global):** `PlatformPost` (blog/tin tức landing), `ConsentDocument`/`ConsentAcceptance` (§Consent pháp lý).
 7. **Cross-cutting:** `AuditLog`.
 
@@ -273,18 +275,21 @@ erDiagram
 - `PlatformPayment`: `@@unique([provider, gatewayRef])` (idempotent webhook).
 - `PlatformWebhookEvent`: `@@unique([provider, eventId])` (dedupe).
 - `UsageCounter`: `@@unique([tenantId, metric])`.
+- `InvoiceCounter`: `@@unique([tenantId, scope])` — cấp số hóa đơn tuần tự theo tenant + scope trong transaction (row-lock chống trùng/nhảy số dưới concurrency). **Không có `schoolId`** (lệch convention có chủ đích): số HĐ đánh theo tenant, không theo trường. Ngoài tập `SOFT_DELETE`. `upsert` set `tenantId` tường minh (extension không auto-inject cho `upsert`).
 
 ## Deletion contract (xóa dữ liệu)
 
 Nguyên tắc: **soft-delete là cơ chế chính**; hard-delete chỉ dùng cho erasure/ops có kiểm soát và được FK bảo vệ.
 
-- **Soft-delete (`deletedAt`)** — model: `Tenant`, `School`, `Membership`, `Plan`, `Subscription`, `PlatformInvoice`, `Classroom`, `Student` (tập `SOFT_DELETE` trong `prisma-tenant.extension.ts`). Xóa thường = `update({ deletedAt })`; extension **tự ẩn** bản ghi `deletedAt != null` ở chiều đọc. Không physical delete trong luồng nghiệp vụ.
-- **Cascade trong aggregate** — bản ghi con chỉ tồn tại cùng cha thì `onDelete: Cascade`: `Student → Attendance/DailyReport/HealthRecord/MedicineRequest/Allergy/Incident/PickupLog/TuitionInvoice/StaffAssignment`; `TuitionInvoice → Item/Payment`; `DailyReport → Photo`; `WeeklyMenu → Meal`; `LessonPlan → Activity`; `Album → Photo`; `MedicineRequest → StatusHistory`; `Subscription/Plan/PlatformInvoice → *`. → **Erasure 1 học sinh** (right-to-erasure) xóa sạch dây con.
+- **Soft-delete (`deletedAt`)** — model: `Tenant`, `School`, `Membership`, `Plan`, `Subscription`, `PlatformInvoice`, `Classroom`, `Student`, `Attendance`, `PickupAuthorization`, `PickupLog`, `DailyReport`, `HealthRecord`, `MedicineRequest`, `Incident`, `Allergy`, `LeaveRequest`, `TuitionInvoice`, `TuitionPayment` (tập `SOFT_DELETE` trong `prisma-tenant.extension.ts`). Xóa thường = `update({ deletedAt })`; extension **tự ẩn** bản ghi `deletedAt != null` ở chiều đọc. Không physical delete trong luồng nghiệp vụ.
+- **Re-create sau soft-delete** — chỉ `Allergy` có **partial unique** `(studentId, allergen) WHERE deletedAt IS NULL` (trong migration SQL, không khai báo được ở Prisma schema) nên soft-delete rồi khai lại cùng allergen là hợp lệ. Các model soft-delete khác giữ **unique đầy đủ** trên khoá tự nhiên (`Attendance`/`DailyReport` `(studentId, date)`, `TuitionPayment` `(method, gatewayRef)`) → tạo lại cùng khoá sau soft-delete sẽ `P2002`; các bảng này chỉ update, không có endpoint xóa.
+- **RESTRICT dữ liệu retention của trẻ** — `Student → Attendance/DailyReport/PickupAuthorization/PickupLog/HealthRecord/MedicineRequest/Allergy/Incident/LeaveRequest/TuitionInvoice` là `ON DELETE RESTRICT`. Vì vậy hard-delete `Student` bị chặn nếu còn chứng từ tài chính, y tế, vận hành/an toàn; erasure/purge phải là job ops theo mốc retention, xóa/ẩn đúng thứ tự và có audit.
+- **Cascade trong aggregate phụ thuộc cha retention** — bản ghi con chỉ tồn tại cùng cha thì vẫn `onDelete: Cascade`: `TuitionInvoice → Item/Payment`; `DailyReport → Photo`; `WeeklyMenu → Meal`; `LessonPlan → Activity`; `Album → Photo`; `MedicineRequest → StatusHistory`; `Subscription/Plan/PlatformInvoice → *`. Cascade này chỉ chạy khi cha đã đủ điều kiện hard-delete theo retention.
 - **RESTRICT ở cạnh top** — FK `tenantId`/`schoolId` (required) = `ON DELETE RESTRICT`: **không thể hard-delete Tenant/School khi còn bản ghi con** → chống xóa nhầm dây chuyền cả trường/tenant và chống orphan. Offboarding/xoá-tenant toàn phần là **quy trình ops tường minh, có audit**, không phải một lệnh `DELETE` lạc.
 - **SetNull cho ref optional** — vd `Student.classroomId`, `DailyReport.classroomId`: xóa lớp thì bản ghi vẫn sống, chỉ null tham chiếu.
 - **Media file** — hiện xóa record `Media` không tự xóa file vật lý (S3/đĩa); cleanup theo retention policy — xem `SECURITY_AUDIT_CHECKLIST.md` §11.
 
-> Regression: `test/deletion-contract.e2e-spec.ts` khóa hành vi (cascade Student→Allergy; RESTRICT chặn xóa School/Tenant còn con).
+> Regression: `test/deletion-contract.e2e-spec.ts` khóa hành vi (hard-delete Student bị RESTRICT khi còn chứng từ/y tế; soft-delete Student giữ dữ liệu con; RESTRICT chặn xóa School/Tenant còn con).
 
 ---
 
@@ -549,6 +554,7 @@ erDiagram
     enum status "UNPAID|PARTIAL|PAID|OVERDUE|CANCELED"
     string note
     uuid createdById
+    datetime deletedAt
   }
   TuitionInvoiceItem {
     uuid id PK
@@ -699,7 +705,7 @@ erDiagram
 
 ## Bảng domain Phase 1 (A→G) — chỉ mục nhanh
 
-> Mọi bảng dưới đây có `tenantId` (cô lập, trong `TENANT_KEY`) + (hầu hết) `schoolId`. Khoá/ràng buộc quan trọng liệt kê ở cột cuối. Soft-delete (`deletedAt`) áp cho `Classroom`, `Student` (ngoài các bảng Tầng A).
+> Mọi bảng dưới đây có `tenantId` (cô lập, trong `TENANT_KEY`) + (hầu hết) `schoolId`. Khoá/ràng buộc quan trọng liệt kê ở cột cuối. Soft-delete (`deletedAt`) áp cho `Classroom`, `Student` và các bảng retention của trẻ: `Attendance`, `PickupAuthorization`, `PickupLog`, `DailyReport`, `HealthRecord`, `MedicineRequest`, `Incident`, `Allergy`, `LeaveRequest`, `TuitionInvoice`, `TuitionPayment`.
 
 | Bảng | Quan hệ chính | Ràng buộc / ghi chú |
 | --- | --- | --- |
@@ -713,10 +719,10 @@ erDiagram
 | `HealthRecord` | Student | heightCm/weightKg/temperatureC (nguồn biểu đồ growth) |
 | `MedicineRequest` + `MedicineStatusHistory` | Student; history N–1 request | status PENDING→APPROVED→ADMINISTERED/REJECTED; history ghi timeline |
 | `Incident` | Student | severity LOW/MEDIUM/HIGH |
-| `Allergy` | Student | **unique `(studentId, allergen)`**; dùng cảnh báo menu |
+| `Allergy` | Student | partial unique active `(studentId, allergen) WHERE deletedAt IS NULL`; dùng cảnh báo menu |
 | `LeaveRequest` | Student | status PENDING→APPROVED/REJECTED (duyệt 1 lần) |
 | `StaffAssignment` | User(staff)/Classroom? | **unique `(staffId, weekday, shift)`**; shift MORNING/AFTERNOON/FULL_DAY |
-| `TuitionInvoice` + `TuitionInvoiceItem` + `TuitionPayment` | Student; items/payments N–1 invoice | invoice unique `(tenantId, invoiceNumber)` `HD-YYYY-NNNN`; payment unique `(method, gatewayRef)`; status UNPAID/PARTIAL/PAID/OVERDUE/CANCELED |
+| `TuitionInvoice` + `TuitionInvoiceItem` + `TuitionPayment` | Student; items/payments N–1 invoice | invoice unique `(tenantId, invoiceNumber)` `HD-YYYY-NNNN`; số HĐ lấy từ `InvoiceCounter`; payment unique `(method, gatewayRef)`; status UNPAID/PARTIAL/PAID/OVERDUE/CANCELED |
 | `Announcement` | Classroom? | audience ALL/PARENTS/TEACHERS/CLASS; `publishedAt` null = nháp |
 | `WeeklyMenu` + `Meal` | Classroom?; meals N–1 menu | mealType BREAKFAST/LUNCH/SNACK/DINNER; `ingredients` dùng dò dị ứng |
 | `LessonPlan` + `Activity` | Classroom; activities N–1 plan | feature `lesson_plan` |

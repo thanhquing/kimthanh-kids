@@ -18,18 +18,18 @@ Nguyên tắc: dữ liệu 🔴/🟠 chỉ hiển thị trong phạm vi tenant +
 
 | Nhóm dữ liệu | Giữ trong | Sau đó | Cơ chế |
 | --- | --- | --- | --- |
-| Hồ sơ trẻ vận hành/sức khỏe (attendance, daily report, health, medicine, incident, allergy, album) | Khi còn học + **2 năm** sau khi rời trường | Hard-delete (cascade theo `Student`) | Job purge theo `Student.status=WITHDRAWN` + mốc thời gian |
+| Hồ sơ trẻ vận hành/sức khỏe (attendance, daily report, health, medicine, incident, allergy, leave, pickup) | Khi còn học + **2 năm** sau khi rời trường | Soft-delete/ẩn trước; hard-delete vật lý chỉ qua job purge có kiểm soát | `deletedAt` trên bảng retention + job purge theo `Student.status=WITHDRAWN` + mốc thời gian |
 | Chứng từ tài chính (tuition/platform invoice & payment) | ⚖️ **10 năm** (chuẩn lưu chứng từ kế toán VN) | Xem xét ẩn/lưu trữ lạnh | KHÔNG purge sớm |
 | Media file vật lý (S3/đĩa) | Theo record `Media` | Xóa file khi record bị xóa | ⚠️ **Gap hiện tại**: xóa record chưa xóa file → cần cleanup job (xem §5) |
 | Audit log | ⚖️ **≥ 12 tháng** (truy vết sự cố) | Lưu trữ lạnh/xóa | Job; audit KHÔNG chứa secret (chỉ id/action/actor) |
 | Notification | **90 ngày** | Purge | Job (giảm phình DB) |
-| Bản ghi soft-delete (`deletedAt != null`) | **30 ngày** grace (cho khôi phục) | Hard-delete vật lý | Job ops |
+| Bản ghi soft-delete (`deletedAt != null`) | **30 ngày** grace (cho khôi phục), trừ dữ liệu có retention dài hơn | Hard-delete vật lý khi đủ điều kiện retention | Job ops |
 
 > Job purge/retention **chưa hiện thực** — thuộc pha ops/devops (nhóm D). Tài liệu này chốt CHÍNH SÁCH để khi có cron/ops thì thực thi theo đúng mốc.
 
 ## 3. Quyền được xóa (right-to-erasure)
 
-- **Xóa 1 học sinh**: hard-delete `Student` → cascade toàn bộ bản ghi con (health/medicine/incident/allergy/attendance/daily report/tuition/pickup) theo `onDelete: Cascade`. Xem [`DATABASE_ERD.md` §Deletion contract](DATABASE_ERD.md). Regression: `test/deletion-contract.e2e-spec.ts`.
+- **Xóa 1 học sinh trong nghiệp vụ thường**: soft-delete `Student.deletedAt` để ẩn khỏi API và nhả quota. Các bản ghi retention của trẻ (`Attendance`, `DailyReport`, `PickupAuthorization`, `PickupLog`, `HealthRecord`, `MedicineRequest`, `Allergy`, `Incident`, `LeaveRequest`, `TuitionInvoice`, `TuitionPayment`) có `deletedAt` riêng và FK `ON DELETE RESTRICT`, nên hard-delete `Student` bị chặn nếu còn chứng từ/y tế/vận hành cần lưu. Erasure/purge vật lý là job ops có audit, chạy sau mốc retention và xóa đúng thứ tự. Xem [`DATABASE_ERD.md` §Deletion contract](DATABASE_ERD.md). Regression: `test/deletion-contract.e2e-spec.ts`.
 - **Xóa tài khoản PH/GV**: soft-delete (`deletedAt`) + `tokenVersion++` (thu hồi phiên); hard-delete chỉ khi không còn ràng buộc (RESTRICT bảo vệ).
 - **Offboarding/xóa tenant toàn phần**: **quy trình ops tường minh, có audit** — KHÔNG phải một lệnh `DELETE` (FK `tenantId` RESTRICT chặn xóa nhầm dây chuyền). Thứ tự: export dữ liệu bàn giao (nếu cần) → purge con theo aggregate → xóa tenant.
 

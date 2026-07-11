@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+const DEFAULT_JWT_SECRETS = new Set([
+  "dev-access-secret-change-me-min-32-chars",
+  "dev-refresh-secret-change-me-min-32-chars",
+]);
+
+function looksLowEntropySecret(value: string): boolean {
+  const trimmed = value.trim();
+  if (DEFAULT_JWT_SECRETS.has(trimmed)) return true;
+  if (/^(.)\1+$/.test(trimmed)) return true;
+  if (/^(changeme|change-me|secret|password|jwt-secret|dev-secret)/i.test(trimmed)) return true;
+  return false;
+}
+
 /** Validate & type-hoá biến môi trường. Fail-fast khi thiếu/sai cấu hình. */
 export const configSchema = z
   .object({
@@ -60,6 +73,18 @@ export const configSchema = z
     MEDIA_QUALITY: z.coerce.number().int().min(40).max(95).default(72), // webp quality (đủ cho PH xem)
   })
   .superRefine((cfg, ctx) => {
+    if (cfg.NODE_ENV === "production") {
+      for (const key of ["JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"] as const) {
+        if (looksLowEntropySecret(cfg[key])) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message:
+              "Production phải dùng JWT secret riêng, entropy cao; không dùng secret dev/mặc định",
+          });
+        }
+      }
+    }
     if (cfg.NODE_ENV === "production" && cfg.API_CORS_ORIGINS.trim() === "*") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -102,6 +127,27 @@ export const configSchema = z
         code: z.ZodIssueCode.custom,
         path: ["VNPAY_PAY_URL"],
         message: "Production phải cấu hình VNPAY_PAY_URL trỏ cổng VNPay thật (không dùng sandbox)",
+      });
+    }
+    if (
+      cfg.NODE_ENV === "production" &&
+      (cfg.VNPAY_RETURN_URL ?? "").trim() !== "" &&
+      !/^https:\/\//i.test(cfg.VNPAY_RETURN_URL ?? "")
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["VNPAY_RETURN_URL"],
+        message: "Production phải cấu hình VNPAY_RETURN_URL dùng HTTPS",
+      });
+    }
+    if (
+      cfg.NODE_ENV === "production" &&
+      /(localhost|127\.0\.0\.1|0\.0\.0\.0|sandbox)/i.test(cfg.VNPAY_RETURN_URL ?? "")
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["VNPAY_RETURN_URL"],
+        message: "Production không được dùng VNPAY_RETURN_URL localhost/sandbox",
       });
     }
   });

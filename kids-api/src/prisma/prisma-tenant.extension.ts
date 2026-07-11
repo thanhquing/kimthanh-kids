@@ -19,6 +19,7 @@ const TENANT_KEY: Record<string, "id" | "tenantId"> = {
   PlatformPayment: "tenantId",
   TenantEntitlement: "tenantId",
   UsageCounter: "tenantId",
+  InvoiceCounter: "tenantId",
   CreditLedger: "tenantId",
   // ── Tầng B domain (Phase 1) ──
   Classroom: "tenantId",
@@ -66,6 +67,17 @@ const SOFT_DELETE = new Set<string>([
   "PlatformInvoice",
   "Classroom",
   "Student",
+  "Attendance",
+  "PickupAuthorization",
+  "PickupLog",
+  "DailyReport",
+  "HealthRecord",
+  "MedicineRequest",
+  "Incident",
+  "Allergy",
+  "LeaveRequest",
+  "TuitionInvoice",
+  "TuitionPayment",
 ]);
 
 const READ_MANY = new Set([
