@@ -4,7 +4,7 @@
 
 ## Trạng thái tổng
 
-- `kids-api` đã đóng Phase 0 SaaS + Phase 1 domain A->G, inventory gần nhất: 168 e2e / 18 suite, NestJS 11 trên Express 5.
+- `kids-api` đã đóng Phase 0 SaaS + Phase 1 domain A->G, inventory gần nhất: 176 e2e / 20 suite, NestJS 11 trên Express 5.
 - `kids-platform` đã nối API thật cho vận hành nền tảng: tenants, plans, coupons, subscriptions, invoices, public invoice, usage/audit, worklist, settings, posts CMS.
 - `kids-crm` đã nối API thật cho toàn bộ module vận hành trường P0/P1 và nhiều P2: dashboard, settings, lớp, học sinh, nhân sự, điểm danh, báo cáo ngày, sức khỏe, học phí, thông báo, phân công, nghỉ phép, menu, album/upload, giáo án, notifications, pickup, audit.
 - `kids-mobile-web` là React/Vite PWA cho PH/GV, API thật + i18n VI/EN + login chọn trường qua `x-tenant`.
@@ -59,7 +59,7 @@
 
 ## Kiểm thử và verify
 
-- E2E API hiện có 18 suite trong `kids-api/test`, gồm auth/RBAC, billing, isolation, domain, media, landing self-service, pickup, tuition, observability.
+- E2E API hiện có 20 suite trong `kids-api/test`, gồm auth/RBAC, billing, isolation, domain, media, landing self-service, pickup, tuition, observability, consent, plan-versioning.
 - Ledger cURL cũ đã xác minh 127 flow mock UI và các domain mobile/CRM chính; phần chi tiết được hấp thụ vào trạng thái DONE ở tài liệu này.
 - Trước khi báo xong khi đổi code API: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test:e2e`.
 - Với FE: chạy build tương ứng và smoke theo `kids-mobile-web/FE_TEST_SCENARIOS.md` hoặc checklist release trong `kids-tasks/BACKLOG.md`.

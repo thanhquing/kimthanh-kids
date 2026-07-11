@@ -144,7 +144,7 @@ erDiagram
   PlanLimit {
     uuid id PK
     uuid planId FK
-    enum metric "STUDENTS|TEACHERS|STORAGE_MB (CLASSROOMS còn trong enum nhưng KHÔNG seed — BL-049)"
+    enum metric "seed/enforce: STUDENTS|TEACHERS|SCHOOLS|STORAGE_MB|ADMIN_USERS · enum-only chưa dùng: CLASSROOMS (BL-049)|PUSH_PER_MONTH"
     int limitValue "null = unlimited"
     enum enforcement "HARD|SOFT"
   }
@@ -261,7 +261,8 @@ erDiagram
 4. **Billing nền tảng:** `PlatformInvoice`, `PlatformInvoiceLine`, `PlatformPayment`, `PlatformWebhookEvent`.
    - `MrrSnapshot`: platform-global (KHÔNG tenant-scoped), `@@unique(periodMonth)`. Chốt MRR theo tháng cho biểu đồ doanh thu nhiều tháng — cron đầu tháng ghi số thực (`source=CRON`); `backfill` suy ngược lịch sử (`source=BACKFILL`, gần đúng vì mù churn).
 5. **Entitlement / Quota / Khuyến mãi:** `TenantEntitlement`, `UsageCounter`, `Coupon`, `CreditLedger`.
-6. **Cross-cutting:** `AuditLog`.
+6. **Landing / CMS (platform-global):** `PlatformPost` (blog/tin tức landing), `ConsentDocument`/`ConsentAcceptance` (§Consent pháp lý).
+7. **Cross-cutting:** `AuditLog`.
 
 ## Index & ràng buộc đáng chú ý
 
@@ -733,7 +734,17 @@ Bảng **system** (không tenant-scope; đọc xuyên tenant như `AuditLog`/`Us
 
 | Bảng | Quan hệ / khóa | Ghi chú |
 | --- | --- | --- |
-| `ConsentDocument` | — (platform-global) | văn bản có phiên bản: `type` (`TERMS`/`PRIVACY`), `version`, `locale`, `title/summary/body`, `isActive`, `effectiveFrom`. **Unique `(type, locale, version)`**; mỗi (type, locale) chỉ 1 bản `isActive` (bản hiệu lực). Đổi giá/nội dung = tạo version mới, hạ `isActive` bản cũ. |
+| `ConsentDocument` | — (platform-global) | văn bản có phiên bản: `type` (`TERMS`/`PRIVACY`), `version`, `locale`, `title/summary/body`, `isActive`, `effectiveFrom`. **Unique `(type, locale, version)`** (ràng buộc DB) + index `(type, locale, isActive)`; quy ước "mỗi (type, locale) chỉ 1 bản `isActive`" do **ứng dụng đảm bảo** (không có partial-unique ở DB). Đổi nội dung = tạo version mới, hạ `isActive` bản cũ. |
 | `ConsentAcceptance` | `documentId`→`ConsentDocument` (RESTRICT); `userId`/`tenantId` (plain, nullable) | log **bất biến** ai-đồng-ý-gì-khi-nào: `docType`+`version` (snapshot), `email` (snapshot), `ipAddress`, `userAgent`, `acceptedAt`. Bằng chứng pháp lý — không sửa/xóa. |
 
 > Enum `ConsentDocType`: `TERMS`, `PRIVACY`. Chủ trường đồng ý lúc signup (`/public/signup` ép `acceptConsent=true`); GV/PH/NV đồng ý ở gate đăng nhập (`/auth/me.pendingConsents` + `POST /consent/accept`). Bản nháp văn bản seed từ `prisma/consent-documents.ts` (⚠️ cần luật sư duyệt).
+
+## Landing CMS — PlatformPost (blog/tin tức)
+
+Bảng **system / platform-global** (không tenant-scope; KHÔNG trong `TENANT_KEY`; đọc/ghi qua `prisma.system`):
+
+| Bảng | Quan hệ / khóa | Ghi chú |
+| --- | --- | --- |
+| `PlatformPost` | — (platform-global), `slug` unique | nội dung marketing landing (`/tin-tuc`): `slug`, `title`, `excerpt`, `body`, `coverImage`, `status` (`PostStatus`), `publishedAt`, `deletedAt` (soft-delete nhưng **ngoài** tập `SOFT_DELETE` của extension — filter tường minh). Index `(status, publishedAt)` + `(deletedAt)`. CRUD ở Platform Console (`PLATFORM_SUPER_ADMIN`/`PLATFORM_SUPPORT`); landing đọc public bản `PUBLISHED`. |
+
+> Enum `PostStatus`: `DRAFT`, `PUBLISHED`, `ARCHIVED`.

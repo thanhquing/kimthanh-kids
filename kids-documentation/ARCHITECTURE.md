@@ -91,7 +91,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 | Nhóm | Module | Điểm chính |
 | --- | --- | --- |
-| **B** Hồ sơ/tổ chức | students, classrooms (+ guardians) | CRUD, gán phụ huynh (`StudentParent` N-N), "con của tôi" cho PH; quota STUDENTS/CLASSROOMS |
+| **B** Hồ sơ/tổ chức | students, classrooms (+ guardians) | CRUD, gán phụ huynh (`StudentParent` N-N), "con của tôi" cho PH; quota STUDENTS/TEACHERS (CLASSROOMS đã gỡ — BL-049) |
 | **B3** Nhân sự | assignments | tạo tài khoản trực tiếp (`/tenant/members`, email **hoặc** phone), bật/tắt (nhả quota); lịch phân công tuần (weekday+shift+duty) |
 | **C** Vận hành | attendance, daily-reports, pickup, media | điểm danh hàng loạt theo lớp (unique studentId+date); báo cáo ngày (upsert + ảnh đính kèm qua media); danh sách người được phép đón + nhật ký CHECK_IN/CHECK_OUT; ảnh nén webp |
 | **D** Sức khỏe | health, medicine, incidents, leave | chỉ số + API growth; đơn thuốc (state machine PENDING→APPROVED→ADMINISTERED + history); sự cố; dị ứng (cho cảnh báo menu); đơn nghỉ duyệt 1 lần |
@@ -116,7 +116,7 @@ Mọi bảng domain có `tenantId` (cô lập, trong `TENANT_KEY`) + `schoolId` 
 
 ## Kiểm thử & vận hành
 
-- `pnpm test:e2e` — **168 e2e / 18 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 6/6 + pickup 7/7).
+- `pnpm test:e2e` — **176 e2e / 20 suite** (gồm isolation đa-tenant 8/8 + tenant-discovery/x-tenant 7/7 + pickup 7/7 + consent 4/4 + plan-versioning 4/4).
 - **Contract FE↔BE:** type FE viết tay (không dùng OpenAPI codegen) — Swagger KHÔNG introspect được Zod DTO nên `openapi.json` rỗng schema, generated types chỉ là vỏ `never`. Chống drift bằng **contract e2e** assert shape response/params cho endpoint FE/mobile phụ thuộc (vd `/auth/me`, `/platform/invoices` money=number, native token-in-body). Muốn adopt generated types thì phải wire Zod→OpenAPI trước (xem SECURITY_AUDIT_CHECKLIST).
 - `pnpm prisma:migrate` / `pnpm prisma:seed` — schema + dữ liệu mẫu.
 - `pnpm lint` / `pnpm exec tsc --noEmit` — sạch.

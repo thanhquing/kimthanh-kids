@@ -50,7 +50,7 @@ pnpm prisma:migrate        # tạo schema
 pnpm prisma:seed           # 5 gói (free/starter/pro/enterprise/dedicated) + platform super-admin
 pnpm prisma:seed:demo      # demo đầy đủ slug "demo" + 5 tenant platform case quota/công nợ/gói
 pnpm start:dev             # http://localhost:3000/api  · Swagger: /docs
-pnpm test:e2e              # 168 e2e / 18 suite
+pnpm test:e2e              # 176 e2e / 20 suite
 ```
 
 > Yêu cầu Node ≥ 20 (khuyến nghị 22). Tài khoản platform seed: `admin@kimthanhkids.vn` / `Admin@12345`.

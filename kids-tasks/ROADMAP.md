@@ -1,6 +1,6 @@
 # KimThanh Kids — Roadmap tổng
 
-> Cập nhật: 2026-07-10. Phase 0 SaaS + Phase 1 domain đã đóng; các app FE chính đã nối API thật. Việc còn lại được gom ở [BACKLOG.md](./BACKLOG.md), kiến thức DONE ở [IMPLEMENTATION_KNOWLEDGE.md](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
+> Cập nhật: 2026-07-11. Phase 0 SaaS + Phase 1 domain đã đóng (176 e2e / 20 suite); các app FE chính đã nối API thật. Consent pháp lý (BL-046), gỡ quota lớp (BL-049), versioning gói (BL-050) đã xong. Việc còn lại được gom ở [BACKLOG.md](./BACKLOG.md), kiến thức DONE ở [IMPLEMENTATION_KNOWLEDGE.md](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
 
 ## Tổng quan
 
@@ -40,4 +40,4 @@ Xem [BACKLOG.md](./BACKLOG.md), đã sắp theo thứ tự dễ -> phức tạp:
 - API-first: schema/endpoint là hợp đồng, FE tiêu thụ qua `src/api/http.ts`.
 - Module backend: model -> migration -> service (`prisma.db`) -> controller (`@Roles` + scope) -> Zod DTO -> e2e.
 - Tính phí/giới hạn: `consumeQuota` + `@RequireFeature`.
-- Không quảng bá tính năng chưa có: chat realtime đã loại; push, auto đối soát, MoMo/ZaloPay production, analytics nâng cao, app store release đều là backlog.
+- Không quảng bá tính năng chưa có: Chat GV–PH là **Coming Soon** (có cờ seed, chưa có module — chỉ hiện badge "Sắp có", không bán như đã có); push, auto đối soát, MoMo/ZaloPay production, analytics nâng cao, app store release đều là backlog.

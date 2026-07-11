@@ -65,7 +65,7 @@ Temp response dir: `/tmp/kids-platform-flow-1782229351`.
 | P21 | Backfill snapshot MRR | `POST /platform/mrr/backfill?months=24` | `201` | `201` | PASS | `{ok,written}`; chi ghi thang con thieu |
 | P22 | Dem tenant theo trang thai (chip) | `GET /platform/tenants/stats` | `200` | `200` | PASS | `{total,ACTIVE,TRIAL,PAST_DUE,SUSPENDED}` |
 | P23 | Tim truong server-side | `GET /platform/tenants?q=demo` | `200` | `200` | PASS | loc theo slug/legalName/displayName |
-| P24 | Chi tiet truong giau truong | `GET /platform/tenants/:id` | `200` | `200` | PASS | demo: mrr 1.200.000, studentCount 12, quota[STUDENTS 12/300,TEACHERS 2/25,CLASSROOMS 3/20,STORAGE_MB 0/20480], schools[]._count |
+| P24 | Chi tiet truong giau truong | `GET /platform/tenants/:id` | `200` | `200` | PASS | demo: mrr 1.200.000, studentCount 12, quota[STUDENTS 12/300,TEACHERS 2/25,STORAGE_MB 0/20480] (CLASSROOMS đã gỡ BL-049), schools[]._count |
 | M01 | Signup MST sai checksum | `POST /public/signup` (taxCode `1234567890`) | `400` | `400` | PASS | `VALIDATION_FAILED` |
 | M02 | Signup MST trung (1 MST=1 truong) | `POST /public/signup` (taxCode da dung) | `409` | `409` | PASS | `TAX_CODE_TAKEN` |
 | M03 | Signup MST hop le | `POST /public/signup` (taxCode dung checksum) | `201` | `201` | PASS | tenant + admin created |

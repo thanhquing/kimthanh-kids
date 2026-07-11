@@ -1,6 +1,6 @@
 # KimThanh Kids — Backlog hợp nhất
 
-> Cập nhật: 2026-07-10. File này là backlog thực thi duy nhất sau khi xoá các tracker phase đã DONE.
+> Cập nhật: 2026-07-11. File này là backlog thực thi duy nhất sau khi xoá các tracker phase đã DONE.
 >
 > Cách dùng: làm từ trên xuống. Mỗi task ghi rõ repo owner, file cần đọc/sửa, đầu ra phải có và lệnh kiểm. Không tự suy đoán phạm vi: nếu task có dòng **Blocked input**, chỉ làm sau khi dữ liệu đó được cung cấp.
 >
@@ -22,20 +22,29 @@
 
 ### 🚀 Lộ trình lên PRODUCTION sớm nhất (mục tiêu 5 trường đầu tiên)
 
-> Sản phẩm đã chạy được (Phase 0 + Phase 1 xong, e2e 168 xanh). Với 5 trường đầu, **việc chặn không phải là thêm tính năng mà là TRIỂN KHAI + hardening tối thiểu + pháp lý tối thiểu**. Làm đúng thứ tự sau; các task khác trong file này để SAU khi đã có khách chạy thật.
+> Sản phẩm đã chạy được (Phase 0 + Phase 1 xong, e2e 176 xanh). Với 5 trường đầu, **việc chặn không phải là thêm tính năng mà là TRIỂN KHAI + hardening tối thiểu + pháp lý tối thiểu**. Làm đúng thứ tự sau; các task khác trong file này để SAU khi đã có khách chạy thật.
 
 **Bắt buộc trước khi mở cho trường thật (P0-PROD):**
 1. 🚀 **BL-051** — Provision hạ tầng + deploy production (VPS, Postgres, HTTPS, domain, secrets, backup đêm). *(Bắt đầu ngay — mua VPS.)*
 2. 🚀 **BL-005** — CORS origins cho domain thật.
 3. 🚀 **BL-007** — Rà `.gitignore`/secrets (không lộ `.env`, key).
 4. 🚀 **BL-008 + BL-009** — Verify backend (tsc/lint/e2e) + build FE xanh trên máy build.
-5. ✅ **BL-046** — Hệ thống consent (đọc + tick ToS/Privacy: chủ trường lúc đăng ký, GV/PH/NV lúc đăng nhập; log bất biến + IP/UA) **ĐÃ XONG**. Chỉ còn **thay bản nháp bằng text luật sư duyệt** trước khi mở trường thật (đổi dữ liệu, không đổi code).
-6. 🚀 **BL-001 → BL-004** — Smoke toàn hệ trên chính prod (seed thật, đăng nhập, CRM, mobile, landing) trước khi giao trường.
+5. 🧨 **BL-052 → BL-056** — SCHEMA-FREEZE/config-freeze: soft-delete/retention bảng thuế·sức khỏe·trẻ em, chuẩn timezone, invoice-number concurrency, prod-guard JWT secret, chốt topology same-origin FE↔API + `VNPAY_RETURN_URL`. **Làm trước trường thật; áp migration khi DB còn rỗng** (đắt nếu để sau khi có rows).
+6. ✅ **BL-046** — Hệ thống consent (đọc + tick ToS/Privacy: chủ trường lúc đăng ký, GV/PH/NV lúc đăng nhập; log bất biến + IP/UA) **ĐÃ XONG**. Chỉ còn **thay bản nháp bằng text luật sư duyệt** trước khi mở trường thật (đổi dữ liệu, không đổi code).
+7. 🚀 **BL-001 → BL-004** — Smoke toàn hệ trên chính prod (seed thật, đăng nhập, CRM, mobile, landing) trước khi giao trường.
 
 **Nên làm sớm (ngay sau khi có trường, không chặn launch):**
-- **BL-049** (gỡ quota lớp — đúng mô hình gói) · **BL-043** (landing hiển thị đúng gói + Coming Soon) · **BL-047** (thông tin pháp nhân + thông báo Bộ Công Thương khi bật đăng ký công khai).
+- **BL-043** (landing hiển thị đúng gói + Coming Soon) · **BL-047** (thông tin pháp nhân + thông báo Bộ Công Thương khi bật đăng ký công khai).
 
-> **Đã làm sẵn để tránh migration/reseed về sau (landmine schema/giá):** ~~BL-049~~ (gỡ quota lớp) **DONE** · ~~BL-050~~ (versioning + bất biến giá gói — làm trước khi có subscription trả phí đầu tiên) **DONE**.
+> **🧨 SCHEMA-FREEZE — làm TRƯỚC KHI có dữ liệu trường thật (rẻ lúc DB rỗng, đắt khi phải migrate + backfill sau):**
+> - ~~BL-049~~ (gỡ quota lớp) **DONE** · ~~BL-050~~ (versioning + bất biến giá gói — làm trước subscription trả phí đầu tiên) **DONE**.
+> - 🆕 **BL-052** — soft-delete + retention cho bảng **tài chính/sức khỏe/trẻ em** (hiện hard-delete + cascade từ Student, KHÔNG có `deletedAt`). *Đắt nhất nếu hoãn.*
+> - 🆕 **BL-053** — chuẩn timezone: `@db.Timestamptz(3)` hoặc chốt "UTC trong timestamp trần" tường minh (đổi kiểu cột sau khi có rows = ALTER khoá bảng).
+> - 🆕 **BL-054** — invoice-number an toàn concurrency (thay `count()+1` bằng counter/advisory lock — số hóa đơn thuế không được nhảy/trùng).
+> - 🆕 **BL-055** — prod-guard chặn JWT secret mặc định dev (min(32) hiện cho secret dev lọt qua khi `NODE_ENV=production`).
+> - 🆕 **BL-056** — chốt topology **same-origin FE↔API** trong BL-051 trước khi provision (cookie refresh `SameSite=Lax` host-only sẽ hỏng nếu tách `crm.*` gọi `api.*`) + prod-guard `VNPAY_RETURN_URL`.
+>
+> *Đã xác minh SOLID, KHÔNG cần churn:* cô lập đa-tenant đầy đủ (mọi bảng domain trong `TENANT_KEY`), bất biến giá/hóa đơn, media key `<tenantId>/<uuid>.webp` sẵn sàng cutover R2 (BL-025) không phải re-key, STORAGE_MB đã enforce.
 
 **Hoãn tới khi >5 trường / có nhu cầu thật:** BL-018 (email — tạm dùng admin reset ở CRM), BL-030 (push), BL-010/011/012 (Playwright/visual), BL-025 (R2/S3 — local + backup là đủ ở quy mô nhỏ), BL-038 (analytics), BL-031/032/033/034 (payment nâng cao), BL-039..042.
 
@@ -55,6 +64,69 @@
 - **Backup (bắt buộc):** cron `pg_dump` hằng đêm + tar thư mục media, đẩy off-box (Cloudflare R2 / Backblaze B2). Test restore 1 lần (giao thoa BL-028).
 - **Done khi:** hệ thống chạy trên domain thật có HTTPS; đăng nhập/CRM/mobile/landing hoạt động; có backup đêm + đã thử restore.
 - **Verify:** smoke BL-001→004 trên prod; `curl` health; kiểm HTTPS + CORS.
+
+## 🧨 Schema-freeze & config-freeze (BL-052→056) — làm TRƯỚC trường thật đầu tiên
+
+> Nhóm này là kết quả rà landmine trước production (2026-07-11, đối chiếu code thật). Nguyên tắc: mọi thứ dưới đây **rẻ khi DB còn rỗng, đắt khi đã có rows** (phải migrate + backfill + sửa nhiều delete path). Cả nhóm thuộc checklist P0-PROD bắt buộc; ưu tiên thực thi **BL-052 > BL-053** (schema), rồi BL-054/055/056 trước khi mở cho trường thật.
+
+### BL-052 — Soft-delete + retention cho bảng tài chính / sức khỏe / trẻ em 🆕 P0 schema-freeze
+
+- **Ưu tiên:** CAO NHẤT trong nhóm schema-freeze (đắt nhất nếu hoãn). — **Landmine #1.**
+- **Owner:** `kids-api`, `kids-documentation`
+- **Vấn đề (đã xác minh):** `Student` là soft-delete, nhưng các bảng con **KHÔNG có `deletedAt`** và gắn `onDelete: Cascade` từ `Student` (`schema.prisma:809,844,1028,1050,1093,...`): `TuitionInvoice`/`TuitionPayment` (chứng từ thuế), `HealthRecord`, `MedicineRequest`, `Incident`, `Attendance`, `PickupLog`, `DailyReport`. Một lệnh `delete` student (hoặc hard-delete) sẽ **cascade xoá sạch** lịch sử thuế + y tế + an toàn của trẻ. Tập `SOFT_DELETE` hiện chỉ 8 model (`prisma-tenant.extension.ts:60-69`).
+- **Đọc trước:** `kids-api/prisma/schema.prisma` (các model trên + relation `onDelete`), `kids-api/src/prisma/prisma-tenant.extension.ts` (`SOFT_DELETE`), `kids-api/src/students/students.service.ts` (delete path), `kids-documentation/PRIVACY_RETENTION.md`, `DATABASE_ERD.md` (Deletion contract).
+- **Làm:**
+  - Thêm `deletedAt DateTime?` cho tối thiểu bảng **thuế + sức khỏe**: `TuitionInvoice`, `TuitionPayment`, `HealthRecord`, `MedicineRequest`, `Incident` (cân nhắc thêm `Attendance`/`DailyReport`/`PickupLog`).
+  - Đưa các bảng này vào `SOFT_DELETE`; đổi mọi delete path (đặc biệt xoá Student) sang soft-delete hoặc chặn (RESTRICT) khi còn chứng từ tài chính chưa hết hạn lưu.
+  - Quyết định chính sách cascade-vs-restrict + mốc retention (giao thoa BL-027) — ghi rõ vào PRIVACY_RETENTION.
+  - Cập nhật e2e isolation/deletion để khẳng định xoá student KHÔNG mất chứng từ thuế/y tế.
+- **Docs:** `DATABASE_ERD.md` (Deletion contract + `deletedAt` list), `PRIVACY_RETENTION.md`, `SECURITY_AUDIT_CHECKLIST.md`.
+- **Done khi:** không code path nào cascade hard-delete chứng từ thuế/y tế của trẻ; `deletedAt` + retention có tài liệu.
+- **Verify:** `cd kids-api && pnpm exec tsc --noEmit && pnpm lint && pnpm test:e2e`.
+
+### BL-053 — Chuẩn timezone cho cột DateTime 🆕 P0 schema-freeze
+
+- **Ưu tiên:** CAO (đổi kiểu cột sau khi có rows = `ALTER ... USING` khoá bảng). — **Landmine #2.**
+- **Owner:** `kids-api`, `kids-documentation`
+- **Vấn đề:** mọi `DateTime` map sang Postgres `timestamp` **without time zone** (Prisma default, không có `@db.Timestamptz`). Chạy đúng khi đọc/ghi qua Prisma (UTC), nhưng công cụ kế toán/BI/raw-SQL đọc trực tiếp sẽ mơ hồ. Cột date-only đã đúng (`@db.Date`).
+- **Làm (chọn 1, ghi rõ ADR):**
+  - (a) Thêm `@db.Timestamptz(3)` cho các `DateTime` (giữ cửa mở cho BI/kế toán) — migration đổi kiểu khi DB còn rỗng là gần như free; HOẶC
+  - (b) Chốt tường minh chuẩn "DB lưu UTC trong timestamp trần" ở `ARCHITECTURE.md` + `DATABASE_ERD.md` để không ai đọc nhầm sau này.
+- **Docs:** `ARCHITECTURE.md` (§gotchas/timezone), `DATABASE_ERD.md`.
+- **Done khi:** chuẩn timezone được chốt + tài liệu; nếu chọn (a) migration áp trước khi có trường thật.
+- **Verify:** `pnpm prisma:deploy` sạch; e2e ngày/giờ (dashboard/attendance) vẫn xanh.
+
+### BL-054 — Invoice-number an toàn concurrency 🆕 (data integrity)
+
+- **Ưu tiên:** TRUNG BÌNH (không phải migration, nhưng rẻ khi chưa có hóa đơn thật). — **Landmine #3.**
+- **Owner:** `kids-api`
+- **Vấn đề:** sinh số hóa đơn bằng `count()+1` (`tuition.service.ts:115-120` `HD-{year}-{n}`; `billing.service.ts:416-425`). Unique constraint chặn trùng nhưng tạo đồng thời → 500 + có thể **nhảy số** (khó chịu về mặt kế toán/thuế).
+- **Làm:** serialize theo `(tenant, year)` bằng counter row (`SELECT ... FOR UPDATE`) hoặc advisory lock; retry khi va unique.
+- **Docs:** `BILLING.md` (ghi cơ chế đánh số), `API.md` nếu đổi hành vi.
+- **Done khi:** tạo hóa đơn đồng thời không 500/không nhảy số.
+- **Verify:** e2e/test tạo song song N hóa đơn → số liên tục, không trùng.
+
+### BL-055 — Prod-guard chặn JWT secret mặc định/low-entropy 🆕 (làm cùng BL-007)
+
+- **Ưu tiên:** THẤP-nhưng-rẻ (một `superRefine`). — **Landmine #4.**
+- **Owner:** `kids-api`
+- **Vấn đề:** `config.schema.ts:13-16` chỉ `min(32)`. Default dev trong `.env.example` (`dev-access-secret-change-me-min-32-chars`) ≥32 ký tự → deploy quên đổi secret vẫn **khởi động thành công ở production** với khóa ký công khai.
+- **Làm:** thêm `superRefine` chặn đúng chuỗi default dev đã biết (và low-entropy) cho `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` khi `NODE_ENV=production` → fail-fast.
+- **Docs:** `SECURITY_AUDIT_CHECKLIST.md`, `.env.example` (ghi rõ phải rotate).
+- **Done khi:** prod từ chối boot nếu còn secret mặc định dev.
+- **Verify:** unit/config test: prod + default secret → throw; secret mạnh → pass.
+
+### BL-056 — Chốt topology same-origin FE↔API + prod-guard VNPAY_RETURN_URL 🆕 (trong BL-051)
+
+- **Ưu tiên:** CAO (quyết định deploy, không phải migration — nhưng lộ ra như "bug auth bí ẩn" nếu bỏ sót). — **Landmine #5/#6.**
+- **Owner:** ops, `kids-api`
+- **Vấn đề:** refresh cookie `SameSite=Lax` + host-only, không set `Domain` (`auth-cookie.ts:7-8,26`), CORS `credentials:true`. Thiết kế giả định **FE gọi API same-origin** (nginx prod). Nếu BL-051 tách `crm.<domain>` gọi `api.<domain>` → cookie refresh cross-site KHÔNG được gửi → web refresh im lặng thất bại. Ngoài ra `VNPAY_RETURN_URL` (default `http://localhost:5173/...`) chưa bị prod-guard như `VNPAY_PAY_URL`.
+- **Làm:**
+  - Trong BL-051: deploy mỗi web app **same-origin** với API qua reverse-proxy path (`/api` sau cùng host), HOẶC đổi cookie sang `SameSite=None; Secure` + `Domain=.<root>`. Chốt 1 hướng TRƯỚC khi onboard trường.
+  - Thêm prod-guard `VNPAY_RETURN_URL` (chặn localhost/http khi production) giống `VNPAY_PAY_URL` (`config.schema.ts:100`).
+- **Docs:** `ARCHITECTURE.md` (§auth cookie/topology), `BL-051` runbook, `SECURITY_AUDIT_CHECKLIST.md`.
+- **Done khi:** topology auth được chốt + tài liệu; refresh web hoạt động trên domain prod; VNPAY_RETURN_URL prod-guarded.
+- **Verify:** smoke login+refresh trên domain prod (BL-001→004); config test VNPAY_RETURN_URL localhost + production → throw.
 
 ### Ma trận Entitlement chuẩn (spec cho BL-043/BL-044 — theo code thật `kids-api/prisma/seed.ts`)
 
@@ -84,7 +156,7 @@ Quota theo gói (metric HARD, `null` = không giới hạn):
 
 Định giá **nhỉnh dưới đối thủ + gói nhiều chức năng**, đủ **hòa vốn ở 1–2 trường**: Starter 690k @ ≤100 HS +Album ⇒ ~7–14k đ/HS; Pro 1.39tr @ ≤300 HS +Album+Giáo án ⇒ ~4.6–14k đ/HS — ngang/nhỉnh dưới thị trường VN (10–30k đ/HS) nhưng gói nhiều chức năng hơn. Hạ tầng lean ~1–1.3tr/tháng → **1 trường Pro** (hoặc **2 Starter**) là hòa vốn; biên gộp ~90%. Free siết còn **200MB** để user free gần như không tốn chi phí. Cơ sở chi phí/thuế: [BILLING.md §Cơ sở định giá](../kids-documentation/BILLING.md).
 
-Ghi chú enforce: STUDENTS/TEACHERS đã consume quota thật; **CLASSROOMS đã gỡ khỏi enforcement + seed (BL-049 DONE)** — tạo lớp không bị chặn theo gói; `SCHOOLS` không tính (1 cơ sở), `STORAGE_MB` có limit seed nhưng **chưa có counter enforce**; `PUSH_PER_MONTH`/`ADMIN_USERS` có trong enum nhưng chưa seed/chưa enforce. Coming Soon toàn hệ (không theo gói, chưa build): Push notification, auto đối soát VietQR, MoMo/ZaloPay, VAT điện tử, proration đổi gói giữa kỳ, auto-charge thẻ.
+Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã consume quota thật; **STORAGE_MB ĐÃ enforce** — mỗi upload cộng dồn `sizeBytes` so với limit (`media.service.ts:76,164-170`), vượt → `QUOTA_EXCEEDED`; `ADMIN_USERS` **đã enforce** (`tenant.service.ts:26`); `SCHOOLS` có seed nhưng không tính vào worklist (gói 1 cơ sở luôn 100%). **CLASSROOMS đã gỡ khỏi enforcement + seed (BL-049 DONE)**; `PUSH_PER_MONTH` còn trong enum nhưng chưa seed/chưa enforce. Coming Soon toàn hệ (không theo gói, chưa build): Push notification, auto đối soát VietQR, MoMo/ZaloPay, VAT điện tử, proration đổi gói giữa kỳ, auto-charge thẻ.
 
 ### BL-049 — Bỏ CLASSROOMS khỏi chiều tính gói (quản theo GV + HS + lưu trữ) ✅ DONE
 
