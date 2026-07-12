@@ -1,6 +1,6 @@
 # KimThanh Kids — Backlog hợp nhất
 
-> Cập nhật: 2026-07-11. File này là backlog thực thi duy nhất sau khi xoá các tracker phase đã DONE.
+> Cập nhật: 2026-07-12. File này là backlog thực thi duy nhất sau khi xoá các tracker phase đã DONE.
 >
 > Cách dùng: làm từ trên xuống. Mỗi task ghi rõ repo owner, file cần đọc/sửa, đầu ra phải có và lệnh kiểm. Không tự suy đoán phạm vi: nếu task có dòng **Blocked input**, chỉ làm sau khi dữ liệu đó được cung cấp.
 >
@@ -27,14 +27,14 @@
 **Bắt buộc trước khi mở cho trường thật (P0-PROD):**
 1. 🚀 **BL-051** — Provision hạ tầng + deploy production (VPS, Postgres, HTTPS, domain, secrets, backup đêm). *(Bắt đầu ngay — mua VPS.)*
 2. 🚀 **BL-005** — CORS origins cho domain thật.
-3. 🚀 **BL-007** — Rà `.gitignore`/secrets (không lộ `.env`, key).
+3. ✅ **BL-007** — Rà `.gitignore`/secrets (không lộ `.env`, key) **ĐÃ XONG** (không file nhạy cảm bị track; fix native `!.env.example`).
 4. 🚀 **BL-008 + BL-009** — Verify backend (tsc/lint/e2e) + build FE xanh trên máy build.
 5. 🧨 **BL-052 → BL-056** — SCHEMA-FREEZE/config-freeze: soft-delete/retention bảng thuế·sức khỏe·trẻ em, chuẩn timezone, invoice-number concurrency, prod-guard JWT secret, chốt topology same-origin FE↔API + `VNPAY_RETURN_URL`. **Làm trước trường thật; áp migration khi DB còn rỗng** (đắt nếu để sau khi có rows).
 6. ✅ **BL-046** — Hệ thống consent (đọc + tick ToS/Privacy: chủ trường lúc đăng ký, GV/PH/NV lúc đăng nhập; log bất biến + IP/UA) **ĐÃ XONG**. Chỉ còn **thay bản nháp bằng text luật sư duyệt** trước khi mở trường thật (đổi dữ liệu, không đổi code).
 7. 🚀 **BL-001 → BL-004** — Smoke toàn hệ trên chính prod (seed thật, đăng nhập, CRM, mobile, landing) trước khi giao trường.
 
 **Nên làm sớm (ngay sau khi có trường, không chặn launch):**
-- **BL-043** (landing hiển thị đúng gói + Coming Soon) · **BL-047** (thông tin pháp nhân + thông báo Bộ Công Thương khi bật đăng ký công khai).
+- ~~**BL-043** (landing hiển thị đúng gói + Coming Soon)~~ **✅ DONE** · **BL-047** (thông tin pháp nhân + thông báo Bộ Công Thương khi bật đăng ký công khai) 🔒 chờ pháp nhân/BCT.
 
 > **🧨 SCHEMA-FREEZE — làm TRƯỚC KHI có dữ liệu trường thật (rẻ lúc DB rỗng, đắt khi phải migrate + backfill sau):**
 > - ~~BL-049~~ (gỡ quota lớp) **DONE** · ~~BL-050~~ (versioning + bất biến giá gói — làm trước subscription trả phí đầu tiên) **DONE**.
@@ -391,8 +391,12 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 - **Done khi:** các app hiển thị lỗi nghiệp vụ bằng copy ổn định; không lộ stack/raw object.
 - **Verify:** build từng app đã sửa; kiểm i18n parity nếu app có script/parity helper.
 
-### BL-007 — Kiểm tra `.gitignore` và file generated/build
+### BL-007 — Kiểm tra `.gitignore` và file generated/build ✅ DONE
 
+- **Trạng thái 2026-07-12:** hoàn tất. `git ls-files` xác nhận **không có** `.env`/build/cache/signing material bị track. Root `.gitignore` phủ toàn diện (node_modules/dist/build/.expo/.env·!.env.example/*.local/keystore/jks/ios·Pods/xcworkspace/`**/src/api/generated`/.DS_Store) áp cho mọi sub-app. `.env.example` tracked đúng ở api/crm/platform.
+- **Đã sửa:** `kids-mobile-native/.gitignore` thiếu `!.env.example` (pattern `.env.*` của app con override negation của root) → thêm `!.env.example` để `.env.example` onboarding sau này không bị ignore mất. `git check-ignore` xác nhận sau fix negation thắng.
+- **Ghi chú (không sửa):** mobile-web/native chưa có file `.env.example` on-disk (dùng `.env.local`/`EXPO_PUBLIC_API_URL`) — gap onboarding nhỏ, thuộc BL-005, không phải rủi ro bảo mật.
+- **Evidence:** `git status --short` sau rà chỉ có `kids-mobile-native/.gitignore`; `git status --ignored` xác nhận `.env` thật (kids-api/.env, native/.env.local) + dist/node_modules đều được ignore đúng.
 - **Owner:** root + mọi `kids-*`
 - **Đọc trước:** `.gitignore`, `kids-api/.gitignore`, `kids-platform/.gitignore`, `kids-crm/.gitignore`, `kids-mobile-web/.gitignore`, `kids-mobile-native/.gitignore`
 - **Làm:**
@@ -833,7 +837,7 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 
 ## 📊 Bảng tổng hợp tình trạng & thứ tự ưu tiên trước production
 
-> Cập nhật 2026-07-11. Sắp xếp **từ trên xuống theo mức chặn production** — hàng trên = phải chốt trước, vì sai/hoãn sẽ gây **hotfix lan rộng DB → API → mọi FE/Mobile** (bán kính ảnh hưởng lớn nhất). Đọc: các "landmine" bán kính lớn nhất (schema/contract/auth) **đã DONE**; phần còn chặn prod chủ yếu là **deploy + smoke + text pháp lý**, không phải code.
+> Cập nhật 2026-07-12. Sắp xếp **từ trên xuống theo mức chặn production** — hàng trên = phải chốt trước, vì sai/hoãn sẽ gây **hotfix lan rộng DB → API → mọi FE/Mobile** (bán kính ảnh hưởng lớn nhất). Đọc: các "landmine" bán kính lớn nhất (schema/contract/auth) **đã DONE**; phần còn chặn prod chủ yếu là **deploy + smoke + text pháp lý**, không phải code.
 >
 > Chú thích trạng thái: ✅ xong · 🟢 đang xanh (gate lặp mỗi deploy) · ⚠️ code xong, còn phần dữ liệu/nội dung · ⬜ chưa làm (chặn prod) · 🔒 chờ input ngoài (domain/pháp nhân/provider) · ⏳ hoãn (không chặn 5 trường đầu).
 
@@ -850,10 +854,10 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 | 7 | BL-055 | Prod-guard JWT secret dev/low-entropy | API | Boot prod với khóa ký công khai | ✅ |
 | 8 | BL-005 | CORS origins domain thật | API | Sai → toàn bộ FE bị chặn gọi API | 🔒 chờ domain |
 | 9 | BL-051 | Provision + deploy (VPS/HTTPS/domain/secret/backup) | ops · all | Blocker vật lý để có prod; sai topology = auth hotfix | ⬜ đang mua VPS |
-| 10 | BL-007 | Rà `.gitignore` / secrets | root · all | Lộ `.env`/key → phải rotate khẩn | ⬜ |
+| 10 | BL-007 | Rà `.gitignore` / secrets | root · all | Lộ `.env`/key → phải rotate khẩn | ✅ |
 | 11 | BL-046 | Consent pháp lý (ToS/Privacy) | API · CRM · Mobile · Landing | Hệ thống xong; thiếu text hợp lệ = rủi ro pháp lý khi mở trường | ✅ hệ thống · ⚠️ chờ text luật sư (chỉ đổi data) |
 | 12 | BL-008 | Verify backend `tsc`/`lint`/`e2e` | API | Regression lọt prod | 🟢 181/21 xanh (lặp mỗi deploy) |
-| 13 | BL-009 | Build/lint FE (platform/crm/mobile-web/landing/native) | mọi FE | Build vỡ lúc deploy | ⬜ chạy lại trước deploy |
+| 13 | BL-009 | Build/lint FE (platform/crm/mobile-web/landing/native) | mọi FE | Build vỡ lúc deploy | 🟢 build xanh (phiên 07-12: crm/platform/mobile-web/landing build ✅, native tsc+lint ✅) — lặp lại trước deploy |
 | 14 | BL-001 | Seed + login demo trên prod | API | Nền cho mọi smoke | ⬜ smoke prod |
 | 15 | BL-002 | Smoke CRM (toàn route P0/P1) | CRM | Phát hiện lỗi tích hợp trước bàn giao | ⬜ smoke prod |
 | 16 | BL-003 | Smoke mobile-web PH/GV | Mobile-web | — | ⬜ smoke prod |
@@ -865,9 +869,9 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 | --- | --- | --- | --- | --- | --- |
 | 18 | BL-043 | Landing bảng giá đúng feature + badge Coming Soon | Landing | Cam kết feature chưa có → phải gỡ gấp | ✅ |
 | 19 | BL-006 | Error-code mapping FE (i18n VI/EN) | mọi FE | Lộ raw error; sửa rải rác nhiều app | ✅ |
-| 20 | BL-044 | Feature-gating theo gói ở FE | CRM · Mobile | "Bấm mới 403" (BE `@RequireFeature` đã là chốt an toàn) | ⬜ |
-| 21 | BL-045 | Chuẩn hóa/enforce cờ feature "chết" (`analytics`/`api_access`) | API | FE tưởng đã enforce | ⬜ |
-| 22 | BL-048 | Role-gating UI CRM (route guard + ẩn nút) | CRM | Gõ URL sai quyền (BE `@Roles` đã là chốt an toàn) | ⬜ |
+| 20 | BL-044 | Feature-gating theo gói ở FE | CRM · Mobile | "Bấm mới 403" (BE `@RequireFeature` đã là chốt an toàn) | ✅ |
+| 21 | BL-045 | Chuẩn hóa/enforce cờ feature "chết" (`analytics`/`api_access`) | API | FE tưởng đã enforce | ✅ |
+| 22 | BL-048 | Role-gating UI CRM (route guard + ẩn nút) | CRM | Gõ URL sai quyền (BE `@Roles` đã là chốt an toàn) | ✅ |
 | 23 | BL-047 | Landing pháp nhân + thông báo Bộ Công Thương | Landing · ops | Tuân thủ TMĐT khi mở đăng ký công khai | 🔒 chờ pháp nhân/BCT |
 
 ### C. Hoãn tới >5 trường / khi có input (không chặn prod)
