@@ -10,6 +10,8 @@ Mobile web/PWA của KimThanh Kids cho 2 role chính: phụ huynh và giáo viê
 - `cn` utility theo shadcn/ui convention (`clsx` + `tailwind-merge`)
 - SPA/PWA shell: `manifest.webmanifest`, service worker cache app shell/static assets khi build production; bỏ qua `/api/*` và request có `Authorization` để không giữ dữ liệu nhạy cảm giữa tài khoản
 - Data: **gọi API thật kids-api** qua `src/api/*` (react-query, mirror `kids-platform`); `src/api/http.ts` xử lý envelope + refresh 401 + `x-language`. `src/mockData.ts` chỉ còn `assets` (ảnh tĩnh)
+- Feature-gating UX: đọc `/auth/me.features` để chặn trước route Album (`media_gallery`) và Giáo án (`lesson_plan`), hiển thị trạng thái nâng cấp thay vì đợi API 403.
+- Copy lỗi ổn định theo `error.code`: `src/lib/errorMessage.ts` map code → i18n (namespace `errors` VI/EN) thay vì raw `error.message`; login map `INVALID_CREDENTIALS`/`ACCOUNT_LOCKED`/`TENANT_REQUIRED`
 - Đa ngôn ngữ VI/EN: `src/lib/language.ts` + `src/i18n` (`useT`), switcher ở Login/Profile
 
 ## Cấu trúc

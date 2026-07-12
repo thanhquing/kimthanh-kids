@@ -1,7 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { me } from "@/api/auth";
 import { crm, type PickupAuthorization, type PickupEventType } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EntitySelect } from "@/components/ui/EntitySelect";
@@ -11,6 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type TKey } from "@/i18n";
 import { formatDateTime } from "@/lib/labels";
+import { NON_FINANCE_ROLES, hasAnyRole } from "@/lib/roles";
 
 const EVENT_KEY: Record<PickupEventType, TKey> = {
   CHECK_IN: "pickupEvent.CHECK_IN",
@@ -42,7 +44,7 @@ function AuthorizationModal({ onClose }: { onClose: () => void }) {
       toast(t("common.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   const valid = form.studentId && form.guardianName.trim() && form.guardianPhone.trim();
   return (
@@ -108,7 +110,7 @@ function LogModal({ authorizations, onClose }: { authorizations: PickupAuthoriza
       toast(t("common.saved"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   return (
     <Modal
@@ -150,6 +152,8 @@ export function PickupPage() {
   const { t } = useT();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
+  const canManagePickup = hasAnyRole(meQuery.data?.roles ?? [], NON_FINANCE_ROLES);
   const [authOpen, setAuthOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [revoking, setRevoking] = useState<PickupAuthorization | null>(null);
@@ -164,7 +168,7 @@ export function PickupPage() {
       toast(t("common.saved"));
       setRevoking(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (
@@ -174,7 +178,9 @@ export function PickupPage() {
         <section className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-100 p-4">
             <h2 className="font-bold">{t("feature.guardian")}</h2>
-            <button className="btn-primary text-sm" onClick={() => setAuthOpen(true)}>{t("feature.authorizationCreate")}</button>
+            {canManagePickup && (
+              <button className="btn-primary text-sm" onClick={() => setAuthOpen(true)}>{t("feature.authorizationCreate")}</button>
+            )}
           </div>
           <div className="divide-y divide-slate-100">
             {authorizations.isLoading ? (
@@ -187,7 +193,9 @@ export function PickupPage() {
                     <div className="text-sm text-slate-500">{a.guardianPhone} · {a.relationship ?? "—"}</div>
                     <div className="text-sm text-slate-500">{a.student?.fullName} · {a.student?.classroom?.name ?? "—"}</div>
                   </div>
-                  <button className="text-xs font-semibold text-red-600" onClick={() => setRevoking(a)}>{t("feature.revoke")}</button>
+                  {canManagePickup && (
+                    <button className="text-xs font-semibold text-red-600" onClick={() => setRevoking(a)}>{t("feature.revoke")}</button>
+                  )}
                 </div>
               </div>
             ))}
@@ -203,7 +211,9 @@ export function PickupPage() {
         <section className="card overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-100 p-4">
             <h2 className="font-bold">{t("feature.logPickup")}</h2>
-            <button className="btn-primary text-sm" onClick={() => setLogOpen(true)}>{t("common.create")}</button>
+            {canManagePickup && (
+              <button className="btn-primary text-sm" onClick={() => setLogOpen(true)}>{t("common.create")}</button>
+            )}
           </div>
           <div className="divide-y divide-slate-100">
             {logs.isLoading ? (
@@ -230,10 +240,10 @@ export function PickupPage() {
           </div>
         </section>
       </main>
-      {authOpen && <AuthorizationModal onClose={() => setAuthOpen(false)} />}
-      {logOpen && <LogModal authorizations={authorizations.items} onClose={() => setLogOpen(false)} />}
+      {authOpen && canManagePickup && <AuthorizationModal onClose={() => setAuthOpen(false)} />}
+      {logOpen && canManagePickup && <LogModal authorizations={authorizations.items} onClose={() => setLogOpen(false)} />}
       <ConfirmDialog
-        open={!!revoking}
+        open={canManagePickup && !!revoking}
         title={t("feature.revoke")}
         message={revoking?.guardianName ?? ""}
         danger

@@ -1,4 +1,5 @@
 import { api, tenantStore, tokenStore } from "./http";
+import type { TenantRole } from "./crm";
 
 export type LoginInput = { identifier: string; password: string };
 // refreshToken KHÔNG còn ở body — server đặt trong cookie HttpOnly.
@@ -10,7 +11,7 @@ export type Me = {
   tenantId?: string | null;
   fullName?: string | null;
   phone?: string | null;
-  roles?: string[];
+  roles?: TenantRole[];
   allowedSchoolIds?: string[] | null;
   // Feature đang bật của gói (featureKey → bool) — dùng feature-gate UI (vd media_gallery, lesson_plan).
   features?: Record<string, boolean>;

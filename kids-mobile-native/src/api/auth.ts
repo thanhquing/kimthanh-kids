@@ -17,6 +17,8 @@ export type Me = {
   phone?: string | null;
   roles: TenantRole[];
   allowedSchoolIds?: string[] | null;
+  // Feature đang bật của gói (featureKey -> bool), dùng để gate UX trước khi API trả 403.
+  features?: Record<string, boolean>;
 };
 
 export async function login(input: LoginInput, tenantId: string): Promise<LoginResult> {

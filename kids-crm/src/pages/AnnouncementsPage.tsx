@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { crm, type Announcement, type AnnouncementAudience, type CreateAnnouncement } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
@@ -54,7 +54,7 @@ function ComposeModal({ schoolId, onClose }: { schoolId?: string; onClose: () =>
       toast(t("announcements.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const valid = title.trim() && body.trim() && (audience !== "CLASS" || classroomId);
@@ -142,7 +142,7 @@ export function AnnouncementsPage() {
       qc.invalidateQueries({ queryKey: ["crm-dashboard"] });
       toast(t("announcements.publishedOk"));
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   const remove = useMutation({
     mutationFn: (id: string) => crm.announcements.remove(id),
@@ -152,7 +152,7 @@ export function AnnouncementsPage() {
       setDeleting(null);
       setSelectedId(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (

@@ -1,6 +1,7 @@
 import { ContactRound, FileText, Image, Pill } from "lucide-react";
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { useMe } from "@/api/auth";
 import { useStudentAttendance } from "@/api/attendance";
 import { useAllergies, useIncidents } from "@/api/health";
 import { useMyChildren, useStaffStudent, type Student } from "@/api/students";
@@ -40,6 +41,8 @@ export function StudentDetailPage() {
   const incidentsQuery = useIncidents(student?.id);
   const allergies = allergiesQuery.data ?? [];
   const incidents = incidentsQuery.data ?? [];
+  const meQuery = useMe();
+  const hasMediaGallery = meQuery.data?.features?.media_gallery === true;
 
   useEffect(() => {
     if (id) setSelectedStudentId(id);
@@ -72,7 +75,7 @@ export function StudentDetailPage() {
           tone="orange"
         />
         <QuickAction icon={Pill} label={t("students.medicine")} to={`${base}/medicine`} tone="green" />
-        <QuickAction icon={Image} label={t("students.album")} to={`${base}/album`} tone="blue" />
+        {hasMediaGallery && <QuickAction icon={Image} label={t("students.album")} to={`${base}/album`} tone="blue" />}
         <QuickAction icon={ContactRound} label={t("pickup.titleShort")} to={`${base}/pickup?studentId=${student.id}`} tone="amber" />
       </div>
       <div className="section-title">{t("students.profileSection")}</div>

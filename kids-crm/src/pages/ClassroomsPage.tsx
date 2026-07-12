@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type Translator } from "@/i18n";
 import { fetchAllPages } from "@/lib/fetchAll";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 
 function useSchools() {
   return useQuery({ queryKey: ["schools"], queryFn: () => crm.schools() });
@@ -72,7 +72,7 @@ function ClassroomForm({
       toast(editing ? t("common.saved") : t("common.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -207,7 +207,7 @@ export function ClassroomsPage() {
       toast(t("common.deleted"));
       setDeleting(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   function openCreate() {

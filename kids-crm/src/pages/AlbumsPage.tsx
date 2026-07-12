@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { crm, type Album } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { AuthImage } from "@/components/ui/AuthImage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -35,7 +35,7 @@ function AlbumModal({ onClose }: { onClose: () => void }) {
       onClose();
       return album;
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   return (
     <Modal
@@ -87,7 +87,7 @@ function UploadModal({ album, onClose }: { album: Album; onClose: () => void }) 
       toast(t("common.saved"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   return (
     <Modal
@@ -132,7 +132,7 @@ export function AlbumsPage() {
       setRemoving(null);
       setSelectedId(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (

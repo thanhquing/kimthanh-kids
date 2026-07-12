@@ -8,7 +8,7 @@ import {
   type MedicineRequest,
   type MedicineStatus,
 } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EntitySelect } from "@/components/ui/EntitySelect";
@@ -68,7 +68,7 @@ function MedicineTab() {
       setHandling(null);
       setNote("");
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (
@@ -195,7 +195,7 @@ function IncidentsTab() {
       setOpen(false);
       setForm({ studentId: "", date: todayIso(), type: "", severity: "LOW", description: "", actionTaken: "" });
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (
@@ -342,7 +342,7 @@ function RecordsTab() {
       setOpen(false);
       setForm({ date: todayIso(), heightCm: "", weightKg: "", temperatureC: "", note: "" });
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const hasMetric = form.heightCm || form.weightKg || form.temperatureC;
@@ -451,7 +451,7 @@ function AllergiesTab() {
       setAllergen("");
       setNote("");
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   const remove = useMutation({
     mutationFn: (id: string) => crm.allergies.remove(id),
@@ -460,7 +460,7 @@ function AllergiesTab() {
       toast(t("health.algRemoved"));
       setRemoving(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (

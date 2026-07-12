@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { errorMessage } from "@/lib/errorMessage";
 import { Text, View } from "react-native";
 import { uploadImage } from "@/api/media";
 import { useUpsertDailyReport } from "@/api/reports";
@@ -38,7 +39,7 @@ export default function ReportComposeScreen() {
       const media = await uploadImage(picked, { kind: "REPORT_PHOTO" });
       setPhotoIds((ids) => [...ids, media.id]);
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : t("reports.photoUploadError"), "error");
+      toast.show(errorMessage(err, t), "error");
     } finally {
       setUploading(false);
     }
@@ -58,7 +59,7 @@ export default function ReportComposeScreen() {
       setNote("");
       setPhotoIds([]);
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : t("reports.composeError"), "error");
+      toast.show(errorMessage(err, t), "error");
     }
   }
 

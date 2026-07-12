@@ -2,11 +2,13 @@ import { Text } from "react-native";
 import { Image } from "expo-image";
 import { useAlbums } from "@/api/albums";
 import { RoleScreen, TopBar, Card, LoadingState, EmptyState } from "@/components/ui/Primitives";
+import { useMobileState } from "@/lib/mobileState";
 
 export default function AlbumGalleryScreen() {
   const query = useAlbums();
+  const role = useMobileState((state) => state.role) ?? "parent";
   return (
-    <RoleScreen role="parent">
+    <RoleScreen role={role}>
       <TopBar title="Album" />
       {query.isLoading ? <LoadingState /> : null}
       {!query.isLoading && (query.data ?? []).length === 0 ? <EmptyState text="Chưa có album." /> : null}

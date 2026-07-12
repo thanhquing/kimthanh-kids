@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Check, Sparkles } from "lucide-react";
+import { Check, Clock, Sparkles } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { publicApi, type BillingCycle, type PublicPlan } from "@/api/public";
@@ -36,6 +36,17 @@ const FEATURE_LABELS: Record<string, string> = {
   api_access: "Tích hợp API/ERP riêng",
 };
 
+// Feature đã seed trong gói nhưng CHƯA có module/endpoint enforce (đồng bộ BL-045: chỉ
+// media_gallery + lesson_plan được enforce ở API). Hiển thị badge "Sắp có", KHÔNG dấu ✓
+// như đã dùng được — tránh cam kết tính năng chưa có.
+const COMING_SOON_FEATURES = new Set(["analytics", "api_access", "messaging"]);
+
+const BASE_FEATURES = [
+  "Quản lý hồ sơ học sinh, giáo viên",
+  "Điểm danh & nhật ký hằng ngày",
+  "Hồ sơ sức khỏe, dặn thuốc, xin nghỉ",
+];
+
 function money(value: number): string {
   return `${new Intl.NumberFormat("vi-VN").format(value)}đ`;
 }
@@ -47,20 +58,25 @@ function limitNote(plan: PublicPlan): string {
     limits.get("STUDENTS") == null ? "Không giới hạn HS" : `${limits.get("STUDENTS")} học sinh`,
   ];
   const storage = limits.get("STORAGE_MB");
-  if (storage != null) parts.push(`${Math.round(storage / 1024)} GB lưu trữ`);
+  if (storage != null) {
+    // < 1GB hiển thị theo MB (vd Free 200MB) để không làm tròn thành "0 GB".
+    parts.push(
+      storage < 1024 ? `${storage} MB lưu trữ` : `${Math.round(storage / 1024)} GB lưu trữ`,
+    );
+  }
   return parts.join(" · ");
 }
 
-function features(plan: PublicPlan): string[] {
-  const enabled = plan.features
-    .filter((f) => f.enabled)
-    .map((f) => FEATURE_LABELS[f.featureKey] ?? f.featureKey);
-  const base = [
-    "Quản lý hồ sơ học sinh, giáo viên",
-    "Điểm danh & nhật ký hằng ngày",
-    "Hồ sơ sức khỏe, dặn thuốc, xin nghỉ",
-  ];
-  return [...base, ...enabled];
+function planFeatures(plan: PublicPlan): { available: string[]; comingSoon: string[] } {
+  const enabled = plan.features.filter((f) => f.enabled);
+  const label = (key: string) => FEATURE_LABELS[key] ?? key;
+  const available = enabled
+    .filter((f) => !COMING_SOON_FEATURES.has(f.featureKey))
+    .map((f) => label(f.featureKey));
+  const comingSoon = enabled
+    .filter((f) => COMING_SOON_FEATURES.has(f.featureKey))
+    .map((f) => label(f.featureKey));
+  return { available: [...BASE_FEATURES, ...available], comingSoon };
 }
 
 function priceFor(plan: PublicPlan, cycle: BillingCycle) {
@@ -131,7 +147,9 @@ function PricingPage() {
             const price = priceFor(p, cycle);
             const amount = Number(price?.amount ?? 0);
             const highlight = p.tier === "PRO";
-            const contactOnly = p.tier === "ENTERPRISE" || amount <= 0;
+            const { available, comingSoon } = planFeatures(p);
+            // Gói Free (0đ) hiển thị "0đ / Bắt đầu miễn phí", KHÔNG gộp vào nhóm liên hệ.
+            const contactOnly = p.tier === "ENTERPRISE" || (amount <= 0 && p.code !== "free");
             const href = contactOnly
               ? `/lien-he?plan=${p.code}`
               : `/dang-ky?plan=${p.code}&cycle=${price?.billingCycle ?? cycle}`;
@@ -170,7 +188,7 @@ function PricingPage() {
                     )}
                   </div>
                   <ul className="mt-6 space-y-3 flex-1">
-                    {features(p).map((f) => (
+                    {available.map((f) => (
                       <li key={f} className="flex items-start gap-2.5 text-sm">
                         <Check
                           className={`h-5 w-5 flex-none ${highlight ? "text-sun" : "text-primary"}`}
@@ -182,6 +200,24 @@ function PricingPage() {
                           }
                         >
                           {f}
+                        </span>
+                      </li>
+                    ))}
+                    {comingSoon.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm">
+                        <Clock
+                          className={`h-5 w-5 flex-none ${highlight ? "text-primary-foreground/45" : "text-muted-foreground"}`}
+                          strokeWidth={2.5}
+                        />
+                        <span
+                          className={`inline-flex flex-wrap items-center gap-1.5 ${highlight ? "text-primary-foreground/70" : "text-muted-foreground"}`}
+                        >
+                          {f}
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${highlight ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                          >
+                            Sắp có
+                          </span>
                         </span>
                       </li>
                     ))}

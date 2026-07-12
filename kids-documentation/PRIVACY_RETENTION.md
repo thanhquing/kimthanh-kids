@@ -25,7 +25,7 @@ Nguyên tắc: dữ liệu 🔴/🟠 chỉ hiển thị trong phạm vi tenant +
 | Notification | **90 ngày** | Purge | Job (giảm phình DB) |
 | Bản ghi soft-delete (`deletedAt != null`) | **30 ngày** grace (cho khôi phục), trừ dữ liệu có retention dài hơn | Hard-delete vật lý khi đủ điều kiện retention | Job ops |
 
-> Job purge/retention **chưa hiện thực** — thuộc pha ops/devops (nhóm D). Tài liệu này chốt CHÍNH SÁCH để khi có cron/ops thì thực thi theo đúng mốc.
+> Job purge/retention (**BL-027**) **chưa hiện thực** — thuộc pha ops/devops (nhóm D). Schema đã sẵn sàng (BL-052: `deletedAt` + `ON DELETE RESTRICT` trên bảng retention). Tài liệu này chốt CHÍNH SÁCH để khi có cron/ops thì thực thi theo đúng mốc.
 
 ## 3. Quyền được xóa (right-to-erasure)
 
@@ -38,6 +38,7 @@ Nguyên tắc: dữ liệu 🔴/🟠 chỉ hiển thị trong phạm vi tenant +
 - Export CSV học phí (`GET /tuition/invoices/export`) và bản in (`/invoices/:id/print`): role-gated (`@Roles` STAFF/VIEWERS) + school-scope; filter `status` validate enum (400 nếu sai — vòng 13).
 - Platform impersonate tenant admin: có `AuditService.log` (truy vết ai truy cập tenant nào).
 - Khuyến nghị (future): audit-log cho export khối lượng lớn dữ liệu trẻ/PH.
+- **Consent (đồng ý xử lý dữ liệu — BL-046):** hệ thống ĐÃ CÓ — `ConsentDocument` (versioned TERMS/PRIVACY) + `ConsentAcceptance` (log bất biến userId/tenantId/version/IP/UA). Chủ trường tick lúc signup; GV/PH/NV tick lúc đăng nhập (`/auth/me.pendingConsents` → `POST /consent/accept`). Đổi nội dung = tăng `version` reseed (user phải đồng ý lại). ⚠️ Văn bản hiện là **bản nháp, chờ luật sư duyệt** trước khi mở trường thật (chỉ đổi dữ liệu, không đổi code).
 
 ## 5. Incident runbook (rò rỉ / sự cố dữ liệu)
 

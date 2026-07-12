@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, Plus, Search, Trash2, UploadCloud } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { platform, type PlatformPost, type PlatformPostInput } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 const EMPTY: PlatformPostInput = {
@@ -87,6 +88,7 @@ function Preview({ markdown }: { markdown: string }) {
 export function PostsPage() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useT();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export function PostsPage() {
       setForm(toForm(post));
       invalidate();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Không lưu được bài viết", "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const publish = useMutation({
@@ -128,7 +130,7 @@ export function PostsPage() {
       if (editingId === post.id) setForm(toForm(post));
       invalidate();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Không xuất bản được", "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const unpublish = useMutation({
@@ -138,7 +140,7 @@ export function PostsPage() {
       if (editingId === post.id) setForm(toForm(post));
       invalidate();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Không hủy xuất bản được", "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const remove = useMutation({
@@ -149,7 +151,7 @@ export function PostsPage() {
       setForm(EMPTY);
       invalidate();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : "Không xóa được bài viết", "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   function newPost() {

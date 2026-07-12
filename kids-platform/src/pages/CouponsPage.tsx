@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { platform, type Coupon, type CreateCouponInput } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
@@ -59,7 +59,7 @@ export function CouponsPage() {
       setForm(EMPTY);
       qc.invalidateQueries({ queryKey: ["coupons"] });
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("cp.toastErr"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const items = data ?? [];

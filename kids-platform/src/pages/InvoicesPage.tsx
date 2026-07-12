@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { platform, type PlatformInvoice } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Modal } from "@/components/ui/Modal";
@@ -52,7 +52,7 @@ export function InvoicesPage() {
       setConfirmInv(null);
       invalidatePlatformData(qc);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("td.toastErr"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const items = data?.items ?? [];

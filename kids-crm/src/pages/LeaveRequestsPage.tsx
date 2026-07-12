@@ -1,7 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { me } from "@/api/auth";
 import { crm, type LeaveRequest, type LeaveStatus, type LeaveType } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { LoadMore } from "@/components/ui/Pagination";
@@ -9,6 +10,9 @@ import { useToast } from "@/components/ui/Toast";
 import { useLoadMore } from "@/hooks/useLoadMore";
 import { useT, type TKey } from "@/i18n";
 import { formatDate } from "@/lib/labels";
+import { hasAnyRole } from "@/lib/roles";
+
+const LEAVE_APPROVERS = ["SCHOOL_ADMIN", "PRINCIPAL", "TEACHER"] as const;
 
 const STATUSES: LeaveStatus[] = ["PENDING", "APPROVED", "REJECTED"];
 const STATUS_KEY: Record<LeaveStatus, TKey> = {
@@ -43,7 +47,7 @@ function DecideModal({
       toast(t(status === "APPROVED" ? "common.approved" : "common.rejected"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   return (
     <Modal
@@ -78,6 +82,8 @@ export function LeaveRequestsPage() {
   const { t } = useT();
   const [status, setStatus] = useState<LeaveStatus | "">("PENDING");
   const [deciding, setDeciding] = useState<{ request: LeaveRequest; status: Exclude<LeaveStatus, "PENDING"> } | null>(null);
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
+  const canDecideLeave = hasAnyRole(meQuery.data?.roles ?? [], [...LEAVE_APPROVERS]);
   const leave = useLoadMore(["leave", status], (pg) => crm.leave.page({ status: status || undefined, ...pg }));
 
   return (
@@ -109,7 +115,7 @@ export function LeaveRequestsPage() {
                   {r.reason && <p className="mt-2 text-sm text-slate-700">{r.reason}</p>}
                   {r.decisionNote && <p className="mt-2 text-xs text-slate-400">{r.decisionNote}</p>}
                 </div>
-                {r.status === "PENDING" && (
+                {canDecideLeave && r.status === "PENDING" && (
                   <div className="flex gap-2">
                     <button className="btn-soft text-sm" onClick={() => setDeciding({ request: r, status: "REJECTED" })}>
                       {t("common.rejected")}
@@ -129,7 +135,7 @@ export function LeaveRequestsPage() {
           onMore={() => leave.fetchNextPage()}
         />
       </main>
-      {deciding && (
+      {deciding && canDecideLeave && (
         <DecideModal
           request={deciding.request}
           status={deciding.status}

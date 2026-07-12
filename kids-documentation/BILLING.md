@@ -10,13 +10,13 @@
 | ------------ | ---------- | ----------------------------------- | ----------------- | ------------------------------------- |
 | `free`       | FREE       | 0đ — **vĩnh viễn**                  | 10 / 1 / 200MB    | —                                     |
 | `starter`    | STARTER    | 690k/th · 6.9tr/năm                 | 100 / 8 / 5GB     | media_gallery                         |
-| `pro`        | PRO        | 1.39tr/th · 3.75tr/quý · 13.9tr/năm | 300 / 25 / 20GB   | media_gallery, lesson_plan, analytics |
-| `enterprise` | ENTERPRISE | thỏa thuận                          | ∞                 | tất cả + api_access                   |
+| `pro`        | PRO        | 1.39tr/th · 3.75tr/quý · 13.9tr/năm | 300 / 25 / 20GB   | media_gallery, lesson_plan; analytics **Sắp có** |
+| `enterprise` | ENTERPRISE | thỏa thuận                          | ∞                 | media_gallery, lesson_plan; analytics/api_access **Sắp có** |
 | `dedicated`  | CUSTOM     | thỏa thuận (ẩn)                     | ∞                 | tất cả; deploy riêng                  |
 
 > **Freemium:** `POST /public/signup` luôn gắn gói **`free` ở trạng thái ACTIVE vĩnh viễn** (`trialEndsAt=null`, `currentPeriodEnd ≈ +100 năm`) — **không qua TRIAL**. Tất cả gói seed hiện đặt `trialDays=0`; state `TRIALING` + cron `expireTrials` chỉ kích hoạt nếu cấu hình gói có `trialDays>0`.
 > **Signup trả phí:** landing có thể gửi `planCode` + `billingCycle`. Backend vẫn tạo tenant Free ACTIVE trước, sau đó tạo `PlatformInvoice` OPEN metadata `{ type: "SIGNUP_UPGRADE", targetPlanId, targetPlanCode, targetBillingCycle }`. Chỉ khi platform admin bấm **Đã thu** thì subscription mới nâng sang gói đã chọn.
-> **Feature key:** `media_gallery` (Album, **enforced** Starter+), `lesson_plan` (Giáo án, **enforced** Pro+), `analytics` (báo cáo nâng cao — **Coming Soon**, cờ khai báo nhưng chưa enforce/chưa xây), `api_access` (**Coming Soon**, chưa enforce). Cờ `messaging` (Chat GV–PH) là **Coming Soon** — có cờ seed nhưng chưa có module; bảng giá chỉ hiển thị badge "Sắp có", không bán như đã có.
+> **Feature key (BL-045 chuẩn hóa):** `media_gallery` (Album, **enforced** Starter+), `lesson_plan` (Giáo án, **enforced** Pro+) là 2 feature đang có endpoint `@RequireFeature`. `analytics` (báo cáo nâng cao), `api_access` (API/webhook tích hợp) và `messaging` (Chat GV–PH) là **Coming Soon**: có cờ seed để pricing/entitlement hiển thị đúng nhưng chưa có module/endpoint enforce; FE chỉ được hiển thị kèm badge/trạng thái nâng cấp, không quảng bá như đã dùng được ngay.
 > **Quota PARENT:** không đếm bằng counter mà **giới hạn theo `STUDENTS`** (1 học sinh ~ 1 phụ huynh đại diện).
 
 Mô hình giá **linh hoạt**: `PlanPrice` (theo chu kỳ × tiền tệ) + `PlanFeature` (bật/tắt tính năng) + `PlanLimit` (quota theo metric). **Đổi giá của gói ĐÃ có thuê bao = tạo phiên bản gói mới** (không mutate tại chỗ) — xem §Vòng đời & versioning gói.
@@ -80,9 +80,10 @@ stateDiagram-v2
 
 ## Feature-gating & Quota
 
-- **Feature-gating:** `@RequireFeature('lesson_plan')`, `@RequireFeature('media_gallery')` trên route → `SubscriptionGuard` chặn nếu gói không bật (đây là 2 feature ĐƯỢC enforce). Cờ `analytics`/`api_access` đã seed nhưng chưa có endpoint gate (**Coming Soon**). Cờ `messaging` (Chat GV–PH) là **Coming Soon** — chưa có module, chỉ hiển thị badge "Sắp có" ở bảng giá.
-- **Quota:** `EntitlementService.consumeQuota(tenantId, metric)` tăng nguyên tử `UsageCounter` (UPDATE … WHERE value ≤ limit-delta). HARD vượt → `403 QUOTA_EXCEEDED`; SOFT cho vượt + ghi overage. `releaseQuota` khi xóa thực thể. Phase 1 gọi trong transaction tạo Student/Classroom...
-- **Cảnh báo nâng gói:** `GET /platform/worklist` trả KPI `quota` (atRisk = số dòng >=80% / `tenants` = số trường distinct) cho tenant ACTIVE/TRIAL/PAST_DUE, tính trực tiếp từ Student/Membership(GV)/Classroom/Media (KHÔNG tính SCHOOLS — gói 1 cơ sở luôn 100%; không qua `UsageCounter` cache). Danh sách trường + cột "Hạn mức" (used/limit 4 metric) ở `GET /platform/tenants?quota=at-risk` (bấm KPI để mở) → operator chủ động tư vấn nâng gói trước khi tenant bị chặn.
+- **Feature-gating:** `@RequireFeature('lesson_plan')`, `@RequireFeature('media_gallery')` trên route → `SubscriptionGuard` chặn nếu gói không bật (đây là 2 feature ĐƯỢC enforce). Cờ `analytics`/`api_access`/`messaging` đã seed nhưng chưa có endpoint gate (**Coming Soon**). FE defense-in-depth (CRM/mobile-web/native) đọc `/auth/me.features` để ẩn/chặn UX album/giáo án trước khi API trả `FEATURE_NOT_AVAILABLE`; chỉ dùng feature key thật, chưa gate analytics cho tới khi có endpoint enforce.
+- **Quota (counter):** `EntitlementService.consumeQuota(tenantId, metric)` tăng nguyên tử `UsageCounter` (UPDATE … WHERE value ≤ limit-delta). HARD vượt → `403 QUOTA_EXCEEDED`; SOFT cho vượt + ghi overage. `releaseQuota` khi xóa thực thể. Phase 1 gọi trong transaction tạo Student (`STUDENTS`) + tạo/kích hoạt tài khoản GV·NV (`TEACHERS`/`ADMIN_USERS`). `CLASSROOMS` đã gỡ enforce (BL-049) → tạo lớp KHÔNG tiêu quota.
+- **Quota lưu trữ (`STORAGE_MB`):** enforce riêng ở `MediaService.assertStorageQuota` — cộng dồn `sizeBytes` của Media theo tenant, HARD vượt → `403 STORAGE_EXCEEDED` (không đi qua `UsageCounter`).
+- **Cảnh báo nâng gói:** `GET /platform/worklist` trả KPI `quota` (atRisk = số dòng >=80% / `tenants` = số trường distinct) cho tenant ACTIVE/TRIAL/PAST_DUE, tính trực tiếp từ Student/Membership(GV)/Media (KHÔNG tính SCHOOLS — gói 1 cơ sở luôn 100%; không qua `UsageCounter` cache). Danh sách trường + cột "Hạn mức" (used/limit 3 metric: STUDENTS/TEACHERS/STORAGE_MB) ở `GET /platform/tenants?quota=at-risk` (bấm KPI để mở) → operator chủ động tư vấn nâng gói trước khi tenant bị chặn.
 - **Entitlements** = `Plan.features/limits` + override `TenantEntitlement` (cho dedicated nâng riêng). Cache ở `Subscription.entitlementsCache`.
 
 ## Hóa đơn & Thanh toán

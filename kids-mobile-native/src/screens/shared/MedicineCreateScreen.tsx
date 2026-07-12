@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { errorMessage } from "@/lib/errorMessage";
 import { Text } from "react-native";
 import { useCreateMedicine } from "@/api/medicine";
 import { useMyChildren } from "@/api/students";
@@ -29,7 +30,7 @@ export default function MedicineCreateScreen() {
       });
       toast.show(t("medicine.createSaved"), "success");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : t("medicine.listError"), "error");
+      toast.show(errorMessage(err, t), "error");
     }
   }
   return (

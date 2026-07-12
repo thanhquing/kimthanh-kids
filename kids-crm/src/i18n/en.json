@@ -168,7 +168,9 @@
     "next": "Next",
     "pageInfo": "Page {page}/{pages}",
     "totalItems": "{total} items",
-    "exporting": "Exporting…"
+    "exporting": "Exporting…",
+    "forbiddenTitle": "Access denied",
+    "forbiddenBody": "Your current role cannot open this page. Please use an account with the right permissions."
   },
   "feature": {
     "assignmentsTitle": "Weekly assignments",
@@ -218,7 +220,9 @@
     "authorizationCreate": "Add pickup person",
     "logPickup": "Record check-in/out",
     "eventType": "Event",
-    "revoke": "Revoke"
+    "revoke": "Revoke",
+    "upgradeTitle": "Upgrade required",
+    "upgradeBody": "This feature is not enabled for the current plan. Please contact the school owner or support to upgrade."
   },
   "pickupStatus": {
     "ACTIVE": "Active",
@@ -643,5 +647,19 @@
     "algAdded": "Allergy added",
     "algRemoved": "Allergy removed",
     "algRemoveConfirm": "Remove this allergy?"
+  },
+  "errors": {
+    "generic": "Something went wrong, please try again.",
+    "QUOTA_EXCEEDED": "You've reached your plan limit. Please upgrade to continue.",
+    "FEATURE_NOT_AVAILABLE": "This feature isn't included in your current plan. Please upgrade.",
+    "NO_BANK_CONFIG": "The school hasn't set up a bank account yet. Please contact an administrator.",
+    "NOT_FOUND": "Data not found.",
+    "FORBIDDEN": "You don't have permission to perform this action.",
+    "VALIDATION_FAILED": "Invalid data. Please review and try again.",
+    "INVALID_CREDENTIALS": "Incorrect email/phone number or password.",
+    "TENANT_REQUIRED": "Could not determine the school. Please sign in via your school's domain or select a school.",
+    "ACCOUNT_LOCKED": "Account temporarily locked due to too many failed attempts. Please try again later.",
+    "SLUG_UNAVAILABLE": "This identifier is already in use. Please choose another.",
+    "NO_PUBLIC_PRICE": "This plan has no public pricing yet. Please contact us for details."
   }
 }

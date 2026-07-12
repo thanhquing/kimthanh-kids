@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Landmark, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { platform, type UpdatePlatformSettingsInput } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Field } from "@/components/ui/Modal";
@@ -29,7 +29,7 @@ export function SettingsPage() {
   }, [data]);
 
   // Mỗi section lưu độc lập — gửi đúng phần dữ liệu của mình (PATCH nhận partial).
-  const onErr = (e: unknown) => toast(e instanceof ApiError ? e.message : t("set.toastErr"), "error");
+  const onErr = (e: unknown) => toast(errorMessage(e, t), "error");
   const onOk = (label: string) => {
     toast(t("set.savedPrefix", { label }));
     qc.invalidateQueries({ queryKey: ["settings"] });

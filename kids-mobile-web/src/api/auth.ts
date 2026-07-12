@@ -18,6 +18,8 @@ export type Me = {
   phone?: string | null;
   roles: TenantRole[];
   allowedSchoolIds?: string[] | null;
+  // Feature đang bật của gói (featureKey -> bool), dùng để gate UX trước khi API trả 403.
+  features?: Record<string, boolean>;
   // BL-046: văn bản pháp lý user CHƯA đồng ý (bản hiệu lực) — có phần tử ⇒ hiện gate bắt buộc.
   pendingConsents?: { id: string; type: string; version: string; title: string; summary?: string | null }[];
 };

@@ -1,6 +1,7 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useMe } from "@/api/auth";
 import { listStudentsPage, studentKeys, useClassrooms } from "@/api/students";
 import { TopBar } from "@/components/mobile/MobileShell";
 import { Avatar, Kpi, StatusBadge } from "@/components/mobile/Primitives";
@@ -21,6 +22,8 @@ export function ClassRosterPage() {
     { enabled: Boolean(currentClassroom?.id) },
   );
   const students = studentsQuery.items;
+  const meQuery = useMe();
+  const hasLessonPlan = meQuery.data?.features?.lesson_plan === true;
   const activeStudents = students.filter((student) => student.status === "ACTIVE").length;
   const needsReview = students.length - activeStudents;
 
@@ -81,7 +84,7 @@ export function ClassRosterPage() {
         onMore={() => void studentsQuery.fetchNextPage()}
       />
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <NavLink to="/teacher/lesson-plan" className="btn-soft text-center">{t("students.lessonPlan")}</NavLink>
+        {hasLessonPlan && <NavLink to="/teacher/lesson-plan" className="btn-soft text-center">{t("students.lessonPlan")}</NavLink>}
         <NavLink to="/teacher/medicine/approve" className="btn-soft text-center">{t("students.approveMedicine")}</NavLink>
       </div>
     </>

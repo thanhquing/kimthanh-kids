@@ -2,7 +2,7 @@ import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { isAuthed, roleForMobile, useMe } from "@/api/auth";
 import { bootstrapAuth, setOnUnauthorized } from "@/api/http";
-import { PhoneFrame, MobileLayout } from "@/components/mobile/MobileShell";
+import { PhoneFrame, MobileLayout, TopBar } from "@/components/mobile/MobileShell";
 import { ConsentGate } from "@/components/ConsentGate";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
@@ -33,6 +33,7 @@ import { ReportComposePage } from "@/pages/teacher/ReportComposePage";
 import { TeacherHomePage } from "@/pages/teacher/TeacherHomePage";
 import { useMobileState } from "@/lib/mobileState";
 import type { Role } from "@/lib/routes";
+import { useT } from "@/i18n";
 
 /**
  * Chặn theo phiên + vai trò: chưa login → /login; đã login nhưng role không khớp khu vực
@@ -49,6 +50,25 @@ function RoleGuard({ role, children }: { role: Role; children: ReactNode }) {
   // BL-046: chưa đồng ý văn bản pháp lý hiệu lực → chặn bằng cổng consent trước khi vào app.
   if (me.pendingConsents && me.pendingConsents.length > 0) return <ConsentGate />;
   if (actual !== role) return <Navigate to={actual === "teacher" ? "/teacher" : "/parent"} replace />;
+  return <>{children}</>;
+}
+
+function FeatureGuard({ featureKey, children }: { featureKey: string; children: ReactNode }) {
+  const { data: me, isLoading, isError } = useMe();
+  const { t } = useT();
+  if (!isAuthed()) return <Navigate to="/login" replace />;
+  if (isLoading) return null;
+  if (isError || !me) return <Navigate to="/login" replace />;
+  const role = roleForMobile(me.roles);
+  const base = role === "teacher" ? "/teacher" : "/parent";
+  if (me.features?.[featureKey] !== true) {
+    return (
+      <>
+        <TopBar title={t("featureGate.title")} backTo={base} />
+        <div className="card mt-3 p-4 text-sm text-slate-500">{t("featureGate.body")}</div>
+      </>
+    );
+  }
   return <>{children}</>;
 }
 
@@ -95,7 +115,7 @@ export function App() {
           <Route path="children" element={<ChildrenListPage />} />
           <Route path="student/:id" element={<StudentDetailPage />} />
           <Route path="reports" element={<ReportFeedPage />} />
-          <Route path="album" element={<AlbumGalleryPage />} />
+          <Route path="album" element={<FeatureGuard featureKey="media_gallery"><AlbumGalleryPage /></FeatureGuard>} />
           <Route path="invoices" element={<InvoicesPage />} />
           <Route path="payment" element={<PaymentCheckoutPage />} />
           <Route path="menu" element={<MenuWeeklyPage />} />
@@ -123,10 +143,10 @@ export function App() {
           <Route path="attendance" element={<AttendanceMarkPage />} />
           <Route path="attendance/history" element={<AttendanceHistoryPage />} />
           <Route path="reports/new" element={<ReportComposePage />} />
-          <Route path="album" element={<AlbumGalleryPage />} />
+          <Route path="album" element={<FeatureGuard featureKey="media_gallery"><AlbumGalleryPage /></FeatureGuard>} />
           <Route path="announcements" element={<AnnouncementsPage />} />
           <Route path="announcements/new" element={<AnnouncementComposePage />} />
-          <Route path="lesson-plan" element={<LessonPlanPage />} />
+          <Route path="lesson-plan" element={<FeatureGuard featureKey="lesson_plan"><LessonPlanPage /></FeatureGuard>} />
           <Route path="leave/approve" element={<LeaveApprovePage />} />
           <Route path="pickup" element={<PickupPage />} />
           <Route path="medicine" element={<MedicineListPage />} />

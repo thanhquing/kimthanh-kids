@@ -460,5 +460,19 @@
     "noEvents": "Chưa có sự kiện nào.",
     "eventsHint": "\"Active\" = số người dùng riêng biệt có đăng nhập trong khoảng. Sự kiện được ghi từ backend (login/signup…); app trường sẽ bổ sung event khi build. ",
     "viewTenants": "Xem trường"
+  },
+  "errors": {
+    "generic": "Có lỗi xảy ra, vui lòng thử lại.",
+    "QUOTA_EXCEEDED": "Đã đạt giới hạn của gói. Vui lòng nâng cấp gói để tiếp tục.",
+    "FEATURE_NOT_AVAILABLE": "Tính năng này không có trong gói hiện tại. Vui lòng nâng cấp gói.",
+    "NO_BANK_CONFIG": "Chưa cấu hình tài khoản ngân hàng. Vui lòng kiểm tra cấu hình.",
+    "NOT_FOUND": "Không tìm thấy dữ liệu.",
+    "FORBIDDEN": "Bạn không có quyền thực hiện thao tác này.",
+    "VALIDATION_FAILED": "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
+    "INVALID_CREDENTIALS": "Email hoặc mật khẩu không đúng.",
+    "TENANT_REQUIRED": "Không xác định được trường.",
+    "ACCOUNT_LOCKED": "Tài khoản tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau.",
+    "SLUG_UNAVAILABLE": "Tên định danh này đã được sử dụng. Vui lòng chọn tên khác.",
+    "NO_PUBLIC_PRICE": "Gói này chưa có bảng giá công khai."
   }
 }

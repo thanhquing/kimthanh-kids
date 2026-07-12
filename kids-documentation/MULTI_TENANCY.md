@@ -36,6 +36,8 @@ Code **không phân nhánh nghiệp vụ** giữa 2 chế độ. SILO chỉ khá
 - Đọc/sửa 1 bản ghi theo tenant → dùng **`findFirst`** (đã được filter), hoặc kiểm tra quyền sở hữu sau khi fetch.
 - Soft-delete khi GHI → service gọi `update({ data: { deletedAt: new Date() } })` thay vì `delete`.
 
+> `SOFT_DELETE` trong extension (đọc tự bỏ `deletedAt != null`) nay gồm cả các bảng **retention** thêm ở BL-052: `Attendance`, `PickupAuthorization`, `PickupLog`, `DailyReport`, `HealthRecord`, `MedicineRequest`, `Incident`, `Allergy`, `LeaveRequest`, `TuitionInvoice`, `TuitionPayment` (ngoài `Tenant`/`School`/`Membership`/`Plan`/`Subscription`/`PlatformInvoice`/`Classroom`/`Student`). FK từ `Student` sang nhóm này là `ON DELETE RESTRICT` → hard-delete bị chặn khi còn chứng từ/y tế/vận hành; xem [PRIVACY_RETENTION.md](./PRIVACY_RETENTION.md).
+
 ## Tenant resolution
 
 [`src/tenancy/tenant-resolution.middleware.ts`](../kids-api/src/tenancy/tenant-resolution.middleware.ts) chạy trước guard, set ALS context:

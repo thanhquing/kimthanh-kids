@@ -7,6 +7,10 @@
     "loading": "Loading data…",
     "loadMore": "Load more"
   },
+  "featureGate": {
+    "title": "Upgrade required",
+    "body": "This feature is not enabled for the current plan. Please contact the school for support."
+  },
   "auth": {
     "welcome": "Welcome back",
     "subtitle": "Sign in to continue with KimThanh Kids",
@@ -377,5 +381,19 @@
     "empty": "No albums yet.",
     "photos": "{count} photos",
     "noPhotos": "This album has no photos."
+  },
+  "errors": {
+    "generic": "Something went wrong, please try again.",
+    "QUOTA_EXCEEDED": "You've reached your plan limit. Please upgrade to continue.",
+    "FEATURE_NOT_AVAILABLE": "This feature isn't included in your current plan. Please upgrade.",
+    "NO_BANK_CONFIG": "The school hasn't set up a bank account yet. Please contact the school.",
+    "NOT_FOUND": "Data not found.",
+    "FORBIDDEN": "You don't have permission to perform this action.",
+    "VALIDATION_FAILED": "Invalid data. Please review and try again.",
+    "INVALID_CREDENTIALS": "Incorrect email/phone number or password.",
+    "TENANT_REQUIRED": "Could not determine the school. Please select a school.",
+    "ACCOUNT_LOCKED": "Account temporarily locked due to too many failed attempts. Please try again later.",
+    "SLUG_UNAVAILABLE": "This identifier is already in use. Please choose another.",
+    "NO_PUBLIC_PRICE": "This plan has no public pricing yet."
   }
 }

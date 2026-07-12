@@ -3,7 +3,7 @@ import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { crm } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
@@ -53,7 +53,7 @@ function AddGuardianModal({
       toast(t("common.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (
@@ -123,7 +123,7 @@ export function StudentProfilePage() {
       qc.invalidateQueries({ queryKey: ["students", id] });
       toast(t("common.deleted"));
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const status = s ? STUDENT_STATUS[s.status] : null;

@@ -26,6 +26,7 @@ Prod: nginx reverse-proxy `/api` → kids-api, set `Host admin.kimthanhkids.vn`.
 ## Cấu trúc
 
 - `src/api/http.ts` — lớp HTTP chung (bóc envelope, auth, 401→refresh). **File mẫu** để CRM/mobile copy.
+- `src/lib/errorMessage.ts` — copy lỗi ổn định theo `error.code` → i18n (namespace `errors` VI/EN), không hiển thị raw `error.message`.
 - `src/api/generated/` — type sinh từ OpenAPI (gitignore, chạy `pnpm gen:api`).
 - `src/components/` `src/pages/` — UI theo mock-ui/platform.
 - `src/index.css` — token + component classes port từ `shared.css`.

@@ -2,14 +2,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
+import { me } from "@/api/auth";
 import { crm, type ManualPayment } from "@/api/crm";
 import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
 import { useT, type TKey } from "@/i18n";
 import { formatDate, formatDateTime } from "@/lib/labels";
+import { hasAnyRole } from "@/lib/roles";
 import { formatVnd } from "@/lib/utils";
 import { vietQrUrl } from "@/lib/vietqr";
 import { INVOICE_STATUS_BADGE, INVOICE_STATUS_KEY, invoiceDisplay, openInvoicePrint } from "./TuitionPage";
@@ -19,6 +22,7 @@ const METHOD_KEY: Record<string, TKey> = {
   BANK_TRANSFER: "payMethod.BANK_TRANSFER",
   VNPAY: "payMethod.VNPAY",
 };
+const TUITION_MANAGERS = ["SCHOOL_ADMIN", "PRINCIPAL", "FINANCE"] as const;
 
 function VietQrModal({ id, onClose }: { id: string; onClose: () => void }) {
   const { t } = useT();
@@ -92,7 +96,7 @@ function PayModal({ id, remaining, onClose }: { id: string; remaining: number; o
       toast(t("tuition.paid"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (
@@ -133,6 +137,8 @@ export function TuitionInvoiceDetailPage() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const { id = "" } = useParams();
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
+  const canManageTuition = hasAnyRole(meQuery.data?.roles ?? [], [...TUITION_MANAGERS]);
   const [qrOpen, setQrOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -155,7 +161,7 @@ export function TuitionInvoiceDetailPage() {
       toast(t("tuition.canceled"));
       setCancelOpen(false);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (
@@ -248,12 +254,16 @@ export function TuitionInvoiceDetailPage() {
 
             {/* Hành động */}
             <div className="space-y-3">
-              <button className="btn-primary w-full" onClick={() => setQrOpen(true)} disabled={!canPay}>
-                {t("tuition.vietqr")}
-              </button>
-              <button className="btn-soft w-full" onClick={() => setPayOpen(true)} disabled={!canPay}>
-                {t("tuition.payCash")}
-              </button>
+              {canManageTuition && (
+                <>
+                  <button className="btn-primary w-full" onClick={() => setQrOpen(true)} disabled={!canPay}>
+                    {t("tuition.vietqr")}
+                  </button>
+                  <button className="btn-soft w-full" onClick={() => setPayOpen(true)} disabled={!canPay}>
+                    {t("tuition.payCash")}
+                  </button>
+                </>
+              )}
               <button
                 className="btn-soft w-full inline-flex items-center justify-center gap-2"
                 onClick={() => openInvoicePrint(inv.id, (m) => toast(m, "error"), t)}
@@ -261,7 +271,7 @@ export function TuitionInvoiceDetailPage() {
                 <Printer className="w-4 h-4" />
                 {t("tuition.print")}
               </button>
-              {inv.status !== "CANCELED" && (
+              {canManageTuition && inv.status !== "CANCELED" && (
                 <button className="btn-soft w-full !text-red-600" onClick={() => setCancelOpen(true)}>
                   {t("tuition.cancel")}
                 </button>
@@ -271,10 +281,10 @@ export function TuitionInvoiceDetailPage() {
         )}
       </main>
 
-      {qrOpen && <VietQrModal id={id} onClose={() => setQrOpen(false)} />}
-      {payOpen && <PayModal id={id} remaining={remaining} onClose={() => setPayOpen(false)} />}
+      {qrOpen && canManageTuition && <VietQrModal id={id} onClose={() => setQrOpen(false)} />}
+      {payOpen && canManageTuition && <PayModal id={id} remaining={remaining} onClose={() => setPayOpen(false)} />}
       <ConfirmDialog
-        open={cancelOpen}
+        open={canManageTuition && cancelOpen}
         title={t("tuition.cancel")}
         message={t("tuition.cancelConfirm")}
         confirmLabel={t("tuition.cancel")}

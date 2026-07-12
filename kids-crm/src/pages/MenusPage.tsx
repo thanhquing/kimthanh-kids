@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { crm, type CreateWeeklyMenu, type MealType, type WeeklyMenu } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EntitySelect } from "@/components/ui/EntitySelect";
@@ -55,7 +55,7 @@ function MenuModal({ onClose }: { onClose: () => void }) {
       toast(t("common.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   const valid = form.weekStart && form.meals.some((m) => m.name.trim());
 
@@ -147,7 +147,7 @@ export function MenusPage() {
       setRemoving(null);
       setSelectedId(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (

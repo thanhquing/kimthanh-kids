@@ -8,6 +8,7 @@ import { assets } from "@/mockData";
 import { LanguageToggle } from "@/components/ui/LanguageToggle";
 import { TenantSelect } from "@/components/ui/TenantSelect";
 import { useT } from "@/i18n";
+import { errorMessage } from "@/lib/errorMessage";
 import { useMobileState } from "@/lib/mobileState";
 
 export function LoginPage() {
@@ -40,9 +41,8 @@ export function LoginPage() {
       setRole(role);
       navigate(role === "parent" ? "/parent" : "/teacher", { replace: true });
     } catch (err) {
-      setError(
-        err instanceof ApiError ? t("auth.errInvalid") : t("auth.errNetwork"),
-      );
+      // BL-006: ApiError → copy ổn định theo code; lỗi mạng/không rõ → errNetwork (không lộ raw).
+      setError(err instanceof ApiError ? errorMessage(err, t) : t("auth.errNetwork"));
     } finally {
       setLoading(false);
     }

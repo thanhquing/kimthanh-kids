@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { crm, type Assignment, type CreateAssignment, type Shift } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EntitySelect } from "@/components/ui/EntitySelect";
@@ -48,7 +48,7 @@ function CreateAssignmentModal({ onClose }: { onClose: () => void }) {
       toast(t("common.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const valid = form.staffId && form.weekday && form.shift && form.duty.trim();
@@ -166,7 +166,7 @@ export function AssignmentsPage() {
       toast(t("common.deleted"));
       setRemoving(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (

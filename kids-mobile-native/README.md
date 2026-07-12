@@ -13,6 +13,8 @@ Quyết định kiến trúc đã chốt: **2 codebase tách, chia sẻ logic b�
   - `api/http.ts`: token store dùng `expo-secure-store`; lang/tenant dùng `react-native-mmkv` thay `localStorage`; `baseURL=EXPO_PUBLIC_API_URL`; vẫn gắn header **`x-tenant`** + `x-language` + refresh 401.
   - `lib/language.ts`: đổi backing store (giữ `subscribe`/`useSyncExternalStore`).
 - **Viết lại UI** bằng RN: `View/Text/Pressable`, **NativeWind** (giữ class Tailwind), **expo-router** (mirror route), **expo-image** (ảnh media kèm header Bearer), **FlashList** cho list dài.
+- **Feature-gating UX:** route wrapper đọc `/auth/me.features` để chặn Album (`media_gallery`) và Giáo án (`lesson_plan`) trước khi API trả 403, khớp mobile-web.
+- **Copy lỗi ổn định theo `error.code`:** `src/lib/errorMessage.ts` map code → i18n (namespace `errors` VI/EN) thay vì raw `error.message`; login map `INVALID_CREDENTIALS`/`ACCOUNT_LOCKED`/`TENANT_REQUIRED` (copy nguyên từ mobile-web).
 - **Đồng bộ:** đổi logic ở `kids-mobile-web` → diff cơ học sang đây (cùng cấu trúc/tên file).
 
 ## Đăng nhập (độc lập subdomain)

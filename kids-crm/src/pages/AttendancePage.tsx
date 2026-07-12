@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { crm, type AttendanceStatus } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ui/Toast";
 import { useT, type TKey } from "@/i18n";
@@ -82,7 +82,7 @@ export function AttendancePage() {
       qc.invalidateQueries({ queryKey: ["crm-dashboard"] });
       toast(t("attendance.saved", { n: res.marked }));
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const upd = (id: string, patch: Partial<Entry>) =>

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { crm, type NotificationType } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { LoadMore } from "@/components/ui/Pagination";
 import { useToast } from "@/components/ui/Toast";
@@ -31,7 +31,7 @@ export function NotificationsPage() {
       qc.invalidateQueries({ queryKey: ["notifications"] });
       qc.invalidateQueries({ queryKey: ["notification-count"] });
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   const markAll = useMutation({
     mutationFn: () => crm.notifications.markAllRead(),
@@ -40,7 +40,7 @@ export function NotificationsPage() {
       qc.invalidateQueries({ queryKey: ["notification-count"] });
       toast(t("common.saved"));
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   const setPref = useMutation({
     mutationFn: ({ type, enabled }: { type: NotificationType; enabled: boolean }) =>
@@ -49,7 +49,7 @@ export function NotificationsPage() {
       qc.invalidateQueries({ queryKey: ["notification-prefs"] });
       toast(t("common.saved"));
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { errorMessage } from "@/lib/errorMessage";
 import { Text } from "react-native";
 import { useCreateLeaveRequest } from "@/api/leave";
 import { useMyChildren } from "@/api/students";
@@ -27,7 +28,7 @@ export default function LeaveRequestScreen() {
       toast.show("Đã gửi đơn xin nghỉ", "success");
       setReason("");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : t("leave.childrenError"), "error");
+      toast.show(errorMessage(err, t), "error");
     }
   }
   return (

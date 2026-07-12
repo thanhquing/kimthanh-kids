@@ -5,6 +5,7 @@ import { login } from "@/api/auth";
 import { ApiError } from "@/api/http";
 import logoFull from "@/assets/logo-kimthanh.png";
 import { useT } from "@/i18n";
+import { errorMessage } from "@/lib/errorMessage";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export function LoginPage() {
       await login({ identifier: email, password });
       navigate("/", { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? t("login.errInvalid") : t("login.errNetwork"));
+      setError(err instanceof ApiError ? errorMessage(err, t) : t("login.errNetwork"));
     } finally {
       setLoading(false);
     }

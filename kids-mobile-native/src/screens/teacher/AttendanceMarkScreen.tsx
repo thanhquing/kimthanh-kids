@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { errorMessage } from "@/lib/errorMessage";
 import { Pressable, Text, View } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useQueryClient } from "@tanstack/react-query";
@@ -101,7 +102,7 @@ export default function AttendanceMarkScreen() {
       await queryClient.invalidateQueries({ queryKey: attendanceKeys.byClass(classroomId, date) });
       toast.show(t("attendance.saved", { count: result.marked }), "success");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : t("attendance.loadError"), "error");
+      toast.show(errorMessage(err, t), "error");
     }
   }
 

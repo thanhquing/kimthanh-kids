@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { crm, type TenantSettings, type UpdateSettings } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { Field } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
@@ -80,7 +80,7 @@ export function SettingsPage() {
       qc.invalidateQueries({ queryKey: ["crm-settings"] });
       toast(t("settings.saved"));
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   return (

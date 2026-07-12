@@ -196,8 +196,8 @@ Luong nguoi dung: chu truong dang nhap -> cau hinh truong -> tao nhan su/lop/hoc
 | CE01 | Edge: thieu token | `GET /tenant/settings` | `401` | `401` | PASS | `UNAUTHORIZED` |
 | CE02 | Edge: phu huynh tao lop (cam) | `POST /classrooms` | `403` | `403` | PASS | `FORBIDDEN` |
 | CE03 | Edge: tao HS thieu field bat buoc | `POST /students` | `400` | `400` | PASS | validation error |
-| CE04 | Edge: lop thu 2 trong han muc (free=2) | `POST /classrooms` | `201` | `201` | PASS | within quota |
-| CE04b | Edge: lop thu 3 vuot han muc (free=2) | `POST /classrooms` | `403` | `403` | PASS | quota enforced |
+| CE04 | Tao nhieu lop (quota lop da go — BL-049) | `POST /classrooms` | `201` | `201` | PASS | quota `CLASSROOMS` đã gỡ (BL-049) — tạo lớp không còn bị chặn theo gói |
+| CE04b | ~~Lop vuot han muc lop~~ (N/A sau BL-049) | `POST /classrooms` | — | — | N/A | không còn enforce quota `CLASSROOMS`; gói định lượng theo GV+HS+STORAGE_MB |
 
 Fix da thuc hien trong qua trinh test (deu o phia script test, **khong sua backend**):
 

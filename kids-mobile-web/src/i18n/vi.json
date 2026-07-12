@@ -7,6 +7,10 @@
     "loading": "Đang tải dữ liệu…",
     "loadMore": "Xem thêm"
   },
+  "featureGate": {
+    "title": "Nâng cấp gói",
+    "body": "Gói hiện tại chưa bật tính năng này. Vui lòng liên hệ nhà trường để được hỗ trợ."
+  },
   "auth": {
     "welcome": "Chào mừng trở lại",
     "subtitle": "Đăng nhập để tiếp tục với KimThanh Kids",
@@ -377,5 +381,19 @@
     "empty": "Chưa có album ảnh.",
     "photos": "{count} ảnh",
     "noPhotos": "Album chưa có ảnh."
+  },
+  "errors": {
+    "generic": "Có lỗi xảy ra, vui lòng thử lại.",
+    "QUOTA_EXCEEDED": "Đã đạt giới hạn của gói. Vui lòng nâng cấp gói để tiếp tục.",
+    "FEATURE_NOT_AVAILABLE": "Tính năng này không có trong gói hiện tại. Vui lòng nâng cấp gói.",
+    "NO_BANK_CONFIG": "Trường chưa cấu hình tài khoản ngân hàng. Vui lòng liên hệ nhà trường.",
+    "NOT_FOUND": "Không tìm thấy dữ liệu.",
+    "FORBIDDEN": "Bạn không có quyền thực hiện thao tác này.",
+    "VALIDATION_FAILED": "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.",
+    "INVALID_CREDENTIALS": "Email/số điện thoại hoặc mật khẩu không đúng.",
+    "TENANT_REQUIRED": "Không xác định được trường. Vui lòng chọn trường.",
+    "ACCOUNT_LOCKED": "Tài khoản tạm khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau.",
+    "SLUG_UNAVAILABLE": "Tên định danh này đã được sử dụng. Vui lòng chọn tên khác.",
+    "NO_PUBLIC_PRICE": "Gói này chưa có bảng giá công khai."
   }
 }

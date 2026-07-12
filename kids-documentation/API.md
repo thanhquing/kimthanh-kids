@@ -847,12 +847,21 @@ Notification phát từ 6 sự kiện hiện có: tạo daily report, publish an
 | ------------------------------------------------- | ---------------------------------------------------------- |
 | `VALIDATION_FAILED`                               | Body/query không đúng Zod schema                           |
 | `UNAUTHORIZED`, `INVALID_TOKEN`                   | Thiếu/sai token                                            |
+| `INVALID_CREDENTIALS`                             | Sai email/phone hoặc mật khẩu ở `/auth/login`             |
+| `ACCOUNT_LOCKED`                                  | Khóa tạm sau nhiều lần sai mật khẩu liên tiếp (xem §Auth) |
+| `TENANT_REQUIRED`                                 | Login tenant thiếu cả Host lẫn header `x-tenant`          |
 | `NO_TENANT`, `TENANT_MISMATCH`                    | Host không resolve được tenant hoặc token dùng sai host    |
 | `FORBIDDEN`                                       | Role không đủ quyền                                        |
 | `SUBSCRIPTION_SUSPENDED`, `SUBSCRIPTION_INACTIVE` | Subscription chặn route thường                             |
 | `FEATURE_NOT_AVAILABLE`                           | Gói không bật feature yêu cầu                              |
 | `QUOTA_EXCEEDED`, `STORAGE_EXCEEDED`              | Vượt quota gói                                             |
 | `SLUG_UNAVAILABLE`, `MEMBER_EXISTS`               | Trùng slug/thành viên                                      |
+| `NO_PUBLIC_PRICE`                                 | Gói chọn khi signup/đổi gói không có giá công khai         |
+| `INVALID_PLAN`                                    | Mua/đổi sang gói không còn bán (không phải bản đại diện đang bán — BL-050) |
+| `PLAN_IMMUTABLE`                                  | Sửa prices/features/limits của gói đã có thuê bao (BL-050) |
+| `PLAN_HAS_SUBSCRIPTIONS`                          | Xóa gói còn thuê bao tham chiếu (BL-050)                   |
+| `PLAN_NOT_SELLABLE`                               | Đặt featured gói chưa active+public (BL-050)               |
+| `NO_BANK_CONFIG`                                  | Thiếu cấu hình ngân hàng khi tạo VietQR học phí            |
 | `NOT_FOUND`, `NO_*`                               | Không tìm thấy tài nguyên trong scope tenant/school/parent |
 | `INVALID_SIGNATURE`                               | Webhook signature không hợp lệ                             |
 

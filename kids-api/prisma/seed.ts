@@ -13,6 +13,9 @@ import { join } from "node:path";
 
 const prisma = new PrismaClient();
 
+// Feature key seed chuẩn:
+// - Enforced ở API: media_gallery, lesson_plan.
+// - Coming Soon/chưa có endpoint enforce: messaging, analytics, api_access.
 const FEATURES = ["messaging", "media_gallery", "lesson_plan", "analytics", "api_access"];
 const BLOG_PLACEHOLDER_COVER = "/public/assets/blog/blog-placeholder.webp";
 const BLOG_DAILY_JOURNAL_COVER =

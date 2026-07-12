@@ -71,7 +71,7 @@
 |-----|-----|--------|------------------|
 | **Miễn phí** | 0đ — **dùng vĩnh viễn** | 10 học sinh · 1 giáo viên · 200MB | "Dùng thử thật, không giới hạn thời gian — cứ trải nghiệm đã." |
 | **Khởi đầu** | **690k/tháng** (hoặc 6.9tr/năm — rẻ ~2 tháng) | 100 học sinh · 8 giáo viên · 5GB | Mở thêm **Album ảnh lớp** + dung lượng lớn |
-| **Chuyên nghiệp** | **1.39tr/tháng** (3.75tr/quý · 13.9tr/năm) | 300 học sinh · 25 giáo viên · 20GB | Thêm **Giáo án điện tử** + báo cáo nâng cao |
+| **Chuyên nghiệp** | **1.39tr/tháng** (3.75tr/quý · 13.9tr/năm) | 300 học sinh · 25 giáo viên · 20GB | Thêm **Giáo án điện tử** (báo cáo nâng cao — *sắp có*) |
 | **Hệ thống (Enterprise)** | **Liên hệ** | Không giới hạn | Nhiều cơ sở, tích hợp riêng, hỗ trợ ưu tiên |
 
 **Cách chốt gói theo quy mô (nói thẳng):**

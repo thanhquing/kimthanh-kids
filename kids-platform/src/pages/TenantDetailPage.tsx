@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Gauge, Info, Lock, LogIn, MapPin, Palette, Power, Receipt, Repeat, School } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { platform, type EntitlementInput } from "@/api/platform";
 import { Field, Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/Toast";
@@ -62,7 +62,7 @@ export function TenantDetailPage() {
     invalidatePlatformData(qc); // gồm cả ["tenants"]
   };
   const onErr = (e: unknown) =>
-    toast(e instanceof ApiError ? e.message : t("td.toastErr"), "error");
+    toast(errorMessage(e, t), "error");
 
   const suspend = useMutation({
     mutationFn: () => platform.suspend(id),

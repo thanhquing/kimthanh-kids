@@ -67,6 +67,8 @@ Request
 - **Platform** (staff của bạn): `PLATFORM_SUPER_ADMIN`, `PLATFORM_SUPPORT`, `PLATFORM_BILLING` — lưu ở `User.platformRole`. Kiểm tra bằng `@PlatformRoles(...)`.
 - **Tenant** (người dùng trường): `SCHOOL_ADMIN`, `PRINCIPAL`, `TEACHER`, `NURSE`, `FINANCE`, `PARENT` — lưu ở `Membership` (scope theo `schoolId`). Kiểm tra bằng `@Roles(...)`.
 
+**Feature-gating & role — defense-in-depth 2 lớp:** BE là chốt an toàn cuối (`@RequireFeature` + `@Roles`/`@PlatformRoles` trên controller; chỉ **2 feature** thực enforce là `media_gallery` + `lesson_plan`, còn analytics/api_access/messaging là **Coming Soon**). FE phủ thêm lớp phòng thủ (BL-044 feature-gating theo gói + BL-048 role-gating UI): CRM route-guard theo role + ẩn nút hành động nhạy cảm; mobile-web/native gate album/giáo án bằng `/auth/me.features` trước khi gọi API. FE chỉ để tránh "bấm mới 403", KHÔNG thay chốt BE.
+
 ## Envelope chuẩn
 
 ```jsonc
@@ -75,6 +77,8 @@ Request
 // error
 { "success": false, "error": { "code": "QUOTA_EXCEEDED", "message": "...", "details": {} } }
 ```
+
+`AllExceptionsFilter` bọc mọi lỗi thành envelope `{ success:false, error:{ code, message, details } }` và **localize `message` theo `x-language`** (fallback `accept-language`; `en` → bảng `EN_MESSAGES`, mặc định `vi`) — `code` là hằng ổn định để FE map sang i18n. FE mỗi app có helper `errorMessage(e, t)` map `error.code` → copy VI/EN (namespace `errors`), code lạ → dùng `message` backend đã localize, non-ApiError → `errors.generic` (BL-006).
 
 ## Quyết định kiến trúc chính
 

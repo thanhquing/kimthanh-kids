@@ -460,5 +460,19 @@
     "noEvents": "No events yet.",
     "eventsHint": "\"Active\" = distinct users who logged in within the window. Events are recorded from the backend (login/signup…); tenant apps will add events as they are built. ",
     "viewTenants": "View tenants"
+  },
+  "errors": {
+    "generic": "Something went wrong, please try again.",
+    "QUOTA_EXCEEDED": "You've reached your plan limit. Please upgrade to continue.",
+    "FEATURE_NOT_AVAILABLE": "This feature isn't included in your current plan. Please upgrade.",
+    "NO_BANK_CONFIG": "No bank account configured. Please check the configuration.",
+    "NOT_FOUND": "Data not found.",
+    "FORBIDDEN": "You don't have permission to perform this action.",
+    "VALIDATION_FAILED": "Invalid data. Please review and try again.",
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "TENANT_REQUIRED": "Could not determine the school.",
+    "ACCOUNT_LOCKED": "Account temporarily locked due to too many failed attempts. Please try again later.",
+    "SLUG_UNAVAILABLE": "This identifier is already in use. Please choose another.",
+    "NO_PUBLIC_PRICE": "This plan has no public pricing yet."
   }
 }

@@ -3,7 +3,7 @@ import { MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { crm, type CreateStudent, type Gender, type Student } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
@@ -78,7 +78,7 @@ function StudentForm({
       toast(editing ? t("common.saved") : t("common.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const valid = form.fullName.trim() && /^\d{4}-\d{2}-\d{2}$/.test(form.dateOfBirth) && (editing || schoolId);
@@ -237,7 +237,7 @@ export function StudentsPage() {
       toast(t("common.deleted"));
       setDeleting(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const [exporting, setExporting] = useState(false);
@@ -266,7 +266,7 @@ export function StudentsPage() {
       ]);
       downloadCsv("students.csv", [header, ...rows]);
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error");
+      toast(errorMessage(e, t), "error");
     } finally {
       setExporting(false);
     }

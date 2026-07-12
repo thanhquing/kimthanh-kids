@@ -1,6 +1,6 @@
 # KimThanh Kids — Roadmap tổng
 
-> Cập nhật: 2026-07-11. Phase 0 SaaS + Phase 1 domain đã đóng (176 e2e / 20 suite); các app FE chính đã nối API thật. Consent pháp lý (BL-046), gỡ quota lớp (BL-049), versioning gói (BL-050) đã xong. Việc còn lại được gom ở [BACKLOG.md](./BACKLOG.md), kiến thức DONE ở [IMPLEMENTATION_KNOWLEDGE.md](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
+> Cập nhật: 2026-07-12. Phase 0 SaaS + Phase 1 domain đã đóng (181 e2e / 21 suite); các app FE chính đã nối API thật. Consent pháp lý (BL-046), gỡ quota lớp (BL-049), versioning gói (BL-050), error-code mapping FE (BL-006), feature/role-gating FE (BL-044/048) và schema/config-freeze trước production (BL-052→056: soft-delete/retention, timestamptz, invoice-counter, prod-guard, topology same-origin) đã xong. Việc còn lại được gom ở [BACKLOG.md](./BACKLOG.md), kiến thức DONE ở [IMPLEMENTATION_KNOWLEDGE.md](../kids-documentation/IMPLEMENTATION_KNOWLEDGE.md).
 
 ## Tổng quan
 

@@ -1,4 +1,5 @@
 import { Text } from "react-native";
+import { errorMessage } from "@/lib/errorMessage";
 import { useHandleMedicine, useMedicineList } from "@/api/medicine";
 import { RoleScreen, TopBar, Card, PrimaryButton, LoadingState, EmptyState } from "@/components/ui/Primitives";
 import { useToast } from "@/components/ui/Toast";
@@ -15,7 +16,7 @@ export default function MedicineApproveScreen() {
       toast.show(t("medicine.approvedToast"), "success");
       await query.refetch();
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : t("medicine.listError"), "error");
+      toast.show(errorMessage(err, t), "error");
     }
   }
   return (

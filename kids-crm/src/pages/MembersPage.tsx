@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { me } from "@/api/auth";
 import { crm, type CreateMember, type Member, type TenantRole } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Field, Modal } from "@/components/ui/Modal";
@@ -13,6 +14,7 @@ import { useT } from "@/i18n";
 import { fetchAllPages } from "@/lib/fetchAll";
 import { formatDate } from "@/lib/labels";
 import { ROLE } from "@/lib/people";
+import { ADMIN_ROLES, hasAnyRole } from "@/lib/roles";
 import { cn, downloadCsv, initials } from "@/lib/utils";
 
 const ROLES: TenantRole[] = ["SCHOOL_ADMIN", "PRINCIPAL", "TEACHER", "NURSE", "FINANCE", "PARENT"];
@@ -50,7 +52,7 @@ function CreateMemberModal({ open, onClose }: { open: boolean; onClose: () => vo
       toast(t("common.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const valid =
@@ -152,7 +154,7 @@ function ResetPasswordModal({ member, onClose }: { member: Member; onClose: () =
       toast(t("feature.passwordResetOk"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
   return (
     <Modal
@@ -186,6 +188,8 @@ export function MembersPage() {
   const { t } = useT();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
+  const canManageMembers = hasAnyRole(meQuery.data?.roles ?? [], ADMIN_ROLES);
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -221,7 +225,7 @@ export function MembersPage() {
       toast(t("common.saved"));
       setToggling(null);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const [exporting, setExporting] = useState(false);
@@ -252,7 +256,7 @@ export function MembersPage() {
       ];
       downloadCsv("members.csv", [header, ...rows]);
     } catch (e) {
-      toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error");
+      toast(errorMessage(e, t), "error");
     } finally {
       setExporting(false);
     }
@@ -298,9 +302,11 @@ export function MembersPage() {
             >
               {exporting ? t("common.exporting") : t("common.exportCsv")}
             </button>
-            <button className="btn-primary text-sm" onClick={() => setCreateOpen(true)}>
-              {t("members.create")}
-            </button>
+            {canManageMembers && (
+              <button className="btn-primary text-sm" onClick={() => setCreateOpen(true)}>
+                {t("members.create")}
+              </button>
+            )}
           </div>
         </div>
 
@@ -347,21 +353,25 @@ export function MembersPage() {
                       >
                         {t("common.view")}
                       </button>
-                      <button
-                        className={cn(
-                          "text-xs font-semibold ml-3",
-                          m.user.isActive ? "text-slate-500" : "text-green-600",
-                        )}
-                        onClick={() => setToggling(m)}
-                      >
-                        {t(m.user.isActive ? "members.deactivate" : "members.activate")}
-                      </button>
-                      <button
-                        className="text-xs font-semibold ml-3 text-amber-700"
-                        onClick={() => setResetting(m)}
-                      >
-                        {t("feature.resetPassword")}
-                      </button>
+                      {canManageMembers && (
+                        <>
+                          <button
+                            className={cn(
+                              "text-xs font-semibold ml-3",
+                              m.user.isActive ? "text-slate-500" : "text-green-600",
+                            )}
+                            onClick={() => setToggling(m)}
+                          >
+                            {t(m.user.isActive ? "members.deactivate" : "members.activate")}
+                          </button>
+                          <button
+                            className="text-xs font-semibold ml-3 text-amber-700"
+                            onClick={() => setResetting(m)}
+                          >
+                            {t("feature.resetPassword")}
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -379,11 +389,11 @@ export function MembersPage() {
         )}
       </main>
 
-      {createOpen && <CreateMemberModal open={createOpen} onClose={() => setCreateOpen(false)} />}
+      {createOpen && canManageMembers && <CreateMemberModal open={createOpen} onClose={() => setCreateOpen(false)} />}
       {viewing && <ViewMemberModal member={viewing} onClose={() => setViewing(null)} />}
-      {resetting && <ResetPasswordModal member={resetting} onClose={() => setResetting(null)} />}
+      {resetting && canManageMembers && <ResetPasswordModal member={resetting} onClose={() => setResetting(null)} />}
       <ConfirmDialog
-        open={!!toggling}
+        open={canManageMembers && !!toggling}
         title={t(toggling?.user.isActive ? "members.deactivate" : "members.activate")}
         message={t(toggling?.user.isActive ? "members.deactivateConfirm" : "members.activateConfirm")}
         danger={toggling?.user.isActive}

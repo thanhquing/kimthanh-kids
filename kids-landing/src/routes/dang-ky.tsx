@@ -2,8 +2,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, School, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ApiError } from "@/api/http";
 import { publicApi, type BillingCycle, type SignupInput } from "@/api/public";
+import { errorMessage } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/dang-ky")({
   validateSearch: (search): { plan?: string; cycle?: BillingCycle } => ({
@@ -315,7 +315,8 @@ function SignupPage() {
                   >
                     Chính sách bảo mật
                   </button>
-                  , bao gồm việc trường tự chịu trách nhiệm xin phép người giám hộ khi nhập dữ liệu trẻ em.
+                  , bao gồm việc trường tự chịu trách nhiệm xin phép người giám hộ khi nhập dữ liệu
+                  trẻ em.
                 </span>
               </label>
               <button
@@ -333,9 +334,7 @@ function SignupPage() {
               )}
               {signup.error && (
                 <p className="text-sm text-destructive">
-                  {signup.error instanceof ApiError
-                    ? signup.error.message
-                    : "Đăng ký chưa thành công"}
+                  {errorMessage(signup.error, "Đăng ký chưa thành công")}
                 </p>
               )}
             </div>

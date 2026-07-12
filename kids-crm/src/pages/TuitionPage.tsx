@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { me } from "@/api/auth";
 import { crm, type CreateInvoice, type Invoice, type TuitionInvoiceStatus } from "@/api/crm";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { PageHeader } from "@/components/PageHeader";
 import { EntitySelect } from "@/components/ui/EntitySelect";
 import { Field, Modal } from "@/components/ui/Modal";
@@ -13,6 +14,7 @@ import { usePaged } from "@/hooks/usePaged";
 import { useT, type TKey, type Translator } from "@/i18n";
 import { fetchAllPages } from "@/lib/fetchAll";
 import { formatDate } from "@/lib/labels";
+import { hasAnyRole } from "@/lib/roles";
 import { cn, formatVnd } from "@/lib/utils";
 
 const STATUS_KEY: Record<string, TKey> = {
@@ -30,6 +32,7 @@ const STATUS_BADGE: Record<string, string> = {
   CANCELED: "b-slate",
 };
 const FILTERS: TuitionInvoiceStatus[] = ["UNPAID", "PARTIAL", "PAID", "OVERDUE", "CANCELED"];
+const TUITION_MANAGERS = ["SCHOOL_ADMIN", "PRINCIPAL", "FINANCE"] as const;
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 /** Trạng thái HIỂN THỊ: HĐ chưa trả mà quá hạn → OVERDUE (dù DB còn UNPAID/PARTIAL). */
@@ -50,7 +53,7 @@ export async function openInvoicePrint(id: string, onError: (m: string) => void,
     w.focus();
     setTimeout(() => w.print(), 400);
   } catch (e) {
-    onError(e instanceof ApiError ? e.message : t("common.errorGeneric"));
+    onError(errorMessage(e, t));
   }
 }
 
@@ -99,7 +102,7 @@ function CreateInvoiceModal({ onClose }: { onClose: () => void }) {
       toast(t("tuition.created"));
       onClose();
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("common.errorGeneric"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const validItems = lines.filter((l) => l.label.trim() && l.unitPrice).length > 0;
@@ -198,6 +201,8 @@ function CreateInvoiceModal({ onClose }: { onClose: () => void }) {
 export function TuitionPage() {
   const { t } = useT();
   const { toast } = useToast();
+  const meQuery = useQuery({ queryKey: ["auth", "me"], queryFn: me, staleTime: 5 * 60_000 });
+  const canManageTuition = hasAnyRole(meQuery.data?.roles ?? [], [...TUITION_MANAGERS]);
   const [tab, setTab] = useState<"invoices" | "payments">("invoices");
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -271,9 +276,11 @@ export function TuitionPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <button className="btn-primary text-sm ml-auto" onClick={() => setCreateOpen(true)}>
-                {t("tuition.create")}
-              </button>
+              {canManageTuition && (
+                <button className="btn-primary text-sm ml-auto" onClick={() => setCreateOpen(true)}>
+                  {t("tuition.create")}
+                </button>
+              )}
             </div>
 
             {invoices.isLoading ? (
@@ -372,7 +379,7 @@ export function TuitionPage() {
         )}
       </main>
 
-      {createOpen && <CreateInvoiceModal onClose={() => setCreateOpen(false)} />}
+      {createOpen && canManageTuition && <CreateInvoiceModal onClose={() => setCreateOpen(false)} />}
     </>
   );
 }

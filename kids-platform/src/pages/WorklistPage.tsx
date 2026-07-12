@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, CircleCheck, Clock, Gauge, Lock, Receipt, Sparkles, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { platform } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { useToast } from "@/components/ui/Toast";
@@ -55,7 +55,7 @@ export function WorklistPage() {
       toast(t("wl.toastPaid"));
       invalidatePlatformData(qc);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("td.toastErr"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   const trial = data?.trial;

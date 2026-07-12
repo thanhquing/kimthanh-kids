@@ -7,7 +7,9 @@ Web quản trị (CRM/dashboard) cho nhà trường & nhân viên KimThanh Kids.
 ## Phạm vi đã có
 
 - App shell tenant realm, auth guard, sidebar/bottom nav responsive, i18n VI/EN.
+- Defense-in-depth FE: sidebar + route guard theo role; route guard theo feature entitlement cho Album/Giáo án; nút hành động nhạy cảm ẩn theo role (BE `@Roles`/`@RequireFeature` vẫn là chốt an toàn).
 - CRUD/vận hành chính qua `src/api/crm.ts` và TanStack Query.
+- Copy lỗi ổn định theo `error.code` (`src/lib/errorMessage.ts`, namespace i18n `errors` VI/EN) thay vì hiển thị raw `error.message`; login map `INVALID_CREDENTIALS`/`ACCOUNT_LOCKED`/`TENANT_REQUIRED`.
 - Các route chính: `/classrooms`, `/students`, `/members`, `/attendance`, `/reports`, `/health`, `/leave`, `/tuition`, `/announcements`, `/assignments`, `/menus`, `/albums`, `/lessons`, `/notifications`, `/pickup`, `/audit-logs`, `/settings`.
 - Còn cần smoke test dev đầy đủ với Docker/Postgres local, visual regression theo mock và E2E FE nếu chuẩn bị release.
 

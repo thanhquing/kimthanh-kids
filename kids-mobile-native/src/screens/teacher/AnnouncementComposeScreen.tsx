@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { errorMessage } from "@/lib/errorMessage";
 import { useCreateAnnouncement } from "@/api/announcements";
 import { RoleScreen, TopBar, Card, TextField, PrimaryButton } from "@/components/ui/Primitives";
 import { useToast } from "@/components/ui/Toast";
+import { useT } from "@/i18n";
 
 export default function AnnouncementComposeScreen() {
   const toast = useToast();
+  const { t } = useT();
   const mutation = useCreateAnnouncement();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -15,7 +18,7 @@ export default function AnnouncementComposeScreen() {
       setTitle("");
       setBody("");
     } catch (err) {
-      toast.show(err instanceof Error ? err.message : "Không gửi được thông báo", "error");
+      toast.show(errorMessage(err, t), "error");
     }
   }
   return (

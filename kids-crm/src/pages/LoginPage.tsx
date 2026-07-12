@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { login } from "@/api/auth";
 import { ApiError } from "@/api/http";
 import logoFull from "@/assets/logo-kimthanh.png";
+import { errorMessage } from "@/lib/errorMessage";
 import type { TenantOption } from "@/api/public";
 import { Modal } from "@/components/ui/Modal";
 import { TenantSelect } from "@/components/ui/TenantSelect";
@@ -31,13 +32,8 @@ export function LoginPage() {
       await login({ identifier, password }, tenant.id);
       navigate("/", { replace: true });
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.code === "UNAUTHORIZED" ? t("login.errInvalid") : err.message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError(t("login.errNetwork"));
-      }
+      // BL-006: ApiError → copy ổn định theo code; lỗi mạng/không rõ → errNetwork (không lộ raw).
+      setError(err instanceof ApiError ? errorMessage(err, t) : t("login.errNetwork"));
     } finally {
       setLoading(false);
     }

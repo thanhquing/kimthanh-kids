@@ -1,10 +1,10 @@
 # KimThanh Kids — Kiến thức triển khai đã DONE
 
-> Cập nhật: 2026-07-11. Tài liệu này ghi lại phần đã hoàn tất sau khi gom/xoá các tracker task cũ. Việc còn lại nằm ở [BACKLOG.md](../kids-tasks/BACKLOG.md).
+> Cập nhật: 2026-07-12. Tài liệu này ghi lại phần đã hoàn tất sau khi gom/xoá các tracker task cũ. Việc còn lại nằm ở [BACKLOG.md](../kids-tasks/BACKLOG.md).
 
 ## Trạng thái tổng
 
-- `kids-api` đã đóng Phase 0 SaaS + Phase 1 domain A->G, inventory gần nhất: 176 e2e / 20 suite, NestJS 11 trên Express 5.
+- `kids-api` đã đóng Phase 0 SaaS + Phase 1 domain A->G, inventory gần nhất: 181 e2e / 21 suite, NestJS 11 trên Express 5.
 - `kids-platform` đã nối API thật cho vận hành nền tảng: tenants, plans, coupons, subscriptions, invoices, public invoice, usage/audit, worklist, settings, posts CMS.
 - `kids-crm` đã nối API thật cho toàn bộ module vận hành trường P0/P1 và nhiều P2: dashboard, settings, lớp, học sinh, nhân sự, điểm danh, báo cáo ngày, sức khỏe, học phí, thông báo, phân công, nghỉ phép, menu, album/upload, giáo án, notifications, pickup, audit.
 - `kids-mobile-web` là React/Vite PWA cho PH/GV, API thật + i18n VI/EN + login chọn trường qua `x-tenant`.
@@ -29,6 +29,7 @@
 - Học phí trường -> phụ huynh: TuitionInvoice/Item/Payment, số hóa đơn `HD-YYYY-NNNN` cấp qua `InvoiceCounter` transaction-safe, VietQR miễn phí, tiền mặt/chuyển khoản thủ công, VNPay sandbox, HTML print, CSV export, cron quá hạn.
 - Schema-freeze BL-052/053/054: dữ liệu retention của trẻ (`Attendance`, `PickupAuthorization`, `PickupLog`, `DailyReport`, `HealthRecord`, `MedicineRequest`, `Incident`, `Allergy`, `LeaveRequest`, `TuitionInvoice`, `TuitionPayment`) có `deletedAt` và được `prisma.db` auto-filter; FK từ `Student` sang các bảng này là `ON DELETE RESTRICT`, nên hard-delete Student bị chặn khi còn chứng từ/y tế/vận hành. Allergy active dùng partial unique `(studentId, allergen) WHERE deletedAt IS NULL`.
 - Nội dung/giao tiếp: Announcements, WeeklyMenu + allergy warnings, LessonPlan feature-gate `lesson_plan`, Album feature-gate `media_gallery`.
+- Feature key BL-045 đã chuẩn hóa: API chỉ enforce `media_gallery` và `lesson_plan`; `analytics`, `api_access`, `messaging` là Coming Soon có seed entitlement nhưng chưa có module/endpoint enforce.
 - Notifications: `NotificationsService.notify`/`notifyStudentParents` là điểm phát duy nhất; in-app feed + preferences đã có, push để P2.
 - Dashboard/audit/usage: `GET /dashboard/summary`, `AuditLog`, `GET /audit-logs`, `UsageEvent` login và `GET /platform/usage/overview`.
 
@@ -59,11 +60,13 @@
 - CRM là nguồn vận hành cho mobile: cấp tài khoản/SĐT, xếp lớp, gán PH, tạo hóa đơn, soạn menu/lesson/album, duyệt thuốc/nghỉ, ghi pickup.
 - Mobile PH xem con, điểm danh, báo cáo, sức khỏe, học phí, VietQR/VNPay sandbox, thuốc, nghỉ phép, thông báo, menu, album.
 - Mobile GV xem lớp, điểm danh, soạn báo cáo kèm ảnh, thông báo lớp, duyệt thuốc/nghỉ, xem giáo án/album/menu.
+- FE feature/role gating BL-044/048: CRM có route guard theo role cho members/settings/audit/health/pickup/lessons và route guard feature cho albums/lessons; các nút nhạy cảm (tạo/thu/hủy học phí, reset/tắt thành viên, duyệt nghỉ, tạo/thu hồi pickup) ẩn theo role. Mobile-web/native gate album (`media_gallery`) và giáo án (`lesson_plan`) bằng `/auth/me.features` trước khi gọi API.
+- FE error-code mapping BL-006: mỗi app có helper `errorMessage(e, t)` (landing: `errorMessage(e, fallback)`) map `error.code` → copy i18n ổn định (namespace `errors`, VI+EN parity 12 key), code lạ → message backend (đã localize theo `x-language`), non-ApiError → `errors.generic`; login map riêng `INVALID_CREDENTIALS`/`ACCOUNT_LOCKED`/`TENANT_REQUIRED`. Không còn hiển thị raw `error.message` (trừ `http.ts` khi tạo ApiError).
 - Reset mật khẩu self-service chưa có email/SMS infra; CRM đã có admin reset mật khẩu nhân sự/phụ huynh.
 
 ## Kiểm thử và verify
 
-- E2E API hiện có 20 suite trong `kids-api/test`, gồm auth/RBAC, billing, isolation, domain, media, landing self-service, pickup, tuition, observability, consent, plan-versioning.
+- E2E API hiện có 21 suite / 181 test trong `kids-api/test`, gồm auth/RBAC, billing, isolation, domain, media, landing self-service, pickup, tuition, observability, consent, plan-versioning, deletion-contract (schema-freeze), config-schema (prod-guard), mass-assignment, members, staff, health, attendance-reports, communication, tenant-discovery, plans.
 - Ledger cURL cũ đã xác minh 127 flow mock UI và các domain mobile/CRM chính; phần chi tiết được hấp thụ vào trạng thái DONE ở tài liệu này.
 - Trước khi báo xong khi đổi code API: `pnpm exec tsc --noEmit`, `pnpm lint`, `pnpm test:e2e`.
 - Với FE: chạy build tương ứng và smoke theo `kids-mobile-web/FE_TEST_SCENARIOS.md` hoặc checklist release trong `kids-tasks/BACKLOG.md`.

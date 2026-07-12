@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Download, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ApiError } from "@/api/http";
+import { errorMessage } from "@/lib/errorMessage";
 import { platform, type CreateTenantInput, type Tenant } from "@/api/platform";
 import { PageHeader } from "@/components/PageHeader";
 import { Field, Modal } from "@/components/ui/Modal";
@@ -153,7 +153,7 @@ export function TenantsPage() {
       setForm(EMPTY);
       invalidatePlatformData(qc);
     },
-    onError: (e) => toast(e instanceof ApiError ? e.message : t("tenants.createError"), "error"),
+    onError: (e) => toast(errorMessage(e, t), "error"),
   });
 
   function pick(key: string) {

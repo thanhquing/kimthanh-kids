@@ -204,8 +204,11 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 - **Done khi:** đổi giá tạo phiên bản mới; khách cũ giữ giá tới hết kỳ rồi sang gói active mới nhất của tier; admin chọn được gói đại diện show landing; không mutate giá gói đã bán.
 - **Verify:** e2e: (a) tạo phiên bản mới không đổi hóa đơn/kỳ hiện tại của khách cũ; (b) renewal tính theo gói đại diện mới; (c) landing chỉ hiện 1 gói/tier theo cờ đại diện.
 
-### BL-043 — Bảng giá landing hiển thị đúng feature theo gói + đánh dấu Coming Soon
+### BL-043 — Bảng giá landing hiển thị đúng feature theo gói + đánh dấu Coming Soon ✅ DONE
 
+- **Trạng thái 2026-07-12:** hoàn tất. `bang-gia.tsx` tách feature thành 2 nhóm: enforced (`media_gallery`/`lesson_plan` → dấu ✓) vs Coming Soon (`analytics`/`api_access`/`messaging` → icon đồng hồ mờ + badge "Sắp có"), không bán như đã có. Landing không có i18n → chỉ VI. BILLING/business-docs đã sẵn mô tả Coming Soon (không cần sửa thêm).
+- **Verify:** `kids-landing pnpm build` ✅ · `pnpm lint` ✅ (tiện fix 1 lỗi prettier có sẵn ở `dang-ky.tsx:318`). Browser (Playwright/Chrome) trên `/bang-gia` với API thật: Starter→messaging "Sắp có"; Pro→messaging+analytics "Sắp có"; Enterprise→+api_access "Sắp có"; Album/Giáo án giữ ✓; 4 card không tràn/đè.
+- **⚠️ Ngoài scope phát hiện khi verify (chưa sửa):** card Free (0đ) hiển thị "Liên hệ"/"Nhận tư vấn" do `contactOnly = ... || amount <= 0` (`bang-gia.tsx:~140`) gộp nhầm gói 0đ — nên tách "free" khỏi contactOnly. Chờ quyết định.
 - **Owner:** `kids-landing`, `kids-documentation`
 - **Đọc trước:** `kids-landing/src/routes/bang-gia.tsx` (đặc biệt `FEATURE_LABELS` :31-37, danh sách feature nền tảng :58-62), `kids-landing/src/api/public.ts`, `kids-documentation/BILLING.md`, ma trận ở trên
 - **Làm:**
@@ -218,8 +221,11 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 - **Done khi:** trang `/bang-gia` thể hiện đúng feature từng gói theo ma trận; Coming Soon có badge rõ; không cam kết feature chưa có như đã có.
 - **Verify:** `cd kids-landing && pnpm build && pnpm lint`; xem `/bang-gia` render đúng từng gói.
 
-### BL-044 — Feature-gating theo gói ở FE (CRM + mobile-web + native)
+### BL-044 — Feature-gating theo gói ở FE (CRM + mobile-web + native) ✅ DONE
 
+- **Trạng thái 2026-07-12:** code/docs đã triển khai + verify đầy đủ (e2e đã chạy lại xanh sau khi Docker lên).
+- **Đã làm:** CRM route guard `media_gallery`/`lesson_plan` cho `/albums`/`/lessons`; mobile-web + native route guard Album/Giáo án bằng `/auth/me.features`; shortcut mobile ẩn Album/Giáo án khi gói chưa bật. README app + SECURITY/BILLING/IMPLEMENTATION_KNOWLEDGE đã đồng bộ.
+- **Verify:** `kids-crm pnpm build` ✅ · `kids-mobile-web pnpm build` ✅ · `kids-mobile-native pnpm typecheck && pnpm lint` ✅ · `kids-api tsc/lint` ✅ · `kids-api test:e2e` **181/181 (21 suite)** ✅. i18n `featureGate.title/body` (mobile) + `feature.upgradeTitle/Body` (CRM) parity VI/EN ✅.
 - **Owner:** `kids-crm`, `kids-mobile-web`, `kids-mobile-native`
 - **Đọc trước:** `kids-crm/src/components/AppLayout.tsx` (`canSee`/`feature` :55-146), `kids-crm/src/api/auth.ts` (`Me.features` :15-16), `kids-crm/src/App.tsx` (route :79-99), tương ứng ở mobile-web/native
 - **Làm:**
@@ -231,8 +237,11 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 - **Done khi:** user gói không bật feature không thấy page/section/nút tương ứng (không còn "bấm mới 403").
 - **Verify:** build từng app; smoke với tenant Free vs Pro (seed demo có case gói khác nhau).
 
-### BL-045 — Enforce hoặc dọn cờ feature "chết" ở API (`analytics`, `api_access`)
+### BL-045 — Enforce hoặc dọn cờ feature "chết" ở API (`analytics`, `api_access`) ✅ DONE
 
+- **Trạng thái 2026-07-12:** code/docs đã triển khai + verify đầy đủ (e2e đã chạy lại xanh).
+- **Đã làm:** `prisma/seed.ts` ghi rõ feature key enforced (`media_gallery`, `lesson_plan`) vs Coming Soon (`messaging`, `analytics`, `api_access`); BILLING/SECURITY/IMPLEMENTATION_KNOWLEDGE cập nhật để FE không hiểu nhầm `analytics`/`api_access` đã enforce.
+- **Verify:** `kids-api pnpm exec tsc --noEmit` ✅ · `kids-api pnpm lint` ✅ · `kids-api test:e2e` **181/181 (21 suite)** ✅.
 - **Owner:** `kids-api`, `kids-documentation`
 - **Đọc trước:** `kids-api/src/common/guards/subscription.guard.ts`, `kids-api/src/prisma/entitlement.service.ts`, `kids-api/prisma/seed.ts:15,328-334`, `kids-documentation/BILLING.md:17,55`
 - **Làm:**
@@ -284,8 +293,12 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 - **Done khi:** landing hiển thị đủ thông tin pháp nhân + điều khoản trước khi chốt đăng ký; sẵn sàng gắn dấu BCT sau khi thông báo.
 - **Verify:** `cd kids-landing && pnpm build`; rà các trang giá/đăng ký/liên hệ có đủ thông tin bắt buộc.
 
-### BL-048 — Hoàn thiện role-gating UI kids-crm (route guard + ẩn nút hành động theo role)
+### BL-048 — Hoàn thiện role-gating UI kids-crm (route guard + ẩn nút hành động theo role) ✅ DONE
 
+- **Trạng thái 2026-07-12:** code/docs đã triển khai + verify đầy đủ.
+- **Đã làm:** CRM thêm `RequireRole` cho `/members`, `/settings`, `/audit-logs`, `/health`, `/pickup`, `/lessons`; nút tạo/thu/hủy học phí, reset/tắt thành viên, duyệt/từ chối nghỉ phép, tạo/thu hồi pickup được ẩn theo role khớp backend. README + SECURITY/IMPLEMENTATION_KNOWLEDGE đã đồng bộ.
+- **Đối chiếu role khớp backend @Roles (đã xác minh):** ADMIN_ROLES=[SCHOOL_ADMIN,PRINCIPAL] (members/audit/settings) · NON_FINANCE_ROLES=[+TEACHER,+NURSE] (health/pickup STAFF) · LESSON_EDITOR/leave APPROVERS=[+TEACHER] · tuition MANAGERS=[SCHOOL_ADMIN,PRINCIPAL,FINANCE].
+- **Verify:** `kids-crm pnpm build` ✅ · `kids-api tsc/lint` ✅ · `kids-api test:e2e` **181/181 (21 suite)** ✅. `kids-crm` không có script `lint` trong `package.json` (build đã typecheck qua `tsc`).
 - **Owner:** `kids-crm`
 - **Đọc trước:** `kids-crm/src/App.tsx` (`RequireAuth` :32-35, `DashboardGate` :41-50, routes :79-99), `kids-crm/src/components/AppLayout.tsx` (`canSee`/`roles` :55-146), `kids-crm/src/lib/roles.ts`, `kids-crm/src/api/auth.ts`
 - **Làm:**
@@ -363,8 +376,11 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 - **Done khi:** `.env.example` và docs nói rõ format comma-separated; production wildcard vẫn bị chặn.
 - **Verify:** `cd kids-api && pnpm exec tsc --noEmit && pnpm lint`.
 
-### BL-006 — Error code mapping FE
+### BL-006 — Error code mapping FE ✅ DONE
 
+- **Trạng thái 2026-07-12:** hoàn tất cả 5 app. Helper `errorMessage(e, t)` (landing: `errorMessage(e, fallback)` vì không i18n) map `error.code` → copy ổn định; code lạ → message backend (đã localize theo `x-language`); non-ApiError/không rõ → `errors.generic` (không lộ raw/stack). Namespace i18n `errors` (generic + 11 code) thêm ở VI **và** EN, parity 12 key mỗi app.
+- **Đã áp:** CRM 42 site + LoginPage · Platform 12 site + LoginPage (thêm `useT` cho PostsPage) · mobile-native 8 site + LoginScreen (thêm `useT` cho AnnouncementCompose) · mobile-web LoginPage · landing dang-ky. Login map đúng `INVALID_CREDENTIALS`/`ACCOUNT_LOCKED`/`TENANT_REQUIRED` (trước chỉ hiện "sai đăng nhập" chung); lỗi mạng vẫn giữ `errNetwork`.
+- **Verify:** build CRM/platform/mobile-web/landing ✅ · native `tsc`+`lint` ✅ · landing `lint` ✅ · i18n parity VI/EN 12 key ✅ · không còn site raw `? x.message :` (trừ `http.ts` tạo ApiError) ✅.
 - **Owner:** `kids-platform`, `kids-crm`, `kids-mobile-web`, `kids-mobile-native`, `kids-landing`
 - **Đọc trước:** `kids-api/src/common/filters/all-exceptions.filter.ts`, `kids-api/src/common/guards/subscription.guard.ts`, `kids-api/src/tuition/tuition-payment.service.ts`, từng app `src/api/http.ts`, từng app `src/i18n/{vi,en}.json`
 - **Làm:**
@@ -847,8 +863,8 @@ Ghi chú enforce (đã xác minh theo code 2026-07-11): STUDENTS/TEACHERS đã c
 
 | # | Task | Việc | Repo ảnh hưởng | Rủi ro nếu hoãn | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
-| 18 | BL-043 | Landing bảng giá đúng feature + badge Coming Soon | Landing | Cam kết feature chưa có → phải gỡ gấp | ⬜ |
-| 19 | BL-006 | Error-code mapping FE (i18n VI/EN) | mọi FE | Lộ raw error; sửa rải rác nhiều app | ⬜ |
+| 18 | BL-043 | Landing bảng giá đúng feature + badge Coming Soon | Landing | Cam kết feature chưa có → phải gỡ gấp | ✅ |
+| 19 | BL-006 | Error-code mapping FE (i18n VI/EN) | mọi FE | Lộ raw error; sửa rải rác nhiều app | ✅ |
 | 20 | BL-044 | Feature-gating theo gói ở FE | CRM · Mobile | "Bấm mới 403" (BE `@RequireFeature` đã là chốt an toàn) | ⬜ |
 | 21 | BL-045 | Chuẩn hóa/enforce cờ feature "chết" (`analytics`/`api_access`) | API | FE tưởng đã enforce | ⬜ |
 | 22 | BL-048 | Role-gating UI CRM (route guard + ẩn nút) | CRM | Gõ URL sai quyền (BE `@Roles` đã là chốt an toàn) | ⬜ |

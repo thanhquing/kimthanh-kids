@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { errorMessage } from "@/lib/errorMessage";
 import { Building2, ChevronDown } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
@@ -89,8 +90,8 @@ export default function LoginScreen() {
       queryClient.setQueryData(meKeys.me, profile);
       router.replace(role === "teacher" ? "/teacher" : "/parent");
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : t("auth.errNetwork");
-      toast.show(message || t("auth.errInvalid"), "error");
+      // BL-006: ApiError → copy ổn định theo code; lỗi mạng/không rõ → errNetwork (không lộ raw).
+      toast.show(err instanceof ApiError ? errorMessage(err, t) : t("auth.errNetwork"), "error");
     } finally {
       setSubmitting(false);
     }
